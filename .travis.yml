@@ -17,7 +17,7 @@ script:
 deploy:
   provider: releases
   api_key:
-    secure: ${GITHUB_KEY}
+    secure: "${GITHUB_KEY}"
   file_glob: true
   file:
     - "target/universal/ot-platform-api-beta-latest.zip"
