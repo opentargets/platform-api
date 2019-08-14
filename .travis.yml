@@ -1,0 +1,49 @@
+sudo: required
+language: scala
+scala:
+  - 2.12.8
+dist: xenial
+jdk:
+  - openjdk11
+services:
+- docker
+env:
+  global:
+  - QUAY_REPO="quay.io/opentargets/platform-api-beta"
+script:
+  - sbt ++$TRAVIS_SCALA_VERSION clean compile
+  - sbt ++$TRAVIS_SCALA_VERSION coverage test coverageReport
+  - sbt ++$TRAVIS_SCALA_VERSION dist
+deploy:
+  provider: releases
+  api_key: ${GITHUB_KEY}
+  file_glob: true
+  file:
+    - "target/universal/ot-platform-api-beta-latest.zip"
+  on:
+    repo: opentargets/platform-api-beta
+    tags: true
+  skip_cleanup: true
+notifications:
+  email:
+    recipients:
+    - ops@opentargets.org
+    on_success: never
+    on_failure: always
+after_success:
+  - bash <(curl -s https://codecov.io/bash)
+  - docker pull "${QUAY_REPO}:${TRAVIS_BRANCH}" || true
+  - docker build --pull --cache-from "${QUAY_REPO}:${TRAVIS_BRANCH}" --tag "${QUAY_REPO}" .
+  - docker login -u="${QUAY_USER}" -p="${QUAY_PASSWORD}" quay.io
+  - git_sha="${TRAVIS_COMMIT}"
+  - docker tag "${QUAY_REPO}" "${QUAY_REPO}:${TRAVIS_BRANCH}"
+  - docker tag "${QUAY_REPO}" "${QUAY_REPO}:${git_sha}-${TRAVIS_BRANCH}"
+  #only push non-PRs
+  - |
+    if [ "${TRAVIS_PULL_REQUEST}" = "false" ]; then
+      docker push "${QUAY_REPO}:${TRAVIS_BRANCH}" && docker push "${QUAY_REPO}:${git_sha}-${TRAVIS_BRANCH}"
+      if [ "${TRAVIS_BRANCH}" = "master" ]; then
+        docker tag "${QUAY_REPO}:${TRAVIS_BRANCH}" "${QUAY_REPO}:latest"
+        docker push "${QUAY_REPO}:latest"
+      fi
+    fi
