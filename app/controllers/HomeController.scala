@@ -28,7 +28,7 @@ class HomeController @Inject()(implicit ec: ExecutionContext, backend: Backend, 
 //     } yield Ok(views.html.associations(id, table))
 //   }
 
-  def healthcheck() = Action { request =>
+  def healthcheck() = Action { _ =>
     Ok("alive!")
   }
 }
