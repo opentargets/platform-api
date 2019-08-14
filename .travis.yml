@@ -1,12 +1,12 @@
 sudo: required
 language: scala
 scala:
-- 2.12.8
+  - 2.12.8
 dist: xenial
 jdk:
   - openjdk11
 services:
-- docker
+  - docker
 env:
   global:
   - QUAY_REPO="quay.io/opentargets/platform-api-beta"
@@ -23,6 +23,7 @@ deploy:
     - "target/universal/ot-platform-api-beta-latest.zip"
   on:
     repo: opentargets/platform-api-beta
+    tags: true
 notifications:
   email:
     recipients:
