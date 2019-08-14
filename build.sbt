@@ -37,11 +37,11 @@ libraryDependencies += "ru.yandex.clickhouse" % "clickhouse-jdbc" % "0.1.54"
 libraryDependencies += "org.sangria-graphql" %% "sangria" % "1.4.2"
 libraryDependencies += "org.sangria-graphql" %% "sangria-play-json" % "1.0.5"
 
-s4sVersion := "7.2.0"
+val s4sVersion = "7.2.0"
 libraryDependencies ++= Seq(
   "com.sksamuel.elastic4s" %% "elastic4s-core" % s4sVersion,
-  "com.sksamuel.elastic4s" %% "elastic4s-http" % s4sVersion,
-  "com.sksamuel.elastic4s" %% "elastic4s-play-json" % s4sVersion
+  "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % s4sVersion,
+  "com.sksamuel.elastic4s" %% "elastic4s-json-play" % s4sVersion
 )
 
 // Adds additional packages into Twirl
