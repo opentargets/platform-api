@@ -1,7 +1,7 @@
 sudo: required
 language: scala
 scala:
-  - 2.12.8
+- 2.12.8
 dist: xenial
 jdk:
   - openjdk11
@@ -16,14 +16,13 @@ script:
   - sbt ++$TRAVIS_SCALA_VERSION dist
 deploy:
   provider: releases
-  api_key: ${GITHUB_KEY}
+  api_key:
+    secure: ${GITHUB_KEY}
   file_glob: true
   file:
     - "target/universal/ot-platform-api-beta-latest.zip"
   on:
     repo: opentargets/platform-api-beta
-    tags: true
-  skip_cleanup: true
 notifications:
   email:
     recipients:
