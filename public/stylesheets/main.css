@@ -1,0 +1,28 @@
+html {
+    font-family: 'Roboto Slab';
+}
+
+body {
+    font-family: 'Roboto Slab', serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-family: 'Roboto', sans-serif;
+}
+
+p {
+    font-family: 'Roboto Slab', serif;
+}
+.tableClass {
+    font-family: 'Roboto Mono', monospace;
+    width: 100%;
+    white-space: nowrap;
+}
+
+.scoreCellClass {
+    background: #efefef;
+    min-width: 2%;
+}
+.nameCellClass {
+    white-space: normal;
+}

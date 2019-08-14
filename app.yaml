@@ -1,0 +1,20 @@
+runtime: custom
+api_version: '1.0'
+env: flex
+service: api-beta
+runtime_config:
+  jdk: openjdk11
+threadsafe: true
+resources:
+  cpu: 2
+  memory_gb: 7.5
+  disk_size_gb: 10
+automatic_scaling:
+  min_num_instances: 1
+  max_num_instances: 1
+  cool_down_period_sec: 60 # default value
+  cpu_utilization:
+    target_utilization: 0.9
+
+health_check:
+  enable_health_check: True
