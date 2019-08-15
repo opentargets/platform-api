@@ -30,8 +30,8 @@ object Entities {
   }
 
   object JSONImplicits {
-    implicit val metaVersionImp = Json.reads[Entities.MetaVersion]
-    implicit val metaImp = Json.reads[Entities.Meta]
+    implicit val metaVersionImp = Json.format[Entities.MetaVersion]
+    implicit val metaImp = Json.format[Entities.Meta]
 
     implicit val esSettingsImp = Json.reads[Entities.ElasticsearchSettings]
   }
