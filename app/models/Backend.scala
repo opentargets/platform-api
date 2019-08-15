@@ -19,5 +19,9 @@ class Backend @Inject()(config: Configuration,
   val defaultESSettings =
     loadConfigurationObject[Entities.ElasticsearchSettings]("ot.elasticsearch", config)
 
-  lazy val getMeta: Meta = Meta("Open Targets API Beta", MetaVersion(0,0,1))
+  val defaultMetaInfo =
+    loadConfigurationObject[Entities.Meta]("ot.meta", config)
+
+  /** return meta information loaded from ot.meta settings */
+  lazy val getMeta: Meta = defaultMetaInfo
 }
