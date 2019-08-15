@@ -5,6 +5,7 @@ import play.api.libs.json.Json
 import slick.jdbc.GetResult
 
 import scala.math.pow
+import models.entities.Target
 
 object Entities {
   case class MetaVersion(x: Int, y: Int, z: Int)
@@ -34,5 +35,7 @@ object Entities {
     implicit val metaImp = Json.format[Entities.Meta]
 
     implicit val esSettingsImp = Json.reads[Entities.ElasticsearchSettings]
+
+    implicit val targetImp = Json.format[models.entities.Target]
   }
 }
