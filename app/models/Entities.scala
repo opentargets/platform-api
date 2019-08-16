@@ -1,15 +1,18 @@
 package models
 
 import clickhouse.rep.SeqRep._
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, JsonConfiguration}
 import slick.jdbc.GetResult
 
 import scala.math.pow
 import models.entities.Target
+import play.api.libs.json.JsonNaming._
 
 object Entities {
   case class MetaVersion(x: Int, y: Int, z: Int)
   case class Meta(name: String, version: MetaVersion)
+
+  case class HealthCheck(ok: Boolean, status: String)
 
   case class ElasticsearchSettings(host: String, port: Int)
 
@@ -34,8 +37,11 @@ object Entities {
     implicit val metaVersionImp = Json.format[Entities.MetaVersion]
     implicit val metaImp = Json.format[Entities.Meta]
 
+    implicit val healthImp = Json.format[Entities.HealthCheck]
+
     implicit val esSettingsImp = Json.reads[Entities.ElasticsearchSettings]
 
+    implicit val targetConfig = JsonConfiguration(SnakeCase)
     implicit val targetImp = Json.format[models.entities.Target]
   }
 }

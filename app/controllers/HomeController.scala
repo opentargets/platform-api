@@ -15,20 +15,4 @@ class HomeController @Inject()(implicit ec: ExecutionContext, backend: Backend, 
   def index() = Action { _ =>
     Ok(views.html.index())
   }
-
-//   def associationsByDisease(id: String, indirect: Boolean, orderBy: Option[String]) = Action.async { request =>
-//     for {
-//       table <- backend.getAssociationsByDisease(id, indirect, Some(backend.defaultHS), orderBy, None)
-//     } yield Ok(views.html.associations(id, table))
-//   }
-// 
-//   def associationsByTarget(id: String, indirect: Boolean, orderBy: Option[String]) = Action.async { request =>
-//     for {
-//       table <- backend.getAssociationsByTarget(id, indirect, Some(backend.defaultHS), orderBy, None)
-//     } yield Ok(views.html.associations(id, table))
-//   }
-
-  def healthcheck() = Action { _ =>
-    Ok("alive!")
-  }
 }

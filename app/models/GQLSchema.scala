@@ -23,7 +23,9 @@ trait GQLTarget {
     })
 
   // howto doc https://sangria-graphql.org/learn/#macro-based-graphql-type-derivation
-  val targetImp = deriveObjectType[Backend, Target]()
+  val targetImp = deriveObjectType[Backend, Target](
+    RenameField("approvedName", "name"),
+    RenameField("approvedSymbol", "symbol"))
 }
 
 object GQLSchema extends GQLMeta with GQLTarget {

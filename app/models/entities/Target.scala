@@ -21,4 +21,4 @@ package models.entities
 //    summaries: _.identity,
 //    details: _.identity,
 
-case class Target(id: String, proteinId: Option[String], symbol: String, name: String, description: Option[String])
+case class Target(id: String, approvedSymbol: String, approvedName: String)
