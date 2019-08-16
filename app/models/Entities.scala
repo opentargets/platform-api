@@ -16,6 +16,8 @@ object Entities {
 
   case class ElasticsearchSettings(host: String, port: Int)
 
+  case class TargetsBody(ids: Seq[String])
+
   case class Pagination(index: Int, size: Int) {
     def toSQL: String = (index, size) match {
       case (0, 0) => s"LIMIT ${Pagination.sizeDefault}"
@@ -41,6 +43,8 @@ object Entities {
 
     implicit val esSettingsImp = Json.reads[Entities.ElasticsearchSettings]
 
+    implicit val targetsBodyImp = Json.format[Entities.TargetsBody]
+    implicit val apiErrorMessageImp = Json.format[entities.APIErrorMessage]
     implicit val targetConfig = JsonConfiguration(SnakeCase)
     implicit val targetImp = Json.format[models.entities.Target]
   }

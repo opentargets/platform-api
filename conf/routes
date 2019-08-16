@@ -19,11 +19,17 @@ GET     /graphql/browser                controllers.GQLSchemaController.renderCl
 
 # we can do fancier things like custom routes like here
 # https://github.com/playframework/play-scala-rest-api-example/tree/2.6.x
-->      /api/v4/meta                    controllers.api.v4.MetaRouter
-->      /api/v4/target                    controllers.api.v4.TargetRouter
+# ->      /api/v4/meta                    controllers.api.v4.MetaRouter
+
+GET     /api/v4/meta/info               controllers.api.v4.MetaController.meta
+GET     /api/v4/meta/health             controllers.api.v4.MetaController.healthcheck
+
+POST    /api/v4/targets                 controllers.api.v4.TargetController.byIds(ids: Seq[String] ?= Seq.empty)
+GET     /api/v4/targets                 controllers.api.v4.TargetController.byIds(ids: Seq[String] ?= Seq.empty)
+GET     /api/v4/targets/:id             controllers.api.v4.TargetController.byId(id: String)
 
 # health uri
-GET     /_ah/health                     controllers.MetaController.healthcheck
+GET     /_ah/health                     controllers.api.v4.MetaController.healthcheck
 
 #  Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file                   controllers.Assets.versioned(path="/public", file: Asset)
