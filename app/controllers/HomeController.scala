@@ -12,7 +12,7 @@ class HomeController @Inject()(implicit ec: ExecutionContext, backend: Backend, 
   extends AbstractController(cc) {
 
   // example from here https://github.com/nemoo/play-slick3-example/blob/master/app/controllers/Application.scala
-  def index() = Action { _ =>
+  def index = Action { _ =>
     Ok(views.html.index())
   }
 }

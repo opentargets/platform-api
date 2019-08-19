@@ -6,8 +6,6 @@
 
 # An example controller showing a sample home page
 GET     /                               controllers.HomeController.index
-# GET     /associations/disease/:id             controllers.HomeController.associationsByDisease(id: String, indirect: Boolean ?= true, orderBy: Option[String] ?= None)
-# GET     /associations/target/:id             controllers.HomeController.associationsByTarget(id: String, indirect: Boolean ?= false, orderBy: Option[String] ?= None)
 
 # graphql uris
 OPTIONS /graphql                        controllers.GraphQLController.options
