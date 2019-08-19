@@ -2,6 +2,15 @@
 
 Experimental GraphQL API.
 
+## Requirement
+SBT (Scala)
+Java 1.8 or later
+Play Framework
+
+ES server: 7.2
+Eg. localhost:9200  (tunnelling or locally installed)
+
+
 ## How to use
 
 # Copyright
