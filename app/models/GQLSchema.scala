@@ -34,7 +34,7 @@ object GQLSchema extends GQLMeta with GQLTarget {
   implicit val paginationFormatImp = Json.format[Entities.Pagination]
   val pagination = deriveInputObjectType[Entities.Pagination]()
   val pageArg = Argument("page", OptionInputType(pagination))
-  val ensemblId = Argument("ennsemblId", StringType, description = "Ensembl ID" )
+  val ensemblId = Argument("ensemblId", StringType, description = "Ensembl ID" )
   val ensemblIds = Argument("ensemblIds", ListInputType(StringType), description = "List of Ensembl IDs")
 
   val query = ObjectType(
@@ -50,7 +50,7 @@ object GQLSchema extends GQLMeta with GQLTarget {
       Field("targets", ListType(targetImp),
         description = Some("Return a Target"),
         arguments = ensemblIds :: Nil,
-        resolve = ctx => targetsFetcher.deferSeq(ctx.arg(ensemblIds)))
+        resolve = ctx => targetsFetcher.deferSeqOpt(ctx.arg(ensemblIds)))
     ))
 
   val schema = Schema(query)
