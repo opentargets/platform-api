@@ -19,12 +19,12 @@ GET     /graphql/browser                controllers.GQLSchemaController.renderCl
 # https://github.com/playframework/play-scala-rest-api-example/tree/2.6.x
 # ->      /api/v4/meta                    controllers.api.v4.MetaRouter
 
-GET     /api/v4/meta/info               controllers.api.v4.MetaController.meta
-GET     /api/v4/meta/health             controllers.api.v4.MetaController.healthcheck
+GET     /rest/v4/meta/info               controllers.api.v4.MetaController.meta
+GET     /rest/v4/meta/health             controllers.api.v4.MetaController.healthcheck
 
-POST    /api/v4/targets                 controllers.api.v4.TargetController.byIds(ids: Seq[String] ?= Seq.empty)
-GET     /api/v4/targets                 controllers.api.v4.TargetController.byIds(ids: Seq[String] ?= Seq.empty)
-GET     /api/v4/targets/:id             controllers.api.v4.TargetController.byId(id: String)
+POST    /rest/v4/targets                 controllers.api.v4.TargetController.byIds(ids: Seq[String] ?= Seq.empty)
+GET     /rest/v4/targets                 controllers.api.v4.TargetController.byIds(ids: Seq[String] ?= Seq.empty)
+GET     /rest/v4/targets/:id             controllers.api.v4.TargetController.byId(id: String)
 
 # health uri
 GET     /_ah/health                     controllers.api.v4.MetaController.healthcheck

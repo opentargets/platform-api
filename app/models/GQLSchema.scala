@@ -5,6 +5,7 @@ import sangria.macros.derive._
 import sangria.marshalling.playJson._
 import sangria.schema._
 import entities._
+import entities.Target.JSONImplicits._
 import Entities.JSONImplicits._
 import sangria.execution.deferred.{DeferredResolver, Fetcher, FetcherConfig, HasId}
 
@@ -23,9 +24,9 @@ trait GQLTarget {
     })
 
   // howto doc https://sangria-graphql.org/learn/#macro-based-graphql-type-derivation
-  val targetImp = deriveObjectType[Backend, Target](
-    RenameField("approvedName", "name"),
-    RenameField("approvedSymbol", "symbol"))
+
+  implicit val genomicLocationImp = deriveObjectType[Backend, GenomicLocation]()
+  implicit val targetImp = deriveObjectType[Backend, Target]()
 }
 
 object GQLSchema extends GQLMeta with GQLTarget {
