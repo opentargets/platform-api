@@ -14,7 +14,8 @@ object Entities {
 
   case class HealthCheck(ok: Boolean, status: String)
 
-  case class ElasticsearchSettings(host: String, port: Int)
+  case class ElasticsearchIndices(target: String, disease: String)
+  case class ElasticsearchSettings(host: String, port: Int, indices: ElasticsearchIndices)
 
   case class TargetsBody(ids: Seq[String])
 
@@ -41,11 +42,11 @@ object Entities {
 
     implicit val healthImp = Json.format[Entities.HealthCheck]
 
+    implicit val esIndices = Json.reads[Entities.ElasticsearchIndices]
     implicit val esSettingsImp = Json.reads[Entities.ElasticsearchSettings]
 
     implicit val targetsBodyImp = Json.format[Entities.TargetsBody]
     implicit val apiErrorMessageImp = Json.format[entities.APIErrorMessage]
     implicit val targetConfig = JsonConfiguration(SnakeCase)
-    implicit val targetImp = Json.format[models.entities.Target]
   }
 }

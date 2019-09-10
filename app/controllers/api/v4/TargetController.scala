@@ -3,6 +3,7 @@ package controllers.api.v4
 import javax.inject._
 import models.Backend
 import models.Entities.JSONImplicits._
+import models.entities.Target.JSONImplicits._
 import models.Entities.TargetsBody
 import models.entities.APIErrorMessage
 import play.api.libs.json._

@@ -1,24 +1,47 @@
 package models.entities
 
-//    id: ({ _ensgId, id }, args, { targetLoader }) =>
-//      id ? id : targetLoader.load(_ensgId).then(({ id }) => id),
-//    uniprotId: ({ _ensgId, id }, args, { targetLoader }) =>
-//      id
-//        ? id
-//        : targetLoader.load(_ensgId).then(({ protein }) => protein.uniprotId),
-//    symbol: ({ _ensgId, symbol }, args, { targetLoader }) =>
-//      symbol ? symbol : targetLoader.load(_ensgId).then(({ symbol }) => symbol),
-//    name: ({ _ensgId, name }, args, { targetLoader }) =>
-//      name ? name : targetLoader.load(_ensgId).then(({ name }) => name),
-//    description: ({ _ensgId, description }, args, { targetLoader }) =>
-//      description
-//        ? description
-//        : targetLoader.load(_ensgId).then(({ description }) => description),
-//    synonyms: ({ _ensgId, synonyms }, args, { targetLoader }) =>
-//      synonyms
-//        ? synonyms
-//        : targetLoader.load(_ensgId).then(({ synonyms }) => synonyms),
-//    summaries: _.identity,
-//    details: _.identity,
+import play.api.libs.json._
 
-case class Target(id: String, approvedSymbol: String, approvedName: String)
+//type Target {
+
+//  description: String
+//  summaries: TargetSummaries!
+//  details: TargetDetails!
+//}
+
+//uniprotAccessions
+//safety
+//proteinClassification
+//
+//pdb?
+//pdbId?
+
+case class GenomicLocation(chromosome: String, start: Long, end: Long, strand: Int)
+case class Target(id: String,
+                  uniprotId: Option[String],
+                  approvedSymbol: String,
+                  approvedName: String,
+                  description: Option[String],
+                  bioType: String,
+                  hgncId: Option[String],
+                  nameSynonyms: Seq[String],
+                  symbolSynonyms: Seq[String],
+                  genomicLocation: GenomicLocation,
+                  accessions: Seq[String]
+                 )
+
+object Target {
+  object JSONImplicits {
+    implicit val genomicLocationImp = Json.format[models.entities.GenomicLocation]
+    implicit val targetImp = Json.format[models.entities.Target]
+  }
+
+  def apply(jObj: JsValue): Option[Target] = {
+    // apply transformers for json and fill the target
+    // start from internal objects and then map the external
+    import JSONImplicits._
+    val source = (__ \ '_source).json.pick
+    jObj.transform(source)
+      .asOpt.map(_.as[Target])
+  }
+}

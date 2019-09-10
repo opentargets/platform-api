@@ -5,6 +5,10 @@ import models.Functions._
 import models.Violations.{InputParameterCheckError, PaginationError}
 import play.api.libs.json.Json
 import play.api.{Configuration, Environment, Logger}
+import play.api.libs.json._
+import play.api.libs.json.Reads._
+import play.api.libs.functional.syntax._
+
 import com.sksamuel.elastic4s._
 import com.sksamuel.elastic4s.http.JavaClient
 import com.sksamuel.elastic4s.playjson._
@@ -35,28 +39,35 @@ class Backend @Inject()(config: Configuration,
     case false => HealthCheck(false, "Hmm, something wrong is going on here!")
   }
 
-  lazy val getESClient = ElasticClient(JavaClient(ElasticProperties(s"http://${defaultESSettings.host}:${defaultESSettings.port}")))
+  lazy val getESClient = ElasticClient(JavaClient(
+    ElasticProperties(s"http://${defaultESSettings.host}:${defaultESSettings.port}")))
 
   // we must import the dsl
   import com.sksamuel.elastic4s.ElasticDsl._
 
-  def getTargets(ids: Seq[String]): Future[Seq[Target]] = {
+  def getTargets(ids: Seq[String]): Future[Seq[Option[Target]]] = {
     ids match {
       case Nil => Future.successful(Seq.empty)
       case _ =>
         val targets = getESClient.execute {
-          search("19.09.b1_gene-data").query {
+          search(defaultESSettings.indices.target).query {
             idsQuery(ids)
           }
         }
-//        val targets = ids.map(Target(_, Some("P001"), "BRAF", "B-Raf proto-oncogene, serine/threonine kinase",
-//          Some("Protein kinase involved in the transduction of mitogenic signals from the cell membrane " +
-//            "to the nucleus. May play a role in the postsynaptic responses of hippocampal neuron. " +
-//            "Phosphorylates MAP2K1, and thereby contributes to the MAP kinase signal transduction pathway.")))
 
         targets.map {
           case _: RequestFailure => Seq.empty
-          case results: RequestSuccess[SearchResponse] => results.result.to[Target]
+          case results: RequestSuccess[SearchResponse] =>
+            // parse the full body response into JsValue
+            // thus, we can apply Json Transformations from JSON Play
+            val result = Json.parse(results.body.get)
+
+
+            val hits = (result \ "hits" \ "hits").get.as[JsArray].value
+              .map(Target(_))
+
+            println(hits.head)
+            hits
         }
     }
   }
