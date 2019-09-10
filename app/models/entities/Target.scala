@@ -48,7 +48,6 @@ object Target {
     val source = (__ \ '_source).json.pick andThen(
       (__ \ 'id).json.pickBranch and
         (__ \ 'uniprotId).json.copyFrom( (__ \ 'uniprot_id).json.pick) and
-        (__ \ 'uniprotId).json.copyFrom( (__ \ 'uniprot_id).json.pick) and
         (__ \ 'approvedSymbol).json.copyFrom( (__ \ 'approved_symbol).json.pick) and
         (__ \ 'approvedName).json.copyFrom( (__ \ 'approved_name).json.pick) and
         (__ \ 'description).json.copyFrom( (__ \ 'uniprot_function).json.pick) reduce
