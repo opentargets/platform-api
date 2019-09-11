@@ -28,14 +28,30 @@ trait GQLTarget {
   implicit val targetImp = deriveObjectType[Backend, Target]()
 }
 
-object GQLSchema extends GQLMeta with GQLTarget {
-  val resolvers = DeferredResolver.fetchers(targetsFetcher)
+trait GQLDrug {
+  implicit val drugHasId = HasId[Drug, String](_.id)
+
+  val drugsFetcher = Fetcher(
+    config = FetcherConfig.maxBatchSize(2048),
+    fetch = (ctx: Backend, ids: Seq[String]) => {
+      ctx.getDrugs(ids)
+    })
+
+  // howto doc https://sangria-graphql.org/learn/#macro-based-graphql-type-derivation
+  implicit val withdrawnNoticeImp = deriveObjectType[Backend, WithdrawnNotice]()
+  implicit val drugImp = deriveObjectType[Backend, Drug]()
+}
+
+object GQLSchema extends GQLMeta with GQLTarget with GQLDrug {
+  val resolvers = DeferredResolver.fetchers(targetsFetcher, drugsFetcher)
 
   implicit val paginationFormatImp = Json.format[Entities.Pagination]
   val pagination = deriveInputObjectType[Entities.Pagination]()
   val pageArg = Argument("page", OptionInputType(pagination))
   val ensemblId = Argument("ensemblId", StringType, description = "Ensembl ID" )
   val ensemblIds = Argument("ensemblIds", ListInputType(StringType), description = "List of Ensembl IDs")
+  val chemblId = Argument("chemblId", StringType, description = "Chembl ID" )
+  val chemblIds = Argument("chemblIds", ListInputType(StringType), description = "List of Chembl IDs")
 
   val query = ObjectType(
     "Query", fields[Backend, Unit](
@@ -50,7 +66,15 @@ object GQLSchema extends GQLMeta with GQLTarget {
       Field("targets", ListType(targetImp),
         description = Some("Return a Target"),
         arguments = ensemblIds :: Nil,
-        resolve = ctx => targetsFetcher.deferSeqOpt(ctx.arg(ensemblIds)))
+        resolve = ctx => targetsFetcher.deferSeqOpt(ctx.arg(ensemblIds))),
+      Field("drug", OptionType(drugImp),
+        description = Some("Return a Target"),
+        arguments = chemblId :: Nil,
+        resolve = ctx => drugsFetcher.deferOpt(ctx.arg(chemblId))),
+      Field("drugs", ListType(drugImp),
+        description = Some("Return a Target"),
+        arguments = chemblIds :: Nil,
+        resolve = ctx => drugsFetcher.deferSeqOpt(ctx.arg(chemblIds)))
     ))
 
   val schema = Schema(query)

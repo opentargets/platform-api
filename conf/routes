@@ -26,6 +26,10 @@ POST    /rest/v4/targets                 controllers.api.v4.TargetController.byI
 GET     /rest/v4/targets                 controllers.api.v4.TargetController.byIds(ids: Seq[String] ?= Seq.empty)
 GET     /rest/v4/targets/:id             controllers.api.v4.TargetController.byId(id: String)
 
+POST    /rest/v4/drugs                 controllers.api.v4.DrugController.byIds(ids: Seq[String] ?= Seq.empty)
+GET     /rest/v4/drugs                 controllers.api.v4.DrugController.byIds(ids: Seq[String] ?= Seq.empty)
+GET     /rest/v4/drugs/:id             controllers.api.v4.DrugController.byId(id: String)
+
 # health uri
 GET     /_ah/health                     controllers.api.v4.MetaController.healthcheck
 

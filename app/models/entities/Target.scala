@@ -59,10 +59,10 @@ object Target {
     /* apply transformers for json and fill the target
      start from internal objects and then map the external
      */
-    import JSONImplicits._
+    import Target.JSONImplicits._
     val source = (__ \ '_source).json.pick
     jObj.transform(source).asOpt.map(obj => {
-      println(Json.prettyPrint(obj))
+//      println(Json.prettyPrint(obj))
       obj.as[Target]
     })
   }
