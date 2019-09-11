@@ -5,8 +5,6 @@ import sangria.macros.derive._
 import sangria.marshalling.playJson._
 import sangria.schema._
 import entities._
-import entities.Target.JSONImplicits._
-import Entities.JSONImplicits._
 import sangria.execution.deferred.{DeferredResolver, Fetcher, FetcherConfig, HasId}
 
 trait GQLMeta {
@@ -18,13 +16,14 @@ trait GQLTarget {
   implicit val targetHasId = HasId[Target, String](_.id)
 
   val targetsFetcher = Fetcher(
-    config = FetcherConfig.maxBatchSize(256),
+    config = FetcherConfig.maxBatchSize(2048),
     fetch = (ctx: Backend, ids: Seq[String]) => {
       ctx.getTargets(ids)
     })
 
   // howto doc https://sangria-graphql.org/learn/#macro-based-graphql-type-derivation
 
+  implicit val proteinImp = deriveObjectType[Backend, Protein]()
   implicit val genomicLocationImp = deriveObjectType[Backend, GenomicLocation]()
   implicit val targetImp = deriveObjectType[Backend, Target]()
 }

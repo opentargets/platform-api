@@ -61,13 +61,11 @@ class Backend @Inject()(config: Configuration,
             // parse the full body response into JsValue
             // thus, we can apply Json Transformations from JSON Play
             val result = Json.parse(results.body.get)
-
             val hits = (result \ "hits" \ "hits").get.as[JsArray].value
 
             val mappedHits = hits
               .map(jObj => {
-//                println(Json.prettyPrint((jObj \ "_source" \ "biotype").get))
-                Target(jObj)
+                Target.fromJsValue(jObj)
               }).withFilter(_.isDefined).map(_.get)
 
             mappedHits

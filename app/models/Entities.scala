@@ -4,10 +4,6 @@ import clickhouse.rep.SeqRep._
 import play.api.libs.json.{Json, JsonConfiguration}
 import slick.jdbc.GetResult
 
-import scala.math.pow
-import models.entities.Target
-import play.api.libs.json.JsonNaming._
-
 object Entities {
   case class MetaVersion(x: Int, y: Int, z: Int)
   case class Meta(name: String, version: MetaVersion)
@@ -47,6 +43,5 @@ object Entities {
 
     implicit val targetsBodyImp = Json.format[Entities.TargetsBody]
     implicit val apiErrorMessageImp = Json.format[entities.APIErrorMessage]
-    implicit val targetConfig = JsonConfiguration(SnakeCase)
   }
 }
