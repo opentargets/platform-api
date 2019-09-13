@@ -5,6 +5,7 @@ import sangria.macros.derive._
 import sangria.marshalling.playJson._
 import sangria.schema._
 import entities._
+import Entities.JSONImplicits._
 import sangria.execution.deferred.{DeferredResolver, Fetcher, FetcherConfig, HasId}
 
 trait GQLMeta {
@@ -16,13 +17,12 @@ trait GQLTarget {
   implicit val targetHasId = HasId[Target, String](_.id)
 
   val targetsFetcher = Fetcher(
-    config = FetcherConfig.maxBatchSize(2048),
+    config = FetcherConfig.maxBatchSize(100),
     fetch = (ctx: Backend, ids: Seq[String]) => {
       ctx.getTargets(ids)
     })
 
   // howto doc https://sangria-graphql.org/learn/#macro-based-graphql-type-derivation
-
   implicit val proteinImp = deriveObjectType[Backend, Protein]()
   implicit val genomicLocationImp = deriveObjectType[Backend, GenomicLocation]()
   implicit val targetImp = deriveObjectType[Backend, Target]()
@@ -32,12 +32,15 @@ trait GQLDrug {
   implicit val drugHasId = HasId[Drug, String](_.id)
 
   val drugsFetcher = Fetcher(
-    config = FetcherConfig.maxBatchSize(2048),
+    config = FetcherConfig.maxBatchSize(100),
     fetch = (ctx: Backend, ids: Seq[String]) => {
       ctx.getDrugs(ids)
     })
 
   // howto doc https://sangria-graphql.org/learn/#macro-based-graphql-type-derivation
+  implicit val drugReferenceImp = deriveObjectType[Backend, DrugReference]()
+  implicit val mechanismOfActionRowImp = deriveObjectType[Backend, MechanismOfActionRow]()
+  implicit val mechanismOfActionImp = deriveObjectType[Backend, MechanismsOfAction]()
   implicit val withdrawnNoticeImp = deriveObjectType[Backend, WithdrawnNotice]()
   implicit val drugImp = deriveObjectType[Backend, Drug]()
 }
