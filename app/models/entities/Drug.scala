@@ -24,10 +24,12 @@ case class MechanismOfActionRow(mechanismOfAction: String,
                                 targets: Option[Seq[String]],
                                 references: Option[Seq[DrugReference]])
 
+case class LinkedDiseases(count: Int, rows: Seq[String])
+case class LinkedTargets(count: Int, rows: Seq[String])
+
 case class MechanismsOfAction(rows: Seq[MechanismOfActionRow],
                              uniqueActionTypes: Seq[String],
-                             uniqueTargetTypes: Seq[String],
-                             references: Option[Seq[DrugReference]])
+                             uniqueTargetTypes: Seq[String])
 
 case class Drug(id: String,
                 name: String,
@@ -39,35 +41,19 @@ case class Drug(id: String,
                 hasBeenWithdrawn: Boolean,
                 withdrawnNotice: Option[WithdrawnNotice],
                 internalCompound: Boolean,
-                mechanismsOfAction: MechanismsOfAction)
+                mechanismsOfAction: MechanismsOfAction,
+                linkedDiseases: LinkedDiseases,
+                linkedTargets: LinkedTargets)
 
 object Drug {
   object JSONImplicits {
+    implicit val linkedDiseasesImpW = Json.format[models.entities.LinkedDiseases]
+    implicit val linkedTargetsImpW = Json.format[models.entities.LinkedTargets]
     implicit val withdrawnNoticeImpW = Json.format[models.entities.WithdrawnNotice]
     implicit val drugReferenceImpW = Json.format[models.entities.DrugReference]
     implicit val mechanismOfActionRowImpW = Json.format[models.entities.MechanismOfActionRow]
     implicit val mechanismOfActionImpW = Json.format[models.entities.MechanismsOfAction]
     implicit val drugImpW = Json.format[models.entities.Drug]
-
-//    implicit val withdrawnNoticeImpR: Reads[models.entities.WithdrawnNotice] = (
-//      (JsPath \ 'withdrawn_class).readNullable[Seq[String]] and
-//        (JsPath \ 'withdrawn_country).readNullable[Seq[String]] and
-//        (JsPath \ 'withdrawn_reason).readNullable[Seq[String]] and
-//        (JsPath \ 'withdrawn_year).readNullable[Int]
-//    )(models.entities.WithdrawnNotice.apply _)
-//
-//    implicit val drugImpR: Reads[models.entities.Drug] = (
-//      (JsPath \ 'id).read[String] and
-//        (JsPath \ 'pref_name).read[String] and
-//        (JsPath \ 'synonyms).read[Seq[String]] and
-//        (JsPath \ 'trade_names).read[Seq[String]] and
-//        (JsPath \ 'year_first_approved).readNullable[Int] and
-//        (JsPath \ 'type).read[String] and
-//        (JsPath \ 'max_clinical_trial_phase).readNullable[Int] and
-//        (JsPath \ 'withdrawn_flag).read[Boolean] and
-//        (JsPath).readNullable[WithdrawnNotice].map(n => if (n.isDefined && n.get.year.isEmpty) None else n) and
-//        (JsPath \ 'internal_compound).read[Boolean]
-//      )(models.entities.Drug.apply _)
   }
 
   def fromJsValue(jObj: JsValue): Option[Drug] = {

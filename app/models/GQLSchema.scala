@@ -38,6 +38,8 @@ trait GQLDrug {
     })
 
   // howto doc https://sangria-graphql.org/learn/#macro-based-graphql-type-derivation
+  implicit val linkedDiseasesImp = deriveObjectType[Backend, LinkedDiseases]()
+  implicit val linkedTargetsImp = deriveObjectType[Backend, LinkedTargets]()
   implicit val drugReferenceImp = deriveObjectType[Backend, DrugReference]()
   implicit val mechanismOfActionRowImp = deriveObjectType[Backend, MechanismOfActionRow]()
   implicit val mechanismOfActionImp = deriveObjectType[Backend, MechanismsOfAction]()
