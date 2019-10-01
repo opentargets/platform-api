@@ -2,8 +2,7 @@ package models
 
 import com.sksamuel.elastic4s.ElasticDsl.{idsQuery, search}
 import javax.inject.Inject
-import models.Functions._
-import models.Violations.{InputParameterCheckError, PaginationError}
+import models.Functions.{parsePaginationTokensForES, _}
 import play.api.libs.json.Json
 import play.api.{Configuration, Environment, Logger}
 import play.api.libs.json._
@@ -13,13 +12,14 @@ import com.sksamuel.elastic4s._
 import com.sksamuel.elastic4s.http.JavaClient
 import com.sksamuel.elastic4s.playjson._
 import com.sksamuel.elastic4s.requests.searches.SearchResponse
+import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.FieldValueFactorFunctionModifier
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
 import scala.util.{Failure, Success}
 import models.entities._
-import models.Entities._
 import models.Entities.JSONImplicits._
+import models.Entities.{HealthCheck, Meta}
 
 class ElasticRetriever(client: ElasticClient) {
   import com.sksamuel.elastic4s.ElasticDsl._
@@ -48,6 +48,53 @@ class ElasticRetriever(client: ElasticClient) {
 
             mappedHits
         }
+    }
+  }
+
+  def getSearchResultSet(indices: Seq[String],
+                         qString: String,
+                         pageIndex: Option[Int],
+                         pageSize: Option[Int]): Future[IndexedSeq[SearchResult]] = {
+
+    import models.entities.SearchResult.JSONImplicits._
+    val limitClause = parsePaginationTokensForES(pageIndex, pageSize)
+
+    if (qString.length > 0) {
+      client.execute {
+        val entities =
+          search(indices) query boolQuery
+            .should(
+              functionScoreQuery(multiMatchQuery(qString)
+                  .analyzer("keyword")
+                  .field("id.keyword", 100D)
+                  .field("keywords.keyword", 100D)
+                  .field("name.keyword", 100D))
+                .functions(fieldFactorScore("multiplier")
+                  .factor(1.0)
+                  .modifier(FieldValueFactorFunctionModifier.NONE)),
+              functionScoreQuery(simpleStringQuery(qString)
+                  .analyzer("token")
+                  .minimumShouldMatch("0")
+                  .defaultOperator("AND")
+                  .field("name", 50D)
+                  .field("description", 25D)
+                  .field("prefixes", 10D)
+                  .field("terms", 5D)
+                  .field("ngrams"))
+                .functions(fieldFactorScore("multiplier")
+                  .factor(1.0)
+                  .modifier(FieldValueFactorFunctionModifier.NONE))
+        ) start limitClause._1 limit limitClause._2
+
+        println(client.show(entities))
+        entities
+
+      }.map {
+        case _: RequestFailure => IndexedSeq.empty
+        case results: RequestSuccess[SearchResponse] => results.result.to[SearchResult]
+      }
+    } else {
+      Future.successful(IndexedSeq.empty)
     }
   }
 }
@@ -82,4 +129,10 @@ class Backend @Inject()(config: Configuration,
 
   def getDrugs(ids: Seq[String]): Future[IndexedSeq[Drug]] =
     esRetriever.getIds(defaultESSettings.indices.drug, ids, Drug.fromJsValue)
+
+  def search(indices: Seq[String],
+             qString: String,
+             pageIndex: Option[Int],
+             pageSize: Option[Int] ): Future[IndexedSeq[SearchResult]] =
+    esRetriever.getSearchResultSet(indices, qString, pageIndex, pageSize)
 }
