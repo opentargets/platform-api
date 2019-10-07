@@ -21,7 +21,8 @@ trait GQLSearchResult {
   implicit val searchResultsImp = deriveObjectType[Backend, models.entities.SearchResults]()
 }
 
-trait GQLTarget {
+trait GQLEntities {
+  // target
   implicit val targetHasId = HasId[Target, String](_.id)
 
   val targetsFetcherCache = FetcherCache.simple
@@ -35,9 +36,8 @@ trait GQLTarget {
   implicit val proteinImp = deriveObjectType[Backend, Protein]()
   implicit val genomicLocationImp = deriveObjectType[Backend, GenomicLocation]()
   implicit val targetImp = deriveObjectType[Backend, Target]()
-}
 
-trait GQLDrug {
+  // drug
   implicit val drugHasId = HasId[Drug, String](_.id)
 
   val drugsFetcherCache = FetcherCache.simple
@@ -49,15 +49,23 @@ trait GQLDrug {
 
   // howto doc https://sangria-graphql.org/learn/#macro-based-graphql-type-derivation
   implicit val linkedDiseasesImp = deriveObjectType[Backend, LinkedDiseases]()
-  implicit val linkedTargetsImp = deriveObjectType[Backend, LinkedTargets]()
+  implicit val linkedTargetsImp = deriveObjectType[Backend, LinkedTargets](
+    ReplaceField("rows", Field("rows", ListType(targetImp), Some("Target List"),
+      resolve = r => targetsFetcher.deferSeq(r.value.rows)))
+  )
+
   implicit val drugReferenceImp = deriveObjectType[Backend, DrugReference]()
-  implicit val mechanismOfActionRowImp = deriveObjectType[Backend, MechanismOfActionRow]()
+  implicit val mechanismOfActionRowImp = deriveObjectType[Backend, MechanismOfActionRow](
+    ReplaceField("targets", Field("targets", ListType(targetImp), Some("Target List"),
+      resolve = r => targetsFetcher.deferSeq(r.value.targets)))
+  )
+
   implicit val mechanismOfActionImp = deriveObjectType[Backend, MechanismsOfAction]()
   implicit val withdrawnNoticeImp = deriveObjectType[Backend, WithdrawnNotice]()
   implicit val drugImp = deriveObjectType[Backend, Drug]()
 }
 
-object GQLSchema extends GQLMeta with GQLTarget with GQLDrug with GQLSearchResult {
+object GQLSchema extends GQLMeta with GQLEntities with GQLSearchResult {
   val resolvers = DeferredResolver.fetchers(targetsFetcher, drugsFetcher)
 
   implicit val paginationFormatImp = Json.format[Entities.Pagination]
@@ -71,21 +79,21 @@ object GQLSchema extends GQLMeta with GQLTarget with GQLDrug with GQLSearchResul
 
   val searchUnionType = UnionType("SearchHitsResult", types = targetImp :: drugImp :: Nil)
 
-  val searchHits = ObjectType("SearchHits",
-    "Search results",
-    fields[Backend, SearchResults](
-      Field("totalHits", LongType,
-        Some("Total results"),
-        resolve = _.value.total),
-      Field("hits", ListType(searchUnionType),
-        Some("List of results"),
-        resolve = ctx => {
-          ctx.value.results.filter(_.entity != "disease").map(hit => hit.entity match {
-            case "target" => targetsFetcher.defer(hit.id)
-            case _ => drugsFetcher.defer(hit.id)
-          })
-        })
-    ))
+//  val searchHits = ObjectType("SearchHits",
+//    "Search results",
+//    fields[Backend, SearchResults](
+//      Field("totalHits", LongType,
+//        Some("Total results"),
+//        resolve = _.value.total),
+//      Field("hits", OptionType(ListType(OptionType(searchUnionType))),
+//        Some("List of results"),
+//        resolve = ctx => {
+//          ctx.value.results.filter(_.entity != "disease").map(hit => hit.entity match {
+//            case "target" => targetsFetcher.deferOpt(hit.id)
+//            case "drug" => drugsFetcher.deferOpt(hit.id)
+//          })
+//        })
+//    ))
 
   val query = ObjectType(
     "Query", fields[Backend, Unit](
@@ -109,17 +117,14 @@ object GQLSchema extends GQLMeta with GQLTarget with GQLDrug with GQLSearchResul
         description = Some("Return drugs"),
         arguments = chemblIds :: Nil,
         resolve = ctx => drugsFetcher.deferSeqOpt(ctx.arg(chemblIds))),
-      Field("searchUnion", searchHits,
-        description = Some("Search"),
-        arguments = queryString :: Nil,
-        resolve = ctx => ctx.ctx.search(Seq("search_target", "search_disease", "search_drug"),
-          ctx.arg(queryString), Some(0), Some(10))),
+//      Field("searchUnion", searchHits,
+//        description = Some("Search"),
+//        arguments = queryString :: Nil,
+//        resolve = ctx => ctx.ctx.search(ctx.arg(queryString), Some(0), Some(10))),
       Field("search", searchResultsImp,
         description = Some("Search"),
         arguments = queryString :: Nil,
-        resolve = ctx => ctx.ctx.search(Seq("search_target", "search_disease", "search_drug"),
-          ctx.arg(queryString), Some(0), Some(100)))
-
+        resolve = ctx => ctx.ctx.search(ctx.arg(queryString), Some(0), Some(100)))
     ))
 
   val schema = Schema(query)

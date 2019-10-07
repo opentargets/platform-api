@@ -16,9 +16,8 @@ class SearchController @Inject()(implicit ec: ExecutionContext, backend: Backend
   extends AbstractController(cc) {
 
   def search(q: String) = Action.async { req =>
-    val indices = Seq("search_target", "search_disease", "search_drug")
     for {
-      res <- backend.search(indices, q, None, None)
+      res <- backend.search(q, None, None)
     } yield Ok(Json.toJson(res))
   }
 }

@@ -10,7 +10,7 @@ object Entities {
 
   case class HealthCheck(ok: Boolean, status: String)
 
-  case class ElasticsearchIndices(target: String, disease: String, drug: String)
+  case class ElasticsearchIndices(target: String, disease: String, drug: String, search: Seq[String])
   case class ElasticsearchSettings(host: String, port: Int, indices: ElasticsearchIndices)
 
   case class TargetsBody(ids: Seq[String])

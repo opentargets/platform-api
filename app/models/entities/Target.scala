@@ -4,12 +4,6 @@ import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 
-//safety
-//proteinClassification
-//
-//pdb?
-//pdbId?
-
 case class Protein(id: String, accessions: Seq[String], functions: Seq[String])
 case class GenomicLocation(chromosome: String, start: Long, end: Long, strand: Int)
 case class Target(id: String,

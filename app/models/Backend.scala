@@ -44,9 +44,7 @@ class Backend @Inject()(config: Configuration,
   def getDrugs(ids: Seq[String]): Future[IndexedSeq[Drug]] =
     esRetriever.getIds(defaultESSettings.indices.drug, ids, Drug.fromJsValue)
 
-  def search(indices: Seq[String],
-             qString: String,
-             pageIndex: Option[Int],
-             pageSize: Option[Int] ): Future[SearchResults] =
+  def search(qString: String, pageIndex: Option[Int], pageSize: Option[Int],
+             indices: Seq[String] = defaultESSettings.indices.search): Future[SearchResults] =
     esRetriever.getSearchResultSet(indices, qString, pageIndex, pageSize)
 }

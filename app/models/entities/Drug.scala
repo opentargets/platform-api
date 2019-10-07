@@ -4,12 +4,6 @@ import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 
-//type DrugDetails {
-//  mechanismsOfAction: DrugDetailMechanismsOfAction
-//  linkedTargets: DrugDetailLinkedTargets
-//  linkedDiseases: DrugDetailLinkedDiseases
-//}
-
 case class WithdrawnNotice(classes: Option[Seq[String]],
                             countries: Option[Seq[String]],
                             reasons: Option[Seq[String]],
@@ -21,7 +15,7 @@ case class DrugReference(ids: Seq[String],
 
 case class MechanismOfActionRow(mechanismOfAction: String,
                                 targetName: String,
-                                targets: Option[Seq[String]],
+                                targets: Seq[String],
                                 references: Option[Seq[DrugReference]])
 
 case class LinkedDiseases(count: Int, rows: Seq[String])

@@ -90,14 +90,14 @@ class ElasticRetriever(client: ElasticClient) {
       client.execute {
         val aggregations =
           search(indices) query (fnQueries.head) aggs(aggFns) size(0)
-        println(client.show(aggregations))
+//        println(client.show(aggregations))
         aggregations trackTotalHits(true)
       }.zip {
         client.execute {
           val hits =
             search(indices) query (mainQuery) start (limitClause._1) limit (limitClause._2) trackTotalHits(true)
 
-          println(client.show(hits))
+//          println(client.show(hits))
           hits
         }
       }.map {
