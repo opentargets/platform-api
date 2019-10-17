@@ -25,9 +25,9 @@ readiness_check:
   path: "/api/v4/meta/health"
   check_interval_sec: 60
   timeout_sec: 10
-  failure_threshold: 5
+  failure_threshold: 30
   success_threshold: 1
-  app_start_timeout_sec: 300
+  app_start_timeout_sec: 1800
 #health_check:
 #  enable_health_check: True
 

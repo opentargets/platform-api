@@ -20,7 +20,6 @@ object Entities {
   case class ElasticsearchEntity(name: String, index: String, searchIndex: String)
 
   case class ElasticsearchSettings(host: String, port: Int,
-                                   indices: ElasticsearchIndices,
                                    entities: Seq[ElasticsearchEntity])
 
   case class TargetsBody(ids: Seq[String])

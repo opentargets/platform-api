@@ -38,15 +38,22 @@ class Backend @Inject()(config: Configuration,
   // we must import the dsl
   import com.sksamuel.elastic4s.ElasticDsl._
 
-  def getTargets(ids: Seq[String]): Future[IndexedSeq[Target]] =
-    esRetriever.getIds(defaultESSettings.indices.target, ids, Target.fromJsValue)
+  def getTargets(ids: Seq[String]): Future[IndexedSeq[Target]] = {
+    val targetIndexName = defaultESSettings.entities
+      .filter(_.name == "target").headOption.map(_.index).getOrElse("targets")
+    esRetriever.getIds(targetIndexName, ids, Target.fromJsValue)
+  }
 
-  def getDrugs(ids: Seq[String]): Future[IndexedSeq[Drug]] =
-    esRetriever.getIds(defaultESSettings.indices.drug, ids, Drug.fromJsValue)
+  def getDrugs(ids: Seq[String]): Future[IndexedSeq[Drug]] = {
+    val drugIndexName = defaultESSettings.entities
+      .filter(_.name == "drug").headOption.map(_.index).getOrElse("drugs")
+
+    esRetriever.getIds(drugIndexName, ids, Drug.fromJsValue)
+  }
 
   def altSearch(qString: String, pagination: Option[Pagination] = Option(Pagination.mkDefault),
-                indices: Seq[String] = defaultESSettings.indices.search): Future[AltSearchResults] =
-    esRetriever.getAltSearchResultSet(indices, qString, pagination.map(_.index) , pagination.map(_.size))
+                entities: Seq[Entities.ElasticsearchEntity] = defaultESSettings.entities): Future[AltSearchResults] =
+    esRetriever.getAltSearchResultSet(entities, qString, pagination.map(_.index) , pagination.map(_.size))
 
   def search(qString: String, pagination: Option[Pagination] = Option(Pagination.mkDefault),
              entities: Seq[Entities.ElasticsearchEntity] = defaultESSettings.entities): Future[SearchResults] =

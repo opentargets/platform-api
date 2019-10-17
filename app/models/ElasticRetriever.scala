@@ -4,6 +4,7 @@ import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 import com.sksamuel.elastic4s._
 import com.sksamuel.elastic4s.playjson._
+import com.sksamuel.elastic4s.requests.common.Operator
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import com.sksamuel.elastic4s.requests.searches.{MultisearchResponseItem, SearchResponse}
@@ -47,17 +48,19 @@ class ElasticRetriever(client: ElasticClient) {
     }
   }
 
-  def getAltSearchResultSet(indices: Seq[String],
+  def getAltSearchResultSet(entities: Seq[Entities.ElasticsearchEntity],
                             qString: String,
                             pageIndex: Option[Int],
                             pageSize: Option[Int]): Future[AltSearchResults] = {
+    val esIndices = entities.map(_.searchIndex)
     val limitClause = parsePaginationTokensForES(pageIndex, pageSize)
 
     val keywordQueryFn = multiMatchQuery(qString)
       .analyzer("token")
-      .field("id.keyword", 100D)
-      .field("keywords", 100D)
-      .field("name.keyword", 100D)
+      .field("id.raw", 100D)
+      .field("keywords.raw", 100D)
+      .field("name.raw", 100D)
+      .operator(Operator.AND)
 
     val stringQueryFn = functionScoreQuery(simpleStringQuery(qString)
       .analyzer("token")
@@ -73,10 +76,10 @@ class ElasticRetriever(client: ElasticClient) {
         .modifier(FieldValueFactorFunctionModifier.NONE))
 
     val aggFns = Seq(
-      termsAgg("entities", "entity.keyword")
+      termsAgg("entities", "entity.raw")
         .size(1000)
-        .subaggs(termsAgg("categories", "category.keyword").size(1000)),
-      cardinalityAgg("total", "id.keyword")
+        .subaggs(termsAgg("categories", "category.raw").size(1000)),
+      cardinalityAgg("total", "id.raw")
     )
 
     val filterQueries = boolQuery.must() :: Nil
@@ -86,13 +89,13 @@ class ElasticRetriever(client: ElasticClient) {
     if (qString.length > 0) {
       client.execute {
         val aggregations =
-          search(indices) query (fnQueries.head) aggs(aggFns) size(0)
+          search(esIndices) query (fnQueries.head) aggs(aggFns) size(0)
 //        println(client.show(aggregations))
         aggregations trackTotalHits(true)
       }.zip {
         client.execute {
           val hits =
-            search(indices) query (mainQuery) start (limitClause._1) limit (limitClause._2) trackTotalHits(true)
+            search(esIndices) query (mainQuery) start (limitClause._1) limit (limitClause._2) trackTotalHits(true)
 
 //          println(client.show(hits))
           hits
@@ -129,9 +132,10 @@ class ElasticRetriever(client: ElasticClient) {
 
     val keywordQueryFn = multiMatchQuery(qString)
       .analyzer("token")
-      .field("id.keyword", 100D)
-      .field("keywords.keyword", 100D)
-      .field("name.keyword", 100D)
+      .field("id.raw", 100D)
+      .field("keywords.raw", 100D)
+      .field("name.raw", 100D)
+      .operator(Operator.AND)
 
     val stringQueryFn = functionScoreQuery(simpleStringQuery(qString)
       .analyzer("token")
@@ -147,10 +151,10 @@ class ElasticRetriever(client: ElasticClient) {
         .modifier(FieldValueFactorFunctionModifier.NONE))
 
     val aggFns = Seq(
-      termsAgg("entities", "entity.keyword")
+      termsAgg("entities", "entity.raw")
         .size(1000)
-        .subaggs(termsAgg("categories", "category.keyword").size(1000)),
-      cardinalityAgg("total", "id.keyword")
+        .subaggs(termsAgg("categories", "category.raw").size(1000)),
+      cardinalityAgg("total", "id.raw")
     )
 
     val filterQueries = boolQuery.must() :: Nil
