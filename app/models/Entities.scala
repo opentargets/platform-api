@@ -37,7 +37,7 @@ object Entities {
 
   object Pagination {
     val sizeMax: Int = 10000
-    val sizeDefault: Int = 100
+    val sizeDefault: Int = 25
     val indexDefault: Int = 0
     def mkDefault: Pagination = Pagination(indexDefault, sizeDefault)
   }

@@ -11,7 +11,7 @@ import scala.concurrent._
 import scala.util.{Failure, Success}
 import models.entities._
 import models.Entities.JSONImplicits._
-import models.Entities.{HealthCheck, Meta}
+import models.Entities.{HealthCheck, Meta, Pagination}
 
 class Backend @Inject()(config: Configuration,
                         env: Environment) {
@@ -44,11 +44,11 @@ class Backend @Inject()(config: Configuration,
   def getDrugs(ids: Seq[String]): Future[IndexedSeq[Drug]] =
     esRetriever.getIds(defaultESSettings.indices.drug, ids, Drug.fromJsValue)
 
-  def search(qString: String, pageIndex: Option[Int], pageSize: Option[Int],
+  def search(qString: String, pagination: Option[Pagination] = Option(Pagination.mkDefault),
              indices: Seq[String] = defaultESSettings.indices.search): Future[SearchResults] =
-    esRetriever.getSearchResultSet(indices, qString, pageIndex, pageSize)
+    esRetriever.getSearchResultSet(indices, qString, pagination.map(_.index) , pagination.map(_.size))
 
-  def msearch(qString: String, pageIndex: Option[Int], pageSize: Option[Int],
+  def msearch(qString: String, pagination: Option[Pagination] = Option(Pagination.mkDefault),
               entities: Seq[Entities.ElasticsearchEntity] = defaultESSettings.entities): Future[MSearchResults] =
-    esRetriever.getMSearchResultSet(entities, qString, pageIndex, pageSize)
+    esRetriever.getMSearchResultSet(entities, qString, pagination.map(_.index) , pagination.map(_.size))
 }

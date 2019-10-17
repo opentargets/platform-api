@@ -142,13 +142,13 @@ object GQLSchema extends GQLMeta with GQLEntities {
         arguments = chemblIds :: Nil,
         resolve = ctx => drugsFetcher.deferSeqOpt(ctx.arg(chemblIds))),
       Field("msearch", searchHitsImp,
-        description = Some("Query"),
-        arguments = queryString :: Nil,
-        resolve = ctx => ctx.ctx.msearch(ctx.arg(queryString), Some(0), Some(10))),
+        description = Some("Multi entity search"),
+        arguments = queryString :: pageArg :: Nil,
+        resolve = ctx => ctx.ctx.msearch(ctx.arg(queryString), ctx.arg(pageArg))),
       Field("search", searchResultsImp,
         description = Some("Search"),
-        arguments = queryString :: Nil,
-        resolve = ctx => ctx.ctx.search(ctx.arg(queryString), Some(0), Some(100)))
+        arguments = queryString :: pageArg :: Nil,
+        resolve = ctx => ctx.ctx.search(ctx.arg(queryString), ctx.arg(pageArg)))
     ))
 
   val schema = Schema(query)
