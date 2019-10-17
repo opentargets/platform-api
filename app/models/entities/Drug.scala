@@ -1,8 +1,11 @@
 package models.entities
 
+import models.Entities
 import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
+
+trait OTEntity
 
 case class WithdrawnNotice(classes: Option[Seq[String]],
                             countries: Option[Seq[String]],
@@ -37,7 +40,7 @@ case class Drug(id: String,
                 internalCompound: Boolean,
                 mechanismsOfAction: MechanismsOfAction,
                 linkedDiseases: LinkedDiseases,
-                linkedTargets: LinkedTargets)
+                linkedTargets: LinkedTargets) extends OTEntity
 
 object Drug {
   object JSONImplicits {

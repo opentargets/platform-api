@@ -6,7 +6,7 @@ import com.sksamuel.elastic4s._
 import com.sksamuel.elastic4s.playjson._
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import com.sksamuel.elastic4s.requests.searches.SearchResponse
+import com.sksamuel.elastic4s.requests.searches.{MultisearchResponseItem, SearchResponse}
 import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.{FieldValueFactorFunctionModifier, FunctionScoreQuery}
 import com.sksamuel.elastic4s.requests.searches.queries.matches.MultiMatchQuery
 import com.sksamuel.elastic4s.{ElasticClient, RequestFailure, RequestSuccess, Response}
@@ -55,9 +55,9 @@ class ElasticRetriever(client: ElasticClient) {
 
     val keywordQueryFn = functionScoreQuery(multiMatchQuery(qString)
       .analyzer("keyword")
-      .field("id.keyword", 100D)
-      .field("keywords.keyword", 100D)
-      .field("name.keyword", 100D))
+      .field("id.keyword", 1000D)
+      .field("keywords.keyword", 1000D)
+      .field("name.keyword", 1000D))
       .functions(fieldFactorScore("multiplier")
         .factor(1.0)
         .modifier(FieldValueFactorFunctionModifier.NONE))
@@ -113,7 +113,90 @@ class ElasticRetriever(client: ElasticClient) {
           SearchResults(hits.result.totalHits, hits.result.to[SearchResult], aggs)
       }
     } else {
-      Future.successful(SearchResults(0, IndexedSeq.empty, None))
+      Future.successful(SearchResults.empty)
+    }
+  }
+
+  def getMSearchResultSet(entities: Seq[Entities.ElasticsearchEntity],
+                          qString: String,
+                          pageIndex: Option[Int],
+                          pageSize: Option[Int]): Future[MSearchResults] = {
+    val limitClause = parsePaginationTokensForES(pageIndex, pageSize)
+    val esIndices = entities.map(_.searchIndex)
+
+    val keywordQueryFn = functionScoreQuery(multiMatchQuery(qString)
+      .analyzer("keyword")
+      .field("id.keyword", 100D)
+      .field("keywords.keyword", 100D)
+      .field("name.keyword", 100D))
+      .functions(fieldFactorScore("multiplier")
+        .factor(1.0)
+        .modifier(FieldValueFactorFunctionModifier.NONE))
+
+    val stringQueryFn = functionScoreQuery(simpleStringQuery(qString)
+      .analyzer("token")
+      .minimumShouldMatch("0")
+      .defaultOperator("AND")
+      .field("name", 50D)
+      .field("description", 25D)
+      .field("prefixes", 10D)
+      .field("terms", 5D)
+      .field("ngrams"))
+      .functions(fieldFactorScore("multiplier")
+        .factor(1.0)
+        .modifier(FieldValueFactorFunctionModifier.NONE))
+
+    val aggFns = Seq(
+      termsAgg("entities", "entity.keyword")
+        .size(1000)
+        .subaggs(termsAgg("categories", "category.keyword").size(1000)),
+      cardinalityAgg("total", "id.keyword")
+    )
+
+    val filterQueries = boolQuery.must() :: Nil
+    val fnQueries = boolQuery.should(keywordQueryFn, stringQueryFn) :: Nil
+    val mainQuery = boolQuery.must(fnQueries ::: filterQueries)
+
+    if (qString.length > 0) {
+      client.execute {
+        val aggregations =
+          search(esIndices) query (fnQueries.head) aggs(aggFns) size(0)
+        //        println(client.show(aggregations))
+        aggregations trackTotalHits(true)
+      }.zip {
+        client.execute {
+          val mhits = multi(
+            search(esIndices) query (mainQuery) start (limitClause._1) limit (limitClause._2) trackTotalHits(true)
+          )
+          // TODO remove it
+//          println(client.show(mhits))
+          mhits
+        }
+      }.map {
+        case (aggregations, hits) =>
+          val aggsJ = Json.parse(aggregations.result.aggregationsAsString)
+          val aggs = aggsJ.validateOpt[SearchResultAggs] match {
+            case JsSuccess(value, _) => value
+            case JsError(errors) =>
+              errors.foreach(println)
+              None
+          }
+
+          val totals = hits.result.successes.foldLeft(0L)((B, op) => B + op.totalHits)
+          val res = hits.result.successes.flatMap(_.to[SearchResult])
+            .groupBy(_.entity)
+            .mapValues(identity)
+            .withDefaultValue(Seq.empty)
+
+          MSearchResults(totals,
+            hits.result.to[SearchResult].headOption,
+            res("target"),
+            res("drug"),
+            res("disease"),
+            aggs)
+      }
+    } else {
+      Future.successful(MSearchResults.empty)
     }
   }
 }

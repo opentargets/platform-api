@@ -1,10 +1,16 @@
 package models
 
 import play.api.libs.json.Json
-import sangria.macros.derive._
-import sangria.marshalling.playJson._
 import sangria.schema._
+import sangria.macros._
+import sangria.macros.derive._
+import sangria.ast
+import sangria.execution._
+import sangria.marshalling.playJson._
+import sangria.schema.AstSchemaBuilder._
+import sangria.util._
 import entities._
+
 import Entities.JSONImplicits._
 import sangria.execution.deferred._
 
@@ -13,15 +19,10 @@ trait GQLMeta {
   implicit val metaImp = deriveObjectType[Backend, Entities.Meta]()
 }
 
-trait GQLSearchResult {
-  implicit val searchResultAggsCategoryImp = deriveObjectType[Backend, models.entities.SearchResultAggCategory]()
-  implicit val searchResultAggsEntityImp = deriveObjectType[Backend, models.entities.SearchResultAggEntity]()
-  implicit val searchResultAggsImp = deriveObjectType[Backend, models.entities.SearchResultAggs]()
-  implicit val searchResultImp = deriveObjectType[Backend, models.entities.SearchResult]()
-  implicit val searchResultsImp = deriveObjectType[Backend, models.entities.SearchResults]()
-}
-
 trait GQLEntities {
+
+//  implicit val otEntity = InterfaceType("Entity", fields[Backend, OTEntity]())
+
   // target
   implicit val targetHasId = HasId[Target, String](_.id)
 
@@ -47,6 +48,15 @@ trait GQLEntities {
       ctx.getDrugs(ids)
     })
 
+  implicit val searchResultAggsCategoryImp = deriveObjectType[Backend, models.entities.SearchResultAggCategory]()
+  implicit val searchResultAggsEntityImp = deriveObjectType[Backend, models.entities.SearchResultAggEntity]()
+  implicit val searchResultAggsImp = deriveObjectType[Backend, models.entities.SearchResultAggs]()
+  implicit val searchResultImp = deriveObjectType[Backend, models.entities.SearchResult]()
+  implicit val searchResultsImp = deriveObjectType[Backend, models.entities.SearchResults]()
+  implicit val msearchResultsImp = deriveObjectType[Backend, models.entities.MSearchResults]()
+
+  lazy val msearchResultType = UnionType("MSearchResultType", types = List(targetImp, drugImp))
+
   // howto doc https://sangria-graphql.org/learn/#macro-based-graphql-type-derivation
   implicit val linkedDiseasesImp = deriveObjectType[Backend, LinkedDiseases]()
   implicit val linkedTargetsImp = deriveObjectType[Backend, LinkedTargets](
@@ -65,7 +75,7 @@ trait GQLEntities {
   implicit val drugImp = deriveObjectType[Backend, Drug]()
 }
 
-object GQLSchema extends GQLMeta with GQLEntities with GQLSearchResult {
+object GQLSchema extends GQLMeta with GQLEntities {
   val resolvers = DeferredResolver.fetchers(targetsFetcher, drugsFetcher)
 
   implicit val paginationFormatImp = Json.format[Entities.Pagination]
@@ -77,23 +87,37 @@ object GQLSchema extends GQLMeta with GQLEntities with GQLSearchResult {
   val chemblId = Argument("chemblId", StringType, description = "Chembl ID" )
   val chemblIds = Argument("chemblIds", ListInputType(StringType), description = "List of Chembl IDs")
 
-  val searchUnionType = UnionType("SearchHitsResult", types = targetImp :: drugImp :: Nil)
+  val searchHitsImp = ObjectType("MSearchHits",
+    "MultiSearch results",
+    fields[Backend, MSearchResults](
+      Field("totalHits", LongType,
+        Some("Total results"),
+        resolve = _.value.total),
+      Field("targets", ListType(targetImp),
+        description = Some("Return Targets"),
+        resolve = ctx => targetsFetcher.deferSeqOpt(ctx.value.targets.map(_.id))),
+      Field("aggregations", OptionType(searchResultAggsImp),
+        description = Some("Aggregations"),
+        resolve = ctx => ctx.value.aggregations),
+      Field("drugs", ListType(drugImp),
+        description = Some("Return drugs"),
+        resolve = ctx => drugsFetcher.deferSeqOpt(ctx.value.drugs.map(_.id))),
+      Field("topHit", OptionType(searchResultImp),
+        Some("Top Hit"),
+        resolve = ctx => ctx.value.topHit)
 
-//  val searchHits = ObjectType("SearchHits",
-//    "Search results",
-//    fields[Backend, SearchResults](
-//      Field("totalHits", LongType,
-//        Some("Total results"),
-//        resolve = _.value.total),
-//      Field("hits", OptionType(ListType(OptionType(searchUnionType))),
-//        Some("List of results"),
+        //      Field("topHit", OptionType(msearchResultType),
+//        Some("Top Hit"),
 //        resolve = ctx => {
-//          ctx.value.results.filter(_.entity != "disease").map(hit => hit.entity match {
-//            case "target" => targetsFetcher.deferOpt(hit.id)
-//            case "drug" => drugsFetcher.deferOpt(hit.id)
+//          val th = ctx.value.topHit.map(h => h.entity match {
+//            case "target" => targetsFetcher.deferOpt(h.id)
+//            case "_" => drugsFetcher.deferOpt(h.id)
 //          })
-//        })
-//    ))
+
+//          th
+//        }
+//      )
+    ))
 
   val query = ObjectType(
     "Query", fields[Backend, Unit](
@@ -117,10 +141,10 @@ object GQLSchema extends GQLMeta with GQLEntities with GQLSearchResult {
         description = Some("Return drugs"),
         arguments = chemblIds :: Nil,
         resolve = ctx => drugsFetcher.deferSeqOpt(ctx.arg(chemblIds))),
-//      Field("searchUnion", searchHits,
-//        description = Some("Search"),
-//        arguments = queryString :: Nil,
-//        resolve = ctx => ctx.ctx.search(ctx.arg(queryString), Some(0), Some(10))),
+      Field("msearch", searchHitsImp,
+        description = Some("Query"),
+        arguments = queryString :: Nil,
+        resolve = ctx => ctx.ctx.msearch(ctx.arg(queryString), Some(0), Some(10))),
       Field("search", searchResultsImp,
         description = Some("Search"),
         arguments = queryString :: Nil,

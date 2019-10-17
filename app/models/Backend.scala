@@ -47,4 +47,8 @@ class Backend @Inject()(config: Configuration,
   def search(qString: String, pageIndex: Option[Int], pageSize: Option[Int],
              indices: Seq[String] = defaultESSettings.indices.search): Future[SearchResults] =
     esRetriever.getSearchResultSet(indices, qString, pageIndex, pageSize)
+
+  def msearch(qString: String, pageIndex: Option[Int], pageSize: Option[Int],
+              entities: Seq[Entities.ElasticsearchEntity] = defaultESSettings.entities): Future[MSearchResults] =
+    esRetriever.getMSearchResultSet(entities, qString, pageIndex, pageSize)
 }

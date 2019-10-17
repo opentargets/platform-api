@@ -1,5 +1,6 @@
 package models.entities
 
+import models.Entities
 import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
@@ -15,7 +16,7 @@ case class Target(id: String,
                   symbolSynonyms: Seq[String],
                   genomicLocation: GenomicLocation,
                   proteinAnnotations: Option[Protein]
-                 )
+                 ) extends OTEntity
 
 object Target {
   object JSONImplicits {

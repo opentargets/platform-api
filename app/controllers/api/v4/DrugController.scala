@@ -8,20 +8,27 @@ import models.entities.APIErrorMessage
 import models.entities.Drug.JSONImplicits._
 import play.api.libs.json._
 import play.api.mvc._
+import sangria.ast.{Document, InputDocument, OperationDefinition}
+import sangria.execution.{Executor, InputDocumentMaterializer}
 import sangria.execution.deferred.FetcherContext
+import sangria.marshalling.queryAst
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class DrugController @Inject()(implicit ec: ExecutionContext, backend: Backend, cc: ControllerComponents)
   extends AbstractController(cc) {
-
   lazy val ctxD = FetcherContext(backend,
     GQLSchema.drugsFetcher,
-    Some(GQLSchema.drugsFetcherCache), Map.empty, Vector.empty)
+    Some(GQLSchema.drugsFetcherCache),
+    Map(GQLSchema.drugsFetcher -> GQLSchema.drugsFetcherCache,
+      GQLSchema.targetsFetcher -> GQLSchema.targetsFetcherCache),
+    Vector(GQLSchema.drugsFetcher,
+      GQLSchema.targetsFetcher))
 
   // example from here https://github.com/nemoo/play-slick3-example/blob/master/app/controllers/Application.scala
   def byId(id:String) = Action.async { req =>
+
     for {
       drugs <- GQLSchema.drugsFetcher.fetch(ctxD, Seq(id))
     } yield drugs.headOption match {

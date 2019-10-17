@@ -1,6 +1,7 @@
 package models.entities
 
 import com.sksamuel.elastic4s.requests.searches.SearchHit
+import models.Entities
 import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
@@ -17,6 +18,20 @@ case class SearchResult(id: String, entity: String, category: Seq[String], name:
                         terms: Option[Seq[String]])
 
 case class SearchResults(total: Long, results: Seq[SearchResult], aggregations: Option[SearchResultAggs])
+
+case class MSearchResults(total: Long, topHit: Option[SearchResult],
+                          targets: Seq[SearchResult],
+                          drugs: Seq[SearchResult],
+                          diseases: Seq[SearchResult],
+                          aggregations: Option[SearchResultAggs])
+
+object MSearchResults {
+  val empty = MSearchResults(0, None, Seq.empty, Seq.empty, Seq.empty, None)
+}
+
+object SearchResults {
+  val empty = SearchResults(0, Seq.empty, None)
+}
 
 object SearchResult {
   object JSONImplicits {
@@ -42,6 +57,7 @@ object SearchResult {
 
     implicit val searchResultImpW = Json.format[models.entities.SearchResult]
     implicit val searchResultsImpW = Json.format[models.entities.SearchResults]
+    implicit val msearchResultsImpW = Json.format[models.entities.MSearchResults]
   }
 
   def fromJsValue(jObj: JsValue): Option[SearchResult] = {

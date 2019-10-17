@@ -10,8 +10,18 @@ object Entities {
 
   case class HealthCheck(ok: Boolean, status: String)
 
+  //    entities = [
+  //    {
+  //      name = "target"
+  //      index = "targets"
+  //      searchIndex = "search_target"
+  //    },
   case class ElasticsearchIndices(target: String, disease: String, drug: String, search: Seq[String])
-  case class ElasticsearchSettings(host: String, port: Int, indices: ElasticsearchIndices)
+  case class ElasticsearchEntity(name: String, index: String, searchIndex: String)
+
+  case class ElasticsearchSettings(host: String, port: Int,
+                                   indices: ElasticsearchIndices,
+                                   entities: Seq[ElasticsearchEntity])
 
   case class TargetsBody(ids: Seq[String])
 
@@ -38,6 +48,7 @@ object Entities {
 
     implicit val healthImp = Json.format[Entities.HealthCheck]
 
+    implicit val esEntities = Json.reads[Entities.ElasticsearchEntity]
     implicit val esIndices = Json.reads[Entities.ElasticsearchIndices]
     implicit val esSettingsImp = Json.reads[Entities.ElasticsearchSettings]
 
