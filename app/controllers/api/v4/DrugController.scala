@@ -3,30 +3,35 @@ package controllers.api.v4
 import javax.inject._
 import models.{Backend, GQLSchema}
 import models.Entities.JSONImplicits._
-import models.entities.Target.JSONImplicits._
 import models.Entities.TargetsBody
 import models.entities.APIErrorMessage
+import models.entities.Drug.JSONImplicits._
 import play.api.libs.json._
 import play.api.mvc._
+import sangria.ast.{Document, InputDocument, OperationDefinition}
+import sangria.execution.{Executor, InputDocumentMaterializer}
 import sangria.execution.deferred.FetcherContext
-import sangria.schema.{DeferredFutureValue, DeferredValue}
+import sangria.marshalling.queryAst
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class TargetController @Inject()(implicit ec: ExecutionContext, backend: Backend, cc: ControllerComponents)
+class DrugController @Inject()(implicit ec: ExecutionContext, backend: Backend, cc: ControllerComponents)
   extends AbstractController(cc) {
-
-  lazy val ctxT = FetcherContext(backend,
-    GQLSchema.targetsFetcher,
-    Some(GQLSchema.targetsFetcherCache), Map.empty, Vector.empty)
+  lazy val ctxD = FetcherContext(backend,
+    GQLSchema.drugsFetcher,
+    Some(GQLSchema.drugsFetcherCache),
+    Map(GQLSchema.drugsFetcher -> GQLSchema.drugsFetcherCache,
+      GQLSchema.targetsFetcher -> GQLSchema.targetsFetcherCache),
+    Vector(GQLSchema.drugsFetcher,
+      GQLSchema.targetsFetcher))
 
   // example from here https://github.com/nemoo/play-slick3-example/blob/master/app/controllers/Application.scala
   def byId(id:String) = Action.async { req =>
+
     for {
-//      targets <- backend.getTargets(Seq(id))
-      targets <- GQLSchema.targetsFetcher.fetch(ctxT, Seq(id))
-    } yield targets.headOption match {
+      drugs <- GQLSchema.drugsFetcher.fetch(ctxD, Seq(id))
+    } yield drugs.headOption match {
       case None => NotFound(Json.toJson(APIErrorMessage(NOT_FOUND, s"$id not found")))
       case Some(t) => Ok(Json.toJson(t))
     }
@@ -36,15 +41,15 @@ class TargetController @Inject()(implicit ec: ExecutionContext, backend: Backend
     (req.method, ids) match {
       case ("POST", _ :: _) | ("GET", _ :: _) =>
         for {
-          targets <- GQLSchema.targetsFetcher.fetch(ctxT, ids)
-        } yield Ok(Json.toJson(targets))
+          drugs <- GQLSchema.drugsFetcher.fetch(ctxD, ids)
+        } yield Ok(Json.toJson(drugs))
 
       case ("POST", Nil) =>
         req.body.asJson.map(_.as[TargetsBody]) match {
           case Some(body) =>
             for {
-              targets <- GQLSchema.targetsFetcher.fetch(ctxT, body.ids)
-            } yield Ok(Json.toJson(targets))
+              drugs <- GQLSchema.drugsFetcher.fetch(ctxD, body.ids)
+            } yield Ok(Json.toJson(drugs))
 
           case None => Future.successful(
             BadRequest(Json.toJson(APIErrorMessage(BAD_REQUEST,

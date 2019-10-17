@@ -2,20 +2,16 @@ package models
 
 import javax.inject.Inject
 import models.Functions._
-import models.Violations.{InputParameterCheckError, PaginationError}
-import play.api.libs.json.Json
 import play.api.{Configuration, Environment, Logger}
 import com.sksamuel.elastic4s._
 import com.sksamuel.elastic4s.http.JavaClient
-import com.sksamuel.elastic4s.playjson._
-import com.sksamuel.elastic4s.requests.searches.SearchResponse
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
 import scala.util.{Failure, Success}
 import models.entities._
-import models.Entities._
 import models.Entities.JSONImplicits._
+import models.Entities.{HealthCheck, Meta, Pagination}
 
 class Backend @Inject()(config: Configuration,
                         env: Environment) {
@@ -30,34 +26,36 @@ class Backend @Inject()(config: Configuration,
   /** return meta information loaded from ot.meta settings */
   lazy val getMeta: Meta = defaultMetaInfo
 
-  def getStatus(isOk: Boolean) = isOk match {
+  def getStatus(isOk: Boolean): HealthCheck = isOk match {
     case true => HealthCheck(true, "All good!")
     case false => HealthCheck(false, "Hmm, something wrong is going on here!")
   }
 
-  lazy val getESClient = ElasticClient(JavaClient(ElasticProperties(s"http://${defaultESSettings.host}:${defaultESSettings.port}")))
+  lazy val getESClient = ElasticClient(JavaClient(
+    ElasticProperties(s"http://${defaultESSettings.host}:${defaultESSettings.port}")))
 
+  lazy val esRetriever = new ElasticRetriever(getESClient)
   // we must import the dsl
   import com.sksamuel.elastic4s.ElasticDsl._
 
-  def getTargets(ids: Seq[String]): Future[Seq[Target]] = {
-    ids match {
-      case Nil => Future.successful(Seq.empty)
-      case _ =>
-        val targets = getESClient.execute {
-          search("19.09.b1_gene-data").query {
-            idsQuery(ids)
-          }
-        }
-//        val targets = ids.map(Target(_, Some("P001"), "BRAF", "B-Raf proto-oncogene, serine/threonine kinase",
-//          Some("Protein kinase involved in the transduction of mitogenic signals from the cell membrane " +
-//            "to the nucleus. May play a role in the postsynaptic responses of hippocampal neuron. " +
-//            "Phosphorylates MAP2K1, and thereby contributes to the MAP kinase signal transduction pathway.")))
-
-        targets.map {
-          case _: RequestFailure => Seq.empty
-          case results: RequestSuccess[SearchResponse] => results.result.to[Target]
-        }
-    }
+  def getTargets(ids: Seq[String]): Future[IndexedSeq[Target]] = {
+    val targetIndexName = defaultESSettings.entities
+      .filter(_.name == "target").headOption.map(_.index).getOrElse("targets")
+    esRetriever.getIds(targetIndexName, ids, Target.fromJsValue)
   }
+
+  def getDrugs(ids: Seq[String]): Future[IndexedSeq[Drug]] = {
+    val drugIndexName = defaultESSettings.entities
+      .filter(_.name == "drug").headOption.map(_.index).getOrElse("drugs")
+
+    esRetriever.getIds(drugIndexName, ids, Drug.fromJsValue)
+  }
+
+  def altSearch(qString: String, pagination: Option[Pagination] = Option(Pagination.mkDefault),
+                entities: Seq[Entities.ElasticsearchEntity] = defaultESSettings.entities): Future[AltSearchResults] =
+    esRetriever.getAltSearchResultSet(entities, qString, pagination.map(_.index) , pagination.map(_.size))
+
+  def search(qString: String, pagination: Option[Pagination] = Option(Pagination.mkDefault),
+             entities: Seq[Entities.ElasticsearchEntity] = defaultESSettings.entities): Future[SearchResults] =
+    esRetriever.getSearchResultSet(entities, qString, pagination.map(_.index) , pagination.map(_.size))
 }
