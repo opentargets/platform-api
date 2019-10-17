@@ -47,10 +47,10 @@ class ElasticRetriever(client: ElasticClient) {
     }
   }
 
-  def getSearchResultSet(indices: Seq[String],
-                         qString: String,
-                         pageIndex: Option[Int],
-                         pageSize: Option[Int]): Future[SearchResults] = {
+  def getAltSearchResultSet(indices: Seq[String],
+                            qString: String,
+                            pageIndex: Option[Int],
+                            pageSize: Option[Int]): Future[AltSearchResults] = {
     val limitClause = parsePaginationTokensForES(pageIndex, pageSize)
 
     val keywordQueryFn = functionScoreQuery(multiMatchQuery(qString)
@@ -110,17 +110,17 @@ class ElasticRetriever(client: ElasticClient) {
               None
           }
 
-          SearchResults(hits.result.totalHits, hits.result.to[SearchResult], aggs)
+          AltSearchResults(hits.result.totalHits, hits.result.to[SearchResult], aggs)
       }
     } else {
-      Future.successful(SearchResults.empty)
+      Future.successful(AltSearchResults.empty)
     }
   }
 
-  def getMSearchResultSet(entities: Seq[Entities.ElasticsearchEntity],
-                          qString: String,
-                          pageIndex: Option[Int],
-                          pageSize: Option[Int]): Future[MSearchResults] = {
+  def getSearchResultSet(entities: Seq[Entities.ElasticsearchEntity],
+                         qString: String,
+                         pageIndex: Option[Int],
+                         pageSize: Option[Int]): Future[SearchResults] = {
     val limitClause = parsePaginationTokensForES(pageIndex, pageSize)
     val esIndices = entities.map(_.searchIndex)
 
@@ -188,7 +188,7 @@ class ElasticRetriever(client: ElasticClient) {
             .mapValues(identity)
             .withDefaultValue(Seq.empty)
 
-          MSearchResults(totals,
+          SearchResults(totals,
             hits.result.to[SearchResult].headOption,
             res("target"),
             res("drug"),
@@ -196,7 +196,7 @@ class ElasticRetriever(client: ElasticClient) {
             aggs)
       }
     } else {
-      Future.successful(MSearchResults.empty)
+      Future.successful(SearchResults.empty)
     }
   }
 }

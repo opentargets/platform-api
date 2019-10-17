@@ -15,19 +15,19 @@ automatic_scaling:
   cool_down_period_sec: 60 # default value
   cpu_utilization:
     target_utilization: 0.9
-#liveness_check:
-#  path: "/api/v4/meta/health"
-#  check_interval_sec: 30
-#  timeout_sec: 10
-#  failure_threshold: 3
-#  success_threshold: 1
-#readiness_check:
-#  path: "/api/v4/meta/health"
-#  check_interval_sec: 5
-#  timeout_sec: 1
-#  failure_threshold: 1
-#  success_threshold: 5
-#  app_start_timeout_sec: 120
-health_check:
-  enable_health_check: True
+liveness_check:
+  path: "/api/v4/meta/health"
+  check_interval_sec: 30
+  timeout_sec: 10
+  failure_threshold: 3
+  success_threshold: 1
+readiness_check:
+  path: "/api/v4/meta/health"
+  check_interval_sec: 5
+  timeout_sec: 1
+  failure_threshold: 1
+  success_threshold: 5
+  app_start_timeout_sec: 300
+#health_check:
+#  enable_health_check: True
 

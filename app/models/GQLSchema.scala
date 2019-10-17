@@ -52,8 +52,8 @@ trait GQLEntities {
   implicit val searchResultAggsEntityImp = deriveObjectType[Backend, models.entities.SearchResultAggEntity]()
   implicit val searchResultAggsImp = deriveObjectType[Backend, models.entities.SearchResultAggs]()
   implicit val searchResultImp = deriveObjectType[Backend, models.entities.SearchResult]()
+  implicit val altSearchResultsImp = deriveObjectType[Backend, models.entities.AltSearchResults]()
   implicit val searchResultsImp = deriveObjectType[Backend, models.entities.SearchResults]()
-  implicit val msearchResultsImp = deriveObjectType[Backend, models.entities.MSearchResults]()
 
   lazy val msearchResultType = UnionType("MSearchResultType", types = List(targetImp, drugImp))
 
@@ -87,9 +87,9 @@ object GQLSchema extends GQLMeta with GQLEntities {
   val chemblId = Argument("chemblId", StringType, description = "Chembl ID" )
   val chemblIds = Argument("chemblIds", ListInputType(StringType), description = "List of Chembl IDs")
 
-  val searchHitsImp = ObjectType("MSearchHits",
-    "MultiSearch results",
-    fields[Backend, MSearchResults](
+  val searchResultsGQLImp = ObjectType("SearchResults",
+    "Search results",
+    fields[Backend, SearchResults](
       Field("totalHits", LongType,
         Some("Total results"),
         resolve = _.value.total),
@@ -141,14 +141,14 @@ object GQLSchema extends GQLMeta with GQLEntities {
         description = Some("Return drugs"),
         arguments = chemblIds :: Nil,
         resolve = ctx => drugsFetcher.deferSeqOpt(ctx.arg(chemblIds))),
-      Field("msearch", searchHitsImp,
+      Field("search", searchResultsGQLImp,
         description = Some("Multi entity search"),
         arguments = queryString :: pageArg :: Nil,
-        resolve = ctx => ctx.ctx.msearch(ctx.arg(queryString), ctx.arg(pageArg))),
-      Field("search", searchResultsImp,
+        resolve = ctx => ctx.ctx.search(ctx.arg(queryString), ctx.arg(pageArg))),
+      Field("altSearch", altSearchResultsImp,
         description = Some("Search"),
         arguments = queryString :: pageArg :: Nil,
-        resolve = ctx => ctx.ctx.search(ctx.arg(queryString), ctx.arg(pageArg)))
+        resolve = ctx => ctx.ctx.altSearch(ctx.arg(queryString), ctx.arg(pageArg)))
     ))
 
   val schema = Schema(query)

@@ -44,11 +44,11 @@ class Backend @Inject()(config: Configuration,
   def getDrugs(ids: Seq[String]): Future[IndexedSeq[Drug]] =
     esRetriever.getIds(defaultESSettings.indices.drug, ids, Drug.fromJsValue)
 
-  def search(qString: String, pagination: Option[Pagination] = Option(Pagination.mkDefault),
-             indices: Seq[String] = defaultESSettings.indices.search): Future[SearchResults] =
-    esRetriever.getSearchResultSet(indices, qString, pagination.map(_.index) , pagination.map(_.size))
+  def altSearch(qString: String, pagination: Option[Pagination] = Option(Pagination.mkDefault),
+                indices: Seq[String] = defaultESSettings.indices.search): Future[AltSearchResults] =
+    esRetriever.getAltSearchResultSet(indices, qString, pagination.map(_.index) , pagination.map(_.size))
 
-  def msearch(qString: String, pagination: Option[Pagination] = Option(Pagination.mkDefault),
-              entities: Seq[Entities.ElasticsearchEntity] = defaultESSettings.entities): Future[MSearchResults] =
-    esRetriever.getMSearchResultSet(entities, qString, pagination.map(_.index) , pagination.map(_.size))
+  def search(qString: String, pagination: Option[Pagination] = Option(Pagination.mkDefault),
+             entities: Seq[Entities.ElasticsearchEntity] = defaultESSettings.entities): Future[SearchResults] =
+    esRetriever.getSearchResultSet(entities, qString, pagination.map(_.index) , pagination.map(_.size))
 }
