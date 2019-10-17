@@ -53,14 +53,11 @@ class ElasticRetriever(client: ElasticClient) {
                             pageSize: Option[Int]): Future[AltSearchResults] = {
     val limitClause = parsePaginationTokensForES(pageIndex, pageSize)
 
-    val keywordQueryFn = functionScoreQuery(multiMatchQuery(qString)
-      .analyzer("keyword")
-      .field("id.keyword", 1000D)
-      .field("keywords.keyword", 1000D)
-      .field("name.keyword", 1000D))
-      .functions(fieldFactorScore("multiplier")
-        .factor(1.0)
-        .modifier(FieldValueFactorFunctionModifier.NONE))
+    val keywordQueryFn = multiMatchQuery(qString)
+      .analyzer("token")
+      .field("id.keyword", 100D)
+      .field("keywords", 100D)
+      .field("name.keyword", 100D)
 
     val stringQueryFn = functionScoreQuery(simpleStringQuery(qString)
       .analyzer("token")
@@ -110,7 +107,13 @@ class ElasticRetriever(client: ElasticClient) {
               None
           }
 
-          AltSearchResults(hits.result.totalHits, hits.result.to[SearchResult], aggs)
+          if (hits.isSuccess) {
+//            println(hits.result.totalHits)
+            AltSearchResults(hits.result.totalHits, hits.result.to[SearchResult], aggs)
+          } else {
+            println(hits.error)
+            AltSearchResults.empty
+          }
       }
     } else {
       Future.successful(AltSearchResults.empty)
@@ -124,14 +127,11 @@ class ElasticRetriever(client: ElasticClient) {
     val limitClause = parsePaginationTokensForES(pageIndex, pageSize)
     val esIndices = entities.map(_.searchIndex)
 
-    val keywordQueryFn = functionScoreQuery(multiMatchQuery(qString)
-      .analyzer("keyword")
+    val keywordQueryFn = multiMatchQuery(qString)
+      .analyzer("token")
       .field("id.keyword", 100D)
       .field("keywords.keyword", 100D)
-      .field("name.keyword", 100D))
-      .functions(fieldFactorScore("multiplier")
-        .factor(1.0)
-        .modifier(FieldValueFactorFunctionModifier.NONE))
+      .field("name.keyword", 100D)
 
     val stringQueryFn = functionScoreQuery(simpleStringQuery(qString)
       .analyzer("token")

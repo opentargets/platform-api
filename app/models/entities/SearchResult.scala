@@ -67,6 +67,7 @@ object SearchResult {
     import SearchResult.JSONImplicits._
     val source = (__ \ '_source).json.pick
     jObj.transform(source).asOpt.map(obj => {
+//      println(Json.prettyPrint(obj))
       obj.as[SearchResult]
     })
   }
