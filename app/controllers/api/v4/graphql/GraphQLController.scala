@@ -1,7 +1,7 @@
-package controllers
+package controllers.api.v4.graphql
 
 import javax.inject._
-import models.Violations._
+import models.entities.Violations._
 import models.{Backend, GQLSchema}
 import play.api.libs.json._
 import play.api.mvc._

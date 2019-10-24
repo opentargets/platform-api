@@ -1,5 +1,6 @@
 package models
 
+import math._
 import clickhouse.rep.SeqRep._
 import play.api.libs.json.{Json, JsonConfiguration}
 import slick.jdbc.GetResult
@@ -10,12 +11,6 @@ object Entities {
 
   case class HealthCheck(ok: Boolean, status: String)
 
-  //    entities = [
-  //    {
-  //      name = "target"
-  //      index = "targets"
-  //      searchIndex = "search_target"
-  //    },
   case class ElasticsearchIndices(target: String, disease: String, drug: String, search: Seq[String])
   case class ElasticsearchEntity(name: String, index: String, searchIndex: String)
 
@@ -31,6 +26,13 @@ object Entities {
       case (i, 0) => s"LIMIT ${i * Pagination.sizeDefault}, ${Pagination.sizeDefault}"
       case (i, s) => s"LIMIT ${i * s} , $s"
       case _ => s"LIMIT ${Pagination.indexDefault}, ${Pagination.sizeDefault}"
+    }
+    def toES: (Int, Int) = (index, size) match {
+      case (0, 0) => (0, Pagination.sizeDefault)
+      case (0, s) => (0, s)
+      case (i, 0)  => (i*Pagination.sizeDefault, Pagination.sizeDefault)
+      case (i, s) => (i*s, s)
+      case _ => (0, Pagination.sizeDefault)
     }
   }
 

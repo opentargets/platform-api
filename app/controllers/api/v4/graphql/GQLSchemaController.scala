@@ -1,4 +1,4 @@
-package controllers
+package controllers.api.v4.graphql
 
 import javax.inject.{Inject, Singleton}
 import models.GQLSchema

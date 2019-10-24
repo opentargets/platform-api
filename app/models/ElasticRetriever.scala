@@ -11,7 +11,7 @@ import com.sksamuel.elastic4s.requests.searches.{MultisearchResponseItem, Search
 import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.{FieldValueFactorFunctionModifier, FunctionScoreQuery}
 import com.sksamuel.elastic4s.requests.searches.queries.matches.MultiMatchQuery
 import com.sksamuel.elastic4s.{ElasticClient, RequestFailure, RequestSuccess, Response}
-import models.Functions.parsePaginationTokensForES
+import models.Entities.Pagination
 import models.entities._
 import models.entities.SearchResult.JSONImplicits._
 import play.api.libs.json.{JsArray, JsError, JsPath, JsSuccess, JsValue, Json}
@@ -50,10 +50,9 @@ class ElasticRetriever(client: ElasticClient) {
 
   def getAltSearchResultSet(entities: Seq[Entities.ElasticsearchEntity],
                             qString: String,
-                            pageIndex: Option[Int],
-                            pageSize: Option[Int]): Future[AltSearchResults] = {
+                            pagination: Pagination): Future[AltSearchResults] = {
     val esIndices = entities.map(_.searchIndex)
-    val limitClause = parsePaginationTokensForES(pageIndex, pageSize)
+    val limitClause = pagination.toES
 
     val keywordQueryFn = multiMatchQuery(qString)
       .analyzer("token")
@@ -125,9 +124,8 @@ class ElasticRetriever(client: ElasticClient) {
 
   def getSearchResultSet(entities: Seq[Entities.ElasticsearchEntity],
                          qString: String,
-                         pageIndex: Option[Int],
-                         pageSize: Option[Int]): Future[SearchResults] = {
-    val limitClause = parsePaginationTokensForES(pageIndex, pageSize)
+                         pagination: Pagination): Future[SearchResults] = {
+    val limitClause = pagination.toES
     val esIndices = entities.map(_.searchIndex)
 
     val keywordQueryFn = multiMatchQuery(qString)

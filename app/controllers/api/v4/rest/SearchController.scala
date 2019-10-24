@@ -1,4 +1,4 @@
-package controllers.api.v4
+package controllers.api.v4.rest
 
 import javax.inject._
 import models.Backend

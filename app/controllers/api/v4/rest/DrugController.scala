@@ -1,17 +1,14 @@
-package controllers.api.v4
+package controllers.api.v4.rest
 
 import javax.inject._
-import models.{Backend, GQLSchema}
 import models.Entities.JSONImplicits._
 import models.Entities.TargetsBody
 import models.entities.APIErrorMessage
 import models.entities.Drug.JSONImplicits._
+import models.{Backend, GQLSchema}
 import play.api.libs.json._
 import play.api.mvc._
-import sangria.ast.{Document, InputDocument, OperationDefinition}
-import sangria.execution.{Executor, InputDocumentMaterializer}
 import sangria.execution.deferred.FetcherContext
-import sangria.marshalling.queryAst
 
 import scala.concurrent.{ExecutionContext, Future}
 

@@ -1,11 +1,9 @@
-package controllers.api.v4
+package controllers.api.v4.rest
 
 import javax.inject._
 import play.api.routing.Router.Routes
 import play.api.routing.SimpleRouter
 import play.api.routing.sird._
-
-import scala.concurrent.ExecutionContext
 
 /** currently not used as it is a bit of a pain with path extractor as it needs more work around it */
 @Singleton

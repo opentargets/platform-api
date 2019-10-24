@@ -8,33 +8,33 @@
 GET     /                               controllers.HomeController.index
 
 # graphql uris
-OPTIONS /graphql                        controllers.GraphQLController.options
-GET     /graphql                        controllers.GraphQLController.gql(query: String, variables: Option[String] ?= None, operation: Option[String] ?= None)
-POST    /graphql                        controllers.GraphQLController.gqlBody()
+OPTIONS /api/v4/graphql                        controllers.api.v4.graphql.GraphQLController.options
+GET     /api/v4/graphql                        controllers.api.v4.graphql.GraphQLController.gql(query: String, variables: Option[String] ?= None, operation: Option[String] ?= None)
+POST    /api/v4/graphql                        controllers.api.v4.graphql.GraphQLController.gqlBody()
 
-GET     /graphql/schema                 controllers.GQLSchemaController.renderSchema
-GET     /graphql/browser                controllers.GQLSchemaController.renderClient
+GET     /api/v4/graphql/schema                 controllers.api.v4.graphql.GQLSchemaController.renderSchema
+GET     /api/v4/graphql/browser                controllers.api.v4.graphql.GQLSchemaController.renderClient
 
 # we can do fancier things like custom routes like here
 # https://github.com/playframework/play-scala-rest-api-example/tree/2.6.x
-# ->      /api/v4/meta                    controllers.api.v4.MetaRouter
+# ->      /api/v4/meta                    controllers.api.v4.rest.MetaRouter
 
-GET     /rest/v4/meta/info               controllers.api.v4.MetaController.meta
-GET     /rest/v4/meta/health             controllers.api.v4.MetaController.healthcheck
+GET     /api/v4/rest/meta/info               controllers.api.v4.rest.MetaController.meta
+GET     /api/v4/rest/meta/health             controllers.api.v4.rest.MetaController.healthcheck
 
-POST    /rest/v4/targets                 controllers.api.v4.TargetController.byIds(ids: Seq[String] ?= Seq.empty)
-GET     /rest/v4/targets                 controllers.api.v4.TargetController.byIds(ids: Seq[String] ?= Seq.empty)
-GET     /rest/v4/targets/:id             controllers.api.v4.TargetController.byId(id: String)
+POST    /api/v4/rest/targets                 controllers.api.v4.rest.TargetController.byIds(ids: Seq[String] ?= Seq.empty)
+GET     /api/v4/rest/targets                 controllers.api.v4.rest.TargetController.byIds(ids: Seq[String] ?= Seq.empty)
+GET     /api/v4/rest/targets/:id             controllers.api.v4.rest.TargetController.byId(id: String)
 
-POST    /rest/v4/drugs                 controllers.api.v4.DrugController.byIds(ids: Seq[String] ?= Seq.empty)
-GET     /rest/v4/drugs                 controllers.api.v4.DrugController.byIds(ids: Seq[String] ?= Seq.empty)
-GET     /rest/v4/drugs/:id             controllers.api.v4.DrugController.byId(id: String)
+POST    /api/v4/rest/drugs                 controllers.api.v4.rest.DrugController.byIds(ids: Seq[String] ?= Seq.empty)
+GET     /api/v4/rest/drugs                 controllers.api.v4.rest.DrugController.byIds(ids: Seq[String] ?= Seq.empty)
+GET     /api/v4/rest/drugs/:id             controllers.api.v4.rest.DrugController.byId(id: String)
 
-GET     /rest/v4/altsearch               controllers.api.v4.AltSearchController.altSearch(q: String)
-GET     /rest/v4/search              controllers.api.v4.SearchController.search(q: String)
+GET     /api/v4/rest/altsearch               controllers.api.v4.rest.AltSearchController.altSearch(q: String)
+GET     /api/v4/rest/search              controllers.api.v4.rest.SearchController.search(q: String)
 
 # health uri
-GET     /_ah/health                     controllers.api.v4.MetaController.healthcheck
+GET     /_ah/health                     controllers.api.v4.rest.MetaController.healthcheck
 
 #  Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file                   controllers.Assets.versioned(path="/public", file: Asset)

@@ -16,13 +16,13 @@ automatic_scaling:
   cpu_utilization:
     target_utilization: 0.9
 liveness_check:
-  path: "/rest/v4/meta/health"
+  path: "/api/v4/rest/meta/health"
   check_interval_sec: 5
   timeout_sec: 3
   failure_threshold: 3
   success_threshold: 1
 readiness_check:
-  path: "/rest/v4/meta/health"
+  path: "/api/v4/rest/meta/health"
   check_interval_sec: 5
   timeout_sec: 3
   failure_threshold: 10

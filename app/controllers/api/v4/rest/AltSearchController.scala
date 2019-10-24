@@ -1,15 +1,12 @@
-package controllers.api.v4
+package controllers.api.v4.rest
 
 import javax.inject._
 import models.Backend
-import models.Entities.JSONImplicits._
-import models.Entities.TargetsBody
-import models.entities.APIErrorMessage
 import models.entities.SearchResult.JSONImplicits._
 import play.api.libs.json._
 import play.api.mvc._
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 @Singleton
 class AltSearchController @Inject()(implicit ec: ExecutionContext, backend: Backend, cc: ControllerComponents)

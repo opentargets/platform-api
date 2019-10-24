@@ -1,7 +1,8 @@
 package models
 
+import clickhouse.ClickHouseProfile
 import javax.inject.Inject
-import models.Functions._
+import models.Helpers._
 import play.api.{Configuration, Environment, Logger}
 import com.sksamuel.elastic4s._
 import com.sksamuel.elastic4s.http.JavaClient
@@ -12,8 +13,11 @@ import scala.util.{Failure, Success}
 import models.entities._
 import models.Entities.JSONImplicits._
 import models.Entities.{HealthCheck, Meta, Pagination}
+import play.api.db.slick.DatabaseConfigProvider
+import play.db.NamedDatabase
 
-class Backend @Inject()(config: Configuration,
+class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider: DatabaseConfigProvider,
+                        config: Configuration,
                         env: Environment) {
   val logger = Logger(this.getClass)
 
@@ -34,28 +38,30 @@ class Backend @Inject()(config: Configuration,
   lazy val getESClient = ElasticClient(JavaClient(
     ElasticProperties(s"http://${defaultESSettings.host}:${defaultESSettings.port}")))
 
+  lazy val dbRetriever = new DatabaseRetriever(dbConfigProvider.get[ClickHouseProfile])
+
   lazy val esRetriever = new ElasticRetriever(getESClient)
   // we must import the dsl
   import com.sksamuel.elastic4s.ElasticDsl._
 
   def getTargets(ids: Seq[String]): Future[IndexedSeq[Target]] = {
     val targetIndexName = defaultESSettings.entities
-      .filter(_.name == "target").headOption.map(_.index).getOrElse("targets")
+      .find(_.name == "target").map(_.index).getOrElse("targets")
     esRetriever.getIds(targetIndexName, ids, Target.fromJsValue)
   }
 
   def getDrugs(ids: Seq[String]): Future[IndexedSeq[Drug]] = {
     val drugIndexName = defaultESSettings.entities
-      .filter(_.name == "drug").headOption.map(_.index).getOrElse("drugs")
+      .find(_.name == "drug").map(_.index).getOrElse("drugs")
 
     esRetriever.getIds(drugIndexName, ids, Drug.fromJsValue)
   }
 
   def altSearch(qString: String, pagination: Option[Pagination] = Option(Pagination.mkDefault),
                 entities: Seq[Entities.ElasticsearchEntity] = defaultESSettings.entities): Future[AltSearchResults] =
-    esRetriever.getAltSearchResultSet(entities, qString, pagination.map(_.index) , pagination.map(_.size))
+    esRetriever.getAltSearchResultSet(entities, qString,pagination.get)
 
   def search(qString: String, pagination: Option[Pagination] = Option(Pagination.mkDefault),
              entities: Seq[Entities.ElasticsearchEntity] = defaultESSettings.entities): Future[SearchResults] =
-    esRetriever.getSearchResultSet(entities, qString, pagination.map(_.index) , pagination.map(_.size))
+    esRetriever.getSearchResultSet(entities, qString, pagination.get)
 }

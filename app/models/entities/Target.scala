@@ -16,7 +16,7 @@ case class Target(id: String,
                   symbolSynonyms: Seq[String],
                   genomicLocation: GenomicLocation,
                   proteinAnnotations: Option[Protein]
-                 ) extends OTEntity
+                 )
 
 object Target {
   object JSONImplicits {
