@@ -10,13 +10,13 @@ import sangria.marshalling.playJson._
 import sangria.schema.AstSchemaBuilder._
 import sangria.util._
 import entities._
-
-import Entities.JSONImplicits._
+import entities.Configuration.JSONImplicits._
+import models.entities.Configuration.{Meta, MetaVersion}
 import sangria.execution.deferred._
 
 trait GQLMeta {
-  implicit val metaVersionImp = deriveObjectType[Backend, Entities.MetaVersion]()
-  implicit val metaImp = deriveObjectType[Backend, Entities.Meta]()
+  implicit val metaVersionImp = deriveObjectType[Backend, MetaVersion]()
+  implicit val metaImp = deriveObjectType[Backend, Meta]()
 }
 
 trait GQLEntities {

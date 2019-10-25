@@ -15,10 +15,6 @@ POST    /api/v4/graphql                        controllers.api.v4.graphql.GraphQ
 GET     /api/v4/graphql/schema                 controllers.api.v4.graphql.GQLSchemaController.renderSchema
 GET     /api/v4/graphql/browser                controllers.api.v4.graphql.GQLSchemaController.renderClient
 
-# we can do fancier things like custom routes like here
-# https://github.com/playframework/play-scala-rest-api-example/tree/2.6.x
-# ->      /api/v4/meta                    controllers.api.v4.rest.MetaRouter
-
 GET     /api/v4/rest/meta/info               controllers.api.v4.rest.MetaController.meta
 GET     /api/v4/rest/meta/health             controllers.api.v4.rest.MetaController.healthcheck
 

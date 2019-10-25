@@ -2,7 +2,9 @@ package controllers.api.v4.rest
 
 import javax.inject._
 import models.Backend
-import models.Entities.JSONImplicits._
+import models.entities._
+import models.entities.Configuration.JSONImplicits._
+import models.entities.HealthCheck.JSONImplicits._
 import play.api.libs.json.Json
 import play.api.mvc._
 

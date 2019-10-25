@@ -10,9 +10,13 @@ import com.sksamuel.elastic4s.http.JavaClient
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
 import scala.util.{Failure, Success}
-import models.entities._
+import models.entities.Configuration._
+import models.entities.Configuration.JSONImplicits._
+
+import models.Entities._
 import models.Entities.JSONImplicits._
-import models.Entities.{HealthCheck, Meta, Pagination}
+import models.entities._
+import models.entities.HealthCheck.JSONImplicits._
 import play.api.db.slick.DatabaseConfigProvider
 import play.db.NamedDatabase
 
@@ -21,14 +25,11 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
                         env: Environment) {
   val logger = Logger(this.getClass)
 
-  val defaultESSettings =
-    loadConfigurationObject[Entities.ElasticsearchSettings]("ot.elasticsearch", config)
-
-  val defaultMetaInfo =
-    loadConfigurationObject[Entities.Meta]("ot.meta", config)
+  val defaultOTSettings = loadConfigurationObject[OTSettings]("ot", config)
+  val defaultESSettings = defaultOTSettings.elasticsearch
 
   /** return meta information loaded from ot.meta settings */
-  lazy val getMeta: Meta = defaultMetaInfo
+  lazy val getMeta: Meta = defaultOTSettings.meta
 
   def getStatus(isOk: Boolean): HealthCheck = isOk match {
     case true => HealthCheck(true, "All good!")
@@ -58,10 +59,10 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
   }
 
   def altSearch(qString: String, pagination: Option[Pagination] = Option(Pagination.mkDefault),
-                entities: Seq[Entities.ElasticsearchEntity] = defaultESSettings.entities): Future[AltSearchResults] =
+                entities: Seq[ElasticsearchEntity] = defaultESSettings.entities): Future[AltSearchResults] =
     esRetriever.getAltSearchResultSet(entities, qString,pagination.get)
 
   def search(qString: String, pagination: Option[Pagination] = Option(Pagination.mkDefault),
-             entities: Seq[Entities.ElasticsearchEntity] = defaultESSettings.entities): Future[SearchResults] =
+             entities: Seq[ElasticsearchEntity] = defaultESSettings.entities): Future[SearchResults] =
     esRetriever.getSearchResultSet(entities, qString, pagination.get)
 }

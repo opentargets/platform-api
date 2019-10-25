@@ -17,27 +17,27 @@ class DatabaseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile]) {
 
   import dbConfig.profile.api._
 
-  def getDatasources: Future[Vector[DataField]] = {
-    val colNamePrefix = evidencesConfig.datasourceColumnNamePrefix
-    val tableName = evidencesConfig.tableNameByDisease
-
-    val plainQ =
-      sql"""
-           |select
-           |  c.name as column_name,
-           |  c.type as column_type
-           |from system.columns c
-           |where c.name like ${colNamePrefix} and c.table = $tableName
-           |order by column_name
-         """.stripMargin.as[DataField]
-
-    //    plainQ.statements.foreach(println)
-
-    db.run(plainQ.asTry).map {
-      case Success(v) => v
-      case Failure(ex) =>
-        logger.error(ex.getMessage)
-        Vector.empty
-    }
-  }
+//  def getDatasources: Future[Vector[DataField]] = {
+//    val colNamePrefix = evidencesConfig.datasourceColumnNamePrefix
+//    val tableName = evidencesConfig.tableNameByDisease
+//
+//    val plainQ =
+//      sql"""
+//           |select
+//           |  c.name as column_name,
+//           |  c.type as column_type
+//           |from system.columns c
+//           |where c.name like ${colNamePrefix} and c.table = $tableName
+//           |order by column_name
+//         """.stripMargin.as[DataField]
+//
+//    //    plainQ.statements.foreach(println)
+//
+//    db.run(plainQ.asTry).map {
+//      case Success(v) => v
+//      case Failure(ex) =>
+//        logger.error(ex.getMessage)
+//        Vector.empty
+//    }
+//  }
 }

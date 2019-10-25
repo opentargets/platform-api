@@ -3,7 +3,8 @@ package controllers.api.v4.rest
 import javax.inject._
 import models.Entities.JSONImplicits._
 import models.Entities.TargetsBody
-import models.entities.APIErrorMessage
+import models.entities._
+import models.entities.APIErrorMessage.JSONImplicits._
 import models.entities.Drug.JSONImplicits._
 import models.{Backend, GQLSchema}
 import play.api.libs.json._

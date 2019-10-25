@@ -6,17 +6,6 @@ import play.api.libs.json.{Json, JsonConfiguration}
 import slick.jdbc.GetResult
 
 object Entities {
-  case class MetaVersion(x: Int, y: Int, z: Int)
-  case class Meta(name: String, version: MetaVersion)
-
-  case class HealthCheck(ok: Boolean, status: String)
-
-  case class ElasticsearchIndices(target: String, disease: String, drug: String, search: Seq[String])
-  case class ElasticsearchEntity(name: String, index: String, searchIndex: String)
-
-  case class ElasticsearchSettings(host: String, port: Int,
-                                   entities: Seq[ElasticsearchEntity])
-
   case class TargetsBody(ids: Seq[String])
 
   case class Pagination(index: Int, size: Int) {
@@ -44,16 +33,6 @@ object Entities {
   }
 
   object JSONImplicits {
-    implicit val metaVersionImp = Json.format[Entities.MetaVersion]
-    implicit val metaImp = Json.format[Entities.Meta]
-
-    implicit val healthImp = Json.format[Entities.HealthCheck]
-
-    implicit val esEntities = Json.reads[Entities.ElasticsearchEntity]
-    implicit val esIndices = Json.reads[Entities.ElasticsearchIndices]
-    implicit val esSettingsImp = Json.reads[Entities.ElasticsearchSettings]
-
     implicit val targetsBodyImp = Json.format[Entities.TargetsBody]
-    implicit val apiErrorMessageImp = Json.format[entities.APIErrorMessage]
   }
 }
