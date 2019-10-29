@@ -1,6 +1,5 @@
 package models.entities
 
-import models.Entities
 import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._

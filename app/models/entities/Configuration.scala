@@ -11,7 +11,7 @@ object Configuration {
   case class ElasticsearchEntity(name: String, index: String, searchIndex: String)
   case class ElasticsearchSettings(host: String, port: Int, entities: Seq[ElasticsearchEntity])
 
-  case class LUTableSettings(name: String, key: String, field: Option[String])
+  case class LUTableSettings(label: String, name: String, key: String, field: Option[String])
   case class NetworkSettings(lut: LUTableSettings, networks: Seq[LUTableSettings])
   case class TargetSettings(lut: LUTableSettings, networks: Seq[LUTableSettings])
   case class DiseaseSettings(lut: LUTableSettings, networks: Seq[LUTableSettings])
@@ -31,7 +31,7 @@ object Configuration {
     implicit val esSettingsImp = Json.reads[ElasticsearchSettings]
 
     implicit val luTableImp = Json.reads[LUTableSettings]
-    implicit val datasourceSettingsImp = Json.reads[DatasourceSettings]
+    implicit val datasourceSettingsImp = Json.format[DatasourceSettings]
     implicit val harmonicSettingsImp = Json.reads[HarmonicSettings]
     implicit val networkSettingsImp = Json.reads[NetworkSettings]
     implicit val targetSettingsImp = Json.reads[TargetSettings]

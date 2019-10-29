@@ -13,8 +13,8 @@ import scala.util.{Failure, Success}
 import models.entities.Configuration._
 import models.entities.Configuration.JSONImplicits._
 
-import models.Entities._
-import models.Entities.JSONImplicits._
+import Entities._
+import Entities.JSONImplicits._
 import models.entities._
 import models.entities.HealthCheck.JSONImplicits._
 import play.api.db.slick.DatabaseConfigProvider
@@ -39,7 +39,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
   lazy val getESClient = ElasticClient(JavaClient(
     ElasticProperties(s"http://${defaultESSettings.host}:${defaultESSettings.port}")))
 
-  lazy val dbRetriever = new DatabaseRetriever(dbConfigProvider.get[ClickHouseProfile])
+  lazy val dbRetriever = new DatabaseRetriever(dbConfigProvider.get[ClickHouseProfile], defaultOTSettings)
 
   lazy val esRetriever = new ElasticRetriever(getESClient)
   // we must import the dsl

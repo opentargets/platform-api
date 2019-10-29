@@ -11,7 +11,6 @@ import com.sksamuel.elastic4s.requests.searches.{MultisearchResponseItem, Search
 import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.{FieldValueFactorFunctionModifier, FunctionScoreQuery}
 import com.sksamuel.elastic4s.requests.searches.queries.matches.MultiMatchQuery
 import com.sksamuel.elastic4s.{ElasticClient, RequestFailure, RequestSuccess, Response}
-import models.Entities.Pagination
 import models.entities.Configuration.ElasticsearchEntity
 import models.entities._
 import models.entities.SearchResult.JSONImplicits._

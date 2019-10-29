@@ -78,8 +78,8 @@ trait GQLEntities {
 object GQLSchema extends GQLMeta with GQLEntities {
   val resolvers = DeferredResolver.fetchers(targetsFetcher, drugsFetcher)
 
-  implicit val paginationFormatImp = Json.format[Entities.Pagination]
-  val pagination = deriveInputObjectType[Entities.Pagination]()
+  implicit val paginationFormatImp = Json.format[Pagination]
+  val pagination = deriveInputObjectType[Pagination]()
   val pageArg = Argument("page", OptionInputType(pagination))
   val queryString = Argument("queryString", StringType, description = "Query string")
   val ensemblId = Argument("ensemblId", StringType, description = "Ensembl ID" )

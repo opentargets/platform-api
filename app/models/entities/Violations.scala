@@ -1,6 +1,6 @@
 package models.entities
 
-import models.Entities
+import models.entities._
 import sangria.execution.{UserFacingError, WithViolations}
 import sangria.validation.{BaseViolation, Violation}
 
@@ -9,7 +9,7 @@ object Violations {
     "There was a pagination error. You used this size %d but the max value is %d"
 
   case class PaginationError(currentSize: Int,
-                             sizeMax: Int = Entities.Pagination.sizeMax)
+                             sizeMax: Int = Pagination.sizeMax)
     extends BaseViolation(paginationErrorMsg format(currentSize, sizeMax))
 
   case class InputParameterCheckError(violations: Vector[Violation])
