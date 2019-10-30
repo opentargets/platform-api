@@ -16,9 +16,6 @@ object Harmonic {
   def maxValue(vSize: Int, pExponent: Int, maxScore: Double): Double =
     (0 until vSize).foldLeft(0D)((acc: Double, n: Int) => acc + (maxScore / pow(1D + n,pExponent)))
 
-  lazy val maxHSColumn: Column =
-    literal(Harmonic.maxValue(maxVectorElementsDefault, pExponentDefault, 1.0)).as(Some("max_hs"))
-
   def mkHSColumn(col: Column, maxHS: Column): Seq[Column] = {
     val colName = Some(col.name.toString + "_v")
 
@@ -69,9 +66,9 @@ object Harmonic {
     val idCol = Column(fixedCol)
     val qCol = Column(queryCol)
 
-    val hsMaxValueCol = Harmonic.maxHSColumn
+    val hsMaxValueCol = literal(Harmonic.maxValue(maxVectorElementsDefault, pExponentDefault, 1.0)).as(Some("max_hs_score"))
     val dsHSCols = datasources.flatMap(c => Harmonic.mkHSColumn(Column(c.id), hsMaxValueCol))
-    val dsWeightV = array(datasources.map(c => literal(c.weight))).as(Some("ds_scores"))
+    val dsWeightV = array(datasources.map(c => literal(c.weight))).as(Some("ds_scores_v"))
 
     val dsV = array(dsHSCols.withFilter(_.name.rep.endsWith("_v_hs")).map(_.name))
       .as(Some("dsV"))
