@@ -12,6 +12,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
+import elesecu._
+
 class DatabaseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: OTSettings) {
   val db = dbConfig.db
   val logger = Logger(this.getClass)
@@ -38,6 +40,8 @@ class DatabaseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: OTS
    * */
   def computeAssociationsDiseaseFixed(id: String, expandedBy: Option[String],
                                       datasourceSettings: Seq[DatasourceSettings]) = {
+
+    // select needs target_id,
     expandedBy match {
       case Some(networkName) =>
         diseaseNetworks.get(networkName)

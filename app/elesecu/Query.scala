@@ -20,7 +20,16 @@ package elesecu
  * [FORMAT format]
  * [LIMIT [offset_value, ]n BY columns]
  */
-case class Query(withQ: Vector[Column], selectQ: Vector[Column])
+
+case class Query(sections: Seq[QuerySection]) extends Rep {
+  override val rep: String = sections.map(_.rep).mkString("", "\n", ";")
+  def toColumn: Column = {
+    val q = sections.map(_.rep).mkString("(", " ", ")")
+    Column(RawExpression(q), None)
+  }
+}
 
 object Query {
+  def apply(w: With, s: Select, sections: QuerySection*): Query = Query(w +: s +: sections)
+  def apply(s: Select, sections: QuerySection*): Query = Query(s +: sections)
 }
