@@ -48,6 +48,21 @@ case class OrderBy(content: Seq[Column]) extends QuerySection {
   override val name: String = "ORDER BY"
   override lazy val rep: String = s"$name ${content.mkString("", ", ", "")}"
 }
+//LIMIT 1 OFFSET 0 BY disease_id
+//limit 10 OFFSET 0;
+
+case class Limit(size: Int, offset: Int = 0) extends QuerySection {
+  override val content: Seq[Column] = Nil
+  override val name: String = "LIMIT"
+  override lazy val rep: String = s"$name $size OFFSET $offset"
+}
+
+case class LimitBy(size: Int, offset: Int = 0, by: Seq[Column]) extends QuerySection {
+  override val content: Seq[Column] = by
+  override val name: String = "LIMIT"
+  override lazy val rep: String = s"$name $size OFFSET $offset BY ${content.mkString("", ", ", "")}"
+}
+
 
 case class From(col: Column) extends QuerySection {
   override val content: Seq[Column] = Seq(col)

@@ -44,17 +44,9 @@ object Harmonic {
             queryColValue: String,
             table: String,
             datasources: Seq[DatasourceSettings],
-            expansionTable: Option[LUTableSettings]): Query = {
-    //prewhere
-    //    (disease_id = 'EFO_0000616' or
-    //     disease_id in
-    //     ( select neighbour
-    //       from (select joinGet('ot.disease_network_t', 'neighbours', 'EFO_0000616') as neighbours)
-    //                array join neighbours as neighbour))
-    //group by target_id
-    //having HS > 0
-    //order by HS desc;
-
+            expansionTable: Option[LUTableSettings],
+            limit: Int,
+            offset: Int): Query = {
     val idCol = Column(fixedCol)
     val qColValueCol = literal(queryColValue)
     val qCol = Column(queryColName)
@@ -93,8 +85,8 @@ object Harmonic {
     val expansionQuery = expansionTable.map(lut => {
       val expCol = F.joinGet(lut.name, lut.field.get, qColValueCol).as(lut.field)
       val neighbourCol = expCol.name.as(Some("neighbour"))
-      val innerSel = Query(Select(expCol +: Nil), ArrayJoin(neighbourCol))
-      val sel = Query(Select(neighbourCol.name +: Nil), From(innerSel.toColumn)).toColumn
+      val innerSel = Query(Select(expCol +: Nil))
+      val sel = Query(Select(neighbourCol.name +: Nil), From(innerSel.toColumn), ArrayJoin(neighbourCol)).toColumn
       val inn = F.in(qCol, sel)
       F.or(F.equals(qCol, qColValueCol), inn)
     })
@@ -103,6 +95,7 @@ object Harmonic {
     val g = GroupBy(idCol +: Nil)
     val h = Having(F.greater(overallHS.name, literal(0.0)))
     val o = OrderBy(overallHS.name.desc +: Nil)
-    Query(w, s, f, pw, g, h, o)
+    val l = Limit(limit, offset)
+    Query(w, s, f, pw, g, h, o, l)
   }
 }

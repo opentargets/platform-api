@@ -21,12 +21,11 @@ case class Column(raw: Expression, alias: Option[String]) extends Rep {
 object Column {
   private def parse(expr: String): Column  = {
     // can produce an adt for a full parse using a proper parsing library
-    val tokens = expr.split(" [aA][sS] ").map(_.trim.stripSuffix(",").trim).toList
+    val tokens = List(expr.trim.stripSuffix(",").trim)
 
     tokens match {
-      case x :: y :: _ => Column(RawExpression(x), Some(y))
-      case x :: Nil => Column(RawExpression(x))
-      case _ => Column(EmptyExpression)
+      case x :: _ => Column(RawExpression(x), None)
+      case Nil => Column(EmptyExpression)
     }
   }
 
