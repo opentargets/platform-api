@@ -1,7 +1,4 @@
 package models.entities
-
-import java.util.UUID
-
 import scala.math.pow
 import elesecu._
 import elesecu.Column._
@@ -42,7 +39,6 @@ object Harmonic {
     Vector(dsV, dsVHS)
   }
 
-  // TODO network expansion
   def apply(fixedCol: String,
             queryColName: String,
             queryColValue: String,
