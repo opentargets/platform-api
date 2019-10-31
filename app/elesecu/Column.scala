@@ -14,6 +14,8 @@ case class Column(raw: Expression, alias: Option[String]) extends Rep {
   def as(newAlias: Option[String]): Column = Column(raw, newAlias)
   def name: Column = alias.map(Column.apply).getOrElse(expr)
   def expr: Column = Column(raw, None)
+  def asc: Column = Column(RawExpression(name.rep + " ASC"), None)
+  def desc: Column = Column(RawExpression(name.rep + " DESC"), None)
 }
 
 object Column {

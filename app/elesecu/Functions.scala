@@ -12,7 +12,8 @@ object Functions {
   def uniq(cols: Seq[Column]): Column = f("uniq", cols)
   def uniq(col: Column, cols: Column*): Column = uniq(col +: cols)
   def groupArray(col: Column): Column = f("groupArray", col)
-  def arrayMap(lambda: String, col: Column): Column = f("arrayMap", Column(lambda), col)
+  def groupArrayIf(col1: Column, col2: Column): Column = f("groupArrayIf", col1, col2)
+  def arrayMap(lambda: String, cols: Column*): Column = f("arrayMap", Column(lambda) +: cols)
   def any(col: Column): Column = f("any", col)
   def array(cols: Seq[Column]): Column = f("array", cols)
   def array(col: Column, cols: Column*): Column = f("array", col +: cols)
@@ -26,7 +27,7 @@ object Functions {
   def length(col: Column): Column = f("length", col)
   def range(col: Column): Column = f("range", col)
   def arraySum(lambda: String, col1: Column, col2: Column): Column =
-    f("arraySum", literal(lambda), col1, col2)
+    f("arraySum", Column(lambda), col1, col2)
 
   def divide(col1: Column, col2: Column): Column = f("divide", col1, col2)
   def multiply(col1: Column, col2: Column): Column = f("multiply", col1, col2)

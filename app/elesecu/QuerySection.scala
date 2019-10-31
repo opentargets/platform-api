@@ -27,6 +27,28 @@ case class PreWhere(col: Column) extends QuerySection {
   override lazy val rep: String = s"$name ${content.mkString("(", "", ")")}"
 }
 
+case class ArrayJoin(col: Column) extends QuerySection {
+  override val content: Seq[Column] = Seq(col)
+  override val name: String = "ARRAY JOIN"
+  override lazy val rep: String = s"$name ${content.mkString}"
+}
+
+case class Having(col: Column) extends QuerySection {
+  override val content: Seq[Column] = Seq(col)
+  override val name: String = "HAVING"
+  override lazy val rep: String = s"$name ${content.mkString("(", "", ")")}"
+}
+
+case class GroupBy(content: Seq[Column]) extends QuerySection {
+  override val name: String = "GROUP BY"
+  override lazy val rep: String = s"$name ${content.mkString("", ", ", "")}"
+}
+
+case class OrderBy(content: Seq[Column]) extends QuerySection {
+  override val name: String = "ORDER BY"
+  override lazy val rep: String = s"$name ${content.mkString("", ", ", "")}"
+}
+
 case class From(col: Column) extends QuerySection {
   override val content: Seq[Column] = Seq(col)
   override val name: String = "FROM"

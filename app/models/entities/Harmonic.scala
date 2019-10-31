@@ -7,19 +7,33 @@ import elesecu._
 import elesecu.Column._
 import elesecu.Functions._
 import elesecu.{Functions => F}
-import models.entities.Configuration.DatasourceSettings
+import models.entities.Configuration.{DatasourceSettings, LUTableSettings}
 
 object Harmonic {
-  val maxVectorElementsDefault: Int = 100
-  val pExponentDefault: Int = 2
+  private val maxVectorElementsDefault: Int = 100
+  private val pExponentDefault: Int = 2
 
-  def maxValue(vSize: Int, pExponent: Int, maxScore: Double): Double =
+  private def maxValue(vSize: Int, pExponent: Int, maxScore: Double): Double =
     (0 until vSize).foldLeft(0D)((acc: Double, n: Int) => acc + (maxScore / pow(1D + n,pExponent)))
 
-  def mkHSColumn(col: Column, maxHS: Column): Seq[Column] = {
-    val colName = Some(col.name.toString + "_v")
+  private def mkHSColumn(col: Column,
+                         maxHS: Column,
+                         propagateCondition: Option[Column]): Seq[Column] = {
+    val colName = Some(col.name.toString.replaceAll("\\.", "__") + "_v")
 
-    val dsV = arraySlice(arrayReverseSort(flatten(groupArray(col.name))),1, maxVectorElementsDefault)
+    /*
+      WARN! this is a hack that needs to be removed as we dont want
+      to keep applying it. This is basically done for expression atlas
+      but it is a temporal action although still coming from years ago.
+      There is a will to remove it let's see if that happens
+     */
+    val ga = if (propagateCondition.isDefined) {
+      groupArrayIf(col.name, propagateCondition.get)
+    } else {
+      groupArray(col.name)
+    }
+
+    val dsV = arraySlice(arrayReverseSort(flatten(ga)),1, maxVectorElementsDefault)
       .as(colName)
 
     val dsVHS = divide(arraySum("(a, b) -> a / pow((b + 1),2)", dsV.name, range(length(dsV.name))), maxHS)
@@ -28,31 +42,13 @@ object Harmonic {
     Vector(dsV, dsVHS)
   }
 
-  def mkQuery(fixedCol: String,
-              queryCol: String,
-              queryColValue: String,
-              table: String,
-              datasources: Seq[DatasourceSettings]): Query = {
-    //with
-    //    1.6349839001848923 as max_hs,
-    //    arrayReverseSort(flatten(groupArray(datasource_europepmc.scores))) as europepmc,
-    //    arrayReverseSort(flatten(groupArrayIf(datasource_expression_atlas.scores, disease_id = 'EFO_0000616'))) as expression_atlas,
-    //
-    //    arraySlice(europepmc, 1, 100) as ds_epmc_v,
-    //        arraySum((a, b) -> a / pow((b + 1),2), ds_epmc_v, range(length(ds_epmc_v))) / max_hs as ds_europepmc_hs,
-    //    arraySlice(expression_atlas, 1, 100) as ds_expression_atlas_v,
-    //        arraySum((a, b) -> a / pow((b + 1),2), ds_expression_atlas_v, range(length(ds_expression_atlas_v))) / max_hs as ds_expression_atlas_hs,
-    //
-    //    array(ds_europepmc_hs, ds_expression_atlas_hs) as DS_V,
-    //    array(0.2, 0.2) as hs_v_scores,
-    //    arrayReverseSort(arrayMap((a, b) -> a * b, DS_V, hs_v_scores)) as HSV,
-    //    arraySum((a, b) -> a / pow((b + 1),2),arrayReverseSort(HSV),range(length(HSV))) / max_hs as HS
-    //select
-    //    target_id,
-    //    HS,
-    //    DS_V,
-    //    groupArray(disease_id) as disease_ids
-    //from ot.aotf_d
+  // TODO network expansion
+  def apply(fixedCol: String,
+            queryColName: String,
+            queryColValue: String,
+            table: String,
+            datasources: Seq[DatasourceSettings],
+            expansionTable: Option[LUTableSettings]): Query = {
     //prewhere
     //    (disease_id = 'EFO_0000616' or
     //     disease_id in
@@ -64,21 +60,53 @@ object Harmonic {
     //order by HS desc;
 
     val idCol = Column(fixedCol)
-    val qCol = Column(queryCol)
+    val qColValueCol = literal(queryColValue)
+    val qCol = Column(queryColName)
 
-    val hsMaxValueCol = literal(Harmonic.maxValue(maxVectorElementsDefault, pExponentDefault, 1.0)).as(Some("max_hs_score"))
-    val dsHSCols = datasources.flatMap(c => Harmonic.mkHSColumn(Column(c.id), hsMaxValueCol))
+    // WARN! the propagation hack strikes again about expression atlas
+    val booleanCondition = Some(F.equals(qCol, qColValueCol))
+    val hsMaxValueCol = literal(Harmonic.maxValue(maxVectorElementsDefault, pExponentDefault, 1.0))
+      .as(Some("max_hs_score"))
+
+    // WARN! the propagation hack strikes again about expression atlas
+    val dsHSCols = datasources.flatMap(c => {
+      if (c.id == "expression_atlas")
+        Harmonic.mkHSColumn(Column(c.id), hsMaxValueCol, booleanCondition)
+      else
+        Harmonic.mkHSColumn(Column(c.id), hsMaxValueCol, None)
+    })
+
     val dsWeightV = array(datasources.map(c => literal(c.weight))).as(Some("ds_scores_v"))
-
     val dsV = array(dsHSCols.withFilter(_.name.rep.endsWith("_v_hs")).map(_.name))
-      .as(Some("dsV"))
+      .as(Some("ds_v"))
 
-    val overallHS = arrayReverseSort(dsV)
+    val dsVWeighted = arrayReverseSort(arrayMap("(a, b) -> a * b", dsV, dsWeightV)).as(Some("wds_v"))
+    val overallHS = F.divide(arraySum("(a, b) -> a / pow((b + 1), 2)",
+        dsVWeighted.name,
+        range(length(dsVWeighted.name))
+      ),
+      hsMaxValueCol.name
+    ).as(Some("overall_hs"))
 
-    val w = With(hsMaxValueCol +: dsWeightV +: dsHSCols)
-    val s = Select(idCol +: dsV +: dsWeightV.name +: Nil)
-    val pw = PreWhere(F.equals(qCol, literal(queryColValue)))
+    val idsV = groupArray(qCol).as(Some("ids_v"))
+
+    val w = With(hsMaxValueCol +: dsWeightV +: dsHSCols :+ dsV :+ dsVWeighted :+ overallHS :+ idsV)
+    val s = Select(idCol.name +: overallHS.name +: dsV.name +: idsV.name +: Nil)
     val f = From(Column(table))
-    Query(w, s, f, pw)
+
+    val expansionQuery = expansionTable.map(lut => {
+      val expCol = F.joinGet(lut.name, lut.field.get, qColValueCol).as(lut.field)
+      val neighbourCol = expCol.name.as(Some("neighbour"))
+      val innerSel = Query(Select(expCol +: Nil), ArrayJoin(neighbourCol))
+      val sel = Query(Select(neighbourCol.name +: Nil), From(innerSel.toColumn)).toColumn
+      val inn = F.in(qCol, sel)
+      F.or(F.equals(qCol, qColValueCol), inn)
+    })
+
+    val pw = PreWhere(expansionQuery.getOrElse(F.equals(qCol, qColValueCol)))
+    val g = GroupBy(idCol +: Nil)
+    val h = Having(F.greater(overallHS.name, literal(0.0)))
+    val o = OrderBy(overallHS.name.desc +: Nil)
+    Query(w, s, f, pw, g, h, o)
   }
 }
