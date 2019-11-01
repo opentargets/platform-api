@@ -43,11 +43,9 @@ object Harmonic {
       but it is a temporal action although still coming from years ago.
       There is a will to remove it let's see if that happens
      */
-    val ga = if (propagateCondition.isDefined) {
-      groupArrayIf(col.name, propagateCondition.get)
-    } else {
-      groupArray(col.name)
-    }
+    val ga = propagateCondition
+      .flatMap(x => Some(groupArrayIf(col.name, x)))
+      .getOrElse(groupArray(col.name))
 
     val dsV = arraySlice(arrayReverseSort(flatten(ga)),1, maxVectorElementsDefault)
       .as(colName)
