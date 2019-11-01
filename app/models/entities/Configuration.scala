@@ -13,11 +13,22 @@ object Configuration {
 
   case class LUTableSettings(label: String, name: String, key: String, field: Option[String])
   case class NetworkSettings(lut: LUTableSettings, networks: Seq[LUTableSettings])
-  case class TargetSettings(lut: LUTableSettings, networks: Seq[LUTableSettings])
-  case class DiseaseSettings(lut: LUTableSettings, networks: Seq[LUTableSettings])
+  //      association {
+  //        label = "Association table for targets"
+  //        name = "ot.aotf_t"
+  //        key = "target_id"
+  //      }
+
+  case class AssociationSettings(label: String, name: String, key: String)
+  case class TargetSettings(associations: AssociationSettings,
+                            lut: LUTableSettings,
+                            networks: Seq[LUTableSettings])
+  case class DiseaseSettings(associations: AssociationSettings,
+                             lut: LUTableSettings,
+                             networks: Seq[LUTableSettings])
 
   case class DatasourceSettings(id: String, weight: Double)
-  case class HarmonicSettings(tableName: String, pExponent: Int, datasources: Seq[DatasourceSettings])
+  case class HarmonicSettings(pExponent: Int, datasources: Seq[DatasourceSettings])
 
   case class ClickhouseSettings(target: TargetSettings, disease: DiseaseSettings, harmonic: HarmonicSettings)
 
@@ -31,6 +42,7 @@ object Configuration {
     implicit val esSettingsImp = Json.reads[ElasticsearchSettings]
 
     implicit val luTableImp = Json.reads[LUTableSettings]
+    implicit val associationSettingsImp = Json.format[AssociationSettings]
     implicit val datasourceSettingsImp = Json.format[DatasourceSettings]
     implicit val harmonicSettingsImp = Json.reads[HarmonicSettings]
     implicit val networkSettingsImp = Json.reads[NetworkSettings]

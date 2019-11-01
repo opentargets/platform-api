@@ -46,8 +46,9 @@ class DatabaseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: OTS
     // select needs target_id
     val expandedByLUT: Option[LUTableSettings] = expandedBy.flatMap(x => diseaseNetworks.get(x))
 
-    val harmonicQ = Harmonic("target_id", "disease_id", id,
-      config.clickhouse.harmonic.tableName + "_d",
+    val harmonicQ = Harmonic(config.clickhouse.target.associations.key,
+      config.clickhouse.disease.associations.key, id,
+      config.clickhouse.disease.associations.name,
       datasourceSettings,
       expandedByLUT,
       pagination)
@@ -56,7 +57,6 @@ class DatabaseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: OTS
       sql"""#${harmonicQ.rep}""".as[Association]
 
     logger.debug(harmonicQ.toString)
-    println(harmonicQ.toString)
 
     db.run(plainQ.asTry).map {
       case Success(v) => v
@@ -78,8 +78,9 @@ class DatabaseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: OTS
     // select needs target_id
     val expandedByLUT: Option[LUTableSettings] = expandedBy.flatMap(x => targetNetworks.get(x))
 
-    val harmonicQ = Harmonic("disease_id", "target_id", id,
-      config.clickhouse.harmonic.tableName + "_t",
+    val harmonicQ = Harmonic(config.clickhouse.disease.associations.key,
+      config.clickhouse.target.associations.key, id,
+      config.clickhouse.target.associations.name,
       datasourceSettings,
       expandedByLUT,
       pagination)
@@ -87,8 +88,7 @@ class DatabaseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: OTS
     val plainQ =
       sql"""#${harmonicQ.rep}""".as[Association]
 
-//    logger.debug(harmonicQ.toString)
-    println(harmonicQ.toString)
+    logger.debug(harmonicQ.toString)
 
     db.run(plainQ.asTry).map {
       case Success(v) => v
