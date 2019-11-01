@@ -1,6 +1,7 @@
 package models.entities
 
 import com.sksamuel.elastic4s.requests.searches.SearchHit
+import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
@@ -33,6 +34,7 @@ object AltSearchResults {
 }
 
 object SearchResult {
+  val logger = Logger(this.getClass)
   object JSONImplicits {
     implicit val searchResultAggsCategoryImpW = Json.writes[models.entities.SearchResultAggCategory]
     implicit val searchResultAggsEntityImpW = Json.writes[models.entities.SearchResultAggEntity]
@@ -66,7 +68,7 @@ object SearchResult {
     import SearchResult.JSONImplicits._
     val source = (__ \ '_source).json.pick
     jObj.transform(source).asOpt.map(obj => {
-//      println(Json.prettyPrint(obj))
+      logger.debug(Json.prettyPrint(obj))
       obj.as[SearchResult]
     })
   }

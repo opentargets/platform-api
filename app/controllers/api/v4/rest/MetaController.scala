@@ -8,6 +8,9 @@ import models.entities.HealthCheck.JSONImplicits._
 import play.api.libs.json.Json
 import play.api.mvc._
 
+import models.entities.Harmonic.Association
+import models.entities.Harmonic.Association.JSONImplicits._
+
 import scala.concurrent.ExecutionContext
 
 @Singleton

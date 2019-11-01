@@ -14,11 +14,13 @@ import com.sksamuel.elastic4s.{ElasticClient, RequestFailure, RequestSuccess, Re
 import models.entities.Configuration.ElasticsearchEntity
 import models.entities._
 import models.entities.SearchResult.JSONImplicits._
+import play.api.Logger
 import play.api.libs.json.{JsArray, JsError, JsPath, JsSuccess, JsValue, Json}
 
 import scala.concurrent.Future
 
 class ElasticRetriever(client: ElasticClient) {
+  val logger = Logger(this.getClass)
   import com.sksamuel.elastic4s.ElasticDsl._
   def getIds[A](esIndex: String, ids: Seq[String], buildF: JsValue => Option[A]): Future[IndexedSeq[A]] = {
     ids match {
@@ -89,14 +91,14 @@ class ElasticRetriever(client: ElasticClient) {
       client.execute {
         val aggregations =
           search(esIndices) query (fnQueries.head) aggs(aggFns) size(0)
-//        println(client.show(aggregations))
+        logger.debug(client.show(aggregations))
         aggregations trackTotalHits(true)
       }.zip {
         client.execute {
           val hits =
             search(esIndices) query (mainQuery) start (limitClause._1) limit (limitClause._2) trackTotalHits(true)
 
-//          println(client.show(hits))
+          logger.debug(client.show(hits))
           hits
         }
       }.map {
@@ -105,15 +107,15 @@ class ElasticRetriever(client: ElasticClient) {
           val aggs = aggsJ.validateOpt[SearchResultAggs] match {
             case JsSuccess(value, _) => value
             case JsError(errors) =>
-              errors.foreach(println)
+              logger.error(errors.mkString("", "\n", ""))
               None
           }
 
           if (hits.isSuccess) {
-//            println(hits.result.totalHits)
+            logger.debug(s"total hits ${hits.result.totalHits}")
             AltSearchResults(hits.result.totalHits, hits.result.to[SearchResult], aggs)
           } else {
-            println(hits.error)
+            logger.error(hits.error.toString)
             AltSearchResults.empty
           }
       }
@@ -163,7 +165,7 @@ class ElasticRetriever(client: ElasticClient) {
       client.execute {
         val aggregations =
           search(esIndices) query (fnQueries.head) aggs(aggFns) size(0)
-        //        println(client.show(aggregations))
+        logger.debug(client.show(aggregations))
         aggregations trackTotalHits(true)
       }.zip {
         client.execute {
@@ -171,7 +173,7 @@ class ElasticRetriever(client: ElasticClient) {
             search(esIndices) query (mainQuery) start (limitClause._1) limit (limitClause._2) trackTotalHits(true)
           )
           // TODO remove it
-//          println(client.show(mhits))
+          logger.debug(client.show(mhits))
           mhits
         }
       }.map {
@@ -180,7 +182,7 @@ class ElasticRetriever(client: ElasticClient) {
           val aggs = aggsJ.validateOpt[SearchResultAggs] match {
             case JsSuccess(value, _) => value
             case JsError(errors) =>
-              errors.foreach(println)
+              logger.error(errors.mkString("", "\n", ""))
               None
           }
 

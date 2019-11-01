@@ -12,9 +12,9 @@ import scala.concurrent._
 import scala.util.{Failure, Success}
 import models.entities.Configuration._
 import models.entities.Configuration.JSONImplicits._
-
 import Entities._
 import Entities.JSONImplicits._
+import models.entities.Harmonic.Association
 import models.entities._
 import models.entities.HealthCheck.JSONImplicits._
 import play.api.db.slick.DatabaseConfigProvider
@@ -65,4 +65,18 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
   def search(qString: String, pagination: Option[Pagination] = Option(Pagination.mkDefault),
              entities: Seq[ElasticsearchEntity] = defaultESSettings.entities): Future[SearchResults] =
     esRetriever.getSearchResultSet(entities, qString, pagination.get)
+
+  def getAssociationsDiseaseFixed(id: String, expansionId: Option[String], pagination: Pagination): Future[Vector[Association]] = {
+    dbRetriever
+      .computeAssociationsDiseaseFixed(id,
+        expansionId,
+        defaultOTSettings.clickhouse.harmonic.datasources, pagination)
+  }
+
+  def getAssociationsTargetFixed(id: String, expansionId: Option[String], pagination: Pagination): Future[Vector[Association]] = {
+    dbRetriever
+      .computeAssociationsTargetFixed(id,
+        expansionId,
+        defaultOTSettings.clickhouse.harmonic.datasources, pagination)
+  }
 }

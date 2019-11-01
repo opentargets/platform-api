@@ -17,7 +17,7 @@ object Configuration {
   case class DiseaseSettings(lut: LUTableSettings, networks: Seq[LUTableSettings])
 
   case class DatasourceSettings(id: String, weight: Double)
-  case class HarmonicSettings(pExponent: Int, datasources: Seq[DatasourceSettings])
+  case class HarmonicSettings(tableName: String, pExponent: Int, datasources: Seq[DatasourceSettings])
 
   case class ClickhouseSettings(target: TargetSettings, disease: DiseaseSettings, harmonic: HarmonicSettings)
 

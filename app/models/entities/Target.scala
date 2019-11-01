@@ -1,5 +1,6 @@
 package models.entities
 
+import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
@@ -18,6 +19,8 @@ case class Target(id: String,
                  )
 
 object Target {
+  val logger = Logger(this.getClass)
+
   object JSONImplicits {
     implicit val proteinImpW = Json.format[models.entities.Protein]
     implicit val genomicLocationImpW = Json.format[models.entities.GenomicLocation]
@@ -31,7 +34,7 @@ object Target {
     import Target.JSONImplicits._
     val source = (__ \ '_source).json.pick
     jObj.transform(source).asOpt.map(obj => {
-//      println(Json.prettyPrint(obj))
+      logger.debug(Json.prettyPrint(obj))
       obj.as[Target]
     })
   }

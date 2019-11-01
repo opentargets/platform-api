@@ -18,6 +18,9 @@ GET     /api/v4/graphql/browser                controllers.api.v4.graphql.GQLSch
 GET     /api/v4/rest/meta/info               controllers.api.v4.rest.MetaController.meta
 GET     /api/v4/rest/meta/health             controllers.api.v4.rest.MetaController.healthcheck
 
+GET     /api/v4/rest/associations/target/:id    controllers.api.v4.rest.AssociationController.byTargetId(id, expansionId: Option[String] ?= None, index: Int ?= 0, size: Int ?= 25)
+GET     /api/v4/rest/associations/disease/:id    controllers.api.v4.rest.AssociationController.byDiseaseId(id, expansionId: Option[String] ?= None, index: Int ?= 0, size: Int ?= 25)
+
 POST    /api/v4/rest/targets                 controllers.api.v4.rest.TargetController.byIds(ids: Seq[String] ?= Seq.empty)
 GET     /api/v4/rest/targets                 controllers.api.v4.rest.TargetController.byIds(ids: Seq[String] ?= Seq.empty)
 GET     /api/v4/rest/targets/:id             controllers.api.v4.rest.TargetController.byId(id: String)

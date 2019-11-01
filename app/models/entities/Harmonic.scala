@@ -1,12 +1,31 @@
 package models.entities
+import clickhouse.rep.SeqRep._
+import clickhouse.rep.SeqRep.Implicits._
+
 import scala.math.pow
 import elesecu._
 import elesecu.Column._
 import elesecu.Functions._
 import elesecu.{Functions => F}
 import models.entities.Configuration.{DatasourceSettings, LUTableSettings}
+import play.api.libs.json.Json
+import slick.jdbc.GetResult
 
 object Harmonic {
+  case class Association(id: String, score: Double, scorePerDS: Vector[Double], ids: Vector[String])
+
+  object Association {
+    object DBImplicits {
+      implicit val getAssociationRowFromDB: GetResult[Association] = {
+        GetResult(r => Association(r.<<, r.<<,DSeqRep(r.<<) ,StrSeqRep(r.<<)))
+      }
+    }
+
+    object JSONImplicits {
+      implicit val AssociationImp = Json.format[Association]
+    }
+  }
+
   private val maxVectorElementsDefault: Int = 100
   private val pExponentDefault: Int = 2
 
@@ -45,8 +64,7 @@ object Harmonic {
             table: String,
             datasources: Seq[DatasourceSettings],
             expansionTable: Option[LUTableSettings],
-            limit: Int,
-            offset: Int): Query = {
+            pagination: Pagination): Query = {
     val idCol = Column(fixedCol)
     val qColValueCol = literal(queryColValue)
     val qCol = Column(queryColName)
@@ -95,7 +113,7 @@ object Harmonic {
     val g = GroupBy(idCol +: Nil)
     val h = Having(F.greater(overallHS.name, literal(0.0)))
     val o = OrderBy(overallHS.name.desc +: Nil)
-    val l = Limit(limit, offset)
+    val l = Limit(pagination.offset, pagination.size)
     Query(w, s, f, pw, g, h, o, l)
   }
 }
