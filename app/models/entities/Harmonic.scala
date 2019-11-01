@@ -12,12 +12,12 @@ import play.api.libs.json.Json
 import slick.jdbc.GetResult
 
 object Harmonic {
-  case class Association(id: String, score: Double, scorePerDS: Vector[Double], ids: Vector[String])
+  case class Association(id: String, score: Double, scorePerDS: Vector[Double])
 
   object Association {
     object DBImplicits {
       implicit val getAssociationRowFromDB: GetResult[Association] = {
-        GetResult(r => Association(r.<<, r.<<,DSeqRep(r.<<) ,StrSeqRep(r.<<)))
+        GetResult(r => Association(r.<<, r.<<,DSeqRep(r.<<)))
       }
     }
 
@@ -95,7 +95,8 @@ object Harmonic {
     val idsV = groupArray(qCol).as(Some("ids_v"))
 
     val w = With(hsMaxValueCol +: dsWeightV +: dsHSCols :+ dsV :+ dsVWeighted :+ overallHS :+ idsV)
-    val s = Select(idCol.name +: overallHS.name +: dsV.name +: idsV.name +: Nil)
+//    val s = Select(idCol.name +: overallHS.name +: dsV.name +: idsV.name +: Nil)
+    val s = Select(idCol.name +: overallHS.name +: dsV.name +: Nil)
     val f = From(Column(table))
 
     val expansionQuery = expansionTable.map(lut => {
