@@ -15,10 +15,10 @@
 
 
     <logger name="play" level="WARN"/>
-    <logger name="application" level="DEBUG"/>
+    <logger name="application" level="WARN"/>
     <logger name="org.apache" level="WARN"/>
     <logger name="httpclient" level="WARN"/>
-    <logger name="models" level="DEBUG"/>
+    <logger name="models" level="WARN"/>
 
     <!-- Off these ones as they are annoying, and anyway we manage configuration ourselves -->
     <logger name="com.avaje.ebean.config.PropertyMapLoader" level="OFF"/>
