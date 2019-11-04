@@ -1,7 +1,7 @@
 package models
 
 import clickhouse.ClickHouseProfile
-import models.entities.Configuration.{DatasourceSettings, LUTableSettings, NetworkSettings, OTSettings, TargetSettings}
+import models.entities.Configuration.{DatasourceSettings, LUTableSettings, OTSettings, TargetSettings}
 import models.entities._
 import play.api.Logger
 import play.api.libs.json.Reads._
