@@ -12,19 +12,7 @@ import play.api.libs.json.Json
 import slick.jdbc.GetResult
 
 object Harmonic {
-  case class Association(id: String, score: Double, scorePerDS: Vector[Double])
 
-  object Association {
-    object DBImplicits {
-      implicit val getAssociationRowFromDB: GetResult[Association] = {
-        GetResult(r => Association(r.<<, r.<<,DSeqRep(r.<<)))
-      }
-    }
-
-    object JSONImplicits {
-      implicit val AssociationImp = Json.format[Association]
-    }
-  }
 
   private val maxVectorElementsDefault: Int = 100
   private val pExponentDefault: Int = 2

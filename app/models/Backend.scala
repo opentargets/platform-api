@@ -14,7 +14,7 @@ import models.entities.Configuration._
 import models.entities.Configuration.JSONImplicits._
 import Entities._
 import Entities.JSONImplicits._
-import models.entities.Harmonic.Association
+import models.entities.Associations._
 import models.entities._
 import models.entities.HealthCheck.JSONImplicits._
 import play.api.db.slick.DatabaseConfigProvider
@@ -66,17 +66,23 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
              entities: Seq[ElasticsearchEntity] = defaultESSettings.entities): Future[SearchResults] =
     esRetriever.getSearchResultSet(entities, qString, pagination.get)
 
-  def getAssociationsDiseaseFixed(id: String, expansionId: Option[String], pagination: Pagination): Future[Vector[Association]] = {
+  def getAssociationsDiseaseFixed(id: String, expansionId: Option[String], pagination: Pagination): Future[Associations] = {
+    val expandedByLUT: Option[LUTableSettings] =
+      expansionId.flatMap(x => dbRetriever.diseaseNetworks.get(x))
+
     dbRetriever
       .computeAssociationsDiseaseFixed(id,
-        expansionId,
+        expandedByLUT,
         defaultOTSettings.clickhouse.harmonic.datasources, pagination)
   }
 
-  def getAssociationsTargetFixed(id: String, expansionId: Option[String], pagination: Pagination): Future[Vector[Association]] = {
+  def getAssociationsTargetFixed(id: String, expansionId: Option[String], pagination: Pagination): Future[Associations] = {
+    val expandedByLUT: Option[LUTableSettings] =
+      expansionId.flatMap(x => dbRetriever.targetNetworks.get(x))
+
     dbRetriever
       .computeAssociationsTargetFixed(id,
-        expansionId,
+        expandedByLUT,
         defaultOTSettings.clickhouse.harmonic.datasources, pagination)
   }
 }

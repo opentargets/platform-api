@@ -6,7 +6,9 @@ import models.Entities.TargetsBody
 import models.entities.APIErrorMessage.JSONImplicits._
 import models.entities.Target.JSONImplicits._
 import models.entities._
-import models.entities.Harmonic.Association.JSONImplicits._
+import models.entities.Configuration.JSONImplicits._
+import models.entities.Associations._
+import models.entities.Associations.JSONImplicits._
 import models.{Backend, GQLSchema}
 import play.api.libs.json._
 import play.api.mvc._
@@ -22,8 +24,8 @@ class AssociationController @Inject()(implicit ec: ExecutionContext, backend: Ba
     for {
       associations <- backend.getAssociationsTargetFixed(id, expansionId, Pagination(index, size))
     } yield associations match {
-      case _ if associations.isEmpty => NotFound(Json.toJson(APIErrorMessage(NOT_FOUND, s"No associations for the target $id")))
-      case v if associations.nonEmpty => Ok(Json.toJson(v))
+      case _ if associations.rows.isEmpty => NotFound(Json.toJson(APIErrorMessage(NOT_FOUND, s"No associations for the target $id")))
+      case v if associations.rows.nonEmpty => Ok(Json.toJson(v))
     }
   }
 
@@ -31,8 +33,12 @@ class AssociationController @Inject()(implicit ec: ExecutionContext, backend: Ba
     for {
       associations <- backend.getAssociationsDiseaseFixed(id, expansionId, Pagination(index, size))
     } yield associations match {
-      case _ if associations.isEmpty => NotFound(Json.toJson(APIErrorMessage(NOT_FOUND, s"No associations for the disease $id")))
-      case v if associations.nonEmpty => Ok(Json.toJson(v))
+      case _ if associations.rows.isEmpty => NotFound(Json.toJson(APIErrorMessage(NOT_FOUND, s"No associations for the disease $id")))
+      case v if associations.rows.nonEmpty => Ok(Json.toJson(v))
     }
+  }
+
+  def getMetaData = Action {
+    Ok(Json.toJson(backend.defaultOTSettings.clickhouse))
   }
 }

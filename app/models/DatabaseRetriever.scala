@@ -12,18 +12,25 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 import elesecu._
-import models.entities.Harmonic.Association
-import models.entities.Harmonic.Association.DBImplicits._
+import elesecu.{Query => Q}
+import models.entities.Harmonic._
+import models.entities.Associations._
+import models.entities.Network.DBImplicits._
+import models.entities.Associations.DBImplicits._
+import slick.dbio.DBIOAction
+import slick.jdbc.SQLActionBuilder
 
 class DatabaseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: OTSettings) {
+  import dbConfig.profile.api._
+
+  implicit private def toSQL(q: Q): SQLActionBuilder = sql"""#${q.rep}"""
+
   val db = dbConfig.db
   val logger = Logger(this.getClass)
   val chSettings = config.clickhouse
   val datasources = chSettings.harmonic.datasources.toVector
   val diseaseNetworks = chSettings.disease.networks.map(x => x.name -> x).toMap
   val targetNetworks = chSettings.target.networks.map(x => x.name -> x).toMap
-
-  import dbConfig.profile.api._
 
   def getDatasourceSettings: Future[Vector[DatasourceSettings]] =
     Future.successful(datasources)
@@ -34,35 +41,13 @@ class DatabaseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: OTS
   def getDiseaseNetworkList: Future[Vector[LUTableSettings]] =
     Future.successful(chSettings.disease.networks.toVector)
 
-  /** compute all associations for a disease specified by its `id`
-   * and the network expansion method by `expandedBy` field which has to
-   * be one of the names you can find in the configuration file in the section
-   * ot.clickhouse.disease.networks field name
-   * */
-  def computeAssociationsDiseaseFixed(id: String, expandedBy: Option[String],
-                                      datasourceSettings: Seq[DatasourceSettings],
-                                      pagination: Pagination) = {
-
-    // select needs target_id
-    val expandedByLUT: Option[LUTableSettings] = expandedBy.flatMap(x => diseaseNetworks.get(x))
-
-    val harmonicQ = Harmonic(config.clickhouse.target.associations.key,
-      config.clickhouse.disease.associations.key, id,
-      config.clickhouse.disease.associations.name,
-      datasourceSettings,
-      expandedByLUT,
-      pagination)
-
-    val plainQ =
-      sql"""#${harmonicQ.rep}""".as[Association]
-
-    logger.debug(harmonicQ.toString)
-
-    db.run(plainQ.asTry).map {
-      case Success(v) => v
-      case Failure(ex) =>
-        logger.error(ex.getMessage)
-        Vector.empty
+  def getNodeNeighbours(netSetttings: LUTableSettings, id: String): Future[Option[NetworkNode]] = {
+    val q = Network(netSetttings, id).as[NetworkNode]
+    db.run(q.asTry) map {
+      case Success(x) => x.headOption
+      case Failure(exception) =>
+        logger.error(exception.getMessage)
+        None
     }
   }
 
@@ -71,30 +56,60 @@ class DatabaseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: OTS
    * be one of the names you can find in the configuration file in the section
    * ot.clickhouse.disease.networks field name
    * */
-  def computeAssociationsTargetFixed(id: String, expandedBy: Option[String],
+  def computeAssociationsDiseaseFixed(id: String, expandedBy: Option[LUTableSettings],
                                       datasourceSettings: Seq[DatasourceSettings],
                                       pagination: Pagination) = {
 
-    // select needs target_id
-    val expandedByLUT: Option[LUTableSettings] = expandedBy.flatMap(x => targetNetworks.get(x))
+    val neighboursQ = expandedBy
+      .map(lut => Network(lut, id).as[NetworkNode].headOption).getOrElse(DBIOAction.successful(None))
+
+    val harmonicQ = Harmonic(config.clickhouse.target.associations.key,
+      config.clickhouse.disease.associations.key, id,
+      config.clickhouse.disease.associations.name,
+      datasourceSettings,
+      expandedBy,
+      pagination)
+
+    val plainQ = harmonicQ.as[Association]
+
+    logger.debug(harmonicQ.toString)
+
+    db.run(plainQ.asTry zip neighboursQ.asTry).map {
+      case (Success(v), Success(w)) =>
+        Associations(expandedBy, w, datasourceSettings, v)
+      case _ =>
+        logger.error("An exception was thrown after quering harmonic and neighbours")
+        Associations(expandedBy, None, datasourceSettings, Vector.empty)
+    }
+  }
+
+  /** compute all associations for a disease specified by its `id`
+   * and the network expansion method by `expandedBy` field which has to
+   * be one of the names you can find in the configuration file in the section
+   * ot.clickhouse.disease.networks field name
+   * */
+  def computeAssociationsTargetFixed(id: String, expandedBy: Option[LUTableSettings],
+                                      datasourceSettings: Seq[DatasourceSettings],
+                                      pagination: Pagination) = {
+
+    val neighboursQ = expandedBy
+      .map(lut => Network(lut, id).as[NetworkNode].headOption).getOrElse(DBIOAction.successful(None))
 
     val harmonicQ = Harmonic(config.clickhouse.disease.associations.key,
       config.clickhouse.target.associations.key, id,
       config.clickhouse.target.associations.name,
       datasourceSettings,
-      expandedByLUT,
-      pagination)
+      expandedBy,
+      pagination).as[Association]
 
-    val plainQ =
-      sql"""#${harmonicQ.rep}""".as[Association]
+    logger.debug(harmonicQ.statements.mkString("\n"))
 
-    logger.debug(harmonicQ.toString)
-
-    db.run(plainQ.asTry).map {
-      case Success(v) => v
-      case Failure(ex) =>
-        logger.error(ex.getMessage)
-        Vector.empty
+    db.run(harmonicQ.asTry zip neighboursQ.asTry).map {
+      case (Success(v), Success(w)) =>
+        Associations(expandedBy, w, datasourceSettings, v)
+      case _ =>
+        logger.error("An exception was thrown after quering harmonic and neighbours")
+        Associations(expandedBy, None, datasourceSettings, Vector.empty)
     }
   }
 }

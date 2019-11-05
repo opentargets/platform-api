@@ -44,17 +44,17 @@ object Configuration {
     implicit val metaVersionImp = Json.format[MetaVersion]
     implicit val metaImp = Json.format[Meta]
 
-    implicit val esEntities = Json.reads[ElasticsearchEntity]
-    implicit val esSettingsImp = Json.reads[ElasticsearchSettings]
+    implicit val esEntities = Json.format[ElasticsearchEntity]
+    implicit val esSettingsImp = Json.format[ElasticsearchSettings]
 
-    implicit val luTableImp = Json.reads[LUTableSettings]
+    implicit val luTableImp = Json.format[LUTableSettings]
     implicit val associationSettingsImp = Json.format[AssociationSettings]
     implicit val datasourceSettingsImp = Json.format[DatasourceSettings]
-    implicit val harmonicSettingsImp = Json.reads[HarmonicSettings]
-    implicit val targetSettingsImp = Json.reads[TargetSettings]
-    implicit val diseaseSettingsImp = Json.reads[DiseaseSettings]
-    implicit val clickhouseSettingsImp = Json.reads[ClickhouseSettings]
+    implicit val harmonicSettingsImp = Json.format[HarmonicSettings]
+    implicit val targetSettingsImp = Json.format[TargetSettings]
+    implicit val diseaseSettingsImp = Json.format[DiseaseSettings]
+    implicit val clickhouseSettingsImp = Json.format[ClickhouseSettings]
 
-    implicit val otSettingsImp = Json.reads[OTSettings]
+    implicit val otSettingsImp = Json.format[OTSettings]
   }
 }
