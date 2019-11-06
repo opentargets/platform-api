@@ -49,7 +49,15 @@ trait GQLEntities extends GQLArguments {
   // howto doc https://sangria-graphql.org/learn/#macro-based-graphql-type-derivation
   implicit val proteinImp = deriveObjectType[Backend, Protein]()
   implicit val genomicLocationImp = deriveObjectType[Backend, GenomicLocation]()
-  implicit val targetImp = deriveObjectType[Backend, Target]()
+  implicit lazy val targetImp: ObjectType[Backend, Target] = deriveObjectType(
+    AddFields(
+      Field("associationsOnTheFly", associationsImp,
+        description = Some("Associations for a fixed target"),
+        arguments = networkExpansionId :: pageArg :: Nil,
+        resolve = ctx =>
+          ctx.ctx.getAssociationsTargetFixed(ctx.value.id,
+            ctx.arg(networkExpansionId), ctx.arg(pageArg)))
+  ))
 
   // drug
   implicit val drugHasId = HasId[Drug, String](_.id)
@@ -71,21 +79,21 @@ trait GQLEntities extends GQLArguments {
   lazy val msearchResultType = UnionType("MSearchResultType", types = List(targetImp, drugImp))
 
   // howto doc https://sangria-graphql.org/learn/#macro-based-graphql-type-derivation
-  implicit val linkedDiseasesImp = deriveObjectType[Backend, LinkedDiseases]()
-  implicit val linkedTargetsImp = deriveObjectType[Backend, LinkedTargets](
+  implicit lazy val linkedDiseasesImp = deriveObjectType[Backend, LinkedDiseases]()
+  implicit lazy val linkedTargetsImp = deriveObjectType[Backend, LinkedTargets](
     ReplaceField("rows", Field("rows", ListType(targetImp), Some("Target List"),
       resolve = r => targetsFetcher.deferSeq(r.value.rows)))
   )
 
-  implicit val drugReferenceImp = deriveObjectType[Backend, DrugReference]()
-  implicit val mechanismOfActionRowImp = deriveObjectType[Backend, MechanismOfActionRow](
+  implicit lazy val drugReferenceImp = deriveObjectType[Backend, DrugReference]()
+  implicit lazy val mechanismOfActionRowImp = deriveObjectType[Backend, MechanismOfActionRow](
     ReplaceField("targets", Field("targets", ListType(targetImp), Some("Target List"),
       resolve = r => targetsFetcher.deferSeq(r.value.targets)))
   )
 
-  implicit val mechanismOfActionImp = deriveObjectType[Backend, MechanismsOfAction]()
-  implicit val withdrawnNoticeImp = deriveObjectType[Backend, WithdrawnNotice]()
-  implicit val drugImp = deriveObjectType[Backend, Drug]()
+  implicit lazy val mechanismOfActionImp = deriveObjectType[Backend, MechanismsOfAction]()
+  implicit lazy val withdrawnNoticeImp = deriveObjectType[Backend, WithdrawnNotice]()
+  implicit lazy val drugImp = deriveObjectType[Backend, Drug]()
 
   implicit val datasourceSettingsImp = deriveObjectType[Backend, DatasourceSettings]()
   implicit val networkSettingsImp = deriveObjectType[Backend, LUTableSettings]()
@@ -95,9 +103,9 @@ trait GQLEntities extends GQLArguments {
   implicit val harmonicSettingsImp = deriveObjectType[Backend, HarmonicSettings]()
   implicit val clickhouseSettingsImp = deriveObjectType[Backend, ClickhouseSettings]()
 
-  implicit val networkNodeImp = deriveObjectType[Backend, NetworkNode]()
-  implicit val associationImp = deriveObjectType[Backend, Association]()
-  implicit val associationsImp = deriveObjectType[Backend, Associations]()
+  implicit lazy val networkNodeImp = deriveObjectType[Backend, NetworkNode]()
+  implicit lazy val associationImp = deriveObjectType[Backend, Association]()
+  implicit lazy val associationsImp = deriveObjectType[Backend, Associations]()
 
   // implement associations
   val associationsObTheFlyGQLImp = ObjectType("AssociationsOnTheFly",
