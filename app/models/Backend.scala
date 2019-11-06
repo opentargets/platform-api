@@ -66,23 +66,25 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
              entities: Seq[ElasticsearchEntity] = defaultESSettings.entities): Future[SearchResults] =
     esRetriever.getSearchResultSet(entities, qString, pagination.get)
 
-  def getAssociationsDiseaseFixed(id: String, expansionId: Option[String], pagination: Pagination): Future[Associations] = {
+  def getAssociationsDiseaseFixed(id: String, expansionId: Option[String], pagination: Option[Pagination]): Future[Associations] = {
     val expandedByLUT: Option[LUTableSettings] =
       expansionId.flatMap(x => dbRetriever.diseaseNetworks.get(x))
 
+    val defaultPagination = Pagination.mkDefault
     dbRetriever
       .computeAssociationsDiseaseFixed(id,
         expandedByLUT,
-        defaultOTSettings.clickhouse.harmonic.datasources, pagination)
+        defaultOTSettings.clickhouse.harmonic.datasources, pagination.getOrElse(defaultPagination))
   }
 
-  def getAssociationsTargetFixed(id: String, expansionId: Option[String], pagination: Pagination): Future[Associations] = {
+  def getAssociationsTargetFixed(id: String, expansionId: Option[String], pagination: Option[Pagination]): Future[Associations] = {
     val expandedByLUT: Option[LUTableSettings] =
       expansionId.flatMap(x => dbRetriever.targetNetworks.get(x))
 
+    val defaultPagination = Pagination.mkDefault
     dbRetriever
       .computeAssociationsTargetFixed(id,
         expandedByLUT,
-        defaultOTSettings.clickhouse.harmonic.datasources, pagination)
+        defaultOTSettings.clickhouse.harmonic.datasources, pagination.getOrElse(defaultPagination))
   }
 }
