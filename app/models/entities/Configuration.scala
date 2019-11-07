@@ -4,12 +4,14 @@ import models.entities
 import play.api.libs.json.Json
 
 object Configuration {
-  case class MetaVersion(x: Int, y: Int, z: Int)
+
+  case class DataVersion(year: Int, month: Int, iteration: Int)
+  case class APIVersion(x: Int, y: Int, z: Int)
   /** meta class compile the name and version information for
    * the application. Also, it serves as a container to include
    * future fields
    * */
-  case class Meta(name: String, version: MetaVersion)
+  case class Meta(name: String, apiVersion: APIVersion, dataVersion: DataVersion)
 
   case class ElasticsearchEntity(name: String, index: String, searchIndex: String)
   /** elasticsearch settings class set capture its configuration and the entities are
@@ -41,7 +43,8 @@ object Configuration {
    * from Json.format Json.reads and Json.writes
    * */
   object JSONImplicits {
-    implicit val metaVersionImp = Json.format[MetaVersion]
+    implicit val metaDataVersionImp = Json.format[DataVersion]
+    implicit val metaAPIVersionImp = Json.format[APIVersion]
     implicit val metaImp = Json.format[Meta]
 
     implicit val esEntities = Json.format[ElasticsearchEntity]

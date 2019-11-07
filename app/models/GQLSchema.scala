@@ -11,7 +11,7 @@ import sangria.schema.AstSchemaBuilder._
 import sangria.util._
 import entities._
 import entities.Configuration.JSONImplicits._
-import models.entities.Configuration.{AssociationSettings, ClickhouseSettings, DatasourceSettings, DiseaseSettings, HarmonicSettings, LUTableSettings, Meta, MetaVersion, TargetSettings}
+import models.entities.Configuration._
 import sangria.execution.deferred._
 
 trait GQLArguments {
@@ -28,7 +28,8 @@ trait GQLArguments {
 }
 
 trait GQLMeta {
-  implicit val metaVersionImp = deriveObjectType[Backend, MetaVersion]()
+  implicit val metaDataVersionImp = deriveObjectType[Backend, DataVersion]()
+  implicit val metaAPIVersionImp = deriveObjectType[Backend, APIVersion]()
   implicit val metaImp = deriveObjectType[Backend, Meta]()
 }
 
