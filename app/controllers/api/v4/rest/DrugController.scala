@@ -2,14 +2,18 @@ package controllers.api.v4.rest
 
 import javax.inject._
 import models.Entities.JSONImplicits._
-import models.Entities.TargetsBody
+import models.Entities._
 import models.entities._
 import models.entities.APIErrorMessage.JSONImplicits._
 import models.entities.Drug.JSONImplicits._
+import models.entities.Violations.InputParameterCheckError
 import models.{Backend, GQLSchema}
 import play.api.libs.json._
 import play.api.mvc._
+import sangria.ast.Document
+import sangria.execution.{ErrorWithResolver, ExceptionHandler, Executor, HandledException, MaxQueryDepthReachedError, QueryAnalysisError, QueryReducer}
 import sangria.execution.deferred.FetcherContext
+import sangria.marshalling.playJson._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -24,6 +28,26 @@ class DrugController @Inject()(implicit ec: ExecutionContext, backend: Backend, 
     Vector(GQLSchema.drugsFetcher,
       GQLSchema.targetsFetcher))
 
+//  private lazy val exceptionHandler = ExceptionHandler {
+//    case (_, error @ TooComplexQueryError) => HandledException(error.getMessage)
+//    case (_, error @ MaxQueryDepthReachedError(_)) => HandledException(error.getMessage)
+//    case (_, error @ InputParameterCheckError(_)) => HandledException(error.getMessage)
+//  }
+//  private def queryDrug(drugId: String) = {
+//    Executor.execute(GQLSchema.schema, Document() , backend,
+//      operationName = Some("query"),
+//      variables = Json.obj(),
+//      deferredResolver = GQLSchema.resolvers,
+//      exceptionHandler = exceptionHandler,
+//      queryReducers = List(
+//        QueryReducer.rejectMaxDepth[Backend](3),
+//        QueryReducer.rejectComplexQueries[Backend](4000, (_, _) => TooComplexQueryError)))
+//      .map(Ok(_))
+//      .recover {
+//        case error: QueryAnalysisError => BadRequest(error.resolveError)
+//        case error: ErrorWithResolver => InternalServerError(error.resolveError)
+//      }
+//  }
   // example from here https://github.com/nemoo/play-slick3-example/blob/master/app/controllers/Application.scala
   def byId(id:String) = Action.async { req =>
 

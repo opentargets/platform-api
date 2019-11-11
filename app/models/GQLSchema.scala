@@ -10,8 +10,8 @@ import sangria.marshalling.playJson._
 import sangria.schema.AstSchemaBuilder._
 import sangria.util._
 import entities._
+import entities.Configuration._
 import entities.Configuration.JSONImplicits._
-import models.entities.Configuration._
 import sangria.execution.deferred._
 
 trait GQLArguments {
@@ -47,6 +47,13 @@ trait GQLEntities extends GQLArguments {
       ctx.getTargets(ids)
     })
 
+  implicit val datasourceSettingsJsonImp = Json.format[DatasourceSettings]
+  val datasourceSettingsInputImp = deriveInputObjectType[DatasourceSettings](
+    InputObjectTypeName("DatasourceSettingsInput")
+  )
+  val datasourceSettingsListArg = Argument("datasources",
+     OptionInputType(ListInputType(datasourceSettingsInputImp)))
+
   // howto doc https://sangria-graphql.org/learn/#macro-based-graphql-type-derivation
   implicit val proteinImp = deriveObjectType[Backend, Protein]()
   implicit val genomicLocationImp = deriveObjectType[Backend, GenomicLocation]()
@@ -54,10 +61,12 @@ trait GQLEntities extends GQLArguments {
     AddFields(
       Field("associationsOnTheFly", associationsImp,
         description = Some("Associations for a fixed target"),
-        arguments = networkExpansionId :: pageArg :: Nil,
+        arguments = datasourceSettingsListArg :: networkExpansionId :: pageArg :: Nil,
         resolve = ctx =>
           ctx.ctx.getAssociationsTargetFixed(ctx.value.id,
-            ctx.arg(networkExpansionId), ctx.arg(pageArg)))
+            ctx.arg(datasourceSettingsListArg),
+            ctx.arg(networkExpansionId),
+            ctx.arg(pageArg)))
   ))
 
   // drug
@@ -117,15 +126,19 @@ trait GQLEntities extends GQLArguments {
         resolve = _.ctx.defaultOTSettings.clickhouse),
       Field("byTargetFixed", associationsImp,
         description = Some("Associations for a fixed target"),
-        arguments = ensemblId :: networkExpansionId :: pageArg :: Nil,
+        arguments = ensemblId :: datasourceSettingsListArg :: networkExpansionId :: pageArg :: Nil,
         resolve = ctx =>
           ctx.ctx.getAssociationsTargetFixed(ctx.arg(ensemblId),
-            ctx.arg(networkExpansionId), ctx.arg(pageArg))),
+            ctx.arg(datasourceSettingsListArg),
+            ctx.arg(networkExpansionId),
+            ctx.arg(pageArg))),
       Field("byDiseaseFixed", associationsImp,
         description = Some("Associations for a fixed disease"),
-        arguments = efoId :: networkExpansionId :: pageArg :: Nil,
+        arguments = efoId :: datasourceSettingsListArg :: networkExpansionId :: pageArg :: Nil,
         resolve = ctx => ctx.ctx.getAssociationsDiseaseFixed(ctx.arg(efoId),
-          ctx.arg(networkExpansionId), ctx.arg(pageArg)))
+          ctx.arg(datasourceSettingsListArg),
+          ctx.arg(networkExpansionId),
+          ctx.arg(pageArg)))
     ))
 }
 

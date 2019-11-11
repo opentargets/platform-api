@@ -22,7 +22,7 @@ class AssociationController @Inject()(implicit ec: ExecutionContext, backend: Ba
 
   def byTargetId(id:String, expansionId: Option[String], index: Int, size: Int) = Action.async { req =>
     for {
-      associations <- backend.getAssociationsTargetFixed(id, expansionId, Some(Pagination(index, size)))
+      associations <- backend.getAssociationsTargetFixed(id, None, expansionId, Some(Pagination(index, size)))
     } yield associations match {
       case _ if associations.rows.isEmpty => NotFound(Json.toJson(APIErrorMessage(NOT_FOUND, s"No associations for the target $id")))
       case v if associations.rows.nonEmpty => Ok(Json.toJson(v))
@@ -31,7 +31,7 @@ class AssociationController @Inject()(implicit ec: ExecutionContext, backend: Ba
 
   def byDiseaseId(id:String, expansionId: Option[String], index: Int, size: Int) = Action.async { req =>
     for {
-      associations <- backend.getAssociationsDiseaseFixed(id, expansionId, Some(Pagination(index, size)))
+      associations <- backend.getAssociationsDiseaseFixed(id, None, expansionId, Some(Pagination(index, size)))
     } yield associations match {
       case _ if associations.rows.isEmpty => NotFound(Json.toJson(APIErrorMessage(NOT_FOUND, s"No associations for the disease $id")))
       case v if associations.rows.nonEmpty => Ok(Json.toJson(v))

@@ -66,25 +66,35 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
              entities: Seq[ElasticsearchEntity] = defaultESSettings.entities): Future[SearchResults] =
     esRetriever.getSearchResultSet(entities, qString, pagination.getOrElse(Pagination.mkDefault))
 
-  def getAssociationsDiseaseFixed(id: String, expansionId: Option[String], pagination: Option[Pagination]): Future[Associations] = {
+  def getAssociationsDiseaseFixed(id: String,
+                                  datasources: Option[Seq[DatasourceSettings]],
+                                  expansionId: Option[String],
+                                  pagination: Option[Pagination]): Future[Associations] = {
     val expandedByLUT: Option[LUTableSettings] =
       expansionId.flatMap(x => dbRetriever.diseaseNetworks.get(x))
 
     val defaultPagination = Pagination.mkDefault
+    val dsV = datasources.getOrElse(defaultOTSettings.clickhouse.harmonic.datasources)
     dbRetriever
       .computeAssociationsDiseaseFixed(id,
         expandedByLUT,
-        defaultOTSettings.clickhouse.harmonic.datasources, pagination.getOrElse(defaultPagination))
+        dsV,
+        pagination.getOrElse(defaultPagination))
   }
 
-  def getAssociationsTargetFixed(id: String, expansionId: Option[String], pagination: Option[Pagination]): Future[Associations] = {
+  def getAssociationsTargetFixed(id: String,
+                                 datasources: Option[Seq[DatasourceSettings]],
+                                 expansionId: Option[String],
+                                 pagination: Option[Pagination]): Future[Associations] = {
     val expandedByLUT: Option[LUTableSettings] =
       expansionId.flatMap(x => dbRetriever.targetNetworks.get(x))
 
     val defaultPagination = Pagination.mkDefault
+    val dsV = datasources.getOrElse(defaultOTSettings.clickhouse.harmonic.datasources)
     dbRetriever
       .computeAssociationsTargetFixed(id,
         expandedByLUT,
-        defaultOTSettings.clickhouse.harmonic.datasources, pagination.getOrElse(defaultPagination))
+        dsV,
+        pagination.getOrElse(defaultPagination))
   }
 }
