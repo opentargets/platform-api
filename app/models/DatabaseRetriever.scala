@@ -17,6 +17,8 @@ import models.entities.Harmonic._
 import models.entities.Associations._
 import models.entities.Network.DBImplicits._
 import models.entities.Associations.DBImplicits._
+import models.entities.Violations.{InputParameterCheckError, PaginationError}
+import sangria.validation.Violation
 import slick.dbio.DBIOAction
 import slick.jdbc.SQLActionBuilder
 
@@ -74,12 +76,17 @@ class DatabaseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: OTS
 
     logger.debug(harmonicQ.toString)
 
-    db.run(plainQ.asTry zip neighboursQ.asTry).map {
-      case (Success(v), Success(w)) =>
-        Associations(expandedBy, w, datasourceSettings, v)
-      case _ =>
-        logger.error("An exception was thrown after quering harmonic and neighbours")
-        Associations(expandedBy, None, datasourceSettings, Vector.empty)
+    if (pagination.hasValidRange()) {
+      db.run(plainQ.asTry zip neighboursQ.asTry).map {
+        case (Success(v), Success(w)) =>
+          Associations(expandedBy, w, datasourceSettings, v)
+        case _ =>
+          logger.error("An exception was thrown after quering harmonic and neighbours")
+          Associations(expandedBy, None, datasourceSettings, Vector.empty)
+      }
+    } else {
+      Future.failed(InputParameterCheckError(
+        Vector(PaginationError(pagination.size))))
     }
   }
 

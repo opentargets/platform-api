@@ -92,13 +92,13 @@ trait GQLEntities extends GQLArguments {
   implicit lazy val linkedDiseasesImp = deriveObjectType[Backend, LinkedDiseases]()
   implicit lazy val linkedTargetsImp = deriveObjectType[Backend, LinkedTargets](
     ReplaceField("rows", Field("rows", ListType(targetImp), Some("Target List"),
-      resolve = r => targetsFetcher.deferSeq(r.value.rows)))
+      resolve = r => targetsFetcher.deferSeqOpt(r.value.rows)))
   )
 
   implicit lazy val drugReferenceImp = deriveObjectType[Backend, DrugReference]()
   implicit lazy val mechanismOfActionRowImp = deriveObjectType[Backend, MechanismOfActionRow](
     ReplaceField("targets", Field("targets", ListType(targetImp), Some("Target List"),
-      resolve = r => targetsFetcher.deferSeq(r.value.targets)))
+      resolve = r => targetsFetcher.deferSeqOpt(r.value.targets)))
   )
 
   implicit lazy val mechanismOfActionImp = deriveObjectType[Backend, MechanismsOfAction]()

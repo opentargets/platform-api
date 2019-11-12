@@ -48,6 +48,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
   def getTargets(ids: Seq[String]): Future[IndexedSeq[Target]] = {
     val targetIndexName = defaultESSettings.entities
       .find(_.name == "target").map(_.index).getOrElse("targets")
+
     esRetriever.getIds(targetIndexName, ids, Target.fromJsValue)
   }
 
