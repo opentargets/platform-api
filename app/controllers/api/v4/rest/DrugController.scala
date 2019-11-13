@@ -171,7 +171,7 @@ class DrugController @Inject()(implicit ec: ExecutionContext,
     logger.debug(s"parsed document: ${drugsGQLQ.renderPretty}")
 
     Executor.execute(GQLSchema.schema, drugsGQLQ, backend,
-      variables = InputUnmarshaller.mapVars(Map("ids" → drugIds)),
+      variables = InputUnmarshaller.mapVars(Map("ids" -> drugIds)),
       deferredResolver = GQLSchema.resolvers,
       exceptionHandler = exceptionHandler,
       queryReducers = List(
@@ -188,7 +188,7 @@ class DrugController @Inject()(implicit ec: ExecutionContext,
     logger.debug(s"parsed document: ${drugGQLQ.renderPretty}")
 
     Executor.execute(GQLSchema.schema, drugGQLQ, backend,
-      variables = InputUnmarshaller.mapVars(Map("id" → drugId)),
+      variables = InputUnmarshaller.mapVars(Map("id" -> drugId)),
       deferredResolver = GQLSchema.resolvers,
       exceptionHandler = exceptionHandler,
       queryReducers = List(

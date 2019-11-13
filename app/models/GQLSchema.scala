@@ -42,7 +42,7 @@ trait GQLEntities extends GQLArguments {
 
   val targetsFetcherCache = FetcherCache.simple
   val targetsFetcher = Fetcher(
-    config = FetcherConfig.maxBatchSize(100).caching(targetsFetcherCache),
+    config = FetcherConfig.maxBatchSize(Configuration.batchSize).caching(targetsFetcherCache),
     fetch = (ctx: Backend, ids: Seq[String]) => {
       ctx.getTargets(ids)
     })
@@ -74,7 +74,7 @@ trait GQLEntities extends GQLArguments {
 
   val drugsFetcherCache = FetcherCache.simple
   val drugsFetcher = Fetcher(
-    config = FetcherConfig.maxBatchSize(100).caching(drugsFetcherCache),
+    config = FetcherConfig.maxBatchSize(Configuration.batchSize).caching(drugsFetcherCache),
     fetch = (ctx: Backend, ids: Seq[String]) => {
       ctx.getDrugs(ids)
     })

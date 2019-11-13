@@ -4,6 +4,7 @@ import models.entities
 import play.api.libs.json.Json
 
 object Configuration {
+  val batchSize = 100
 
   case class DataVersion(year: Int, month: Int, iteration: Int)
   case class APIVersion(x: Int, y: Int, z: Int)
