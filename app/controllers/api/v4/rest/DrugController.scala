@@ -31,12 +31,6 @@ class DrugController @Inject()(implicit ec: ExecutionContext,
   extends AbstractController(cc) {
   val logger = Logger(this.getClass)
 
-  private lazy val exceptionHandler = ExceptionHandler {
-    case (_, error @ TooComplexQueryError) => HandledException(error.getMessage)
-    case (_, error @ MaxQueryDepthReachedError(_)) => HandledException(error.getMessage)
-    case (_, error @ InputParameterCheckError(_)) => HandledException(error.getMessage)
-  }
-
   val drugsGQLQ =
     gql"""
         query drugsQuery($$ids: [String!]!) {
@@ -202,7 +196,7 @@ class DrugController @Inject()(implicit ec: ExecutionContext,
   }
 
   // example from here https://github.com/nemoo/play-slick3-example/blob/master/app/controllers/Application.scala
-  def byId(id:String) = Action.async { req =>
+  def byId(id:String) = Action.async { _ =>
 //    for {
 //      drugs <- GQLSchema.drugsFetcher.fetch(ctxD, Seq(id))
 //    } yield drugs.headOption match {
@@ -220,7 +214,7 @@ class DrugController @Inject()(implicit ec: ExecutionContext,
       case ("POST", Nil) =>
         req.body.asJson.map(_.as[TargetsBody]) match {
           case Some(body) =>
-            queryDrugs(ids)
+            queryDrugs(body.ids)
 
           case None => Future.successful(
             BadRequest(Json.toJson(APIErrorMessage(BAD_REQUEST,

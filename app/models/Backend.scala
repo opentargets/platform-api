@@ -31,10 +31,9 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
   /** return meta information loaded from ot.meta settings */
   lazy val getMeta: Meta = defaultOTSettings.meta
 
-  def getStatus(isOk: Boolean): HealthCheck = isOk match {
-    case true => HealthCheck(true, "All good!")
-    case false => HealthCheck(false, "Hmm, something wrong is going on here!")
-  }
+  def getStatus(isOk: Boolean): HealthCheck =
+    if (isOk) HealthCheck(true, "All good!")
+    else HealthCheck(false, "Hmm, something wrong is going on here!")
 
   lazy val getESClient = ElasticClient(JavaClient(
     ElasticProperties(s"http://${defaultESSettings.host}:${defaultESSettings.port}")))
