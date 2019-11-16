@@ -14,7 +14,7 @@
     </appender>
 
 
-    <logger name="play" level="WARN"/>
+    <logger name="play" level="DEBUG"/>
     <logger name="application" level="DEBUG"/>
     <logger name="org.apache" level="WARN"/>
     <logger name="httpclient" level="WARN"/>

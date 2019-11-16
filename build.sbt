@@ -5,7 +5,7 @@ organization := "io.opentargets"
 
 version := "latest"
 
-lazy val root = (project in file(".")).enablePlugins(PlayScala)
+lazy val root = (project in file(".")).enablePlugins(PlayScala, PlayLogback)
 
 scalaVersion := "2.12.9"
 maintainer := "ops@opentargets.org"
@@ -26,7 +26,7 @@ resolvers += Resolver.sonatypeRepo("releases")
 
 libraryDependencies += guice
 libraryDependencies += "com.github.pathikrit" %% "better-files" % "3.8.0"
-libraryDependencies += "org.apache.logging.log4j" %% "log4j-api-scala" % "11.0"
+// libraryDependencies += "org.apache.logging.log4j" %% "log4j-api-scala" % "11.0"
 libraryDependencies += "com.typesafe.slick" %% "slick" % "3.3.2"
 libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "4.0.3" % Test
 val playVersion = "2.7.3"
