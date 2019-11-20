@@ -14,7 +14,7 @@ class SearchController @Inject()(implicit ec: ExecutionContext, backend: Backend
 
   def search(q: String) = Action.async { req =>
     for {
-      res <- backend.search(q)
+      res <- backend.search(q, None)
     } yield Ok(Json.toJson(res))
   }
 }

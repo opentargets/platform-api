@@ -6,6 +6,8 @@ package models.entities
 case class Pagination(index: Int, size: Int) {
   lazy val offset: Int = toES._1
 
+  def hasValidRange(maxSize: Int = Pagination.sizeMax): Boolean = size <= maxSize
+
   val toSQL: String = (index, size) match {
     case (0, 0) => s"LIMIT ${Pagination.sizeDefault}"
     case (0, s) => s"LIMIT $s"
@@ -23,7 +25,7 @@ case class Pagination(index: Int, size: Int) {
 }
 
 object Pagination {
-  val sizeMax: Int = 10000
+  val sizeMax: Int = 5000
   val sizeDefault: Int = 25
   val indexDefault: Int = 0
   def mkDefault: Pagination = Pagination(indexDefault, sizeDefault)

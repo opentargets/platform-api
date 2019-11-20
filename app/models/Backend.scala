@@ -31,10 +31,9 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
   /** return meta information loaded from ot.meta settings */
   lazy val getMeta: Meta = defaultOTSettings.meta
 
-  def getStatus(isOk: Boolean): HealthCheck = isOk match {
-    case true => HealthCheck(true, "All good!")
-    case false => HealthCheck(false, "Hmm, something wrong is going on here!")
-  }
+  def getStatus(isOk: Boolean): HealthCheck =
+    if (isOk) HealthCheck(true, "All good!")
+    else HealthCheck(false, "Hmm, something wrong is going on here!")
 
   lazy val getESClient = ElasticClient(JavaClient(
     ElasticProperties(s"http://${defaultESSettings.host}:${defaultESSettings.port}")))
@@ -48,6 +47,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
   def getTargets(ids: Seq[String]): Future[IndexedSeq[Target]] = {
     val targetIndexName = defaultESSettings.entities
       .find(_.name == "target").map(_.index).getOrElse("targets")
+
     esRetriever.getIds(targetIndexName, ids, Target.fromJsValue)
   }
 
@@ -58,31 +58,43 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     esRetriever.getIds(drugIndexName, ids, Drug.fromJsValue)
   }
 
-  def altSearch(qString: String, pagination: Option[Pagination] = Option(Pagination.mkDefault),
+  def altSearch(qString: String, pagination: Option[Pagination],
                 entities: Seq[ElasticsearchEntity] = defaultESSettings.entities): Future[AltSearchResults] =
-    esRetriever.getAltSearchResultSet(entities, qString,pagination.get)
+    esRetriever.getAltSearchResultSet(entities, qString,pagination.getOrElse(Pagination.mkDefault))
 
-  def search(qString: String, pagination: Option[Pagination] = Option(Pagination.mkDefault),
+  def search(qString: String, pagination: Option[Pagination],
              entities: Seq[ElasticsearchEntity] = defaultESSettings.entities): Future[SearchResults] =
-    esRetriever.getSearchResultSet(entities, qString, pagination.get)
+    esRetriever.getSearchResultSet(entities, qString, pagination.getOrElse(Pagination.mkDefault))
 
-  def getAssociationsDiseaseFixed(id: String, expansionId: Option[String], pagination: Pagination): Future[Associations] = {
+  def getAssociationsDiseaseFixed(id: String,
+                                  datasources: Option[Seq[DatasourceSettings]],
+                                  expansionId: Option[String],
+                                  pagination: Option[Pagination]): Future[Associations] = {
     val expandedByLUT: Option[LUTableSettings] =
       expansionId.flatMap(x => dbRetriever.diseaseNetworks.get(x))
 
+    val defaultPagination = Pagination.mkDefault
+    val dsV = datasources.getOrElse(defaultOTSettings.clickhouse.harmonic.datasources)
     dbRetriever
       .computeAssociationsDiseaseFixed(id,
         expandedByLUT,
-        defaultOTSettings.clickhouse.harmonic.datasources, pagination)
+        dsV,
+        pagination.getOrElse(defaultPagination))
   }
 
-  def getAssociationsTargetFixed(id: String, expansionId: Option[String], pagination: Pagination): Future[Associations] = {
+  def getAssociationsTargetFixed(id: String,
+                                 datasources: Option[Seq[DatasourceSettings]],
+                                 expansionId: Option[String],
+                                 pagination: Option[Pagination]): Future[Associations] = {
     val expandedByLUT: Option[LUTableSettings] =
       expansionId.flatMap(x => dbRetriever.targetNetworks.get(x))
 
+    val defaultPagination = Pagination.mkDefault
+    val dsV = datasources.getOrElse(defaultOTSettings.clickhouse.harmonic.datasources)
     dbRetriever
       .computeAssociationsTargetFixed(id,
         expandedByLUT,
-        defaultOTSettings.clickhouse.harmonic.datasources, pagination)
+        dsV,
+        pagination.getOrElse(defaultPagination))
   }
 }

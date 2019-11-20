@@ -2,6 +2,7 @@ package controllers.api.v4.rest
 
 import javax.inject._
 import models.Backend
+import models.entities.Pagination
 import models.entities.SearchResult.JSONImplicits._
 import play.api.libs.json._
 import play.api.mvc._
@@ -14,7 +15,7 @@ class AltSearchController @Inject()(implicit ec: ExecutionContext, backend: Back
 
   def altSearch(q: String) = Action.async { req =>
     for {
-      res <- backend.altSearch(q)
+      res <- backend.altSearch(q, None)
     } yield Ok(Json.toJson(res))
   }
 }

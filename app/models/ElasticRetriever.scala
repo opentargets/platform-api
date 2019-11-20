@@ -29,7 +29,7 @@ class ElasticRetriever(client: ElasticClient) {
         val elems: Future[Response[SearchResponse]] = client.execute {
           search(esIndex).query {
             idsQuery(ids)
-          }
+          } limit(Configuration.batchSize)
         }
 
         elems.map {

@@ -11,6 +11,7 @@ import sangria.parser.{QueryParser, SyntaxError}
 
 import scala.concurrent._
 import scala.util.{Failure, Success}
+import models.Entities._
 
 @Singleton
 class GraphQLController @Inject()(implicit ec: ExecutionContext, dbTables: Backend, cc: ControllerComponents)
@@ -70,12 +71,4 @@ class GraphQLController @Inject()(implicit ec: ExecutionContext, dbTables: Backe
       case Failure(error) =>
         throw error
     }
-
-  lazy val exceptionHandler = ExceptionHandler {
-    case (_, error @ TooComplexQueryError) => HandledException(error.getMessage)
-    case (_, error @ MaxQueryDepthReachedError(_)) => HandledException(error.getMessage)
-    case (_, error @ InputParameterCheckError(_)) => HandledException(error.getMessage)
-  }
-
-  case object TooComplexQueryError extends Exception("Query is too expensive.")
 }

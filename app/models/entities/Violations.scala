@@ -1,6 +1,5 @@
 package models.entities
 
-import models.entities._
 import sangria.execution.{UserFacingError, WithViolations}
 import sangria.validation.{BaseViolation, Violation}
 
