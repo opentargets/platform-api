@@ -8,3 +8,6 @@ app/.metals/
 app/build.sbt
 app/project/
 lib/
+.metals/
+.bloop/
+project/metals.sbt
