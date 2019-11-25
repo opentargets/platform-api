@@ -4,3 +4,7 @@
 /project/project/
 /project/target/
 .idea/
+app/.metals/
+app/build.sbt
+app/project/
+lib/
