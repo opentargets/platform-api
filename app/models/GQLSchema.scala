@@ -19,9 +19,10 @@ trait GQLArguments {
   val pagination = deriveInputObjectType[Pagination]()
   val pageArg = Argument("page", OptionInputType(pagination))
   val queryString = Argument("queryString", StringType, description = "Query string")
-  val ensemblId = Argument("ensemblId", StringType, description = "Ensembl ID" )
   val efoId = Argument("efoId", StringType, description = "EFO ID" )
+  val efoIds = Argument("efoIds", ListInputType(StringType), description = "EFO ID" )
   val networkExpansionId = Argument("networkExpansionId", OptionInputType(StringType), description = "Network expansion ID")
+  val ensemblId = Argument("ensemblId", StringType, description = "Ensembl ID" )
   val ensemblIds = Argument("ensemblIds", ListInputType(StringType), description = "List of Ensembl IDs")
   val chemblId = Argument("chemblId", StringType, description = "Chembl ID" )
   val chemblIds = Argument("chemblIds", ListInputType(StringType), description = "List of Chembl IDs")
@@ -47,6 +48,16 @@ trait GQLEntities extends GQLArguments {
       ctx.getTargets(ids)
     })
 
+  // disease
+  implicit val diseaseHasId = HasId[Disease, String](_.id)
+
+  val diseasesFetcherCache = FetcherCache.simple
+  val diseasesFetcher = Fetcher(
+    config = FetcherConfig.maxBatchSize(Configuration.batchSize).caching(diseasesFetcherCache),
+    fetch = (ctx: Backend, ids: Seq[String]) => {
+      ctx.getDiseases(ids)
+    })
+
   implicit val datasourceSettingsJsonImp = Json.format[DatasourceSettings]
   val datasourceSettingsInputImp = deriveInputObjectType[DatasourceSettings](
     InputObjectTypeName("DatasourceSettingsInput")
@@ -68,6 +79,19 @@ trait GQLEntities extends GQLArguments {
             ctx.arg(networkExpansionId),
             ctx.arg(pageArg)))
   ))
+
+  // disease
+  implicit lazy val diseaseImp: ObjectType[Backend, Disease] = deriveObjectType(
+    AddFields(
+      Field("associationsOnTheFly", associationsImp,
+        description = Some("Associations for a fixed disease"),
+        arguments = datasourceSettingsListArg :: networkExpansionId :: pageArg :: Nil,
+        resolve = ctx =>
+          ctx.ctx.getAssociationsDiseaseFixed(ctx.value.id,
+            ctx.arg(datasourceSettingsListArg),
+            ctx.arg(networkExpansionId),
+            ctx.arg(pageArg)))
+    ))
 
   // drug
   implicit val drugHasId = HasId[Drug, String](_.id)
@@ -142,7 +166,7 @@ trait GQLEntities extends GQLArguments {
 }
 
 object GQLSchema extends GQLMeta with GQLEntities {
-  val resolvers = DeferredResolver.fetchers(targetsFetcher, drugsFetcher)
+  val resolvers = DeferredResolver.fetchers(targetsFetcher, drugsFetcher, diseasesFetcher)
 
   val searchResultsGQLImp = ObjectType("SearchResults",
     "Search results",
@@ -182,6 +206,15 @@ object GQLSchema extends GQLMeta with GQLEntities {
         arguments = ensemblId :: Nil,
         resolve = ctx => targetsFetcher.deferOpt(ctx.arg(ensemblId))),
       Field("targets", ListType(targetImp),
+        description = Some("Return Targets"),
+        arguments = ensemblIds :: Nil,
+        resolve = ctx => targetsFetcher.deferSeqOpt(ctx.arg(ensemblIds))),
+      // TODO!!!!!
+      Field("disease", OptionType(targetImp),
+        description = Some("Return a Target"),
+        arguments = ensemblId :: Nil,
+        resolve = ctx => targetsFetcher.deferOpt(ctx.arg(ensemblId))),
+      Field("diseases", ListType(targetImp),
         description = Some("Return Targets"),
         arguments = ensemblIds :: Nil,
         resolve = ctx => targetsFetcher.deferSeqOpt(ctx.arg(ensemblIds))),
