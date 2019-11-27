@@ -160,9 +160,16 @@ object GQLSchema extends GQLMeta with GQLEntities {
       Field("drugs", ListType(drugImp),
         description = Some("Return drugs"),
         resolve = ctx => drugsFetcher.deferSeqOpt(ctx.value.drugs.map(_.id))),
-      Field("topHit", OptionType(searchResultImp),
+      Field("topHit", OptionType(msearchResultType),
         Some("Top Hit"),
-        resolve = ctx => ctx.value.topHit)
+        resolve = ctx => {
+          ctx.value.topHit match {
+            case Some(el) =>
+              if (el.entity == "target") targetsFetcher.deferOpt(el.id)
+              else drugsFetcher.deferOpt(el.id)
+            case None => None
+          }
+        })
     ))
 
   val query = ObjectType(
