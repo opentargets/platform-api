@@ -83,7 +83,6 @@ trait GQLEntities extends GQLArguments {
   implicit val searchResultAggsEntityImp = deriveObjectType[Backend, models.entities.SearchResultAggEntity]()
   implicit val searchResultAggsImp = deriveObjectType[Backend, models.entities.SearchResultAggs]()
   implicit val searchResultImp = deriveObjectType[Backend, models.entities.SearchResult]()
-  implicit val altSearchResultsImp = deriveObjectType[Backend, models.entities.AltSearchResults]()
   implicit val searchResultsImp = deriveObjectType[Backend, models.entities.SearchResults]()
 
   lazy val msearchResultType = UnionType("MSearchResultType", types = List(targetImp, drugImp))
@@ -198,10 +197,6 @@ object GQLSchema extends GQLMeta with GQLEntities {
         description = Some("Multi entity search"),
         arguments = queryString :: pageArg :: Nil,
         resolve = ctx => ctx.ctx.search(ctx.arg(queryString), ctx.arg(pageArg))),
-      Field("altSearch", altSearchResultsImp,
-        description = Some("Search"),
-        arguments = queryString :: pageArg :: Nil,
-        resolve = ctx => ctx.ctx.altSearch(ctx.arg(queryString), ctx.arg(pageArg))),
       Field("associationsOnTheFly", associationsObTheFlyGQLImp,
         Some("associations on the fly"),
         resolve = ctx => ctx.value)

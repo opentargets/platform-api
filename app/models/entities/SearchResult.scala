@@ -17,8 +17,6 @@ case class SearchResult(id: String, entity: String, category: Seq[String], name:
                         prefixes: Option[Seq[String]], ngrams: Option[Seq[String]],
                         terms: Option[Seq[String]])
 
-case class AltSearchResults(total: Long, results: Seq[SearchResult], aggregations: Option[SearchResultAggs])
-
 case class SearchResults(total: Long, topHit: Option[SearchResult],
                          targets: Seq[SearchResult],
                          drugs: Seq[SearchResult],
@@ -27,10 +25,6 @@ case class SearchResults(total: Long, topHit: Option[SearchResult],
 
 object SearchResults {
   val empty = SearchResults(0, None, Seq.empty, Seq.empty, Seq.empty, None)
-}
-
-object AltSearchResults {
-  val empty = AltSearchResults(0, Seq.empty, None)
 }
 
 object SearchResult {
@@ -57,7 +51,6 @@ object SearchResult {
         )(models.entities.SearchResultAggs.apply _)
 
     implicit val searchResultImpW = Json.format[models.entities.SearchResult]
-    implicit val searchResultsImpW = Json.format[models.entities.AltSearchResults]
     implicit val msearchResultsImpW = Json.format[models.entities.SearchResults]
   }
 

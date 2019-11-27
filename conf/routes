@@ -30,7 +30,6 @@ POST    /api/v4/rest/drugs                 controllers.api.v4.rest.DrugControlle
 GET     /api/v4/rest/drugs                 controllers.api.v4.rest.DrugController.byIds(ids: Seq[String] ?= Seq.empty)
 GET     /api/v4/rest/drugs/:id             controllers.api.v4.rest.DrugController.byId(id: String)
 
-GET     /api/v4/rest/altsearch           controllers.api.v4.rest.AltSearchController.altSearch(q: String)
 GET     /api/v4/rest/search              controllers.api.v4.rest.SearchController.search(q: String)
 
 # health uri
