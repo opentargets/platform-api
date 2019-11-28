@@ -109,7 +109,7 @@ trait GQLEntities extends GQLArguments {
   implicit val searchResultImp = deriveObjectType[Backend, models.entities.SearchResult]()
   implicit val searchResultsImp = deriveObjectType[Backend, models.entities.SearchResults]()
 
-  lazy val msearchResultType = UnionType("MSearchResultType", types = List(targetImp, drugImp))
+  lazy val msearchResultType = UnionType("MSearchResultType", types = List(targetImp, drugImp, diseaseImp))
 
   // howto doc https://sangria-graphql.org/learn/#macro-based-graphql-type-derivation
   implicit lazy val linkedDiseasesImp = deriveObjectType[Backend, LinkedDiseases]()
@@ -177,6 +177,9 @@ object GQLSchema extends GQLMeta with GQLEntities {
       Field("targets", ListType(targetImp),
         description = Some("Return Targets"),
         resolve = ctx => targetsFetcher.deferSeqOpt(ctx.value.targets.map(_.id))),
+      Field("diseases", ListType(diseaseImp),
+        description = Some("Return Diseases"),
+        resolve = ctx => diseasesFetcher.deferSeqOpt(ctx.value.diseases.map(_.id))),
       Field("aggregations", OptionType(searchResultAggsImp),
         description = Some("Aggregations"),
         resolve = ctx => ctx.value.aggregations),
@@ -185,14 +188,18 @@ object GQLSchema extends GQLMeta with GQLEntities {
         resolve = ctx => drugsFetcher.deferSeqOpt(ctx.value.drugs.map(_.id))),
       Field("topHit", OptionType(msearchResultType),
         Some("Top Hit"),
-        resolve = ctx => {
+        resolve = ctx =>
           ctx.value.topHit match {
             case Some(el) =>
-              if (el.entity == "target") targetsFetcher.deferOpt(el.id)
-              else drugsFetcher.deferOpt(el.id)
+              el.entity match {
+                case "target" => targetsFetcher.deferOpt(el.id)
+                case "disease" => diseasesFetcher.deferOpt(el.id)
+                case "drug" => drugsFetcher.deferOpt(el.id)
+                case _ => None
+              }
             case None => None
           }
-        })
+        )
     ))
 
   val query = ObjectType(
@@ -209,15 +216,14 @@ object GQLSchema extends GQLMeta with GQLEntities {
         description = Some("Return Targets"),
         arguments = ensemblIds :: Nil,
         resolve = ctx => targetsFetcher.deferSeqOpt(ctx.arg(ensemblIds))),
-      // TODO!!!!!
-      Field("disease", OptionType(targetImp),
-        description = Some("Return a Target"),
-        arguments = ensemblId :: Nil,
-        resolve = ctx => targetsFetcher.deferOpt(ctx.arg(ensemblId))),
-      Field("diseases", ListType(targetImp),
-        description = Some("Return Targets"),
-        arguments = ensemblIds :: Nil,
-        resolve = ctx => targetsFetcher.deferSeqOpt(ctx.arg(ensemblIds))),
+      Field("disease", OptionType(diseaseImp),
+        description = Some("Return a Disease"),
+        arguments = efoId :: Nil,
+        resolve = ctx => diseasesFetcher.deferOpt(ctx.arg(efoId))),
+      Field("diseases", ListType(diseaseImp),
+        description = Some("Return Diseases"),
+        arguments = efoIds :: Nil,
+        resolve = ctx => diseasesFetcher.deferSeqOpt(ctx.arg(efoIds))),
       Field("drug", OptionType(drugImp),
         description = Some("Return a drug"),
         arguments = chemblId :: Nil,

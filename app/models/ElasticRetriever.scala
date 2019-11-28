@@ -27,9 +27,12 @@ class ElasticRetriever(client: ElasticClient) {
       case Nil => Future.successful(IndexedSeq.empty)
       case _ =>
         val elems: Future[Response[SearchResponse]] = client.execute {
-          search(esIndex).query {
+          val q = search(esIndex).query {
             idsQuery(ids)
           } limit(Configuration.batchSize)
+
+          logger.debug(client.show(q))
+          q
         }
 
         elems.map {
@@ -38,6 +41,9 @@ class ElasticRetriever(client: ElasticClient) {
             // parse the full body response into JsValue
             // thus, we can apply Json Transformations from JSON Play
             val result = Json.parse(results.body.get)
+
+            logger.debug(Json.prettyPrint(result))
+
             val hits = (result \ "hits" \ "hits").get.as[JsArray].value
 
             val mappedHits = hits
