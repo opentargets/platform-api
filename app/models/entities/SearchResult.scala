@@ -17,14 +17,12 @@ case class SearchResult(id: String, entity: String, category: Seq[String], name:
                         prefixes: Option[Seq[String]], ngrams: Option[Seq[String]],
                         terms: Option[Seq[String]])
 
-case class SearchResults(total: Long, topHit: Option[SearchResult],
-                         targets: Seq[SearchResult],
-                         drugs: Seq[SearchResult],
-                         diseases: Seq[SearchResult],
+case class SearchResults(top: Option[SearchResult],
+                         hits: Seq[SearchResult],
                          aggregations: Option[SearchResultAggs])
 
 object SearchResults {
-  val empty = SearchResults(0, None, Seq.empty, Seq.empty, Seq.empty, None)
+  val empty = SearchResults(None, Seq.empty, None)
 }
 
 object SearchResult {

@@ -7,7 +7,7 @@ version := "latest"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala, PlayLogback)
 
-scalaVersion := "2.12.9"
+scalaVersion := "2.12.10"
 maintainer := "ops@opentargets.org"
 
 javacOptions ++= Seq( "-encoding", "UTF-8" )
@@ -35,7 +35,7 @@ libraryDependencies += "com.typesafe.play" %% "play-logback" % playVersion
 libraryDependencies += "com.typesafe.play" %% "play-json" % playVersion
 libraryDependencies += "com.typesafe.play" %% "play-slick" % "4.0.2"
 libraryDependencies += "ru.yandex.clickhouse" % "clickhouse-jdbc" % "0.2"
-libraryDependencies += "org.sangria-graphql" %% "sangria" % "2.0.0-M1"
+libraryDependencies += "org.sangria-graphql" %% "sangria" % "2.0.0-M3"
 libraryDependencies += "org.sangria-graphql" %% "sangria-play-json" % "2.0.0"
 
 val s4sVersion = "7.3.1"

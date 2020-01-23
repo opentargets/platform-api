@@ -12,9 +12,10 @@ import scala.concurrent.ExecutionContext
 class SearchController @Inject()(implicit ec: ExecutionContext, backend: Backend, cc: ControllerComponents)
   extends AbstractController(cc) {
 
+  // TODO move this to graphql query instead doing its own query
   def search(q: String) = Action.async { req =>
     for {
-      res <- backend.search(q, None)
+      res <- backend.search(q, None, Seq.empty)
     } yield Ok(Json.toJson(res))
   }
 }

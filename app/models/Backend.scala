@@ -66,8 +66,14 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
   }
 
   def search(qString: String, pagination: Option[Pagination],
-             entities: Seq[ElasticsearchEntity] = defaultESSettings.entities): Future[SearchResults] =
+             entityNames: Seq[String]): Future[SearchResults] = {
+    val entities = for {
+      e <- defaultESSettings.entities
+      if entityNames.contains(e.name)
+    } yield e
+
     esRetriever.getSearchResultSet(entities, qString, pagination.getOrElse(Pagination.mkDefault))
+  }
 
   def getAssociationsDiseaseFixed(id: String,
                                   datasources: Option[Seq[DatasourceSettings]],

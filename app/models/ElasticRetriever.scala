@@ -64,9 +64,9 @@ class ElasticRetriever(client: ElasticClient) {
 
     val keywordQueryFn = multiMatchQuery(qString)
       .analyzer("token")
-      .field("id.raw", 100D)
-      .field("keywords.raw", 100D)
-      .field("name.raw", 100D)
+      .field("id.raw", 1000D)
+      .field("keywords.raw", 1000D)
+      .field("name.raw", 1000D)
       .operator(Operator.AND)
 
     val stringQueryFn = functionScoreQuery(simpleStringQuery(qString)
@@ -96,7 +96,7 @@ class ElasticRetriever(client: ElasticClient) {
     if (qString.length > 0) {
       client.execute {
         val aggregations =
-          search(esIndices) query (fnQueries.head) aggs(aggFns) size(0)
+          search("search_*") query (fnQueries.head) aggs(aggFns) size(0)
         logger.debug(client.show(aggregations))
         aggregations trackTotalHits(true)
       }.zip {
@@ -104,7 +104,6 @@ class ElasticRetriever(client: ElasticClient) {
           val mhits = multi(
             search(esIndices) query (mainQuery) start (limitClause._1) limit (limitClause._2) trackTotalHits(true)
           )
-          // TODO remove it
           logger.debug(client.show(mhits))
           mhits
         }
@@ -118,17 +117,8 @@ class ElasticRetriever(client: ElasticClient) {
               None
           }
 
-          val totals = hits.result.successes.foldLeft(0L)((B, op) => B + op.totalHits)
-          val res = hits.result.successes.flatMap(_.to[SearchResult])
-            .groupBy(_.entity)
-            .mapValues(identity)
-            .withDefaultValue(Seq.empty)
-
-          SearchResults(totals,
-            hits.result.to[SearchResult].headOption,
-            res("target"),
-            res("drug"),
-            res("disease"),
+          SearchResults(hits.result.to[SearchResult].headOption,
+            hits.result.successes.flatMap(_.to[SearchResult]),
             aggs)
       }
     } else {
