@@ -71,7 +71,6 @@ trait GQLEntities extends GQLArguments {
   implicit val proteinImp = deriveObjectType[Backend, Protein]()
   implicit val genomicLocationImp = deriveObjectType[Backend, GenomicLocation]()
   implicit lazy val targetImp: ObjectType[Backend, Target] = deriveObjectType(
-//    Interfaces(interfaces[Backend, Target](entityImp):_*),
     AddFields(
       Field("associationsOnTheFly", associationsImp,
         description = Some("Associations for a fixed target"),
@@ -85,7 +84,9 @@ trait GQLEntities extends GQLArguments {
 
   // disease
   implicit lazy val diseaseImp: ObjectType[Backend, Disease] = deriveObjectType(
-//    Interfaces(interfaces[Backend, Disease](entityImp):_*),
+    ReplaceField("therapeuticAreas", Field("therapeuticAreas",
+      ListType(diseaseImp), Some("Disease List"),
+      resolve = r => diseasesFetcher.deferSeq(r.value.therapeuticAreas))),
     AddFields(
       Field("associationsOnTheFly", associationsImp,
         description = Some("Associations for a fixed disease"),
@@ -123,7 +124,6 @@ trait GQLEntities extends GQLArguments {
   implicit lazy val mechanismOfActionImp = deriveObjectType[Backend, MechanismsOfAction]()
   implicit lazy val withdrawnNoticeImp = deriveObjectType[Backend, WithdrawnNotice]()
   implicit lazy val drugImp = deriveObjectType[Backend, Drug](
-//    Interfaces(interfaces[Backend, Drug](entityImp):_*)
   )
 
   implicit val datasourceSettingsImp = deriveObjectType[Backend, DatasourceSettings]()
