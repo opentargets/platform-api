@@ -101,9 +101,7 @@ class ElasticRetriever(client: ElasticClient) {
         aggregations trackTotalHits(true)
       }.zip {
         client.execute {
-          val mhits = multi(
-            search(esIndices) query (mainQuery) start (limitClause._1) limit (limitClause._2) trackTotalHits(true)
-          )
+          val mhits = search(esIndices) query (mainQuery) start (limitClause._1) limit (limitClause._2) trackTotalHits(true)
           logger.debug(client.show(mhits))
           mhits
         }
@@ -117,9 +115,8 @@ class ElasticRetriever(client: ElasticClient) {
               None
           }
 
-          SearchResults(hits.result.to[SearchResult].headOption,
-            hits.result.successes.flatMap(_.to[SearchResult]),
-            aggs)
+          SearchResults(hits.result.to[SearchResult],
+            aggs, hits.result.totalHits)
       }
     } else {
       Future.successful(SearchResults.empty)

@@ -191,13 +191,13 @@ object GQLSchema extends GQLMeta with GQLEntities {
     fields[Backend, SearchResults](
       Field("aggregations", OptionType(searchResultAggsImp),
         description = Some("Aggregations"),
-        resolve = ctx => ctx.value.aggregations),
+        resolve = _.value.aggregations),
       Field("hits", ListType(searchResultImp),
         description = Some("Return combined"),
-        resolve = ctx => { ctx.value.hits }),
-      Field("top", OptionType(searchResultImp),
-        Some("Top Hit"),
-        resolve = ctx => ctx.value.top)
+        resolve = _.value.hits),
+      Field("total", LongType,
+        description = Some("Total number or results given a entity filter"),
+        resolve = _.value.total)
     ))
 
   val query = ObjectType(
