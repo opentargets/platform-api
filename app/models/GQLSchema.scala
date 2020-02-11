@@ -115,11 +115,18 @@ trait GQLEntities extends GQLArguments {
       resolve = r => targetsFetcher.deferSeqOpt(r.value.rows)))
   )
 
-  implicit lazy val drugReferenceImp = deriveObjectType[Backend, DrugReference]()
+  implicit lazy val drugReferenceImp = deriveObjectType[Backend, Reference]()
   implicit lazy val mechanismOfActionRowImp = deriveObjectType[Backend, MechanismOfActionRow](
     ReplaceField("targets", Field("targets", ListType(targetImp), Some("Target List"),
       resolve = r => targetsFetcher.deferSeqOpt(r.value.targets)))
   )
+
+  implicit lazy val indicationRowImp = deriveObjectType[Backend, IndicationRow](
+    ReplaceField("disease", Field("disease", diseaseImp, Some("Disease"),
+      resolve = r => diseasesFetcher.defer(r.value.disease)))
+  )
+
+  implicit lazy val indicationsImp = deriveObjectType[Backend, Indications]()
 
   implicit lazy val mechanismOfActionImp = deriveObjectType[Backend, MechanismsOfAction]()
   implicit lazy val withdrawnNoticeImp = deriveObjectType[Backend, WithdrawnNotice]()
