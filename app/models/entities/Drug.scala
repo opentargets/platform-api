@@ -10,9 +10,9 @@ case class WithdrawnNotice(classes: Option[Seq[String]],
                             reasons: Option[Seq[String]],
                             year: Option[Int])
 
-case class Reference(ids: Seq[String],
+case class Reference(ids: Option[Seq[String]],
                      source: String,
-                     urls: Seq[String])
+                     urls: Option[Seq[String]])
 
 case class MechanismOfActionRow(mechanismOfAction: String,
                                 targetName: String,
@@ -53,7 +53,7 @@ object Drug {
     implicit val linkedDiseasesImpW = Json.format[models.entities.LinkedDiseases]
     implicit val linkedTargetsImpW = Json.format[models.entities.LinkedTargets]
     implicit val withdrawnNoticeImpW = Json.format[models.entities.WithdrawnNotice]
-    implicit val drugReferenceImpW = Json.format[models.entities.Reference]
+    implicit val referenceImpW = Json.format[models.entities.Reference]
     implicit val mechanismOfActionRowImpW = Json.format[models.entities.MechanismOfActionRow]
     implicit val mechanismOfActionImpW = Json.format[models.entities.MechanismsOfAction]
     implicit val indicationRowImpW = Json.format[models.entities.IndicationRow]
