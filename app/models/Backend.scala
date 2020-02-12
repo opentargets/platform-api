@@ -40,7 +40,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
 
   lazy val dbRetriever = new DatabaseRetriever(dbConfigProvider.get[ClickHouseProfile], defaultOTSettings)
 
-  lazy val esRetriever = new ElasticRetriever(getESClient)
+  lazy val esRetriever = new ElasticRetriever(getESClient, defaultESSettings.highlightFields)
   // we must import the dsl
   import com.sksamuel.elastic4s.ElasticDsl._
 

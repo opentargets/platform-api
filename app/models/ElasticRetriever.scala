@@ -1,5 +1,6 @@
 package models
 
+import play.api.Logging
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 import com.sksamuel.elastic4s._
@@ -7,10 +8,10 @@ import com.sksamuel.elastic4s.playjson._
 import com.sksamuel.elastic4s.requests.common.Operator
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import com.sksamuel.elastic4s.requests.searches.{MultisearchResponseItem, SearchResponse}
-import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.{FieldValueFactorFunctionModifier, FunctionScoreQuery}
+import com.sksamuel.elastic4s.requests.searches._
+import com.sksamuel.elastic4s.requests.searches.queries.funcscorer._
 import com.sksamuel.elastic4s.requests.searches.queries.matches.MultiMatchQuery
-import com.sksamuel.elastic4s.{ElasticClient, RequestFailure, RequestSuccess, Response}
+import com.sksamuel.elastic4s._
 import models.entities.Configuration.ElasticsearchEntity
 import models.entities._
 import models.entities.SearchResult.JSONImplicits._
@@ -19,8 +20,8 @@ import play.api.libs.json.{JsArray, JsError, JsPath, JsSuccess, JsValue, Json}
 
 import scala.concurrent.Future
 
-class ElasticRetriever(client: ElasticClient) {
-  val logger = Logger(this.getClass)
+class ElasticRetriever(client: ElasticClient, hlFields: Seq[String]) extends Logging {
+  val hlFieldSeq = hlFields.map(HighlightField(_))
   import com.sksamuel.elastic4s.ElasticDsl._
   def getIds[A](esIndex: String, ids: Seq[String], buildF: JsValue => Option[A]): Future[IndexedSeq[A]] = {
     ids match {
@@ -101,7 +102,12 @@ class ElasticRetriever(client: ElasticClient) {
         aggregations trackTotalHits(true)
       }.zip {
         client.execute {
-          val mhits = search(esIndices) query (mainQuery) start (limitClause._1) limit (limitClause._2) trackTotalHits(true)
+          val mhits = search(esIndices)
+            .query(mainQuery)
+            .start(limitClause._1)
+            .limit(limitClause._2)
+            .highlighting(hlFieldSeq)
+            .trackTotalHits(true)
           logger.debug(client.show(mhits))
           mhits
         }
@@ -115,7 +121,19 @@ class ElasticRetriever(client: ElasticClient) {
               None
           }
 
-          SearchResults(hits.result.to[SearchResult],
+          if (logger.isDebugEnabled) {
+            val jsHits = Json.parse(hits.body.get)
+            logger.debug(Json.prettyPrint(jsHits))
+          }
+
+          val sresults = (Json.parse(hits.body.get) \ "hits" \ "hits").validate[Seq[SearchResult]] match {
+            case JsSuccess(value, _) => value
+            case JsError(errors) =>
+              logger.error(errors.mkString("", "\n", ""))
+              Seq.empty
+          }
+
+          SearchResults(sresults,
             aggs, hits.result.totalHits)
       }
     } else {
