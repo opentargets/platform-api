@@ -76,7 +76,9 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String]) extends Log
       .defaultOperator("AND")
       .field("name", 50D)
       .field("description", 25D)
-      .field("prefixes", 10D)
+      .field("prefixes", 20D)
+      .field("terms5", 15D)
+      .field("terms25", 10D)
       .field("terms", 5D)
       .field("ngrams"))
       .functions(fieldFactorScore("multiplier")
@@ -106,8 +108,9 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String]) extends Log
             .query(mainQuery)
             .start(limitClause._1)
             .limit(limitClause._2)
-            .highlighting(hlFieldSeq)
+            .highlighting(HighlightOptions(highlighterType = Some("fvh")), hlFieldSeq)
             .trackTotalHits(true)
+            .sourceExclude("terms", "terms5", "terms25")
           logger.debug(client.show(mhits))
           mhits
         }

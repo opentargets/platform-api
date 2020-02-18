@@ -15,7 +15,7 @@ case class SearchResultAggs(total: Long, entities: Seq[SearchResultAggEntity])
 case class SearchResult(id: String, entity: String, category: Seq[String], name: String,
                         description: Option[String], keywords: Option[Seq[String]], multiplier: Double,
                         prefixes: Option[Seq[String]], ngrams: Option[Seq[String]],
-                        terms: Option[Seq[String]], score: Double, highlights: Seq[String])
+                        score: Double, highlights: Seq[String])
 
 case class SearchResults(hits: Seq[SearchResult],
                          aggregations: Option[SearchResultAggs], total: Long)
@@ -59,7 +59,6 @@ object SearchResult {
         (JsPath \ "_source" \ "multiplier").read[Double] and
         (JsPath \ "_source" \ "prefixes").readNullable[Seq[String]] and
         (JsPath \ "_source" \ "ngrams").readNullable[Seq[String]] and
-        (JsPath \ "_source" \ "terms").readNullable[Seq[String]] and
         (JsPath \ "_score").read[Double] and
         (JsPath \ "highlight").readNullable[Map[String, Seq[String]]].map {
           case Some(m) =>
