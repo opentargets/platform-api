@@ -45,7 +45,8 @@ case class Drug(id: String,
                 mechanismsOfAction: Option[MechanismsOfAction],
                 indications: Option[Indications],
                 linkedDiseases: LinkedDiseases,
-                linkedTargets: LinkedTargets)
+                linkedTargets: LinkedTargets,
+                blackBoxWarning: Boolean)
 
 object Drug {
   val logger = Logger(this.getClass)

@@ -130,8 +130,7 @@ trait GQLEntities extends GQLArguments {
 
   implicit lazy val mechanismOfActionImp = deriveObjectType[Backend, MechanismsOfAction]()
   implicit lazy val withdrawnNoticeImp = deriveObjectType[Backend, WithdrawnNotice]()
-  implicit lazy val drugImp = deriveObjectType[Backend, Drug](
-  )
+  implicit lazy val drugImp = deriveObjectType[Backend, Drug]()
 
   implicit val datasourceSettingsImp = deriveObjectType[Backend, DatasourceSettings]()
   implicit val networkSettingsImp = deriveObjectType[Backend, LUTableSettings]()
