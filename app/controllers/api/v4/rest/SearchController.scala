@@ -88,7 +88,6 @@ class SearchController @Inject()(implicit ec: ExecutionContext, backend: Backend
       }
   }
 
-  // TODO move this to graphql query instead doing its own query
   def search(q: String) = Action.async { req =>
     queryFn(q)
 //    for {

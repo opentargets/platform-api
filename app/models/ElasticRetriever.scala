@@ -61,7 +61,7 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String]) extends Log
                          qString: String,
                          pagination: Pagination): Future[SearchResults] = {
     val limitClause = pagination.toES
-    val esIndices = entities.map(_.searchIndex)
+    val esIndices = entities.withFilter(_.searchIndex.isDefined).map(_.searchIndex.get)
 
     val keywordQueryFn = multiMatchQuery(qString)
       .analyzer("token")

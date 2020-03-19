@@ -69,7 +69,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
              entityNames: Seq[String]): Future[SearchResults] = {
     val entities = for {
       e <- defaultESSettings.entities
-      if entityNames.contains(e.name)
+      if (entityNames.contains(e.name) && e.searchIndex.isDefined)
     } yield e
 
     esRetriever.getSearchResultSet(entities, qString, pagination.getOrElse(Pagination.mkDefault))
