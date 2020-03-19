@@ -7,7 +7,9 @@ object Configuration {
   val batchSize = 100
 
   case class DataVersion(year: Int, month: Int, iteration: Int)
+
   case class APIVersion(x: Int, y: Int, z: Int)
+
   /** meta class compile the name and version information for
    * the application. Also, it serves as a container to include
    * future fields
@@ -15,18 +17,25 @@ object Configuration {
   case class Meta(name: String, apiVersion: APIVersion, dataVersion: DataVersion)
 
   case class ElasticsearchEntity(name: String, index: String, searchIndex: String)
+
   /** elasticsearch settings class set capture its configuration and the entities are
    * stored there */
-  case class ElasticsearchSettings(host: String, port: Int, entities: Seq[ElasticsearchEntity])
+  case class ElasticsearchSettings(host: String, port: Int,
+                                   entities: Seq[ElasticsearchEntity],
+                                   highlightFields: Seq[String])
 
   case class LUTableSettings(label: String, name: String, key: String, field: Option[String])
+
   case class AssociationSettings(label: String, name: String, key: String)
+
   case class TargetSettings(associations: AssociationSettings,
                             networks: Seq[LUTableSettings])
+
   case class DiseaseSettings(associations: AssociationSettings,
                              networks: Seq[LUTableSettings])
 
   case class DatasourceSettings(id: String, weight: Double)
+
   case class HarmonicSettings(pExponent: Int, datasources: Seq[DatasourceSettings])
 
   /** ClickHouse settings stores the configuration for the entities it handles.
@@ -61,4 +70,5 @@ object Configuration {
 
     implicit val otSettingsImp = Json.format[OTSettings]
   }
+
 }

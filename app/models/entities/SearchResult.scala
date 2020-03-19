@@ -15,16 +15,13 @@ case class SearchResultAggs(total: Long, entities: Seq[SearchResultAggEntity])
 case class SearchResult(id: String, entity: String, category: Seq[String], name: String,
                         description: Option[String], keywords: Option[Seq[String]], multiplier: Double,
                         prefixes: Option[Seq[String]], ngrams: Option[Seq[String]],
-                        terms: Option[Seq[String]])
+                        score: Double, highlights: Seq[String])
 
-case class SearchResults(total: Long, topHit: Option[SearchResult],
-                         targets: Seq[SearchResult],
-                         drugs: Seq[SearchResult],
-                         diseases: Seq[SearchResult],
-                         aggregations: Option[SearchResultAggs])
+case class SearchResults(hits: Seq[SearchResult],
+                         aggregations: Option[SearchResultAggs], total: Long)
 
 object SearchResults {
-  val empty = SearchResults(0, None, Seq.empty, Seq.empty, Seq.empty, None)
+  val empty = SearchResults(Seq.empty, None, 0)
 }
 
 object SearchResult {
@@ -50,7 +47,28 @@ object SearchResult {
         (JsPath \ "entities" \ "buckets").read[Seq[models.entities.SearchResultAggEntity]]
         )(models.entities.SearchResultAggs.apply _)
 
-    implicit val searchResultImpW = Json.format[models.entities.SearchResult]
+    implicit val searchResultImpW = Json.writes[models.entities.SearchResult]
+
+    implicit val searchResultImpR: Reads[models.entities.SearchResult] =
+      ((JsPath \ "_source" \ "id").read[String] and
+        (JsPath \ "_source" \ "entity").read[String] and
+        (JsPath \ "_source" \ "category").read[Seq[String]] and
+        (JsPath \ "_source" \ "name").read[String] and
+        (JsPath \ "_source" \ "description").readNullable[String] and
+        (JsPath \ "_source" \ "keywords").readNullable[Seq[String]] and
+        (JsPath \ "_source" \ "multiplier").read[Double] and
+        (JsPath \ "_source" \ "prefixes").readNullable[Seq[String]] and
+        (JsPath \ "_source" \ "ngrams").readNullable[Seq[String]] and
+        (JsPath \ "_score").read[Double] and
+        (JsPath \ "highlight").readNullable[Map[String, Seq[String]]].map {
+          case Some(m) =>
+            (for {
+              s <- m.flatMap(_._2)
+            } yield s).toSeq.distinct
+          case None => Seq.empty[String]
+        }
+        )(SearchResult.apply _)
+
     implicit val msearchResultsImpW = Json.format[models.entities.SearchResults]
   }
 

@@ -5,6 +5,29 @@ import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 
+case class Ortholog(speciesId: String,
+                    name: String,
+                    symbol: String,
+                    support: Seq[String],
+                    ensemblId: String,
+                    dbId: String,
+                    entrezId: String,
+                    chromosomeId: String,
+                    assertIds: Seq[String])
+
+case class Orthologs(chimpanzee: Option[Seq[Ortholog]],
+                     dog: Option[Seq[Ortholog]],
+                     fly: Option[Seq[Ortholog]],
+                     frog: Option[Seq[Ortholog]],
+                     macaque: Option[Seq[Ortholog]],
+                     mouse: Option[Seq[Ortholog]],
+                     pig: Option[Seq[Ortholog]],
+                     rat: Option[Seq[Ortholog]],
+                     worm: Option[Seq[Ortholog]],
+                     yeast: Option[Seq[Ortholog]],
+                     zebrafish: Option[Seq[Ortholog]]
+                    )
+
 case class Protein(id: String, accessions: Seq[String], functions: Seq[String])
 case class GenomicLocation(chromosome: String, start: Long, end: Long, strand: Int)
 case class Target(id: String,
@@ -15,7 +38,8 @@ case class Target(id: String,
                   nameSynonyms: Seq[String],
                   symbolSynonyms: Seq[String],
                   genomicLocation: GenomicLocation,
-                  proteinAnnotations: Option[Protein]
+                  proteinAnnotations: Option[Protein],
+                  orthologs: Option[Orthologs]
                  )
 
 object Target {
