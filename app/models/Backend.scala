@@ -44,6 +44,17 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
   // we must import the dsl
   import com.sksamuel.elastic4s.ElasticDsl._
 
+  def getCancerBiomarkers(kv: Map[String, String], pagination: Option[Pagination]):
+    Future[IndexedSeq[CancerBiomarker]] = {
+
+    val pag = pagination.getOrElse(Pagination.mkDefault)
+
+    val cbIndex = defaultESSettings.entities
+      .find(_.name == "cancerBiomarker").map(_.index).getOrElse("cancerbiomarkers")
+
+    esRetriever.getByIndexedQuery(cbIndex, kv, pag, CancerBiomarker.fromJsValue)
+  }
+
   def getTargets(ids: Seq[String]): Future[IndexedSeq[Target]] = {
     val targetIndexName = defaultESSettings.entities
       .find(_.name == "target").map(_.index).getOrElse("targets")

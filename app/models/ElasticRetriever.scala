@@ -23,6 +23,43 @@ import scala.concurrent.Future
 class ElasticRetriever(client: ElasticClient, hlFields: Seq[String]) extends Logging {
   val hlFieldSeq = hlFields.map(HighlightField(_))
   import com.sksamuel.elastic4s.ElasticDsl._
+
+  def getByIndexedQuery[A](esIndex: String, kv: Map[String, String],
+                           pagination: Pagination,
+                           buildF: JsValue => Option[A]): Future[IndexedSeq[A]] = {
+    val limitClause = pagination.toES
+    val q = search(esIndex).bool {
+      must(
+        kv.toSeq.map(p => matchQuery(p._1, p._2))
+      )
+    }.start(limitClause._1).limit(limitClause._2)
+
+    // just log and execute the query
+    val elems: Future[Response[SearchResponse]] = client.execute {
+      logger.debug(client.show(q))
+      q
+    }
+
+    elems.map {
+      case _: RequestFailure => IndexedSeq.empty
+      case results: RequestSuccess[SearchResponse] =>
+        // parse the full body response into JsValue
+        // thus, we can apply Json Transformations from JSON Play
+        val result = Json.parse(results.body.get)
+
+        logger.debug(Json.prettyPrint(result))
+
+        val hits = (result \ "hits" \ "hits").get.as[JsArray].value
+
+        val mappedHits = hits
+          .map(jObj => {
+            buildF(jObj)
+          }).withFilter(_.isDefined).map(_.get)
+
+        mappedHits
+    }
+  }
+
   def getIds[A](esIndex: String, ids: Seq[String], buildF: JsValue => Option[A]): Future[IndexedSeq[A]] = {
     ids match {
       case Nil => Future.successful(IndexedSeq.empty)

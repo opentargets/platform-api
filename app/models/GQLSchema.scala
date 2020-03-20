@@ -72,6 +72,14 @@ trait GQLEntities extends GQLArguments {
   implicit val genomicLocationImp = deriveObjectType[Backend, GenomicLocation]()
   implicit lazy val targetImp: ObjectType[Backend, Target] = deriveObjectType(
     AddFields(
+      Field("cancerBiomarkers", ListType(cancerBiomarkerImp),
+        description = Some("CancerBiomarkers"),
+        arguments = pageArg :: Nil,
+        resolve = ctx =>
+          ctx.ctx.getCancerBiomarkers(
+            Map("target" -> ctx.value.id),
+            ctx.arg(pageArg))),
+
       Field("associationsOnTheFly", associationsImp,
         description = Some("Associations for a fixed target"),
         arguments = datasourceSettingsListArg :: networkExpansionId :: pageArg :: Nil,
@@ -107,6 +115,16 @@ trait GQLEntities extends GQLArguments {
     fetch = (ctx: Backend, ids: Seq[String]) => {
       ctx.getDrugs(ids)
     })
+
+
+  // cancerbiomarkers
+  implicit val cancerBiomarkerSourceImp = deriveObjectType[Backend, CancerBiomarkerSource]()
+  implicit val cancerBiomarkerImp = deriveObjectType[Backend, CancerBiomarker](
+    ReplaceField("target", Field("target", targetImp, Some("Target"),
+      resolve = r => targetsFetcher.defer(r.value.target))),
+    ReplaceField("disease", Field("disease", diseaseImp, Some("Disease"),
+      resolve = r => diseasesFetcher.defer(r.value.disease)))
+  )
 
   // howto doc https://sangria-graphql.org/learn/#macro-based-graphql-type-derivation
   implicit lazy val linkedDiseasesImp = deriveObjectType[Backend, LinkedDiseases]()

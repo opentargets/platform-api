@@ -28,16 +28,16 @@ case class Orthologs(chimpanzee: Option[Seq[Ortholog]],
                      zebrafish: Option[Seq[Ortholog]]
                     )
 
-case class Reference(pubmedId: String, description: String)
+case class LiteratureReference(pubmedId: String, description: String)
 
 case class Hallmark(suppress: Boolean,
                     promote: Boolean,
-                    reference: Reference,
+                    reference: LiteratureReference,
                     label: String)
 
-case class HallmarkAttribute(name: String, reference: Reference)
+case class HallmarkAttribute(name: String, reference: LiteratureReference)
 
-case class CancerHallmarks(hallmarks: Seq[Hallmark], attributes: Seq[HallmarkAttribute], functions: Seq[Reference])
+case class CancerHallmarks(hallmarks: Seq[Hallmark], attributes: Seq[HallmarkAttribute], functions: Seq[LiteratureReference])
 
 case class Protein(id: String, accessions: Seq[String], functions: Seq[String])
 
@@ -91,12 +91,12 @@ case class Target(id: String,
                   nameSynonyms: Seq[String],
                   symbolSynonyms: Seq[String],
                   genomicLocation: GenomicLocation,
-                  proteinAnnotations: Option[Protein],
-                  orthologs: Option[Orthologs],
-                  cancerHallmarks: Option[CancerHallmarks],
-                  chemicalProbes: Option[ChemicalProbes],
-                  geneOntology: Seq[GeneOntology],
-                  safety: Option[Safety]
+                  proteinAnnotations: Option[Protein]
+//                  orthologs: Option[Orthologs],
+//                  cancerHallmarks: Option[CancerHallmarks],
+//                  chemicalProbes: Option[ChemicalProbes],
+//                  geneOntology: Seq[GeneOntology],
+//                  safety: Option[Safety]
                  )
 
 object Target {
