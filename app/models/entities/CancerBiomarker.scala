@@ -11,6 +11,14 @@ case class CancerBiomarker(id: String, associationType: String, disease: String,
                            evidenceLevel: String, target: String, sources: Seq[CancerBiomarkerSource],
                            pubmedIds: Seq[Long])
 
+/*
+  cancerBiomarkerCount: Int!
+  diseaseCount: Int!
+  drugCount: Int!
+ */
+case class CancerBiomarkers(uniqueDrugs: Long, uniqueDiseases: Long, uniqueBiomarkers: Long,
+                            rows: Seq[CancerBiomarker])
+
 object CancerBiomarker {
   val logger = Logger(this.getClass)
 
@@ -33,6 +41,8 @@ object CancerBiomarker {
         (JsPath \ "sources_other").read[Seq[CancerBiomarkerSource]] and
         (JsPath \ "sources_pubmed").read[Seq[Map[String, String]]].map(_.map(m => m("pmid").toLong))
         )(CancerBiomarker.apply _)
+
+    implicit val cancerBiomarkersImpF = Json.format[models.entities.CancerBiomarkers]
   }
 
   def fromJsValue(jObj: JsValue): Option[CancerBiomarker] = {
