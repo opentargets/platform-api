@@ -64,21 +64,21 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val targetIndexName = defaultESSettings.entities
       .find(_.name == "target").map(_.index).getOrElse("targets")
 
-    esRetriever.getIds(targetIndexName, ids, Target.fromJsValue)
+    esRetriever.getByIds(targetIndexName, ids, Target.fromJsValue)
   }
 
   def getDrugs(ids: Seq[String]): Future[IndexedSeq[Drug]] = {
     val drugIndexName = defaultESSettings.entities
       .find(_.name == "drug").map(_.index).getOrElse("drugs")
 
-    esRetriever.getIds(drugIndexName, ids, Drug.fromJsValue)
+    esRetriever.getByIds(drugIndexName, ids, Drug.fromJsValue)
   }
 
   def getDiseases(ids: Seq[String]): Future[IndexedSeq[Disease]] = {
     val diseaseIndexName = defaultESSettings.entities
       .find(_.name == "disease").map(_.index).getOrElse("diseases")
 
-    esRetriever.getIds(diseaseIndexName, ids, Disease.fromJsValue)
+    esRetriever.getByIds(diseaseIndexName, ids, Disease.fromJsValue)
   }
 
   def search(qString: String, pagination: Option[Pagination],

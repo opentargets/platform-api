@@ -24,6 +24,7 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String]) extends Log
   val hlFieldSeq = hlFields.map(HighlightField(_))
   import com.sksamuel.elastic4s.ElasticDsl._
 
+  /** This fn represents a query  */
   def getByIndexedQuery[A](esIndex: String, kv: Map[String, String],
                            pagination: Pagination,
                            buildF: JsValue => Option[A]): Future[IndexedSeq[A]] = {
@@ -60,7 +61,7 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String]) extends Log
     }
   }
 
-  def getIds[A](esIndex: String, ids: Seq[String], buildF: JsValue => Option[A]): Future[IndexedSeq[A]] = {
+  def getByIds[A](esIndex: String, ids: Seq[String], buildF: JsValue => Option[A]): Future[IndexedSeq[A]] = {
     ids match {
       case Nil => Future.successful(IndexedSeq.empty)
       case _ =>
