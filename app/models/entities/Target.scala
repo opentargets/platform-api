@@ -91,11 +91,11 @@ case class Target(id: String,
                   nameSynonyms: Seq[String],
                   symbolSynonyms: Seq[String],
                   genomicLocation: GenomicLocation,
-                  proteinAnnotations: Option[Protein]
-//                  orthologs: Option[Orthologs],
-//                  cancerHallmarks: Option[CancerHallmarks],
-//                  chemicalProbes: Option[ChemicalProbes],
-//                  geneOntology: Seq[GeneOntology],
+                  proteinAnnotations: Option[Protein],
+                  geneOntology: Seq[GeneOntology]
+                  //                  orthologs: Option[Orthologs],
+                  //                  cancerHallmarks: Option[CancerHallmarks],
+                  //                  chemicalProbes: Option[ChemicalProbes],
 //                  safety: Option[Safety]
                  )
 
@@ -103,9 +103,33 @@ object Target {
   val logger = Logger(this.getClass)
 
   object JSONImplicits {
+    // case class GeneOntology(id: String, project: String, term: String, evidenceId: String)
+    implicit val geneOntologyImpW = Json.writes[models.entities.GeneOntology]
+    implicit val geneOntologyImpR: Reads[models.entities.GeneOntology] =
+      ((__ \ "id").read[String] and
+        (__ \ "value" \ "project").read[String] and
+        (__ \ "value" \ "term").read[String] and
+        (__ \ "value" \ "evidence").read[String].map(_.replace(":", "_"))
+        )(GeneOntology.apply _)
+
     implicit val proteinImpW = Json.format[models.entities.Protein]
     implicit val genomicLocationImpW = Json.format[models.entities.GenomicLocation]
-    implicit val targetImpW = Json.format[models.entities.Target]
+    implicit val targetImpW = Json.writes[models.entities.Target]
+    implicit val targetImpR: Reads[models.entities.Target] = (
+      (JsPath \ "id").read[String] and
+      (JsPath \ "approvedSymbol").read[String] and
+      (JsPath \ "approvedName").read[String] and
+      (JsPath \ "bioType").read[String] and
+      (JsPath \ "hgncId").readNullable[String] and
+      (JsPath \ "nameSynonyms").read[Seq[String]] and
+      (JsPath \ "symbolSynonyms").read[Seq[String]] and
+      (JsPath \ "genomicLocation").read[GenomicLocation] and
+      (JsPath \ "proteinAnnotations").readNullable[Protein] and
+      (JsPath \ "go").readNullable[Seq[GeneOntology]].map{
+        case None => Seq.empty
+        case Some(s) => s
+      }
+      )(Target.apply _)
   }
 
   def fromJsValue(jObj: JsValue): Option[Target] = {

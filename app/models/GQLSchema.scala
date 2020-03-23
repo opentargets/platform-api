@@ -68,6 +68,7 @@ trait GQLEntities extends GQLArguments {
      OptionInputType(ListInputType(datasourceSettingsInputImp)))
 
   // howto doc https://sangria-graphql.org/learn/#macro-based-graphql-type-derivation
+  implicit val geneObtologyImp = deriveObjectType[Backend, GeneOntology]()
   implicit val proteinImp = deriveObjectType[Backend, Protein]()
   implicit val genomicLocationImp = deriveObjectType[Backend, GenomicLocation]()
   implicit lazy val targetImp: ObjectType[Backend, Target] = deriveObjectType(
