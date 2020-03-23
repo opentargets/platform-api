@@ -49,7 +49,7 @@ case class PortalProbe(note: String, chemicalprobe: String, geneSymbol: String, 
 
 case class ChemicalProbes(probminer: String, portalprobes: Seq[PortalProbe])
 
-case class GeneOntology(id: String, project: String, term: String, evidenceId: String)
+case class GeneOntology(id: String, project: String, term: String, evidence: String)
 
 case class TractabilityAntibodyCategories(predictedTractableMedLowConfidence: Double,
                                           clinicalPrecedence: Double,

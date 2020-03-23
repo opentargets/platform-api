@@ -12,6 +12,7 @@ import sangria.util._
 import entities._
 import entities.Configuration._
 import entities.Configuration.JSONImplicits._
+import play.api.mvc.CookieBaker
 import sangria.execution.deferred._
 
 trait GQLArguments {
@@ -60,6 +61,18 @@ trait GQLEntities extends GQLArguments {
       ctx.getDiseases(ids)
     })
 
+  // disease
+  implicit val ecoHasId = HasId[ECO, String](_.id)
+
+  val ecosFetcherCache = FetcherCache.simple
+  val ecosFetcher = Fetcher(
+    config = FetcherConfig.maxBatchSize(Configuration.batchSize).caching(diseasesFetcherCache),
+    fetch = (ctx: Backend, ids: Seq[String]) => {
+      ctx.getECOs(ids)
+    })
+
+  implicit val ecoImp = deriveObjectType[Backend, ECO]()
+
   implicit val datasourceSettingsJsonImp = Json.format[DatasourceSettings]
   val datasourceSettingsInputImp = deriveInputObjectType[DatasourceSettings](
     InputObjectTypeName("DatasourceSettingsInput")
@@ -68,7 +81,12 @@ trait GQLEntities extends GQLArguments {
      OptionInputType(ListInputType(datasourceSettingsInputImp)))
 
   // howto doc https://sangria-graphql.org/learn/#macro-based-graphql-type-derivation
-  implicit val geneObtologyImp = deriveObjectType[Backend, GeneOntology]()
+  implicit val geneObtologyImp = deriveObjectType[Backend, GeneOntology](
+    ReplaceField("evidence", Field("evidence",
+      ecoImp, Some("ECO object"),
+      resolve = r => ecosFetcher.defer(r.value.evidence)))
+  )
+
   implicit val proteinImp = deriveObjectType[Backend, Protein]()
   implicit val genomicLocationImp = deriveObjectType[Backend, GenomicLocation]()
   implicit lazy val targetImp: ObjectType[Backend, Target] = deriveObjectType(
@@ -191,7 +209,7 @@ trait GQLEntities extends GQLArguments {
 }
 
 object GQLSchema extends GQLMeta with GQLEntities {
-  val resolvers = DeferredResolver.fetchers(targetsFetcher, drugsFetcher, diseasesFetcher)
+  val resolvers = DeferredResolver.fetchers(targetsFetcher, drugsFetcher, diseasesFetcher, ecosFetcher)
 
 
   lazy val msearchResultType = UnionType("EntityUnionType", types = List(targetImp, drugImp, diseaseImp))

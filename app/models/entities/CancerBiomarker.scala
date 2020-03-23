@@ -11,11 +11,6 @@ case class CancerBiomarker(id: String, associationType: String, disease: String,
                            evidenceLevel: String, target: String, sources: Seq[CancerBiomarkerSource],
                            pubmedIds: Seq[Long])
 
-/*
-  cancerBiomarkerCount: Int!
-  diseaseCount: Int!
-  drugCount: Int!
- */
 case class CancerBiomarkers(uniqueDrugs: Long, uniqueDiseases: Long, uniqueBiomarkers: Long,
                             rows: Seq[CancerBiomarker])
 

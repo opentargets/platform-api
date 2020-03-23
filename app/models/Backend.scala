@@ -70,6 +70,13 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     }
   }
 
+  def getECOs(ids: Seq[String]): Future[IndexedSeq[ECO]] = {
+    val targetIndexName = defaultESSettings.entities
+      .find(_.name == "eco").map(_.index).getOrElse("ecos")
+
+    esRetriever.getByIds(targetIndexName, ids, ECO.fromJsValue)
+  }
+
   def getTargets(ids: Seq[String]): Future[IndexedSeq[Target]] = {
     val targetIndexName = defaultESSettings.entities
       .find(_.name == "target").map(_.index).getOrElse("targets")
