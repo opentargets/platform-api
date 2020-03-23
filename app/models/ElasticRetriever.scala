@@ -12,28 +12,34 @@ import com.sksamuel.elastic4s.requests.searches._
 import com.sksamuel.elastic4s.requests.searches.queries.funcscorer._
 import com.sksamuel.elastic4s.requests.searches.queries.matches.MultiMatchQuery
 import com.sksamuel.elastic4s._
+import com.sksamuel.elastic4s.requests.searches.aggs.AbstractAggregation
 import models.entities.Configuration.ElasticsearchEntity
 import models.entities._
 import models.entities.SearchResult.JSONImplicits._
 import play.api.Logger
-import play.api.libs.json.{JsArray, JsError, JsPath, JsSuccess, JsValue, Json}
+import play.api.libs.json._
 
 import scala.concurrent.Future
 
 class ElasticRetriever(client: ElasticClient, hlFields: Seq[String]) extends Logging {
   val hlFieldSeq = hlFields.map(HighlightField(_))
+
   import com.sksamuel.elastic4s.ElasticDsl._
 
-  /** This fn represents a query  */
+  /** Based on the query asked by `getByIndexedQuery` and aggregation is applied */
+
+  /** This fn represents a query where each kv from the map is used in
+   * a bool must. Based on the query asked by `getByIndexedQuery` and aggregation is applied */
   def getByIndexedQuery[A](esIndex: String, kv: Map[String, String],
                            pagination: Pagination,
-                           buildF: JsValue => Option[A]): Future[IndexedSeq[A]] = {
+                           buildF: JsValue => Option[A],
+                           aggs: Iterable[AbstractAggregation] = Iterable.empty): Future[(IndexedSeq[A], JsValue)] = {
     val limitClause = pagination.toES
     val q = search(esIndex).bool {
       must(
         kv.toSeq.map(p => matchQuery(p._1, p._2))
       )
-    }.start(limitClause._1).limit(limitClause._2)
+    } start(limitClause._1) limit(limitClause._2) aggs(aggs) trackTotalHits(true)
 
     // just log and execute the query
     val elems: Future[Response[SearchResponse]] = client.execute {
@@ -42,22 +48,22 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String]) extends Log
     }
 
     elems.map {
-      case _: RequestFailure => IndexedSeq.empty
+      case _: RequestFailure => (IndexedSeq.empty, JsNull)
       case results: RequestSuccess[SearchResponse] =>
         // parse the full body response into JsValue
         // thus, we can apply Json Transformations from JSON Play
         val result = Json.parse(results.body.get)
 
         logger.debug(Json.prettyPrint(result))
-
         val hits = (result \ "hits" \ "hits").get.as[JsArray].value
+        val aggs = (result \ "aggregations").getOrElse(JsNull)
 
         val mappedHits = hits
           .map(jObj => {
             buildF(jObj)
           }).withFilter(_.isDefined).map(_.get)
 
-        mappedHits
+        (mappedHits, aggs)
     }
   }
 
@@ -68,7 +74,7 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String]) extends Log
         val elems: Future[Response[SearchResponse]] = client.execute {
           val q = search(esIndex).query {
             idsQuery(ids)
-          } limit(Configuration.batchSize)
+          } limit (Configuration.batchSize)
 
           logger.debug(client.show(q))
           q
@@ -137,9 +143,9 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String]) extends Log
     if (qString.length > 0) {
       client.execute {
         val aggregations =
-          search("search_*") query (fnQueries.head) aggs(aggFns) size(0)
+          search("search_*") query (fnQueries.head) aggs (aggFns) size (0)
         logger.debug(client.show(aggregations))
-        aggregations trackTotalHits(true)
+        aggregations trackTotalHits (true)
       }.zip {
         client.execute {
           val mhits = search(esIndices)

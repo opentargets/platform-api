@@ -18,6 +18,7 @@ import models.entities.Associations._
 import models.entities._
 import models.entities.HealthCheck.JSONImplicits._
 import play.api.db.slick.DatabaseConfigProvider
+import play.api.libs.json._
 import play.db.NamedDatabase
 
 class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider: DatabaseConfigProvider,
@@ -52,12 +53,21 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val cbIndex = defaultESSettings.entities
       .find(_.name == "cancerBiomarker").map(_.index).getOrElse("cancerbiomarkers")
 
-    esRetriever.getByIndexedQuery(cbIndex, kv, pag, CancerBiomarker.fromJsValue).map(seq => {
-      if (seq.isEmpty) None
-      else {
-        Some(CancerBiomarkers(0,0,0,seq))
-      }
-    })
+    val aggs = Seq(
+      cardinalityAgg("uniqueDrugs", "drugName.keyword"),
+      cardinalityAgg("uniqueDiseases", "disease.keyword"),
+      cardinalityAgg("uniqueBiomarkers", "id.keyword")
+    )
+
+    esRetriever.getByIndexedQuery(cbIndex, kv, pag, CancerBiomarker.fromJsValue, aggs).map {
+      case (Seq(), _) => None
+      case (seq, agg) =>
+        logger.debug(Json.prettyPrint(agg))
+        val drugs = (agg \ "uniqueDrugs" \ "value").as[Long]
+        val diseases = (agg \ "uniqueDiseases" \ "value").as[Long]
+        val biomarkers = (agg \ "uniqueBiomarkers" \ "value").as[Long]
+        Some(CancerBiomarkers(drugs, diseases, biomarkers,seq))
+    }
   }
 
   def getTargets(ids: Seq[String]): Future[IndexedSeq[Target]] = {
