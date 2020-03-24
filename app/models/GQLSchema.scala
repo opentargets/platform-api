@@ -92,6 +92,8 @@ trait GQLEntities extends GQLArguments {
   implicit val hallmarksAttributeImp = deriveObjectType[Backend, HallmarkAttribute]()
   implicit val hallmarksImp = deriveObjectType[Backend, Hallmarks]()
 
+  implicit val orthologImp = deriveObjectType[Backend, Ortholog]()
+  implicit val orthologsImp = deriveObjectType[Backend, Orthologs]()
 
   implicit val sourceLinkImp = deriveObjectType[Backend, SourceLink]()
   implicit val portalProbeImp = deriveObjectType[Backend, PortalProbe]()
