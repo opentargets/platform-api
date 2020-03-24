@@ -47,7 +47,7 @@ case class SourceLink(source: String, link: String)
 
 case class PortalProbe(note: String, chemicalprobe: String, gene: String, sourcelinks: Seq[SourceLink])
 
-case class ChemicalProbes(probeminer: String, rows: Seq[PortalProbe])
+case class ChemicalProbes(probeminer: Option[String], rows: Seq[PortalProbe])
 
 case class GeneOntology(id: String, project: String, term: String, evidence: String)
 
@@ -181,8 +181,8 @@ object Target {
     implicit val portalProbeImpF = Json.format[models.entities.PortalProbe]
     implicit val chemicalProbesImpW = Json.writes[models.entities.ChemicalProbes]
     implicit val chemicalProbesImpR: Reads[models.entities.ChemicalProbes] =
-      ((__ \ "probeminer" \ "link").read[String] and
-        (__ \ "portalprobes").read[Seq[PortalProbe]]
+      ((__ \ "probeminer" \ "link").readNullable[String] and
+        (__ \ "portalprobes").readNullable[Seq[PortalProbe]].map(_.getOrElse(Seq.empty))
         )(ChemicalProbes.apply _)
 
     implicit val safetyCodeImpW = Json.writes[models.entities.SafetyCode]
