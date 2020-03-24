@@ -87,6 +87,24 @@ trait GQLEntities extends GQLArguments {
       resolve = r => ecosFetcher.defer(r.value.evidence)))
   )
 
+  implicit val literatureReferenceImp = deriveObjectType[Backend, LiteratureReference]()
+  implicit val cancerHallmarkImp = deriveObjectType[Backend, CancerHallmark]()
+  implicit val hallmarksAttributeImp = deriveObjectType[Backend, HallmarkAttribute]()
+  implicit val hallmarksImp = deriveObjectType[Backend, Hallmarks]()
+
+
+  implicit val sourceLinkImp = deriveObjectType[Backend, SourceLink]()
+  implicit val portalProbeImp = deriveObjectType[Backend, PortalProbe]()
+  implicit val chemicalProbesImp = deriveObjectType[Backend, ChemicalProbes]()
+
+  implicit val safetyCodeImp = deriveObjectType[Backend, SafetyCode]()
+  implicit val safetyReferenceImp = deriveObjectType[Backend, SafetyReference]()
+  implicit val adverseEffectsActivationEffectsImp = deriveObjectType[Backend, AdverseEffectsActivationEffects]()
+  implicit val adverseEffectsInhibitionEffectsImp = deriveObjectType[Backend, AdverseEffectsInhibitionEffects]()
+  implicit val adverseEffectsImp = deriveObjectType[Backend, AdverseEffects]()
+  implicit val safetyRiskInfoImp = deriveObjectType[Backend, SafetyRiskInfo]()
+  implicit val safetyImp = deriveObjectType[Backend, Safety]()
+
   implicit val proteinImp = deriveObjectType[Backend, Protein]()
   implicit val genomicLocationImp = deriveObjectType[Backend, GenomicLocation]()
   implicit lazy val targetImp: ObjectType[Backend, Target] = deriveObjectType(

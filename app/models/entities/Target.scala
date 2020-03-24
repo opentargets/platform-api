@@ -30,14 +30,14 @@ case class Orthologs(chimpanzee: Option[Seq[Ortholog]],
 
 case class LiteratureReference(pubmedId: String, description: String)
 
-case class Hallmark(suppress: Boolean,
+case class CancerHallmark(suppress: Boolean,
                     promote: Boolean,
                     reference: LiteratureReference,
                     label: String)
 
 case class HallmarkAttribute(name: String, reference: LiteratureReference)
 
-case class CancerHallmarks(hallmarks: Seq[Hallmark], attributes: Seq[HallmarkAttribute], functions: Seq[LiteratureReference])
+case class Hallmarks(rows: Seq[CancerHallmark], attributes: Seq[HallmarkAttribute], functions: Seq[LiteratureReference])
 
 case class Protein(id: String, accessions: Seq[String], functions: Seq[String])
 
@@ -45,9 +45,9 @@ case class GenomicLocation(chromosome: String, start: Long, end: Long, strand: I
 
 case class SourceLink(source: String, link: String)
 
-case class PortalProbe(note: String, chemicalprobe: String, geneSymbol: String, sourcelinks: Seq[SourceLink])
+case class PortalProbe(note: String, chemicalprobe: String, gene: String, sourcelinks: Seq[SourceLink])
 
-case class ChemicalProbes(probminer: String, portalprobes: Seq[PortalProbe])
+case class ChemicalProbes(probeminer: String, rows: Seq[PortalProbe])
 
 case class GeneOntology(id: String, project: String, term: String, evidence: String)
 
@@ -67,7 +67,7 @@ case class TractabilitySmallMolecule(topCategory: String, smallMoleculeGenomeMem
 case class Tractability(smallmolecule: Option[TractabilitySmallMolecule], antibody: Option[TractabilityAntibody])
 
 case class SafetyCode(code: String, mappedTerm: String, termInPaper: String)
-case class SafetyReference(pubmedId: Option[String], refLabel: Option[String], refLink: Option[String])
+case class SafetyReference(pubmedId: Option[Long], refLabel: Option[String], refLink: Option[String])
 case class AdverseEffectsActivationEffects(acuteDosing: Seq[SafetyCode], chronicDosing: Seq[SafetyCode],
                                            general: Seq[SafetyCode])
 case class AdverseEffectsInhibitionEffects(acuteDosing: Seq[SafetyCode],
@@ -81,7 +81,7 @@ case class AdverseEffects(activationEffects: AdverseEffectsActivationEffects,
 
 case class SafetyRiskInfo(organsSystemsAffected: Seq[SafetyCode], references: Seq[SafetyReference],
                           safetyLiability: String)
-case class Safety(adverseEffects: AdverseEffects, safetyRiskInfo: SafetyRiskInfo)
+case class Safety(adverseEffects: Seq[AdverseEffects], safetyRiskInfo: Seq[SafetyRiskInfo])
 
 case class Target(id: String,
                   approvedSymbol: String,
@@ -92,18 +92,117 @@ case class Target(id: String,
                   symbolSynonyms: Seq[String],
                   genomicLocation: GenomicLocation,
                   proteinAnnotations: Option[Protein],
-                  geneOntology: Seq[GeneOntology]
+                  geneOntology: Seq[GeneOntology],
+                  safety: Option[Safety],
+                  chemicalProbes: Option[ChemicalProbes],
+                  hallmarks: Option[Hallmarks]
                   //                  orthologs: Option[Orthologs],
-                  //                  cancerHallmarks: Option[CancerHallmarks],
-                  //                  chemicalProbes: Option[ChemicalProbes],
-//                  safety: Option[Safety]
                  )
 
 object Target {
   val logger = Logger(this.getClass)
 
   object JSONImplicits {
-    // case class GeneOntology(id: String, project: String, term: String, evidenceId: String)
+    implicit val literatureReferenceImpW = Json.writes[LiteratureReference]
+    implicit val literatureReferenceImpR: Reads[LiteratureReference] =
+      ((__ \ "pmid").read[String] and
+        (__ \ "description").read[String]
+        )(LiteratureReference.apply _)
+
+    implicit val cancerHallmarkImpW = Json.writes[CancerHallmark]
+    implicit val cancerHallmarkImpR: Reads[CancerHallmark] =
+      ((__ \ "suppress").read[Boolean] and
+        (__ \ "promote").read[Boolean] and
+        literatureReferenceImpR and
+        (__ \ "label").read[String]
+        )(CancerHallmark.apply _)
+
+    implicit val hallmarkAttributeImpW = Json.writes[HallmarkAttribute]
+    implicit val hallmarkAttributeImpR: Reads[HallmarkAttribute] =
+      ((__ \ "attribute_name").read[String] and
+        literatureReferenceImpR
+        )(HallmarkAttribute.apply _)
+
+    implicit val hallmarksImpW = Json.writes[Hallmarks]
+    implicit val hallmarksImpR: Reads[Hallmarks] =
+      ((__ \ "cancer_hallmarks").read[Seq[CancerHallmark]] and
+        (__ \ "attributes").read[Seq[HallmarkAttribute]] and
+        (__ \ "function_summary").read[Seq[LiteratureReference]]
+        )(Hallmarks.apply _)
+
+    implicit val sourceLinkImpF = Json.format[models.entities.SourceLink]
+    implicit val portalProbeImpF = Json.format[models.entities.PortalProbe]
+    implicit val chemicalProbesImpW = Json.writes[models.entities.ChemicalProbes]
+    implicit val chemicalProbesImpR: Reads[models.entities.ChemicalProbes] =
+      ((__ \ "probeminer" \ "link").read[String] and
+        (__ \ "portalprobes").read[Seq[PortalProbe]]
+        )(ChemicalProbes.apply _)
+
+    implicit val safetyCodeImpW = Json.writes[models.entities.SafetyCode]
+    implicit val safetyCodeImpR: Reads[models.entities.SafetyCode] =
+    ((__ \ "mapped_term").read[String] and
+      (__ \ "term_in_paper").read[String] and
+      (__ \ "code").read[String]
+      )(SafetyCode.apply _)
+
+    implicit val safetyReferenceImpW = Json.writes[models.entities.SafetyReference]
+    implicit val safetyReferenceImpR: Reads[models.entities.SafetyReference] =
+      ((__ \ "pmid").readNullable[String].map{
+        case Some(pid) =>
+          if (pid.isEmpty) None
+          else Some(pid.toLong)
+        case None => None
+      } and
+        (__ \ "ref_label").readNullable[String].map {
+          case Some(label) =>
+            if (label.isEmpty) None
+            else Some(label)
+          case None => None
+        } and
+        (__ \ "ref_link").readNullable[String].map {
+          case Some(link) =>
+            if (link.isEmpty) None
+            else Some(link)
+          case None => None
+        }
+        )(SafetyReference.apply _)
+
+    implicit val adverseEffectsActivationEffectsImpW = Json.writes[AdverseEffectsActivationEffects]
+    implicit val adverseEffectsActivationEffectsImpR: Reads[models.entities.AdverseEffectsActivationEffects] =
+      ((__ \ "acute_dosing").readNullable[Seq[SafetyCode]].map(_.getOrElse(Seq.empty)) and
+        (__ \ "chronic_dosing").readNullable[Seq[SafetyCode]].map(_.getOrElse(Seq.empty)) and
+        (__ \ "general").readNullable[Seq[SafetyCode]].map(_.getOrElse(Seq.empty))
+        )(AdverseEffectsActivationEffects.apply _)
+
+    implicit val adverseEffectsInhibitionEffectsImpW = Json.writes[AdverseEffectsInhibitionEffects]
+    implicit val adverseEffectsInhibitionEffectsImpR: Reads[models.entities.AdverseEffectsInhibitionEffects] =
+      ((__ \ "acute_dosing").readNullable[Seq[SafetyCode]].map(_.getOrElse(Seq.empty)) and
+        (__ \ "chronic_dosing").readNullable[Seq[SafetyCode]].map(_.getOrElse(Seq.empty)) and
+        (__ \ "general").readNullable[Seq[SafetyCode]].map(_.getOrElse(Seq.empty)) and
+        (__ \ "developmental").readNullable[Seq[SafetyCode]].map(_.getOrElse(Seq.empty))
+        )(AdverseEffectsInhibitionEffects.apply _)
+
+    implicit val adverseEffectsImpW = Json.writes[models.entities.AdverseEffects]
+    implicit val adverseEffectsImpR: Reads[models.entities.AdverseEffects] =
+      ((__ \ "activation_effects").read[AdverseEffectsActivationEffects] and
+        (__ \ "inhibition_effects").read[AdverseEffectsInhibitionEffects] and
+        (__ \ "organs_systems_affected").read[Seq[SafetyCode]] and
+        (__ \ "references").read[Seq[SafetyReference]]
+        )(AdverseEffects.apply _)
+
+    implicit val safetyRiskInfoImpW = Json.writes[models.entities.SafetyRiskInfo]
+    implicit val safetyRiskInfoImpR: Reads[models.entities.SafetyRiskInfo] =
+    ((__ \ "organs_systems_affected").read[Seq[SafetyCode]] and
+      (__ \ "references").read[Seq[SafetyReference]] and
+      (__ \ "safety_liability").read[String]
+      )(SafetyRiskInfo.apply _)
+
+    implicit val safetyImpW = Json.writes[models.entities.Safety]
+    implicit val safetyImpR: Reads[models.entities.Safety] =
+      ((__ \ "adverse_effects").readNullable[Seq[AdverseEffects]].map(_.getOrElse(Seq.empty)) and
+        (__ \ "safety_risk_info").readNullable[Seq[SafetyRiskInfo]].map(_.getOrElse(Seq.empty))
+        )(Safety.apply _)
+
     implicit val geneOntologyImpW = Json.writes[models.entities.GeneOntology]
     implicit val geneOntologyImpR: Reads[models.entities.GeneOntology] =
       ((__ \ "id").read[String] and
@@ -128,7 +227,10 @@ object Target {
       (JsPath \ "go").readNullable[Seq[GeneOntology]].map{
         case None => Seq.empty
         case Some(s) => s
-      }
+      } and
+        (JsPath \ "safety").readNullable[Safety] and
+        (JsPath \ "chemicalProbes").readNullable[ChemicalProbes] and
+        (JsPath \ "hallMarks").readNullable[Hallmarks]
       )(Target.apply _)
   }
 
