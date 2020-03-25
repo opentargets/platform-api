@@ -45,6 +45,27 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
   // we must import the dsl
   import com.sksamuel.elastic4s.ElasticDsl._
 
+  def getAdverseEvents(kv: Map[String, String], pagination: Option[Pagination]):
+  Future[Option[AdverseEvents]] = {
+
+    val pag = pagination.getOrElse(Pagination.mkDefault)
+
+    val indexName = defaultESSettings.entities
+      .find(_.name == "faers").map(_.index).getOrElse("faers")
+
+    val aggs = Seq(
+      valueCountAgg("eventCount", "event.keyword")
+    )
+
+    esRetriever.getByIndexedQuery(indexName, kv, pag, AdverseEvent.fromJsValue, aggs, Some("llr")).map {
+      case (Seq(), _) => None
+      case (seq, agg) =>
+        logger.debug(Json.prettyPrint(agg))
+        val counts = (agg \ "eventCount" \ "value").as[Long]
+        Some(AdverseEvents(counts, seq.head.criticalValue, seq))
+    }
+  }
+
   def getCancerBiomarkers(kv: Map[String, String], pagination: Option[Pagination]):
     Future[Option[CancerBiomarkers]] = {
 

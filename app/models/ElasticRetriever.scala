@@ -33,7 +33,8 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String]) extends Log
   def getByIndexedQuery[A](esIndex: String, kv: Map[String, String],
                            pagination: Pagination,
                            buildF: JsValue => Option[A],
-                           aggs: Iterable[AbstractAggregation] = Iterable.empty): Future[(IndexedSeq[A], JsValue)] = {
+                           aggs: Iterable[AbstractAggregation] = Iterable.empty,
+                           sortByFieldDesc: Option[String] = None): Future[(IndexedSeq[A], JsValue)] = {
     val limitClause = pagination.toES
     val q = search(esIndex).bool {
       must(
@@ -43,8 +44,13 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String]) extends Log
 
     // just log and execute the query
     val elems: Future[Response[SearchResponse]] = client.execute {
-      logger.debug(client.show(q))
-      q
+      val qq = sortByFieldDesc match {
+        case Some(f) => q.sortByFieldDesc(f)
+        case None => q
+      }
+
+      logger.debug(client.show(qq))
+      qq
     }
 
     elems.map {

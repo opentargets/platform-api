@@ -73,6 +73,9 @@ trait GQLEntities extends GQLArguments {
 
   implicit val ecoImp = deriveObjectType[Backend, ECO]()
 
+  implicit val adverseEventImp = deriveObjectType[Backend, AdverseEvent]()
+  implicit val adverseEventsImp = deriveObjectType[Backend, AdverseEvents]()
+
   implicit val datasourceSettingsJsonImp = Json.format[DatasourceSettings]
   val datasourceSettingsInputImp = deriveInputObjectType[DatasourceSettings](
     InputObjectTypeName("DatasourceSettingsInput")
@@ -155,7 +158,6 @@ trait GQLEntities extends GQLArguments {
       ctx.getDrugs(ids)
     })
 
-
   // cancerbiomarkers
   implicit val cancerBiomarkerSourceImp = deriveObjectType[Backend, CancerBiomarkerSource]()
   implicit val cancerBiomarkerImp = deriveObjectType[Backend, CancerBiomarker](
@@ -189,7 +191,17 @@ trait GQLEntities extends GQLArguments {
 
   implicit lazy val mechanismOfActionImp = deriveObjectType[Backend, MechanismsOfAction]()
   implicit lazy val withdrawnNoticeImp = deriveObjectType[Backend, WithdrawnNotice]()
-  implicit lazy val drugImp = deriveObjectType[Backend, Drug]()
+  implicit lazy val drugImp = deriveObjectType[Backend, Drug](
+    AddFields(
+      Field("adverseEvents", OptionType(adverseEventsImp),
+        description = Some("The FDA Adverse Event Reporting System (FAERS)"),
+        arguments = pageArg :: Nil,
+        resolve = ctx =>
+          ctx.ctx.getAdverseEvents(
+            Map("chembl_id" -> ctx.value.id),
+            ctx.arg(pageArg)))
+    )
+  )
 
   implicit val datasourceSettingsImp = deriveObjectType[Backend, DatasourceSettings]()
   implicit val networkSettingsImp = deriveObjectType[Backend, LUTableSettings]()
