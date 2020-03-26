@@ -62,16 +62,4 @@ object Drug {
     implicit val indicationsImpW = Json.format[models.entities.Indications]
     implicit val drugImpW = Json.format[models.entities.Drug]
   }
-
-  def fromJsValue(jObj: JsValue): Option[Drug] = {
-    /* apply transformers for json and fill the target
-     start from internal objects and then map the external
-     */
-    import Drug.JSONImplicits._
-    val source = (__ \ '_source).json.pick
-    jObj.transform(source).asOpt.map(obj => {
-      logger.debug(Json.prettyPrint(obj))
-      obj.as[models.entities.Drug]
-    })
-  }
 }

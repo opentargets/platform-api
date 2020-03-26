@@ -71,16 +71,4 @@ object SearchResult {
 
     implicit val msearchResultsImpW = Json.format[models.entities.SearchResults]
   }
-
-  def fromJsValue(jObj: JsValue): Option[SearchResult] = {
-    /* apply transformers for json and fill the searchresult
-     start from internal objects and then map the external
-     */
-    import SearchResult.JSONImplicits._
-    val source = (__ \ '_source).json.pick
-    jObj.transform(source).asOpt.map(obj => {
-      logger.debug(Json.prettyPrint(obj))
-      obj.as[SearchResult]
-    })
-  }
 }

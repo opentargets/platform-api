@@ -39,17 +39,4 @@ object CancerBiomarker {
 
     implicit val cancerBiomarkersImpF = Json.format[models.entities.CancerBiomarkers]
   }
-
-  def fromJsValue(jObj: JsValue): Option[CancerBiomarker] = {
-    /* apply transformers for json and fill the target
-     start from internal objects and then map the external
-     */
-    import CancerBiomarker.JSONImplicits._
-
-    val source = (__ \ '_source).json.pick
-    jObj.transform(source).asOpt.map(obj => {
-      logger.debug(Json.prettyPrint(obj))
-      obj.as[CancerBiomarker]
-    })
-  }
 }

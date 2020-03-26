@@ -20,17 +20,4 @@ object AdverseEvent {
         (JsPath \ "critval").read[Double]
       )(AdverseEvent.apply _)
   }
-
-  def fromJsValue(jObj: JsValue): Option[AdverseEvent] = {
-    /* apply transformers for json and fill the target
-     start from internal objects and then map the external
-     */
-    import AdverseEvent.JSONImplicits._
-
-    val source = (__ \ '_source).json.pick
-    jObj.transform(source).asOpt.map(obj => {
-      logger.debug(Json.prettyPrint(obj))
-      obj.as[AdverseEvent]
-    })
-  }
 }

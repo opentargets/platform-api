@@ -57,7 +57,8 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       valueCountAgg("eventCount", "event.keyword")
     )
 
-    esRetriever.getByIndexedQuery(indexName, kv, pag, AdverseEvent.fromJsValue, aggs, Some("llr")).map {
+    import AdverseEvent.JSONImplicits._
+    esRetriever.getByIndexedQuery(indexName, kv, pag, fromJsValue[AdverseEvent], aggs, Some("llr")).map {
       case (Seq(), _) => None
       case (seq, agg) =>
         logger.debug(Json.prettyPrint(agg))
@@ -80,7 +81,8 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       cardinalityAgg("uniqueBiomarkers", "id.keyword")
     )
 
-    esRetriever.getByIndexedQuery(cbIndex, kv, pag, CancerBiomarker.fromJsValue, aggs).map {
+    import CancerBiomarker.JSONImplicits._
+    esRetriever.getByIndexedQuery(cbIndex, kv, pag, fromJsValue[CancerBiomarker], aggs).map {
       case (Seq(), _) => None
       case (seq, agg) =>
         logger.debug(Json.prettyPrint(agg))
@@ -95,28 +97,32 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val targetIndexName = defaultESSettings.entities
       .find(_.name == "eco").map(_.index).getOrElse("ecos")
 
-    esRetriever.getByIds(targetIndexName, ids, ECO.fromJsValue)
+    import ECO.JSONImplicits._
+    esRetriever.getByIds(targetIndexName, ids, fromJsValue[ECO])
   }
 
   def getTargets(ids: Seq[String]): Future[IndexedSeq[Target]] = {
     val targetIndexName = defaultESSettings.entities
       .find(_.name == "target").map(_.index).getOrElse("targets")
 
-    esRetriever.getByIds(targetIndexName, ids, Target.fromJsValue)
+    import Target.JSONImplicits._
+    esRetriever.getByIds(targetIndexName, ids, fromJsValue[Target])
   }
 
   def getDrugs(ids: Seq[String]): Future[IndexedSeq[Drug]] = {
     val drugIndexName = defaultESSettings.entities
       .find(_.name == "drug").map(_.index).getOrElse("drugs")
 
-    esRetriever.getByIds(drugIndexName, ids, Drug.fromJsValue)
+    import Drug.JSONImplicits._
+    esRetriever.getByIds(drugIndexName, ids, fromJsValue[Drug])
   }
 
   def getDiseases(ids: Seq[String]): Future[IndexedSeq[Disease]] = {
     val diseaseIndexName = defaultESSettings.entities
       .find(_.name == "disease").map(_.index).getOrElse("diseases")
 
-    esRetriever.getByIds(diseaseIndexName, ids, Disease.fromJsValue)
+    import Disease.JSONImplicits._
+    esRetriever.getByIds(diseaseIndexName, ids, fromJsValue[Disease])
   }
 
   def search(qString: String, pagination: Option[Pagination],
