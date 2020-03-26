@@ -71,6 +71,32 @@ trait GQLEntities extends GQLArguments {
       ctx.getECOs(ids)
     })
 
+  implicit val relatedTargetImp = deriveObjectType[Backend, DDRelation](
+    ExcludeFields("A"),
+    ReplaceField("B", Field("B",
+      targetImp, Some("Target"),
+      resolve = r => targetsFetcher.defer(r.value.B)))
+  )
+
+  implicit val relatedDiseaseImp = deriveObjectType[Backend, DDRelation](
+    ExcludeFields("A"),
+    ReplaceField("B", Field("B",
+      diseaseImp, Some("Disease"),
+      resolve = r => diseasesFetcher.defer(r.value.B)))
+  )
+
+  implicit val relatedTargetsImp = deriveObjectType[Backend, DDRelations](
+    ReplaceField("rows", Field("rows",
+      ListType(relatedTargetImp), Some("Related Targets"),
+      resolve = r => r.value.rows))
+  )
+
+  implicit val relatedDiseasesImp = deriveObjectType[Backend, DDRelations](
+    ReplaceField("rows", Field("rows",
+      ListType(relatedDiseaseImp), Some("Related Diseases"),
+      resolve = r => r.value.rows))
+  )
+
   implicit val ecoImp = deriveObjectType[Backend, ECO]()
 
   implicit val adverseEventImp = deriveObjectType[Backend, AdverseEvent]()
@@ -119,7 +145,15 @@ trait GQLEntities extends GQLArguments {
         arguments = pageArg :: Nil,
         resolve = ctx =>
           ctx.ctx.getCancerBiomarkers(
-            Map("target" -> ctx.value.id),
+            Map("target.keyword" -> ctx.value.id),
+            ctx.arg(pageArg))),
+
+      Field("relatedTargets", OptionType(relatedTargetsImp),
+        description = Some("Related Targets"),
+        arguments = pageArg :: Nil,
+        resolve = ctx =>
+          ctx.ctx.getRelatedTargets(
+            Map("A.keyword" -> ctx.value.id),
             ctx.arg(pageArg))),
 
       Field("associationsOnTheFly", associationsImp,
@@ -138,6 +172,14 @@ trait GQLEntities extends GQLArguments {
       ListType(diseaseImp), Some("Disease List"),
       resolve = r => diseasesFetcher.deferSeq(r.value.therapeuticAreas))),
     AddFields(
+      Field("relatedDiseases", OptionType(relatedDiseasesImp),
+        description = Some("Related Targets"),
+        arguments = pageArg :: Nil,
+        resolve = ctx =>
+          ctx.ctx.getRelatedDiseases(
+            Map("A.keyword" -> ctx.value.id),
+            ctx.arg(pageArg))),
+
       Field("associationsOnTheFly", associationsImp,
         description = Some("Associations for a fixed disease"),
         arguments = datasourceSettingsListArg :: networkExpansionId :: pageArg :: Nil,
@@ -198,7 +240,7 @@ trait GQLEntities extends GQLArguments {
         arguments = pageArg :: Nil,
         resolve = ctx =>
           ctx.ctx.getAdverseEvents(
-            Map("chembl_id" -> ctx.value.id),
+            Map("chembl_id.keyword" -> ctx.value.id),
             ctx.arg(pageArg)))
     )
   )

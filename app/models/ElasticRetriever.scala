@@ -80,7 +80,7 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String]) extends Log
         val elems: Future[Response[SearchResponse]] = client.execute {
           val q = search(esIndex).query {
             idsQuery(ids)
-          } limit (Configuration.batchSize)
+          } limit (Configuration.batchSize) trackTotalHits(true)
 
           logger.debug(client.show(q))
           q

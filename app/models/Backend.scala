@@ -45,6 +45,50 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
   // we must import the dsl
   import com.sksamuel.elastic4s.ElasticDsl._
 
+  def getRelatedDiseases(kv: Map[String, String], pagination: Option[Pagination]):
+  Future[Option[DDRelations]] = {
+
+    val pag = pagination.getOrElse(Pagination.mkDefault)
+
+    val indexName = defaultESSettings.entities
+      .find(_.name == "disease_relation").map(_.index).getOrElse("disease_relation")
+
+    val aggs = Seq(
+      valueCountAgg("relationCount", "B.keyword")
+    )
+
+    import DDRelation.JSONImplicits._
+    esRetriever.getByIndexedQuery(indexName, kv, pag, fromJsValue[DDRelation], aggs, Some("score")).map {
+      case (Seq(), _) => None
+      case (seq, agg) =>
+        logger.debug(Json.prettyPrint(agg))
+        val counts = (agg \ "relationCount" \ "value").as[Long]
+        Some(DDRelations(counts, seq))
+    }
+  }
+
+  def getRelatedTargets(kv: Map[String, String], pagination: Option[Pagination]):
+  Future[Option[DDRelations]] = {
+
+    val pag = pagination.getOrElse(Pagination.mkDefault)
+
+    val indexName = defaultESSettings.entities
+      .find(_.name == "target_relation").map(_.index).getOrElse("target_relation")
+
+    val aggs = Seq(
+      valueCountAgg("relationCount", "B.keyword")
+    )
+
+    import DDRelation.JSONImplicits._
+    esRetriever.getByIndexedQuery(indexName, kv, pag, fromJsValue[DDRelation], aggs, Some("score")).map {
+      case (Seq(), _) => None
+      case (seq, agg) =>
+        logger.debug(Json.prettyPrint(agg))
+        val counts = (agg \ "relationCount" \ "value").as[Long]
+        Some(DDRelations(counts, seq))
+    }
+  }
+
   def getAdverseEvents(kv: Map[String, String], pagination: Option[Pagination]):
   Future[Option[AdverseEvents]] = {
 
