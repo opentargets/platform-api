@@ -172,9 +172,9 @@ object Target {
 
     implicit val hallmarksImpW = Json.writes[Hallmarks]
     implicit val hallmarksImpR: Reads[Hallmarks] =
-      ((__ \ "cancer_hallmarks").read[Seq[CancerHallmark]] and
-        (__ \ "attributes").read[Seq[HallmarkAttribute]] and
-        (__ \ "function_summary").read[Seq[LiteratureReference]]
+      ((__ \ "cancer_hallmarks").readNullable[Seq[CancerHallmark]].map(_.getOrElse(Seq.empty)) and
+        (__ \ "attributes").readNullable[Seq[HallmarkAttribute]].map(_.getOrElse(Seq.empty)) and
+        (__ \ "function_summary").readNullable[Seq[LiteratureReference]].map(_.getOrElse(Seq.empty))
         )(Hallmarks.apply _)
 
     implicit val sourceLinkImpF = Json.format[models.entities.SourceLink]
