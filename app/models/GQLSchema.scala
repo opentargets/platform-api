@@ -72,6 +72,8 @@ trait GQLEntities extends GQLArguments {
     })
 
   implicit val relatedTargetImp = deriveObjectType[Backend, DDRelation](
+    ObjectTypeName("RelatedTarget"),
+    ObjectTypeDescription("Related Target Entity"),
     ExcludeFields("A"),
     ReplaceField("B", Field("B",
       targetImp, Some("Target"),
@@ -79,6 +81,8 @@ trait GQLEntities extends GQLArguments {
   )
 
   implicit val relatedDiseaseImp = deriveObjectType[Backend, DDRelation](
+    ObjectTypeName("RelatedDisease"),
+    ObjectTypeDescription("Related Disease Entity"),
     ExcludeFields("A"),
     ReplaceField("B", Field("B",
       diseaseImp, Some("Disease"),
@@ -86,12 +90,16 @@ trait GQLEntities extends GQLArguments {
   )
 
   implicit val relatedTargetsImp = deriveObjectType[Backend, DDRelations](
+    ObjectTypeName("RelatedTargets"),
+    ObjectTypeDescription("Related Targets Entity"),
     ReplaceField("rows", Field("rows",
       ListType(relatedTargetImp), Some("Related Targets"),
       resolve = r => r.value.rows))
   )
 
   implicit val relatedDiseasesImp = deriveObjectType[Backend, DDRelations](
+    ObjectTypeName("RelatedDiseases"),
+    ObjectTypeDescription("Related Diseases"),
     ReplaceField("rows", Field("rows",
       ListType(relatedDiseaseImp), Some("Related Diseases"),
       resolve = r => r.value.rows))
