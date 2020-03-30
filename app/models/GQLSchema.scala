@@ -136,7 +136,7 @@ trait GQLEntities extends GQLArguments {
   implicit val safetyRiskInfoImp = deriveObjectType[Backend, SafetyRiskInfo]()
   implicit val safetyImp = deriveObjectType[Backend, Safety]()
 
-  implicit val proteinImp = deriveObjectType[Backend, Protein]()
+  implicit val proteinImp = deriveObjectType[Backend, ProteinAnnotations]()
   implicit val genomicLocationImp = deriveObjectType[Backend, GenomicLocation]()
   implicit lazy val targetImp: ObjectType[Backend, Target] = deriveObjectType(
     AddFields(

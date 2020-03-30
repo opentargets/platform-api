@@ -39,7 +39,7 @@ case class HallmarkAttribute(name: String, reference: LiteratureReference)
 
 case class Hallmarks(rows: Seq[CancerHallmark], attributes: Seq[HallmarkAttribute], functions: Seq[LiteratureReference])
 
-case class Protein(id: String, accessions: Seq[String], functions: Seq[String])
+case class ProteinAnnotations(id: String, accessions: Seq[String], functions: Seq[String])
 
 case class GenomicLocation(chromosome: String, start: Long, end: Long, strand: Int)
 
@@ -91,7 +91,7 @@ case class Target(id: String,
                   nameSynonyms: Seq[String],
                   symbolSynonyms: Seq[String],
                   genomicLocation: GenomicLocation,
-                  proteinAnnotations: Option[Protein],
+                  proteinAnnotations: Option[ProteinAnnotations],
                   geneOntology: Seq[GeneOntology],
                   safety: Option[Safety],
                   chemicalProbes: Option[ChemicalProbes],
@@ -258,7 +258,7 @@ object Target {
         (__ \ "value" \ "evidence").read[String].map(_.replace(":", "_"))
         )(GeneOntology.apply _)
 
-    implicit val proteinImpW = Json.format[models.entities.Protein]
+    implicit val proteinImpW = Json.format[models.entities.ProteinAnnotations]
     implicit val genomicLocationImpW = Json.format[models.entities.GenomicLocation]
     implicit val targetImpW = Json.writes[models.entities.Target]
     implicit val targetImpR: Reads[models.entities.Target] = (
@@ -270,7 +270,7 @@ object Target {
       (JsPath \ "nameSynonyms").read[Seq[String]] and
       (JsPath \ "symbolSynonyms").read[Seq[String]] and
       (JsPath \ "genomicLocation").read[GenomicLocation] and
-      (JsPath \ "proteinAnnotations").readNullable[Protein] and
+      (JsPath \ "proteinAnnotations").readNullable[ProteinAnnotations] and
       (JsPath \ "go").readNullable[Seq[GeneOntology]].map{
         case None => Seq.empty
         case Some(s) => s
