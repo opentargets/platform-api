@@ -71,6 +71,14 @@ trait GQLEntities extends GQLArguments {
       ctx.getECOs(ids)
     })
 
+  implicit val tractabilityAntibodyCategoriesImp = deriveObjectType[Backend, TractabilityAntibodyCategories]()
+  implicit val tractabilitySmallMoleculeCategoriesImp = deriveObjectType[Backend, TractabilitySmallMoleculeCategories]()
+
+  implicit val tractabilityAntibodyImp = deriveObjectType[Backend, TractabilityAntibody]()
+  implicit val tractabilitySmallMoleculeImp = deriveObjectType[Backend, TractabilitySmallMolecule]()
+  implicit val tractabilityImp = deriveObjectType[Backend, Tractability]()
+
+
   implicit val relatedTargetImp = deriveObjectType[Backend, DDRelation](
     ObjectTypeName("RelatedTarget"),
     ObjectTypeDescription("Related Target Entity"),

@@ -28,7 +28,7 @@ case class Orthologs(chimpanzee: Option[Seq[Ortholog]],
                      zebrafish: Option[Seq[Ortholog]]
                     )
 
-case class LiteratureReference(pubmedId: String, description: String)
+case class LiteratureReference(pubmedId: Long, description: String)
 
 case class CancerHallmark(suppress: Boolean,
                     promote: Boolean,
@@ -66,7 +66,7 @@ case class TractabilitySmallMolecule(topCategory: String, smallMoleculeGenomeMem
                                     )
 case class Tractability(smallmolecule: Option[TractabilitySmallMolecule], antibody: Option[TractabilityAntibody])
 
-case class SafetyCode(code: String, mappedTerm: String, termInPaper: String)
+case class SafetyCode(code: Option[String], mappedTerm: Option[String], termInPaper: Option[String])
 case class SafetyReference(pubmedId: Option[Long], refLabel: Option[String], refLink: Option[String])
 case class AdverseEffectsActivationEffects(acuteDosing: Seq[SafetyCode], chronicDosing: Seq[SafetyCode],
                                            general: Seq[SafetyCode])
@@ -92,48 +92,54 @@ case class Target(id: String,
                   symbolSynonyms: Seq[String],
                   genomicLocation: GenomicLocation,
                   proteinAnnotations: Option[ProteinAnnotations],
-                  geneOntology: Seq[GeneOntology],
+//                  geneOntology: Seq[GeneOntology],
                   safety: Option[Safety],
                   chemicalProbes: Option[ChemicalProbes],
                   hallmarks: Option[Hallmarks],
-                  orthologs: Option[Orthologs]
+                  orthologs: Option[Orthologs],
+                  tractability: Option[Tractability]
                  )
 
 object Target {
   val logger = Logger(this.getClass)
 
   object JSONImplicits {
+    implicit val tractabilityAntibodyCategoriesImpW = Json.writes[TractabilityAntibodyCategories]
+    implicit val tractabilityAntibodyCategoriesImpR: Reads[TractabilityAntibodyCategories] =
+      ((__ \ "predicted_tractable_med_low_confidence").read[Double] and
+        (__ \ "clinical_precedence").read[Double] and
+        (__ \ "predicted_tractable_high_confidence").read[Double]
+      )(TractabilityAntibodyCategories.apply _)
 
-    // orthologs
-    //              {
-    //                "ortholog_species" : "9544",
-    //                "ortholog_species_name" : "B-Raf proto-oncogene, serine/threonine kinase",
-    //                "ortholog_species_symbol" : "BRAF",
-    //                "support" : [
-    //                  "Ensembl",
-    //                  "HomoloGene",
-    //                  "NCBI",
-    //                  "OrthoDB"
-    //                ],
-    //                "ortholog_species_ensembl_gene" : "ENSMMUG00000042793",
-    //                "ortholog_species_db_id" : "-",
-    //                "ortholog_species_entrez_gene" : "693554",
-    //                "ortholog_species_chr" : "3",
-    //                "ortholog_species_assert_ids" : [
-    //                  "ENSMMUG00000042793",
-    //                  "3197",
-    //                  "693554",
-    //                  "11271at9443"
-    //                ]
-    //case class Ortholog(speciesId: String,
-    //                    name: String,
-    //                    symbol: String,
-    //                    support: Seq[String],
-    //                    ensemblId: String,
-    //                    dbId: String,
-    //                    entrezId: String,
-    //                    chromosomeId: String,
-    //                    assertIds: Seq[String])
+    implicit val tractabilitySmallMoleculeCategoriesImpW = Json.writes[TractabilitySmallMoleculeCategories]
+    implicit val tractabilitySmallMoleculeCategoriesImpR: Reads[TractabilitySmallMoleculeCategories] =
+      ((__ \ "clinical_precedence").read[Double] and
+        (__ \ "predicted_tractable").read[Double] and
+        (__ \ "discovery_precedence").read[Double]
+        )(TractabilitySmallMoleculeCategories.apply _)
+
+    implicit val tractabilityAntibodyImpW = Json.writes[TractabilityAntibody]
+    implicit val TractabilityAntibodyImpR: Reads[TractabilityAntibody] =
+      ((__ \ "top_category").read[String] and
+        (__ \ "buckets").read[Seq[Long]] and
+        (__ \ "categories").read[TractabilityAntibodyCategories]
+        )(TractabilityAntibody.apply _)
+
+    implicit val tractabilitySmallMoleculeImpW = Json.writes[TractabilitySmallMolecule]
+    implicit val tractabilitySmallMoleculeImpR: Reads[TractabilitySmallMolecule] =
+      ((__ \ "top_category").read[String] and
+        (__ \ "small_molecule_genome_member").read[Boolean] and
+        (__ \ "buckets").read[Seq[Long]] and
+        (__ \ "high_quality_compounds").read[Long] and
+        (__ \ "ensemble").read[Double] and
+        (__ \ "categories").read[TractabilitySmallMoleculeCategories]
+        )(TractabilitySmallMolecule.apply _)
+
+    implicit val tractabilityImpW = Json.writes[Tractability]
+    implicit val tractabilityImpR: Reads[Tractability] =
+      ((__ \ "smallmolecule").readNullable[TractabilitySmallMolecule] and
+        (__ \ "antibody").readNullable[TractabilityAntibody]
+        )(Tractability.apply _)
 
     implicit val orthologImpW = Json.writes[Ortholog]
     implicit val orthologImpR: Reads[Ortholog] =
@@ -152,7 +158,7 @@ object Target {
 
     implicit val literatureReferenceImpW = Json.writes[LiteratureReference]
     implicit val literatureReferenceImpR: Reads[LiteratureReference] =
-      ((__ \ "pmid").read[String] and
+      ((__ \ "pmid").read[Long] and
         (__ \ "description").read[String]
         )(LiteratureReference.apply _)
 
@@ -187,30 +193,30 @@ object Target {
 
     implicit val safetyCodeImpW = Json.writes[models.entities.SafetyCode]
     implicit val safetyCodeImpR: Reads[models.entities.SafetyCode] =
-    ((__ \ "mapped_term").read[String] and
-      (__ \ "term_in_paper").read[String] and
-      (__ \ "code").read[String]
+    ((__ \ "mapped_term").readNullable[String].map {
+      case Some("") => None
+      case x => x
+    } and
+      (__ \ "term_in_paper").readNullable[String].map {
+        case Some("") => None
+        case x => x
+      } and
+      (__ \ "code").readNullable[String].map {
+        case Some("") => None
+        case x => x
+      }
       )(SafetyCode.apply _)
 
     implicit val safetyReferenceImpW = Json.writes[models.entities.SafetyReference]
     implicit val safetyReferenceImpR: Reads[models.entities.SafetyReference] =
-      ((__ \ "pmid").readNullable[String].map{
-        case Some(pid) =>
-          if (pid.isEmpty) None
-          else Some(pid.toLong)
-        case None => None
-      } and
+      ((__ \ "pmid").readNullable[Long] and
         (__ \ "ref_label").readNullable[String].map {
-          case Some(label) =>
-            if (label.isEmpty) None
-            else Some(label)
-          case None => None
+          case Some("") => None
+          case x => x
         } and
         (__ \ "ref_link").readNullable[String].map {
-          case Some(link) =>
-            if (link.isEmpty) None
-            else Some(link)
-          case None => None
+          case Some("") => None
+          case x => x
         }
         )(SafetyReference.apply _)
 
@@ -255,7 +261,7 @@ object Target {
       ((__ \ "id").read[String] and
         (__ \ "value" \ "project").read[String] and
         (__ \ "value" \ "term").read[String] and
-        (__ \ "value" \ "evidence").read[String].map(_.replace(":", "_"))
+        (__ \ "value" \ "evidence").read[String]
         )(GeneOntology.apply _)
 
     implicit val proteinImpW = Json.format[models.entities.ProteinAnnotations]
@@ -271,14 +277,11 @@ object Target {
       (JsPath \ "symbolSynonyms").read[Seq[String]] and
       (JsPath \ "genomicLocation").read[GenomicLocation] and
       (JsPath \ "proteinAnnotations").readNullable[ProteinAnnotations] and
-      (JsPath \ "go").readNullable[Seq[GeneOntology]].map{
-        case None => Seq.empty
-        case Some(s) => s
-      } and
         (JsPath \ "safety").readNullable[Safety] and
         (JsPath \ "chemicalProbes").readNullable[ChemicalProbes] and
         (JsPath \ "hallMarks").readNullable[Hallmarks] and
-        (JsPath \ "ortholog").readNullable[Orthologs]
+        (JsPath \ "ortholog").readNullable[Orthologs] and
+        (JsPath \ "tractability").readNullable[Tractability]
       )(Target.apply _)
   }
 
