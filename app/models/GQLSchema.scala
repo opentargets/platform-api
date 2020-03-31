@@ -228,8 +228,16 @@ trait GQLEntities extends GQLArguments {
   implicit val cancerBiomarkersImp = deriveObjectType[Backend, CancerBiomarkers]()
 
   // howto doc https://sangria-graphql.org/learn/#macro-based-graphql-type-derivation
-  implicit lazy val linkedDiseasesImp = deriveObjectType[Backend, LinkedDiseases]()
-  implicit lazy val linkedTargetsImp = deriveObjectType[Backend, LinkedTargets](
+  implicit lazy val linkedDiseasesImp = deriveObjectType[Backend, LinkedIds](
+    ObjectTypeName("LinkedDiseases"),
+    ObjectTypeDescription("Linked Disease Entities"),
+    ReplaceField("rows", Field("rows", ListType(diseaseImp), Some("Disease List"),
+      resolve = r => diseasesFetcher.deferSeqOpt(r.value.rows)))
+  )
+
+  implicit lazy val linkedTargetsImp = deriveObjectType[Backend, LinkedIds](
+    ObjectTypeName("LinkedTargets"),
+    ObjectTypeDescription("Linked Target Entities"),
     ReplaceField("rows", Field("rows", ListType(targetImp), Some("Target List"),
       resolve = r => targetsFetcher.deferSeqOpt(r.value.rows)))
   )
@@ -258,7 +266,11 @@ trait GQLEntities extends GQLArguments {
           ctx.ctx.getAdverseEvents(
             Map("chembl_id.keyword" -> ctx.value.id),
             ctx.arg(pageArg)))
-    )
+    ),
+    ReplaceField("linkedDiseases", Field("linkedDiseases", linkedDiseasesImp, Some("Linked Diseases"),
+      resolve = r => r.value.linkedDiseases)),
+    ReplaceField("linkedTargets", Field("linkedTargets", linkedTargetsImp, Some("Linked Targets"),
+      resolve = r => r.value.linkedTargets))
   )
 
   implicit val datasourceSettingsImp = deriveObjectType[Backend, DatasourceSettings]()
