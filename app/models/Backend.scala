@@ -137,8 +137,8 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     }
   }
 
-  def getClinicalTrialDrugs(kv: Map[String, String], pagination: Option[Pagination]):
-  Future[Option[ClinicalTrialDrugs]] = {
+  def getKnownDrugs(kv: Map[String, String], pagination: Option[Pagination]):
+  Future[Option[KnownDrugs]] = {
 
     val pag = pagination.getOrElse(Pagination.mkDefault)
 
@@ -149,21 +149,21 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       cardinalityAgg("uniqueTargets", "target.keyword"),
       cardinalityAgg("uniqueDiseases", "disease.keyword"),
       cardinalityAgg("uniqueDrugs", "drug.keyword"),
-      cardinalityAgg("uniqueClinicalTrials", "list_urls.url.keyword"),
+//      cardinalityAgg("uniqueClinicalTrials", "list_urls.url.keyword"),
       valueCountAgg("rowsCount", "drug.keyword")
     )
 
-    import ClinicalTrialDrug.JSONImplicits._
-    esRetriever.getByIndexedQuery(cbIndex, kv, pag, fromJsValue[ClinicalTrialDrug], aggs).map {
+    import KnownDrug.JSONImplicits._
+    esRetriever.getByIndexedQuery(cbIndex, kv, pag, fromJsValue[KnownDrug], aggs).map {
       case (Seq(), _) => None
       case (seq, agg) =>
         logger.debug(Json.prettyPrint(agg))
         val drugs = (agg \ "uniqueDrugs" \ "value").as[Long]
         val diseases = (agg \ "uniqueDiseases" \ "value").as[Long]
         val targets = (agg \ "uniqueTargets" \ "value").as[Long]
-        val clinicalTrials = (agg \ "uniqueClinicalTrials" \ "value").as[Long]
+//        val clinicalTrials = (agg \ "uniqueClinicalTrials" \ "value").as[Long]
         val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
-        Some(ClinicalTrialDrugs(drugs, diseases, targets, clinicalTrials, rowsCount, seq))
+        Some(KnownDrugs(drugs, diseases, targets, rowsCount, seq))
     }
   }
 

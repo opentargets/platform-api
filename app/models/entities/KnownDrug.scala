@@ -26,41 +26,48 @@ import play.api.libs.functional.syntax._
 //            "Unclassified protein"
 //          ]
 //        }
-case class ClinicalTrialDrug(drugType: String, targetId: String, diseaseId: String,
-                             drugId: String, phase: String, mechanismOfAction: String,
-                             status: String, activity: String, targetClass: Seq[String],
-                             ctIds: Seq[String])
+case class URL(url: String, name: String)
+case class KnownDrug(drugType: String, targetId: String, diseaseId: String,
+                     drugId: String, phase: String, mechanismOfAction: String,
+                     status: Option[String], activity: String, targetClass: Seq[String],
+                     ctIds: Seq[String], urls: Seq[URL])
 
-case class ClinicalTrialDrugs(uniqueDrugs: Long,
-                              uniqueDiseases: Long,
-                              uniqueTargets: Long,
-                              uniqueClinicalTrials: Long,
-                              count: Long,
-                              rows: Seq[ClinicalTrialDrug])
+case class KnownDrugs(uniqueDrugs: Long,
+                      uniqueDiseases: Long,
+                      uniqueTargets: Long,
+                      count: Long,
+                      rows: Seq[KnownDrug])
 
-object ClinicalTrialDrug {
+object KnownDrug {
   val logger = Logger(this.getClass)
 
   // (ctPattern findAllIn str)
   val ctPattern = "NCT(\\d{8})".r
 
   object JSONImplicits {
-    implicit val clinicalTrialDrugImpW = Json.writes[ClinicalTrialDrug]
-    implicit val clinicalTrialDrugImpR: Reads[ClinicalTrialDrug] = (
+    implicit val URLImpW = Json.writes[URL]
+    implicit val URLImpR: Reads[URL] = (
+      (__ \ "url").read[String] and
+        (__ \ "nice_name").read[String]
+    )(URL.apply _)
+
+    implicit val knownDrugImpW = Json.writes[KnownDrug]
+    implicit val knownDrugImpR: Reads[KnownDrug] = (
       (JsPath \ "drug_type").read[String] and
         (JsPath \ "target").read[String] and
         (JsPath \ "disease").read[String] and
         (JsPath \ "drug").read[String] and
         (JsPath \ "clinical_trial_phase").read[String] and
         (JsPath \ "mechanism_of_action").read[String] and
-        (JsPath \ "clinical_trial_status").read[String] and
+        (JsPath \ "clinical_trial_status").readNullable[String] and
         (JsPath \ "activity").read[String] and
         (JsPath \ "target_class").read[Seq[String]] and
         (JsPath \ "list_urls").read[Seq[Map[String, String]]].map(
           s => s.flatMap(m => ctPattern findAllIn m("url") )
-        )
-    )(ClinicalTrialDrug.apply _)
+        ) and
+        (JsPath \ "list_urls").read[Seq[URL]]
+    )(KnownDrug.apply _)
 
-    implicit val clinicalTrialDrugsImpF = Json.format[ClinicalTrialDrugs]
+    implicit val knownDrugsImpF = Json.format[KnownDrugs]
   }
 }

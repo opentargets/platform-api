@@ -155,11 +155,11 @@ trait GQLEntities extends GQLArguments {
   implicit val genomicLocationImp = deriveObjectType[Backend, GenomicLocation]()
   implicit lazy val targetImp: ObjectType[Backend, Target] = deriveObjectType(
     AddFields(
-      Field("clinicalTrialDrugs", OptionType(clinicalTrialDrugsImp),
+      Field("knownDrugs", OptionType(knownDrugsImp),
         description = Some("Clinical Trial Drugs from evidences"),
         arguments = pageArg :: Nil,
         resolve = ctx =>
-          ctx.ctx.getClinicalTrialDrugs(
+          ctx.ctx.getKnownDrugs(
             Map("target.keyword" -> ctx.value.id),
             ctx.arg(pageArg))),
       Field("cancerBiomarkers", OptionType(cancerBiomarkersImp),
@@ -194,11 +194,11 @@ trait GQLEntities extends GQLArguments {
       ListType(diseaseImp), Some("Disease List"),
       resolve = r => diseasesFetcher.deferSeq(r.value.therapeuticAreas))),
     AddFields(
-      Field("clinicalTrialDrugs", OptionType(clinicalTrialDrugsImp),
+      Field("knownDrugs", OptionType(knownDrugsImp),
         description = Some("Clinical Trial Drugs from evidences"),
         arguments = pageArg :: Nil,
         resolve = ctx =>
-          ctx.ctx.getClinicalTrialDrugs(
+          ctx.ctx.getKnownDrugs(
             Map("disease.keyword" -> ctx.value.id),
             ctx.arg(pageArg))),
 
@@ -273,11 +273,11 @@ trait GQLEntities extends GQLArguments {
   implicit lazy val withdrawnNoticeImp = deriveObjectType[Backend, WithdrawnNotice]()
   implicit lazy val drugImp = deriveObjectType[Backend, Drug](
     AddFields(
-      Field("clinicalTrialDrugs", OptionType(clinicalTrialDrugsImp),
+      Field("knownDrugs", OptionType(knownDrugsImp),
         description = Some("Clinical Trial Drugs from evidences"),
         arguments = pageArg :: Nil,
         resolve = ctx =>
-          ctx.ctx.getClinicalTrialDrugs(
+          ctx.ctx.getKnownDrugs(
             Map("drug.keyword" -> ctx.value.id),
             ctx.arg(pageArg))),
 
@@ -331,7 +331,8 @@ trait GQLEntities extends GQLArguments {
           ctx.arg(pageArg)))
     ))
 
-  implicit val clinicalTrialDrugImp: ObjectType[Backend, ClinicalTrialDrug] = deriveObjectType[Backend, ClinicalTrialDrug](
+  implicit val URLImp: ObjectType[Backend, URL] = deriveObjectType[Backend, URL]()
+  implicit val knownDrugImp: ObjectType[Backend, KnownDrug] = deriveObjectType[Backend, KnownDrug](
     AddFields(
       Field("disease", OptionType(diseaseImp),
         resolve = r => diseasesFetcher.deferOpt(r.value.diseaseId)),
@@ -342,7 +343,7 @@ trait GQLEntities extends GQLArguments {
     )
   )
 
-  implicit val clinicalTrialDrugsImp: ObjectType[Backend, ClinicalTrialDrugs] = deriveObjectType[Backend, ClinicalTrialDrugs]()
+  implicit val knownDrugsImp: ObjectType[Backend, KnownDrugs] = deriveObjectType[Backend, KnownDrugs]()
 
 }
 
