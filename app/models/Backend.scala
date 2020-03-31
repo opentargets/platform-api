@@ -137,6 +137,36 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     }
   }
 
+  def getClinicalTrialDrugs(kv: Map[String, String], pagination: Option[Pagination]):
+  Future[Option[ClinicalTrialDrugs]] = {
+
+    val pag = pagination.getOrElse(Pagination.mkDefault)
+
+    val cbIndex = defaultESSettings.entities
+      .find(_.name == "evidence_drug_direct").map(_.index).getOrElse("evidence_drug_direct")
+
+    val aggs = Seq(
+      cardinalityAgg("uniqueTargets", "target.keyword"),
+      cardinalityAgg("uniqueDiseases", "disease.keyword"),
+      cardinalityAgg("uniqueDrugs", "drug.keyword"),
+      cardinalityAgg("uniqueClinicalTrials", "list_urls.url.keyword"),
+      valueCountAgg("rowsCount", "drug.keyword")
+    )
+
+    import ClinicalTrialDrug.JSONImplicits._
+    esRetriever.getByIndexedQuery(cbIndex, kv, pag, fromJsValue[ClinicalTrialDrug], aggs).map {
+      case (Seq(), _) => None
+      case (seq, agg) =>
+        logger.debug(Json.prettyPrint(agg))
+        val drugs = (agg \ "uniqueDrugs" \ "value").as[Long]
+        val diseases = (agg \ "uniqueDiseases" \ "value").as[Long]
+        val targets = (agg \ "uniqueTargets" \ "value").as[Long]
+        val clinicalTrials = (agg \ "uniqueClinicalTrials" \ "value").as[Long]
+        val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
+        Some(ClinicalTrialDrugs(drugs, diseases, targets, clinicalTrials, rowsCount, seq))
+    }
+  }
+
   def getECOs(ids: Seq[String]): Future[IndexedSeq[ECO]] = {
     val targetIndexName = defaultESSettings.entities
       .find(_.name == "eco").map(_.index).getOrElse("ecos")

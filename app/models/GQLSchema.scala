@@ -78,7 +78,6 @@ trait GQLEntities extends GQLArguments {
   implicit val tractabilitySmallMoleculeImp = deriveObjectType[Backend, TractabilitySmallMolecule]()
   implicit val tractabilityImp = deriveObjectType[Backend, Tractability]()
 
-
   implicit val relatedTargetImp = deriveObjectType[Backend, DDRelation](
     ObjectTypeName("RelatedTarget"),
     ObjectTypeDescription("Related Target Entity"),
@@ -156,6 +155,13 @@ trait GQLEntities extends GQLArguments {
   implicit val genomicLocationImp = deriveObjectType[Backend, GenomicLocation]()
   implicit lazy val targetImp: ObjectType[Backend, Target] = deriveObjectType(
     AddFields(
+      Field("clinicalTrialDrugs", OptionType(clinicalTrialDrugsImp),
+        description = Some("Clinical Trial Drugs from evidences"),
+        arguments = pageArg :: Nil,
+        resolve = ctx =>
+          ctx.ctx.getClinicalTrialDrugs(
+            Map("target.keyword" -> ctx.value.id),
+            ctx.arg(pageArg))),
       Field("cancerBiomarkers", OptionType(cancerBiomarkersImp),
         description = Some("CancerBiomarkers"),
         arguments = pageArg :: Nil,
@@ -188,6 +194,14 @@ trait GQLEntities extends GQLArguments {
       ListType(diseaseImp), Some("Disease List"),
       resolve = r => diseasesFetcher.deferSeq(r.value.therapeuticAreas))),
     AddFields(
+      Field("clinicalTrialDrugs", OptionType(clinicalTrialDrugsImp),
+        description = Some("Clinical Trial Drugs from evidences"),
+        arguments = pageArg :: Nil,
+        resolve = ctx =>
+          ctx.ctx.getClinicalTrialDrugs(
+            Map("disease.keyword" -> ctx.value.id),
+            ctx.arg(pageArg))),
+
       Field("relatedDiseases", OptionType(relatedDiseasesImp),
         description = Some("Related Targets"),
         arguments = pageArg :: Nil,
@@ -259,6 +273,14 @@ trait GQLEntities extends GQLArguments {
   implicit lazy val withdrawnNoticeImp = deriveObjectType[Backend, WithdrawnNotice]()
   implicit lazy val drugImp = deriveObjectType[Backend, Drug](
     AddFields(
+      Field("clinicalTrialDrugs", OptionType(clinicalTrialDrugsImp),
+        description = Some("Clinical Trial Drugs from evidences"),
+        arguments = pageArg :: Nil,
+        resolve = ctx =>
+          ctx.ctx.getClinicalTrialDrugs(
+            Map("drug.keyword" -> ctx.value.id),
+            ctx.arg(pageArg))),
+
       Field("adverseEvents", OptionType(adverseEventsImp),
         description = Some("The FDA Adverse Event Reporting System (FAERS)"),
         arguments = pageArg :: Nil,
@@ -308,6 +330,20 @@ trait GQLEntities extends GQLArguments {
           ctx.arg(networkExpansionId),
           ctx.arg(pageArg)))
     ))
+
+  implicit val clinicalTrialDrugImp: ObjectType[Backend, ClinicalTrialDrug] = deriveObjectType[Backend, ClinicalTrialDrug](
+    AddFields(
+      Field("disease", OptionType(diseaseImp),
+        resolve = r => diseasesFetcher.deferOpt(r.value.diseaseId)),
+      Field("target", OptionType(targetImp),
+        resolve = r => targetsFetcher.deferOpt(r.value.targetId)),
+      Field("drug", OptionType(drugImp),
+        resolve = r => drugsFetcher.deferOpt(r.value.drugId))
+    )
+  )
+
+  implicit val clinicalTrialDrugsImp: ObjectType[Backend, ClinicalTrialDrugs] = deriveObjectType[Backend, ClinicalTrialDrugs]()
+
 }
 
 object GQLSchema extends GQLMeta with GQLEntities {

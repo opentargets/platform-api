@@ -92,7 +92,7 @@ case class Target(id: String,
                   symbolSynonyms: Seq[String],
                   genomicLocation: GenomicLocation,
                   proteinAnnotations: Option[ProteinAnnotations],
-//                  geneOntology: Seq[GeneOntology],
+                  geneOntology: Seq[GeneOntology],
                   safety: Option[Safety],
                   chemicalProbes: Option[ChemicalProbes],
                   hallmarks: Option[Hallmarks],
@@ -277,6 +277,7 @@ object Target {
       (JsPath \ "symbolSynonyms").read[Seq[String]] and
       (JsPath \ "genomicLocation").read[GenomicLocation] and
       (JsPath \ "proteinAnnotations").readNullable[ProteinAnnotations] and
+      (JsPath \ "go").readNullable[Seq[GeneOntology]].map(_.getOrElse(Seq.empty)) and
         (JsPath \ "safety").readNullable[Safety] and
         (JsPath \ "chemicalProbes").readNullable[ChemicalProbes] and
         (JsPath \ "hallMarks").readNullable[Hallmarks] and
