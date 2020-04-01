@@ -12,7 +12,7 @@ case class CancerBiomarker(id: String, associationType: String, disease: String,
                            pubmedIds: Seq[Long])
 
 case class CancerBiomarkers(uniqueDrugs: Long, uniqueDiseases: Long, uniqueBiomarkers: Long,
-                            rows: Seq[CancerBiomarker])
+                            count: Long, rows: Seq[CancerBiomarker])
 
 object CancerBiomarker {
   val logger = Logger(this.getClass)

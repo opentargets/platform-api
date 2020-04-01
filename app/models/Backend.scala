@@ -122,7 +122,8 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val aggs = Seq(
       cardinalityAgg("uniqueDrugs", "drugName.keyword"),
       cardinalityAgg("uniqueDiseases", "disease.keyword"),
-      cardinalityAgg("uniqueBiomarkers", "id.keyword")
+      cardinalityAgg("uniqueBiomarkers", "id.keyword"),
+      valueCountAgg("rowsCount", "id.keyword")
     )
 
     import CancerBiomarker.JSONImplicits._
@@ -133,7 +134,8 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
         val drugs = (agg \ "uniqueDrugs" \ "value").as[Long]
         val diseases = (agg \ "uniqueDiseases" \ "value").as[Long]
         val biomarkers = (agg \ "uniqueBiomarkers" \ "value").as[Long]
-        Some(CancerBiomarkers(drugs, diseases, biomarkers,seq))
+        val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
+        Some(CancerBiomarkers(drugs, diseases, biomarkers, rowsCount, seq))
     }
   }
 
