@@ -5,27 +5,6 @@ import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 
-//          "drug_type" : "Small molecule",
-//          "target" : "ENSG00000148229",
-//          "disease" : "EFO_0000305",
-//          "clinical_trial_phase" : "Phase II",
-//          "mechanism_of_action" : "DNA polymerase (alpha/delta/epsilon) inhibitor",
-//          "clinical_trial_status" : "Withdrawn",
-//          "list_urls_counts" : 1,
-//          "drug" : "CHEMBL1096882",
-//          "activity" : "negative_modulator",
-//          "list_urls" : [
-//            {
-//              "url" : "https://clinicaltrials.gov/search?id=%22NCT00006261%22",
-//              "nice_name" : "Clinical Trials Information"
-//            }
-//          ],
-//          "target_class" : [
-//            "Enzyme",
-//            "Transferase",
-//            "Unclassified protein"
-//          ]
-//        }
 case class URL(url: String, name: String)
 case class KnownDrug(drugType: String, targetId: String, diseaseId: String,
                      drugId: String, phase: String, mechanismOfAction: String,
@@ -40,8 +19,6 @@ case class KnownDrugs(uniqueDrugs: Long,
 
 object KnownDrug {
   val logger = Logger(this.getClass)
-
-  // (ctPattern findAllIn str)
   val ctPattern = "NCT(\\d{8})".r
 
   object JSONImplicits {
