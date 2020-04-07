@@ -10,7 +10,7 @@ case class DDRelation(id: String, A: String, B: String,
                       countAOrB: Long, countAndB: Long,
                       score: Double)
 
-case class DDRelations(count: Long, rows: Seq[DDRelation])
+case class DDRelations(maxCountAOrB: Long, count: Long, rows: Seq[DDRelation])
 
 object DDRelation {
   val logger = Logger(this.getClass)

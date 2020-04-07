@@ -54,7 +54,8 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       .find(_.name == "disease_relation").map(_.index).getOrElse("disease_relation")
 
     val aggs = Seq(
-      valueCountAgg("relationCount", "B.keyword")
+      valueCountAgg("relationCount", "B.keyword"),
+      maxAgg("maxCountAOrB", "countAOrB")
     )
 
     import DDRelation.JSONImplicits._
@@ -63,7 +64,8 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       case (seq, agg) =>
         logger.debug(Json.prettyPrint(agg))
         val counts = (agg \ "relationCount" \ "value").as[Long]
-        Some(DDRelations(counts, seq))
+        val maxCountAOrB = (agg \ "maxCountAOrB" \ "value").as[Long]
+        Some(DDRelations(maxCountAOrB, counts, seq))
     }
   }
 
@@ -76,7 +78,8 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       .find(_.name == "target_relation").map(_.index).getOrElse("target_relation")
 
     val aggs = Seq(
-      valueCountAgg("relationCount", "B.keyword")
+      valueCountAgg("relationCount", "B.keyword"),
+      maxAgg("maxCountAOrB", "countAOrB")
     )
 
     import DDRelation.JSONImplicits._
@@ -85,7 +88,8 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       case (seq, agg) =>
         logger.debug(Json.prettyPrint(agg))
         val counts = (agg \ "relationCount" \ "value").as[Long]
-        Some(DDRelations(counts, seq))
+        val maxCountAOrB = (agg \ "maxCountAOrB" \ "value").as[Long]
+        Some(DDRelations(maxCountAOrB, counts, seq))
     }
   }
 
