@@ -34,13 +34,14 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String]) extends Log
                            pagination: Pagination,
                            buildF: JsValue => Option[A],
                            aggs: Iterable[AbstractAggregation] = Iterable.empty,
-                           sortByFieldDesc: Option[String] = None): Future[(IndexedSeq[A], JsValue)] = {
+                           sortByFieldDesc: Option[String] = None,
+                           excludedFields: Seq[String] = Seq.empty): Future[(IndexedSeq[A], JsValue)] = {
     val limitClause = pagination.toES
     val q = search(esIndex).bool {
       must(
         kv.toSeq.map(p => matchQuery(p._1, p._2))
       )
-    } start(limitClause._1) limit(limitClause._2) aggs(aggs) trackTotalHits(true)
+    } start(limitClause._1) limit(limitClause._2) aggs(aggs) trackTotalHits(true) sourceExclude(excludedFields)
 
     // just log and execute the query
     val elems: Future[Response[SearchResponse]] = client.execute {

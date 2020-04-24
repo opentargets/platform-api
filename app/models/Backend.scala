@@ -59,7 +59,9 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     )
 
     import DDRelation.JSONImplicits._
-    esRetriever.getByIndexedQuery(indexName, kv, pag, fromJsValue[DDRelation], aggs, Some("score")).map {
+    val excludedFields = List("relatedInfo*")
+    esRetriever.getByIndexedQuery(indexName, kv, pag, fromJsValue[DDRelation],
+      aggs, Some("score"), excludedFields).map {
       case (Seq(), _) => None
       case (seq, agg) =>
         logger.debug(Json.prettyPrint(agg))
@@ -83,7 +85,9 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     )
 
     import DDRelation.JSONImplicits._
-    esRetriever.getByIndexedQuery(indexName, kv, pag, fromJsValue[DDRelation], aggs, Some("score")).map {
+    val excludedFields = List("relatedInfo*")
+    esRetriever.getByIndexedQuery(indexName, kv, pag, fromJsValue[DDRelation],
+      aggs, Some("score"), excludedFields).map {
       case (Seq(), _) => None
       case (seq, agg) =>
         logger.debug(Json.prettyPrint(agg))
