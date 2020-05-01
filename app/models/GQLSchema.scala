@@ -143,6 +143,13 @@ trait GQLEntities extends GQLArguments {
   implicit val portalProbeImp = deriveObjectType[Backend, PortalProbe]()
   implicit val chemicalProbesImp = deriveObjectType[Backend, ChemicalProbes]()
 
+  // case class ExperimentDetails(assayFormatType: String, tissue: Option[String], assayFormat: String,
+  //                             assayDescription: String, cellShortName: Option[String])
+  //case class ExperimentalToxicity(dataSource: String, dataSourceReferenceLink: String,
+  //                                experimentDetails: ExperimentDetails)
+
+  implicit val experimentDetailsImp = deriveObjectType[Backend, ExperimentDetails]()
+  implicit val experimentalToxicityImp = deriveObjectType[Backend, ExperimentalToxicity]()
   implicit val safetyCodeImp = deriveObjectType[Backend, SafetyCode]()
   implicit val safetyReferenceImp = deriveObjectType[Backend, SafetyReference]()
   implicit val adverseEffectsActivationEffectsImp = deriveObjectType[Backend, AdverseEffectsActivationEffects]()
@@ -193,6 +200,15 @@ trait GQLEntities extends GQLArguments {
     ReplaceField("therapeuticAreas", Field("therapeuticAreas",
       ListType(diseaseImp), Some("Disease List"),
       resolve = r => diseasesFetcher.deferSeq(r.value.therapeuticAreas))),
+    ReplaceField("phenotypes", Field("phenotypes",
+      ListType(diseaseImp), Some("Phenotype List"),
+      resolve = r => diseasesFetcher.deferSeq(r.value.phenotypes))),
+    ReplaceField("parents", Field("parents",
+      ListType(diseaseImp), Some("Disease Parents List"),
+      resolve = r => diseasesFetcher.deferSeq(r.value.parents))),
+    ReplaceField("children", Field("children",
+      ListType(diseaseImp), Some("Disease Children List"),
+      resolve = r => diseasesFetcher.deferSeq(r.value.children))),
     AddFields(
       Field("knownDrugs", OptionType(knownDrugsImp),
         description = Some("Clinical Trial Drugs from evidences"),

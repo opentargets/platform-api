@@ -61,7 +61,6 @@ case class TractabilityAntibody(topCategory: String, buckets: Seq[Long], categor
 case class TractabilitySmallMolecule(topCategory: String, smallMoleculeGenomeMember: Boolean,
                                      buckets: Seq[Long],
                                      highQualityCompounds: Long,
-                                     ensemble: Double,
                                      categories: TractabilitySmallMoleculeCategories
                                     )
 case class Tractability(smallmolecule: Option[TractabilitySmallMolecule], antibody: Option[TractabilityAntibody])
@@ -81,7 +80,14 @@ case class AdverseEffects(activationEffects: AdverseEffectsActivationEffects,
 
 case class SafetyRiskInfo(organsSystemsAffected: Seq[SafetyCode], references: Seq[SafetyReference],
                           safetyLiability: String)
-case class Safety(adverseEffects: Seq[AdverseEffects], safetyRiskInfo: Seq[SafetyRiskInfo])
+
+case class ExperimentDetails(assayFormatType: String, tissue: Option[String], assayFormat: String,
+                             assayDescription: String, cellShortName: Option[String])
+case class ExperimentalToxicity(dataSource: String, dataSourceReferenceLink: String,
+                                experimentDetails: ExperimentDetails)
+
+case class Safety(adverseEffects: Seq[AdverseEffects], safetyRiskInfo: Seq[SafetyRiskInfo],
+                  experimentalToxicity: Seq[ExperimentalToxicity])
 
 case class Target(id: String,
                   approvedSymbol: String,
@@ -131,7 +137,6 @@ object Target {
         (__ \ "small_molecule_genome_member").read[Boolean] and
         (__ \ "buckets").read[Seq[Long]] and
         (__ \ "high_quality_compounds").read[Long] and
-        (__ \ "ensemble").read[Double] and
         (__ \ "categories").read[TractabilitySmallMoleculeCategories]
         )(TractabilitySmallMolecule.apply _)
 
@@ -250,10 +255,29 @@ object Target {
       (__ \ "safety_liability").read[String]
       )(SafetyRiskInfo.apply _)
 
+    implicit val experimentalDetailsImpW = Json.writes[ExperimentDetails]
+    implicit val experimentalDetailsImpR: Reads[ExperimentDetails] =
+      ((__ \ "assay_format_type").read[String] and
+        (__ \ "tissue").readNullable[String] and
+        (__ \ "assay_format").read[String] and
+        (__ \ "assay_description").read[String] and
+        (__ \ "cell_short_name").readNullable[String]
+        )(ExperimentDetails.apply _)
+
+
+    implicit val experimentalToxicityImpW = Json.writes[ExperimentalToxicity]
+    implicit val experimentalToxicityImpR: Reads[ExperimentalToxicity] =
+    ((__ \ "data_source").read[String] and
+      (__ \ "data_source_reference_link").read[String] and
+      (__ \ "experiment_details").read[ExperimentDetails]
+      )(ExperimentalToxicity.apply _)
+
+
     implicit val safetyImpW = Json.writes[models.entities.Safety]
     implicit val safetyImpR: Reads[models.entities.Safety] =
       ((__ \ "adverse_effects").readNullable[Seq[AdverseEffects]].map(_.getOrElse(Seq.empty)) and
-        (__ \ "safety_risk_info").readNullable[Seq[SafetyRiskInfo]].map(_.getOrElse(Seq.empty))
+        (__ \ "safety_risk_info").readNullable[Seq[SafetyRiskInfo]].map(_.getOrElse(Seq.empty)) and
+        (__ \ "experimental_toxicity").readNullable[Seq[ExperimentalToxicity]].map(_.getOrElse(Seq.empty))
         )(Safety.apply _)
 
     implicit val geneOntologyImpW = Json.writes[models.entities.GeneOntology]
