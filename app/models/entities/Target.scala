@@ -63,7 +63,18 @@ case class TractabilitySmallMolecule(topCategory: String, smallMoleculeGenomeMem
                                      highQualityCompounds: Long,
                                      categories: TractabilitySmallMoleculeCategories
                                     )
-case class Tractability(smallmolecule: Option[TractabilitySmallMolecule], antibody: Option[TractabilityAntibody])
+//             "other_modalities" : {
+//              "buckets" : [
+//                1
+//              ],
+//              "categories" : {
+//                "clinical_precedence" : 1.0
+//              }
+//            },
+case class OtherModalitiesCategories(clinicalPrecedence: Double)
+case class OtherModalities(buckets: Seq[Long], categories: OtherModalitiesCategories)
+case class Tractability(smallmolecule: Option[TractabilitySmallMolecule], antibody: Option[TractabilityAntibody],
+                        otherModalities: Option[OtherModalities])
 
 case class SafetyCode(code: Option[String], mappedTerm: Option[String], termInPaper: Option[String])
 case class SafetyReference(pubmedId: Option[Long], refLabel: Option[String], refLink: Option[String])
@@ -140,10 +151,19 @@ object Target {
         (__ \ "categories").read[TractabilitySmallMoleculeCategories]
         )(TractabilitySmallMolecule.apply _)
 
+    implicit val otherModalitiesCategoriesImpW = Json.writes[OtherModalitiesCategories]
+
+    implicit val otherModalitiesImpW = Json.writes[OtherModalities]
+    implicit val otherModalitiesImpR: Reads[OtherModalities] = (
+      (__ \ "buckets").read[Seq[Long]] and
+        (__ \ "categories" \ "clinical_precendence").read[Double].map(OtherModalitiesCategories(_))
+    )(OtherModalities.apply _)
+
     implicit val tractabilityImpW = Json.writes[Tractability]
     implicit val tractabilityImpR: Reads[Tractability] =
       ((__ \ "smallmolecule").readNullable[TractabilitySmallMolecule] and
-        (__ \ "antibody").readNullable[TractabilityAntibody]
+        (__ \ "antibody").readNullable[TractabilityAntibody] and
+        (__ \ "other_modalities").readNullable[OtherModalities]
         )(Tractability.apply _)
 
     implicit val orthologImpW = Json.writes[Ortholog]
