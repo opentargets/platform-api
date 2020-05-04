@@ -18,6 +18,7 @@ import models.entities.Associations._
 import models.entities._
 import models.entities.HealthCheck.JSONImplicits._
 import play.api.db.slick.DatabaseConfigProvider
+import play.api.libs.json._
 import play.db.NamedDatabase
 
 class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider: DatabaseConfigProvider,
@@ -40,37 +41,187 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
 
   lazy val dbRetriever = new DatabaseRetriever(dbConfigProvider.get[ClickHouseProfile], defaultOTSettings)
 
-  lazy val esRetriever = new ElasticRetriever(getESClient, defaultESSettings.highlightFields)
+  val allSearchableIndices = defaultESSettings.entities
+    .withFilter(_.searchIndex.isDefined).map(_.searchIndex.get)
+
+  lazy val esRetriever = new ElasticRetriever(getESClient,
+    defaultESSettings.highlightFields,
+    allSearchableIndices)
+
   // we must import the dsl
   import com.sksamuel.elastic4s.ElasticDsl._
+
+  def getRelatedDiseases(kv: Map[String, String], pagination: Option[Pagination]):
+  Future[Option[DDRelations]] = {
+
+    val pag = pagination.getOrElse(Pagination.mkDefault)
+
+    val indexName = defaultESSettings.entities
+      .find(_.name == "disease_relation").map(_.index).getOrElse("disease_relation")
+
+    val aggs = Seq(
+      valueCountAgg("relationCount", "B.keyword"),
+      maxAgg("maxCountAOrB", "countAOrB")
+    )
+
+    import DDRelation.JSONImplicits._
+    val excludedFields = List("relatedInfo*")
+    esRetriever.getByIndexedQuery(indexName, kv, pag, fromJsValue[DDRelation],
+      aggs, Some("score"), excludedFields).map {
+      case (Seq(), _) => None
+      case (seq, agg) =>
+        logger.debug(Json.prettyPrint(agg))
+        val counts = (agg \ "relationCount" \ "value").as[Long]
+        val maxCountAOrB = (agg \ "maxCountAOrB" \ "value").as[Long]
+        Some(DDRelations(maxCountAOrB, counts, seq))
+    }
+  }
+
+  def getRelatedTargets(kv: Map[String, String], pagination: Option[Pagination]):
+  Future[Option[DDRelations]] = {
+
+    val pag = pagination.getOrElse(Pagination.mkDefault)
+
+    val indexName = defaultESSettings.entities
+      .find(_.name == "target_relation").map(_.index).getOrElse("target_relation")
+
+    val aggs = Seq(
+      valueCountAgg("relationCount", "B.keyword"),
+      maxAgg("maxCountAOrB", "countAOrB")
+    )
+
+    import DDRelation.JSONImplicits._
+    val excludedFields = List("relatedInfo*")
+    esRetriever.getByIndexedQuery(indexName, kv, pag, fromJsValue[DDRelation],
+      aggs, Some("score"), excludedFields).map {
+      case (Seq(), _) => None
+      case (seq, agg) =>
+        logger.debug(Json.prettyPrint(agg))
+        val counts = (agg \ "relationCount" \ "value").as[Long]
+        val maxCountAOrB = (agg \ "maxCountAOrB" \ "value").as[Long]
+        Some(DDRelations(maxCountAOrB, counts, seq))
+    }
+  }
+
+  def getAdverseEvents(kv: Map[String, String], pagination: Option[Pagination]):
+  Future[Option[AdverseEvents]] = {
+
+    val pag = pagination.getOrElse(Pagination.mkDefault)
+
+    val indexName = defaultESSettings.entities
+      .find(_.name == "faers").map(_.index).getOrElse("faers")
+
+    val aggs = Seq(
+      valueCountAgg("eventCount", "event.keyword")
+    )
+
+    import AdverseEvent.JSONImplicits._
+    esRetriever.getByIndexedQuery(indexName, kv, pag, fromJsValue[AdverseEvent], aggs, Some("llr")).map {
+      case (Seq(), _) => None
+      case (seq, agg) =>
+        logger.debug(Json.prettyPrint(agg))
+        val counts = (agg \ "eventCount" \ "value").as[Long]
+        Some(AdverseEvents(counts, seq.head.criticalValue, seq))
+    }
+  }
+
+  def getCancerBiomarkers(kv: Map[String, String], pagination: Option[Pagination]):
+    Future[Option[CancerBiomarkers]] = {
+
+    val pag = pagination.getOrElse(Pagination.mkDefault)
+
+    val cbIndex = defaultESSettings.entities
+      .find(_.name == "cancerBiomarker").map(_.index).getOrElse("cancerbiomarkers")
+
+    val aggs = Seq(
+      cardinalityAgg("uniqueDrugs", "drugName.keyword"),
+      cardinalityAgg("uniqueDiseases", "disease.keyword"),
+      cardinalityAgg("uniqueBiomarkers", "id.keyword"),
+      valueCountAgg("rowsCount", "id.keyword")
+    )
+
+    import CancerBiomarker.JSONImplicits._
+    esRetriever.getByIndexedQuery(cbIndex, kv, pag, fromJsValue[CancerBiomarker], aggs).map {
+      case (Seq(), _) => None
+      case (seq, agg) =>
+        logger.debug(Json.prettyPrint(agg))
+        val drugs = (agg \ "uniqueDrugs" \ "value").as[Long]
+        val diseases = (agg \ "uniqueDiseases" \ "value").as[Long]
+        val biomarkers = (agg \ "uniqueBiomarkers" \ "value").as[Long]
+        val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
+        Some(CancerBiomarkers(drugs, diseases, biomarkers, rowsCount, seq))
+    }
+  }
+
+  def getKnownDrugs(kv: Map[String, String], pagination: Option[Pagination]):
+  Future[Option[KnownDrugs]] = {
+
+    val pag = pagination.getOrElse(Pagination.mkDefault)
+
+    val cbIndex = defaultESSettings.entities
+      .find(_.name == "evidence_drug_direct").map(_.index).getOrElse("evidence_drug_direct")
+
+    val aggs = Seq(
+      cardinalityAgg("uniqueTargets", "target.keyword"),
+      cardinalityAgg("uniqueDiseases", "disease.keyword"),
+      cardinalityAgg("uniqueDrugs", "drug.keyword"),
+//      cardinalityAgg("uniqueClinicalTrials", "list_urls.url.keyword"),
+      valueCountAgg("rowsCount", "drug.keyword")
+    )
+
+    import KnownDrug.JSONImplicits._
+    esRetriever.getByIndexedQuery(cbIndex, kv, pag, fromJsValue[KnownDrug], aggs).map {
+      case (Seq(), _) => None
+      case (seq, agg) =>
+        logger.debug(Json.prettyPrint(agg))
+        val drugs = (agg \ "uniqueDrugs" \ "value").as[Long]
+        val diseases = (agg \ "uniqueDiseases" \ "value").as[Long]
+        val targets = (agg \ "uniqueTargets" \ "value").as[Long]
+//        val clinicalTrials = (agg \ "uniqueClinicalTrials" \ "value").as[Long]
+        val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
+        Some(KnownDrugs(drugs, diseases, targets, rowsCount, seq))
+    }
+  }
+
+  def getECOs(ids: Seq[String]): Future[IndexedSeq[ECO]] = {
+    val targetIndexName = defaultESSettings.entities
+      .find(_.name == "eco").map(_.index).getOrElse("ecos")
+
+    import ECO.JSONImplicits._
+    esRetriever.getByIds(targetIndexName, ids, fromJsValue[ECO])
+  }
 
   def getTargets(ids: Seq[String]): Future[IndexedSeq[Target]] = {
     val targetIndexName = defaultESSettings.entities
       .find(_.name == "target").map(_.index).getOrElse("targets")
 
-    esRetriever.getIds(targetIndexName, ids, Target.fromJsValue)
+    import Target.JSONImplicits._
+    esRetriever.getByIds(targetIndexName, ids, fromJsValue[Target])
   }
 
   def getDrugs(ids: Seq[String]): Future[IndexedSeq[Drug]] = {
     val drugIndexName = defaultESSettings.entities
       .find(_.name == "drug").map(_.index).getOrElse("drugs")
 
-    esRetriever.getIds(drugIndexName, ids, Drug.fromJsValue)
+    import Drug.JSONImplicits._
+    esRetriever.getByIds(drugIndexName, ids, fromJsValue[Drug])
   }
 
   def getDiseases(ids: Seq[String]): Future[IndexedSeq[Disease]] = {
     val diseaseIndexName = defaultESSettings.entities
       .find(_.name == "disease").map(_.index).getOrElse("diseases")
 
-    esRetriever.getIds(diseaseIndexName, ids, Disease.fromJsValue)
+    import Disease.JSONImplicits._
+    esRetriever.getByIds(diseaseIndexName, ids, fromJsValue[Disease])
   }
 
   def search(qString: String, pagination: Option[Pagination],
              entityNames: Seq[String]): Future[SearchResults] = {
     val entities = for {
       e <- defaultESSettings.entities
-      if entityNames.contains(e.name)
+      if (entityNames.contains(e.name) && e.searchIndex.isDefined)
     } yield e
+
 
     esRetriever.getSearchResultSet(entities, qString, pagination.getOrElse(Pagination.mkDefault))
   }

@@ -4,8 +4,10 @@ import better.files._
 import com.typesafe.config.{ConfigObject, ConfigRenderOptions}
 import play.api.libs.json._
 import play.api.Configuration
+import play.api.Logger
 
 object Helpers {
+  val logger = Logger(this.getClass)
   /** Given a `filename`, the function fully loads the content into an option and
     * maps it with `Json.parse`
     * @param filename fully filename of a resource file
@@ -37,5 +39,13 @@ object Helpers {
     })
 
     defaultHarmonicDatasourceOptions
+  }
+
+  def fromJsValue[A](jObj: JsValue)(implicit reader: Reads[A]): Option[A] = {
+    val source = (__ \ '_source).json.pick
+    jObj.transform(source).asOpt.map(obj => {
+      logger.debug(Json.prettyPrint(obj))
+      obj.as[A]
+    })
   }
 }

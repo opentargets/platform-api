@@ -1,0 +1,263 @@
+query test {
+  search(queryString:"erectile") {
+    total
+    aggregations {
+      total
+      entities {
+        total
+        name
+        categories {
+          name
+          total
+        }
+      }
+    }
+    hits {
+      id
+      entity
+      category
+      score
+      object {
+        ... on Target {
+          approvedSymbol
+        }
+        ... on Drug {
+          name
+        }
+        ... on Disease {
+          name
+        }
+      }
+    }
+  }
+  target(ensemblId: "ENSG00000138735") {
+    id
+    approvedSymbol
+    approvedName
+    bioType
+    hgncId
+    nameSynonyms
+    symbolSynonyms
+    genomicLocation {
+      chromosome
+      start
+      end
+      strand
+    }
+    proteinAnnotations {
+      id
+      accessions
+      functions
+    }
+    geneOntology {
+      id
+      project
+      term
+      evidence {
+        id
+        label
+      }
+    }
+    safety {
+      adverseEffects {
+        activationEffects {
+          acuteDosing {
+            code
+            mappedTerm
+            termInPaper
+          }
+          general {
+            code
+            mappedTerm
+            termInPaper
+          }
+        }
+      }
+      safetyRiskInfo {
+        organsSystemsAffected {
+          code
+          mappedTerm
+          termInPaper
+        }
+        references {
+          pubmedId
+          refLabel
+          refLink
+        }
+      }
+      experimentalToxicity {
+        dataSource
+        dataSourceReferenceLink
+        experimentDetails {
+          assayFormatType
+          tissue
+          assayFormat
+          assayDescription
+          cellShortName
+        }
+      }
+    }
+    chemicalProbes {
+      probeminer
+      rows {
+        note
+        gene
+      }
+    }
+    hallmarks {
+      attributes {
+        name
+        reference {
+          pubmedId
+          description
+        }
+      }
+    }
+    orthologs {
+      yeast {
+        speciesId
+        name
+        symbol
+      }
+    }
+    tractability {
+      smallmolecule {
+        topCategory
+      }
+      antibody {
+        topCategory
+      }
+    }
+    knownDrugs {
+      uniqueDrugs
+      uniqueDiseases
+      uniqueTargets
+      count
+    }
+    cancerBiomarkers {
+      uniqueDrugs
+      uniqueDiseases
+      uniqueBiomarkers
+      count
+    }
+    relatedTargets {
+      maxCountAOrB
+      count
+    }
+  }
+  
+  disease(efoId: "Orphanet_242") {
+      id
+      name
+      description
+      synonyms
+      therapeuticAreas {
+        id
+        name
+      }
+      parents {
+        name
+      }
+      children {
+        name
+      }
+      phenotypes {
+        url
+        name
+        disease
+      }
+      knownDrugs {
+        uniqueDrugs
+        uniqueDiseases
+        uniqueTargets
+        count
+        rows {
+          drugType
+          targetId
+        }
+      }
+      relatedDiseases {
+        maxCountAOrB
+        count
+      }
+    }
+  }
+  drug(chemblId:"CHEMBL192") {
+      id
+      name
+      synonyms
+      tradeNames
+      yearOfFirstApproval
+      drugType
+      maximumClinicalTrialPhase
+      hasBeenWithdrawn
+      withdrawnNotice {
+        classes
+        countries
+        reasons
+        year
+      }
+      internalCompound
+      mechanismsOfAction {
+        uniqueActionTypes
+        uniqueTargetTypes
+        rows {
+          mechanismOfAction
+          targetName
+          references {
+            ids
+            source
+            urls
+          }
+          targets {
+            approvedSymbol
+          }
+        }
+      }
+      blackBoxWarning
+      indications {
+        count
+        rows {
+          maxPhaseForIndication
+          references {
+            ids
+            source
+            urls
+          }
+          disease {
+            name
+          }
+        }
+      }
+      adverseEvents {
+        count
+        critVal
+        rows {
+          name
+          count
+          llr
+          criticalValue
+        }
+      }
+      knownDrugs {
+        uniqueDrugs
+        uniqueDiseases
+        uniqueTargets
+        count
+        rows {
+          drugType
+          targetId
+          diseaseId
+          phase
+          mechanismOfAction
+          status
+          activity
+          targetClass
+          ctIds
+
+        }
+      }
+    }
+  }
+}
+

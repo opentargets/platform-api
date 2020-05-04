@@ -32,35 +32,35 @@ object SearchResult {
     implicit val searchResultAggsImpW = Json.writes[models.entities.SearchResultAggs]
 
     implicit val searchResultAggCategoryImpR: Reads[models.entities.SearchResultAggCategory] = (
-      (JsPath \ "key").read[String] and
-        (JsPath \ "doc_count").read[Long]
+      (__ \ "key").read[String] and
+        (__ \ "doc_count").read[Long]
     )(SearchResultAggCategory.apply _)
 
     implicit val searchResultAggEntityImpR: Reads[models.entities.SearchResultAggEntity] = (
-      (JsPath \ "key").read[String] and
-        (JsPath \ "doc_count").read[Long] and
-        (JsPath \ "categories" \ "buckets").read[Seq[models.entities.SearchResultAggCategory]]
+      (__ \ "key").read[String] and
+        (__ \ "doc_count").read[Long] and
+        (__ \ "categories" \ "buckets").read[Seq[models.entities.SearchResultAggCategory]]
     )(SearchResultAggEntity.apply _)
 
     implicit val searchResultAggsImpR: Reads[models.entities.SearchResultAggs] =
-      ((JsPath \ "total" \ "value").readWithDefault[Long](0) and
-        (JsPath \ "entities" \ "buckets").read[Seq[models.entities.SearchResultAggEntity]]
+      ((__ \ "total" \ "value").readWithDefault[Long](0) and
+        (__ \ "entities" \ "buckets").read[Seq[models.entities.SearchResultAggEntity]]
         )(models.entities.SearchResultAggs.apply _)
 
     implicit val searchResultImpW = Json.writes[models.entities.SearchResult]
 
     implicit val searchResultImpR: Reads[models.entities.SearchResult] =
-      ((JsPath \ "_source" \ "id").read[String] and
-        (JsPath \ "_source" \ "entity").read[String] and
-        (JsPath \ "_source" \ "category").read[Seq[String]] and
-        (JsPath \ "_source" \ "name").read[String] and
-        (JsPath \ "_source" \ "description").readNullable[String] and
-        (JsPath \ "_source" \ "keywords").readNullable[Seq[String]] and
-        (JsPath \ "_source" \ "multiplier").read[Double] and
-        (JsPath \ "_source" \ "prefixes").readNullable[Seq[String]] and
-        (JsPath \ "_source" \ "ngrams").readNullable[Seq[String]] and
-        (JsPath \ "_score").read[Double] and
-        (JsPath \ "highlight").readNullable[Map[String, Seq[String]]].map {
+      ((__ \ "_source" \ "id").read[String] and
+        (__ \ "_source" \ "entity").read[String] and
+        (__ \ "_source" \ "category").read[Seq[String]] and
+        (__ \ "_source" \ "name").read[String] and
+        (__ \ "_source" \ "description").readNullable[String] and
+        (__ \ "_source" \ "keywords").readNullable[Seq[String]] and
+        (__ \ "_source" \ "multiplier").read[Double] and
+        (__ \ "_source" \ "prefixes").readNullable[Seq[String]] and
+        (__ \ "_source" \ "ngrams").readNullable[Seq[String]] and
+        (__ \ "_score").read[Double] and
+        (__ \ "highlight").readNullable[Map[String, Seq[String]]].map {
           case Some(m) =>
             (for {
               s <- m.flatMap(_._2)
@@ -70,17 +70,5 @@ object SearchResult {
         )(SearchResult.apply _)
 
     implicit val msearchResultsImpW = Json.format[models.entities.SearchResults]
-  }
-
-  def fromJsValue(jObj: JsValue): Option[SearchResult] = {
-    /* apply transformers for json and fill the searchresult
-     start from internal objects and then map the external
-     */
-    import SearchResult.JSONImplicits._
-    val source = (__ \ '_source).json.pick
-    jObj.transform(source).asOpt.map(obj => {
-      logger.debug(Json.prettyPrint(obj))
-      obj.as[SearchResult]
-    })
   }
 }
