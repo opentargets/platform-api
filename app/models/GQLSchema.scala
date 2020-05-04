@@ -197,14 +197,15 @@ trait GQLEntities extends GQLArguments {
             ctx.arg(pageArg)))
   ))
 
+  implicit val phenotypeImp = deriveObjectType[Backend, Phenotype]()
   // disease
   implicit lazy val diseaseImp: ObjectType[Backend, Disease] = deriveObjectType(
     ReplaceField("therapeuticAreas", Field("therapeuticAreas",
       ListType(diseaseImp), Some("Disease List"),
       resolve = r => diseasesFetcher.deferSeq(r.value.therapeuticAreas))),
-    ReplaceField("phenotypes", Field("phenotypes",
-      ListType(diseaseImp), Some("Phenotype List"),
-      resolve = r => diseasesFetcher.deferSeq(r.value.phenotypes))),
+//    ReplaceField("phenotypes", Field("phenotypes",
+//      ListType(diseaseImp), Some("Phenotype List"),
+//      resolve = r => diseasesFetcher.deferSeq(r.value.phenotypes))),
     ReplaceField("parents", Field("parents",
       ListType(diseaseImp), Some("Disease Parents List"),
       resolve = r => diseasesFetcher.deferSeq(r.value.parents))),
