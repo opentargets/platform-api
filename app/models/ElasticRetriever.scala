@@ -21,7 +21,8 @@ import play.api.libs.json._
 
 import scala.concurrent.Future
 
-class ElasticRetriever(client: ElasticClient, hlFields: Seq[String]) extends Logging {
+class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
+                       searchEntities: Seq[String]) extends Logging {
   val hlFieldSeq = hlFields.map(HighlightField(_))
 
   import com.sksamuel.elastic4s.ElasticDsl._
@@ -150,7 +151,7 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String]) extends Log
     if (qString.length > 0) {
       client.execute {
         val aggregations =
-          search("search_*") query (fnQueries.head) aggs (aggFns) size (0)
+          search(searchEntities) query (fnQueries.head) aggs (aggFns) size (0)
         logger.debug(client.show(aggregations))
         aggregations trackTotalHits (true)
       }.zip {

@@ -41,7 +41,13 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
 
   lazy val dbRetriever = new DatabaseRetriever(dbConfigProvider.get[ClickHouseProfile], defaultOTSettings)
 
-  lazy val esRetriever = new ElasticRetriever(getESClient, defaultESSettings.highlightFields)
+  val allSearchableIndices = defaultESSettings.entities
+    .withFilter(_.searchIndex.isDefined).map(_.searchIndex.get)
+
+  lazy val esRetriever = new ElasticRetriever(getESClient,
+    defaultESSettings.highlightFields,
+    allSearchableIndices)
+
   // we must import the dsl
   import com.sksamuel.elastic4s.ElasticDsl._
 
@@ -215,6 +221,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       e <- defaultESSettings.entities
       if (entityNames.contains(e.name) && e.searchIndex.isDefined)
     } yield e
+
 
     esRetriever.getSearchResultSet(entities, qString, pagination.getOrElse(Pagination.mkDefault))
   }
