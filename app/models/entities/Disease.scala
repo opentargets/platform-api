@@ -39,8 +39,7 @@ object Disease {
         (__ \ "synonyms").read[Seq[String]] and
         (__ \ "parents").read[Seq[String]] and
         (__ \ "children").read[Seq[String]] and
-        (__ \ "phenotypes" \ "rows").readNullable[Seq[Phenotype]]
-          .map(_.getOrElse(Seq.empty)) and
+        (__ \ "phenotypes" \ "rows").readWithDefault[Seq[Phenotype]](Seq.empty) and
         (__ \ "ontology" \ "isTherapeuticArea").read[Boolean]
     )(Disease.apply _)
   }

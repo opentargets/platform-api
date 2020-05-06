@@ -4,6 +4,7 @@ import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
+import play.api.libs.json.JsonNaming.SnakeCase
 
 case class Ortholog(speciesId: String,
                     name: String,
@@ -63,14 +64,7 @@ case class TractabilitySmallMolecule(topCategory: String, smallMoleculeGenomeMem
                                      highQualityCompounds: Long,
                                      categories: TractabilitySmallMoleculeCategories
                                     )
-//             "other_modalities" : {
-//              "buckets" : [
-//                1
-//              ],
-//              "categories" : {
-//                "clinical_precedence" : 1.0
-//              }
-//            },
+
 case class OtherModalitiesCategories(clinicalPrecedence: Double)
 case class OtherModalities(buckets: Seq[Long], categories: OtherModalitiesCategories)
 case class Tractability(smallmolecule: Option[TractabilitySmallMolecule], antibody: Option[TractabilityAntibody],
@@ -156,8 +150,8 @@ object Target {
     implicit val otherModalitiesImpW = Json.writes[OtherModalities]
     implicit val otherModalitiesImpR: Reads[OtherModalities] = (
       (__ \ "buckets").read[Seq[Long]] and
-        (__ \ "categories" \ "clinical_precendence").read[Double].map(OtherModalitiesCategories(_))
-    )(OtherModalities.apply _)
+        (__ \ "categories" \ "clinical_precedence").read[Double].map(OtherModalitiesCategories)
+    )(OtherModalities)
 
     implicit val tractabilityImpW = Json.writes[Tractability]
     implicit val tractabilityImpR: Reads[Tractability] =
@@ -203,9 +197,9 @@ object Target {
 
     implicit val hallmarksImpW = Json.writes[Hallmarks]
     implicit val hallmarksImpR: Reads[Hallmarks] =
-      ((__ \ "cancer_hallmarks").readNullable[Seq[CancerHallmark]].map(_.getOrElse(Seq.empty)) and
-        (__ \ "attributes").readNullable[Seq[HallmarkAttribute]].map(_.getOrElse(Seq.empty)) and
-        (__ \ "function_summary").readNullable[Seq[LiteratureReference]].map(_.getOrElse(Seq.empty))
+      ((__ \ "cancer_hallmarks").readWithDefault[Seq[CancerHallmark]](Seq.empty) and
+      (__ \ "attributes").readWithDefault[Seq[HallmarkAttribute]](Seq.empty) and
+        (__ \ "function_summary").readWithDefault[Seq[LiteratureReference]](Seq.empty)
         )(Hallmarks.apply _)
 
     implicit val sourceLinkImpF = Json.format[models.entities.SourceLink]
@@ -213,7 +207,7 @@ object Target {
     implicit val chemicalProbesImpW = Json.writes[models.entities.ChemicalProbes]
     implicit val chemicalProbesImpR: Reads[models.entities.ChemicalProbes] =
       ((__ \ "probeminer" \ "link").readNullable[String] and
-        (__ \ "portalprobes").readNullable[Seq[PortalProbe]].map(_.getOrElse(Seq.empty))
+        (__ \ "portalprobes").readWithDefault[Seq[PortalProbe]](Seq.empty)
         )(ChemicalProbes.apply _)
 
     implicit val safetyCodeImpW = Json.writes[models.entities.SafetyCode]
@@ -247,17 +241,17 @@ object Target {
 
     implicit val adverseEffectsActivationEffectsImpW = Json.writes[AdverseEffectsActivationEffects]
     implicit val adverseEffectsActivationEffectsImpR: Reads[models.entities.AdverseEffectsActivationEffects] =
-      ((__ \ "acute_dosing").readNullable[Seq[SafetyCode]].map(_.getOrElse(Seq.empty)) and
-        (__ \ "chronic_dosing").readNullable[Seq[SafetyCode]].map(_.getOrElse(Seq.empty)) and
-        (__ \ "general").readNullable[Seq[SafetyCode]].map(_.getOrElse(Seq.empty))
+      ((__ \ "acute_dosing").readWithDefault[Seq[SafetyCode]](Seq.empty) and
+        (__ \ "chronic_dosing").readWithDefault[Seq[SafetyCode]](Seq.empty) and
+        (__ \ "general").readWithDefault[Seq[SafetyCode]](Seq.empty)
         )(AdverseEffectsActivationEffects.apply _)
 
     implicit val adverseEffectsInhibitionEffectsImpW = Json.writes[AdverseEffectsInhibitionEffects]
     implicit val adverseEffectsInhibitionEffectsImpR: Reads[models.entities.AdverseEffectsInhibitionEffects] =
-      ((__ \ "acute_dosing").readNullable[Seq[SafetyCode]].map(_.getOrElse(Seq.empty)) and
-        (__ \ "chronic_dosing").readNullable[Seq[SafetyCode]].map(_.getOrElse(Seq.empty)) and
-        (__ \ "general").readNullable[Seq[SafetyCode]].map(_.getOrElse(Seq.empty)) and
-        (__ \ "developmental").readNullable[Seq[SafetyCode]].map(_.getOrElse(Seq.empty))
+      ((__ \ "acute_dosing").readWithDefault[Seq[SafetyCode]](Seq.empty) and
+        (__ \ "chronic_dosing").readWithDefault[Seq[SafetyCode]](Seq.empty) and
+        (__ \ "general").readWithDefault[Seq[SafetyCode]](Seq.empty) and
+        (__ \ "developmental").readWithDefault[Seq[SafetyCode]](Seq.empty)
         )(AdverseEffectsInhibitionEffects.apply _)
 
     implicit val adverseEffectsImpW = Json.writes[models.entities.AdverseEffects]
@@ -295,9 +289,9 @@ object Target {
 
     implicit val safetyImpW = Json.writes[models.entities.Safety]
     implicit val safetyImpR: Reads[models.entities.Safety] =
-      ((__ \ "adverse_effects").readNullable[Seq[AdverseEffects]].map(_.getOrElse(Seq.empty)) and
-        (__ \ "safety_risk_info").readNullable[Seq[SafetyRiskInfo]].map(_.getOrElse(Seq.empty)) and
-        (__ \ "experimental_toxicity").readNullable[Seq[ExperimentalToxicity]].map(_.getOrElse(Seq.empty))
+      ((__ \ "adverse_effects").readWithDefault[Seq[AdverseEffects]](Seq.empty) and
+        (__ \ "safety_risk_info").readWithDefault[Seq[SafetyRiskInfo]](Seq.empty) and
+        (__ \ "experimental_toxicity").readWithDefault[Seq[ExperimentalToxicity]](Seq.empty)
         )(Safety.apply _)
 
     implicit val geneOntologyImpW = Json.writes[models.entities.GeneOntology]
@@ -321,7 +315,7 @@ object Target {
       (JsPath \ "symbolSynonyms").read[Seq[String]] and
       (JsPath \ "genomicLocation").read[GenomicLocation] and
       (JsPath \ "proteinAnnotations").readNullable[ProteinAnnotations] and
-      (JsPath \ "go").readNullable[Seq[GeneOntology]].map(_.getOrElse(Seq.empty)) and
+      (JsPath \ "go").readWithDefault[Seq[GeneOntology]](Seq.empty) and
         (JsPath \ "safety").readNullable[Safety] and
         (JsPath \ "chemicalProbes").readNullable[ChemicalProbes] and
         (JsPath \ "hallMarks").readNullable[Hallmarks] and

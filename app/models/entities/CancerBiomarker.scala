@@ -33,8 +33,8 @@ object CancerBiomarker {
         (JsPath \ "drugName").read[String] and
         (JsPath \ "evidenceLevel").read[String] and
         (JsPath \ "target").read[String] and
-        (JsPath \ "sourcesOther").readNullable[Seq[CancerBiomarkerSource]].map(_.getOrElse(Seq.empty)) and
-        (JsPath \ "sourcesPubmed").readNullable[Seq[Long]].map(_.getOrElse(Seq.empty))
+        (JsPath \ "sourcesOther").readWithDefault[Seq[CancerBiomarkerSource]](Seq.empty) and
+        (JsPath \ "sourcesPubmed").readWithDefault[Seq[Long]](Seq.empty)
         )(CancerBiomarker.apply _)
 
     implicit val cancerBiomarkersImpF = Json.format[models.entities.CancerBiomarkers]
