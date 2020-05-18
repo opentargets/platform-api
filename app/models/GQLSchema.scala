@@ -147,7 +147,20 @@ trait GQLEntities extends GQLArguments {
 
   implicit val ecoImp = deriveObjectType[Backend, ECO]()
 
-  implicit val reactomeImp = deriveObjectType[Backend, Reactome]()
+  lazy implicit val reactomeImp: ObjectType[Backend, Reactome] = deriveObjectType[Backend, Reactome](
+    ReplaceField("children", Field("children",
+      ListType(reactomeImp), Some("Reactome Nodes"),
+      resolve = r => reactomeFetcher.deferSeqOpt(r.value.children))
+    ),
+    ReplaceField("parents", Field("parents",
+      ListType(reactomeImp), Some("Reactome Nodes"),
+      resolve = r => reactomeFetcher.deferSeqOpt(r.value.parents))
+    ),
+    ReplaceField("ancestors", Field("ancestors",
+      ListType(reactomeImp), Some("Reactome Nodes"),
+      resolve = r => reactomeFetcher.deferSeqOpt(r.value.ancestors))
+    )
+  )
 
   implicit val tissueImp = deriveObjectType[Backend, Tissue]()
   implicit val rnaExpressionImp = deriveObjectType[Backend, RNAExpression]()
