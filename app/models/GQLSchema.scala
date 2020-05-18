@@ -25,7 +25,9 @@ import models.entities.Configuration._
 trait GQLArguments {
   implicit val paginationFormatImp = Json.format[Pagination]
   implicit val sortOrderImp = deriveEnumType[SortOrder]()
-  val sortFieldArg = Argument("sortField", OptionInputType(StringType), description = "Sort field name")
+  implicit val sortEntityImp = deriveEnumType[SortEntity]()
+
+  val sortFieldArg = Argument("sortField", OptionInputType(sortEntityImp), description = "Sort field name")
   val sortOrderArg = Argument("sortOrder", OptionInputType(sortOrderImp), description = "Sort type")
   val pagination = deriveInputObjectType[Pagination]()
   val entityNames = Argument("entityNames", OptionInputType(ListInputType(StringType)),
@@ -213,7 +215,7 @@ trait GQLEntities extends GQLArguments {
         arguments = pageArg :: sortFieldArg :: sortOrderArg :: Nil,
         resolve = ctx => {
           val fieldName = ctx.arg(sortFieldArg)
-            .flatMap( f => ElasticRetriever.sortBy(s"$f.keyword",
+            .flatMap( f => ElasticRetriever.sortBy(f.name,
               ctx.arg(sortOrderArg).getOrElse(SortOrder.DESC))
             )
 
@@ -269,7 +271,7 @@ trait GQLEntities extends GQLArguments {
         arguments = pageArg :: sortFieldArg :: sortOrderArg :: Nil,
         resolve = ctx => {
           val fieldName = ctx.arg(sortFieldArg)
-            .flatMap( f => ElasticRetriever.sortBy(s"$f.keyword",
+            .flatMap( f => ElasticRetriever.sortBy(f.name,
               ctx.arg(sortOrderArg).getOrElse(SortOrder.DESC))
             )
           ctx.ctx.getKnownDrugs(
@@ -354,7 +356,7 @@ trait GQLEntities extends GQLArguments {
         arguments = pageArg :: sortFieldArg :: sortOrderArg :: Nil,
         resolve = ctx => {
           val fieldName = ctx.arg(sortFieldArg)
-            .flatMap( f => ElasticRetriever.sortBy(s"$f.keyword",
+            .flatMap( f => ElasticRetriever.sortBy(f.name,
               ctx.arg(sortOrderArg).getOrElse(SortOrder.DESC))
             )
           ctx.ctx.getKnownDrugs(
