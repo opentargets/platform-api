@@ -148,6 +148,11 @@ trait GQLEntities extends GQLArguments {
   implicit val ecoImp = deriveObjectType[Backend, ECO]()
 
   lazy implicit val reactomeImp: ObjectType[Backend, Reactome] = deriveObjectType[Backend, Reactome](
+    AddFields(
+      Field("isRoot", BooleanType,
+        description = Some("If the node is root"),
+        resolve = _.value.isRoot)
+    ),
     ReplaceField("children", Field("children",
       ListType(reactomeImp), Some("Reactome Nodes"),
       resolve = r => reactomeFetcher.deferSeqOpt(r.value.children))
