@@ -1,5 +1,48 @@
 query test {
-  search(queryString:"erectile") {
+  expression: target(ensemblId: "ENSG00000091831") {
+    id
+    approvedSymbol
+    proteinAnnotations {
+      id
+      accessions
+      functions
+      pathways
+      similarities
+      subcellularLocations
+      subunits
+    }
+    expressions {
+      tissue {
+        id
+        label
+        anatomicalSystems
+        organs
+      }
+      rna {
+        zscore
+        value
+        unit
+        level
+      }
+      protein {
+        reliability
+        level
+        cellType {
+          reliability
+          name
+          level
+        }
+      }
+    }
+    knownDrugs {
+      rows {
+        drugType
+        targetId
+        diseaseId
+      }
+    }
+  }
+  search(queryString: "erectile") {
     total
     aggregations {
       total
@@ -145,119 +188,132 @@ query test {
       count
     }
   }
-  
   disease(efoId: "Orphanet_242") {
+    id
+    name
+    description
+    synonyms
+    therapeuticAreas {
       id
       name
-      description
-      synonyms
-      therapeuticAreas {
-        id
-        name
+    }
+    parents {
+      name
+    }
+    children {
+      name
+    }
+    phenotypes {
+      url
+      name
+      disease
+    }
+    knownDrugs {
+      uniqueDrugs
+      uniqueDiseases
+      uniqueTargets
+      count
+      rows {
+        drugType
+        targetId
       }
-      parents {
-        name
-      }
-      children {
-        name
-      }
-      phenotypes {
-        url
-        name
-        disease
-      }
-      knownDrugs {
-        uniqueDrugs
-        uniqueDiseases
-        uniqueTargets
-        count
-        rows {
-          drugType
-          targetId
+    }
+    relatedDiseases {
+      maxCountAOrB
+      count
+    }
+  }
+  drug(chemblId: "CHEMBL192") {
+    id
+    name
+    synonyms
+    tradeNames
+    yearOfFirstApproval
+    drugType
+    maximumClinicalTrialPhase
+    hasBeenWithdrawn
+    withdrawnNotice {
+      classes
+      countries
+      reasons
+      year
+    }
+    internalCompound
+    mechanismsOfAction {
+      uniqueActionTypes
+      uniqueTargetTypes
+      rows {
+        mechanismOfAction
+        targetName
+        references {
+          ids
+          source
+          urls
+        }
+        targets {
+          approvedSymbol
         }
       }
-      relatedDiseases {
-        maxCountAOrB
+    }
+    blackBoxWarning
+    indications {
+      count
+      rows {
+        maxPhaseForIndication
+        references {
+          ids
+          source
+          urls
+        }
+        disease {
+          name
+        }
+      }
+    }
+    adverseEvents {
+      count
+      critVal
+      rows {
+        name
         count
+        llr
+        criticalValue
+      }
+    }
+    knownDrugs {
+      uniqueDrugs
+      uniqueDiseases
+      uniqueTargets
+      count
+      rows {
+        drugType
+        targetId
+        diseaseId
+        phase
+        mechanismOfAction
+        status
+        activity
+        targetClass
+        ctIds
       }
     }
   }
-  drug(chemblId:"CHEMBL192") {
-      id
-      name
-      synonyms
-      tradeNames
-      yearOfFirstApproval
-      drugType
-      maximumClinicalTrialPhase
-      hasBeenWithdrawn
-      withdrawnNotice {
-        classes
-        countries
-        reasons
-        year
-      }
-      internalCompound
-      mechanismsOfAction {
-        uniqueActionTypes
-        uniqueTargetTypes
-        rows {
-          mechanismOfAction
-          targetName
-          references {
-            ids
-            source
-            urls
-          }
-          targets {
-            approvedSymbol
-          }
-        }
-      }
-      blackBoxWarning
-      indications {
-        count
-        rows {
-          maxPhaseForIndication
-          references {
-            ids
-            source
-            urls
-          }
-          disease {
-            name
-          }
-        }
-      }
-      adverseEvents {
-        count
-        critVal
-        rows {
-          name
-          count
-          llr
-          criticalValue
-        }
-      }
-      knownDrugs {
-        uniqueDrugs
-        uniqueDiseases
-        uniqueTargets
+    knwonDrugs: target(ensemblId: "ENSG00000105650") {
+      approvedSymbol
+      knownDrugs(sortField:"label", sortOrder:Asc) {
         count
         rows {
           drugType
           targetId
           diseaseId
-          phase
+          approvedSymbol
+          label
+          prefName
           mechanismOfAction
-          status
-          activity
-          targetClass
-          ctIds
-
+          drug {
+            synonyms
+          }
         }
       }
     }
-  }
 }
-

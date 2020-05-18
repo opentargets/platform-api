@@ -5,6 +5,7 @@ import javax.inject.Inject
 import models.Helpers._
 import play.api.{Configuration, Environment, Logger}
 import com.sksamuel.elastic4s._
+import com.sksamuel.elastic4s.requests.searches._
 import com.sksamuel.elastic4s.http.JavaClient
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -67,7 +68,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     import DDRelation.JSONImplicits._
     val excludedFields = List("relatedInfo*")
     esRetriever.getByIndexedQuery(indexName, kv, pag, fromJsValue[DDRelation],
-      aggs, Some("score"), excludedFields).map {
+      aggs, ElasticRetriever.sortByDesc("score"), excludedFields).map {
       case (Seq(), _) => None
       case (seq, agg) =>
         logger.debug(Json.prettyPrint(agg))
@@ -93,7 +94,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     import DDRelation.JSONImplicits._
     val excludedFields = List("relatedInfo*")
     esRetriever.getByIndexedQuery(indexName, kv, pag, fromJsValue[DDRelation],
-      aggs, Some("score"), excludedFields).map {
+      aggs, ElasticRetriever.sortByDesc("score"), excludedFields).map {
       case (Seq(), _) => None
       case (seq, agg) =>
         logger.debug(Json.prettyPrint(agg))
@@ -116,7 +117,8 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     )
 
     import AdverseEvent.JSONImplicits._
-    esRetriever.getByIndexedQuery(indexName, kv, pag, fromJsValue[AdverseEvent], aggs, Some("llr")).map {
+    esRetriever.getByIndexedQuery(indexName, kv, pag, fromJsValue[AdverseEvent], aggs,
+      ElasticRetriever.sortByDesc("llr")).map {
       case (Seq(), _) => None
       case (seq, agg) =>
         logger.debug(Json.prettyPrint(agg))
@@ -153,7 +155,8 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     }
   }
 
-  def getKnownDrugs(kv: Map[String, String], pagination: Option[Pagination]):
+  def getKnownDrugs(kv: Map[String, String], pagination: Option[Pagination],
+                    sortByField: Option[sort.FieldSort] = None):
   Future[Option[KnownDrugs]] = {
 
     val pag = pagination.getOrElse(Pagination.mkDefault)
@@ -170,7 +173,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     )
 
     import KnownDrug.JSONImplicits._
-    esRetriever.getByIndexedQuery(cbIndex, kv, pag, fromJsValue[KnownDrug], aggs).map {
+    esRetriever.getByIndexedQuery(cbIndex, kv, pag, fromJsValue[KnownDrug], aggs, sortByField).map {
       case (Seq(), _) => None
       case (seq, agg) =>
         logger.debug(Json.prettyPrint(agg))
@@ -189,6 +192,22 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
 
     import ECO.JSONImplicits._
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[ECO])
+  }
+
+  def getExpressions(ids: Seq[String]): Future[IndexedSeq[Expressions]] = {
+    val targetIndexName = defaultESSettings.entities
+      .find(_.name == "expression").map(_.index).getOrElse("expression")
+
+    import Expression.JSONImplicits._
+    esRetriever.getByIds(targetIndexName, ids, fromJsValue[Expressions])
+  }
+
+  def getReactomeNodes(ids: Seq[String]): Future[IndexedSeq[Reactome]] = {
+    val targetIndexName = defaultESSettings.entities
+      .find(_.name == "reactome").map(_.index).getOrElse("reactome")
+
+    import Reactome.JSONImplicits._
+    esRetriever.getByIds(targetIndexName, ids, fromJsValue[Reactome])
   }
 
   def getTargets(ids: Seq[String]): Future[IndexedSeq[Target]] = {

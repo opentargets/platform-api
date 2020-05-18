@@ -35,7 +35,7 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
                            pagination: Pagination,
                            buildF: JsValue => Option[A],
                            aggs: Iterable[AbstractAggregation] = Iterable.empty,
-                           sortByFieldDesc: Option[String] = None,
+                           sortByField: Option[sort.FieldSort] = None,
                            excludedFields: Seq[String] = Seq.empty): Future[(IndexedSeq[A], JsValue)] = {
     val limitClause = pagination.toES
     val q = search(esIndex).bool {
@@ -46,8 +46,8 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
 
     // just log and execute the query
     val elems: Future[Response[SearchResponse]] = client.execute {
-      val qq = sortByFieldDesc match {
-        case Some(f) => q.sortByFieldDesc(f)
+      val qq = sortByField match {
+        case Some(s) => q.sortBy(s)
         case None => q
       }
 
@@ -195,4 +195,14 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
       Future.successful(SearchResults.empty)
     }
   }
+}
+
+object ElasticRetriever {
+  /***
+   * SortBy case class use the `fieldName` to sort by and asc if `desc` is false
+   * otherwise desc
+   */
+  def sortByAsc(fieldName: String) = Some(sort.FieldSort(fieldName).asc())
+  def sortByDesc(fieldName: String) = Some(sort.FieldSort(fieldName).desc())
+  def sortBy(fieldName: String, order: sort.SortOrder) = Some(sort.FieldSort(field = fieldName, order = order))
 }

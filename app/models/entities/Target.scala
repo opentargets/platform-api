@@ -40,7 +40,12 @@ case class HallmarkAttribute(name: String, reference: LiteratureReference)
 
 case class Hallmarks(rows: Seq[CancerHallmark], attributes: Seq[HallmarkAttribute], functions: Seq[LiteratureReference])
 
-case class ProteinAnnotations(id: String, accessions: Seq[String], functions: Seq[String])
+case class ProteinAnnotations(id: String, accessions: Seq[String],
+                              functions: Seq[String],
+                              pathways: Seq[String],
+                              similarities: Seq[String],
+                              subcellularLocations: Seq[String],
+                              subunits: Seq[String])
 
 case class GenomicLocation(chromosome: String, start: Long, end: Long, strand: Int)
 
@@ -108,7 +113,8 @@ case class Target(id: String,
                   chemicalProbes: Option[ChemicalProbes],
                   hallmarks: Option[Hallmarks],
                   orthologs: Option[Orthologs],
-                  tractability: Option[Tractability]
+                  tractability: Option[Tractability],
+                  reactome: Seq[String]
                  )
 
 object Target {
@@ -302,7 +308,17 @@ object Target {
         (__ \ "value" \ "evidence").read[String]
         )(GeneOntology.apply _)
 
-    implicit val proteinImpW = Json.format[models.entities.ProteinAnnotations]
+    implicit val proteinImpW = Json.writes[models.entities.ProteinAnnotations]
+    implicit val proteinImpR: Reads[models.entities.ProteinAnnotations] =
+      ((__ \ "id").read[String] and
+        (__ \ "accessions").readWithDefault[Seq[String]](Seq.empty) and
+        (__ \ "functions").readWithDefault[Seq[String]](Seq.empty) and
+        (__ \ "pathways").readWithDefault[Seq[String]](Seq.empty) and
+        (__ \ "similarities").readWithDefault[Seq[String]](Seq.empty) and
+        (__ \ "subcellularLocations").readWithDefault[Seq[String]](Seq.empty) and
+        (__ \ "subunits").readWithDefault[Seq[String]](Seq.empty)
+        )(ProteinAnnotations.apply _)
+
     implicit val genomicLocationImpW = Json.format[models.entities.GenomicLocation]
     implicit val targetImpW = Json.writes[models.entities.Target]
     implicit val targetImpR: Reads[models.entities.Target] = (
@@ -312,15 +328,16 @@ object Target {
       (JsPath \ "bioType").read[String] and
       (JsPath \ "hgncId").readNullable[String] and
       (JsPath \ "nameSynonyms").read[Seq[String]] and
-      (JsPath \ "symbolSynonyms").read[Seq[String]] and
+      (JsPath \ "symbolSynonyms").readWithDefault[Seq[String]](Seq.empty) and
       (JsPath \ "genomicLocation").read[GenomicLocation] and
       (JsPath \ "proteinAnnotations").readNullable[ProteinAnnotations] and
       (JsPath \ "go").readWithDefault[Seq[GeneOntology]](Seq.empty) and
-        (JsPath \ "safety").readNullable[Safety] and
-        (JsPath \ "chemicalProbes").readNullable[ChemicalProbes] and
-        (JsPath \ "hallMarks").readNullable[Hallmarks] and
-        (JsPath \ "ortholog").readNullable[Orthologs] and
-        (JsPath \ "tractability").readNullable[Tractability]
+      (JsPath \ "safety").readNullable[Safety] and
+      (JsPath \ "chemicalProbes").readNullable[ChemicalProbes] and
+      (JsPath \ "hallMarks").readNullable[Hallmarks] and
+      (JsPath \ "ortholog").readNullable[Orthologs] and
+      (JsPath \ "tractability").readNullable[Tractability] and
+      (JsPath \ "reactome").readWithDefault[Seq[String]](Seq.empty)
       )(Target.apply _)
   }
 

@@ -12,11 +12,21 @@ import sangria.util._
 import entities._
 import entities.Configuration._
 import entities.Configuration.JSONImplicits._
+import play.api.{Configuration, Logger}
 import play.api.mvc.CookieBaker
 import sangria.execution.deferred._
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent._
+import com.sksamuel.elastic4s.requests.searches._
+import com.sksamuel.elastic4s.requests.searches.sort._
+
+import models.entities.Configuration._
 
 trait GQLArguments {
   implicit val paginationFormatImp = Json.format[Pagination]
+  implicit val sortOrderImp = deriveEnumType[SortOrder]()
+  val sortFieldArg = Argument("sortField", OptionInputType(StringType), description = "Sort field name")
+  val sortOrderArg = Argument("sortOrder", OptionInputType(sortOrderImp), description = "Sort type")
   val pagination = deriveInputObjectType[Pagination]()
   val entityNames = Argument("entityNames", OptionInputType(ListInputType(StringType)),
     description = "List of entity names to search for (target, disease, drug,...)")
@@ -38,6 +48,8 @@ trait GQLMeta {
 }
 
 trait GQLEntities extends GQLArguments {
+  val logger = Logger(this.getClass)
+
   val entityImp = InterfaceType("Entity", fields[Backend, Entity](
     Field("id", StringType, resolve = _.value.id)))
 
@@ -46,7 +58,7 @@ trait GQLEntities extends GQLArguments {
 
   val targetsFetcherCache = FetcherCache.simple
   val targetsFetcher = Fetcher(
-    config = FetcherConfig.maxBatchSize(Configuration.batchSize).caching(targetsFetcherCache),
+    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(targetsFetcherCache),
     fetch = (ctx: Backend, ids: Seq[String]) => {
       ctx.getTargets(ids)
     })
@@ -56,17 +68,34 @@ trait GQLEntities extends GQLArguments {
 
   val diseasesFetcherCache = FetcherCache.simple
   val diseasesFetcher = Fetcher(
-    config = FetcherConfig.maxBatchSize(Configuration.batchSize).caching(diseasesFetcherCache),
+    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(diseasesFetcherCache),
     fetch = (ctx: Backend, ids: Seq[String]) => {
       ctx.getDiseases(ids)
     })
 
-  // disease
+  implicit val expressionHasId = HasId[Expressions, String](_.id)
+
+  val expressionFetcherCache = FetcherCache.simple
+  val expressionFetcher = Fetcher(
+    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(expressionFetcherCache),
+    fetch = (ctx: Backend, ids: Seq[String]) => {
+      ctx.getExpressions(ids)
+    })
+
+  implicit val reactomeHasId = HasId[Reactome, String](_.id)
+
+  val reactomeFetcherCache = FetcherCache.simple
+  val reactomeFetcher = Fetcher(
+    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(reactomeFetcherCache),
+    fetch = (ctx: Backend, ids: Seq[String]) => {
+      ctx.getReactomeNodes(ids)
+    })
+
   implicit val ecoHasId = HasId[ECO, String](_.id)
 
   val ecosFetcherCache = FetcherCache.simple
   val ecosFetcher = Fetcher(
-    config = FetcherConfig.maxBatchSize(Configuration.batchSize).caching(diseasesFetcherCache),
+    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(diseasesFetcherCache),
     fetch = (ctx: Backend, ids: Seq[String]) => {
       ctx.getECOs(ids)
     })
@@ -116,6 +145,17 @@ trait GQLEntities extends GQLArguments {
 
   implicit val ecoImp = deriveObjectType[Backend, ECO]()
 
+  implicit val reactomeImp = deriveObjectType[Backend, Reactome]()
+
+  implicit val tissueImp = deriveObjectType[Backend, Tissue]()
+  implicit val rnaExpressionImp = deriveObjectType[Backend, RNAExpression]()
+  implicit val cellTypeImp = deriveObjectType[Backend, CellType]()
+  implicit val proteinExpressionImp = deriveObjectType[Backend, ProteinExpression]()
+  implicit val expressionImp = deriveObjectType[Backend, Expression]()
+  implicit val expressionsImp = deriveObjectType[Backend, Expressions](
+    ExcludeFields("id")
+  )
+
   implicit val adverseEventImp = deriveObjectType[Backend, AdverseEvent]()
   implicit val adverseEventsImp = deriveObjectType[Backend, AdverseEvents]()
 
@@ -145,11 +185,6 @@ trait GQLEntities extends GQLArguments {
   implicit val portalProbeImp = deriveObjectType[Backend, PortalProbe]()
   implicit val chemicalProbesImp = deriveObjectType[Backend, ChemicalProbes]()
 
-  // case class ExperimentDetails(assayFormatType: String, tissue: Option[String], assayFormat: String,
-  //                             assayDescription: String, cellShortName: Option[String])
-  //case class ExperimentalToxicity(dataSource: String, dataSourceReferenceLink: String,
-  //                                experimentDetails: ExperimentDetails)
-
   implicit val experimentDetailsImp = deriveObjectType[Backend, ExperimentDetails]()
   implicit val experimentalToxicityImp = deriveObjectType[Backend, ExperimentalToxicity]()
   implicit val safetyCodeImp = deriveObjectType[Backend, SafetyCode]()
@@ -163,14 +198,30 @@ trait GQLEntities extends GQLArguments {
   implicit val proteinImp = deriveObjectType[Backend, ProteinAnnotations]()
   implicit val genomicLocationImp = deriveObjectType[Backend, GenomicLocation]()
   implicit lazy val targetImp: ObjectType[Backend, Target] = deriveObjectType(
+    ReplaceField("reactome", Field("reactome",
+      ListType(reactomeImp), Some("Reactome node list"),
+      resolve = r => reactomeFetcher.deferSeq(r.value.reactome))),
     AddFields(
+      Field("expressions", ListType(expressionImp),
+        description = Some("Protein and baseline expression for this target"),
+        resolve = r => DeferredValue(expressionFetcher.deferOpt(r.value.id)).map {
+          case Some(expressions) => expressions.rows
+          case None => Seq.empty
+        }),
       Field("knownDrugs", OptionType(knownDrugsImp),
         description = Some("Clinical Trial Drugs from evidences"),
-        arguments = pageArg :: Nil,
-        resolve = ctx =>
+        arguments = pageArg :: sortFieldArg :: sortOrderArg :: Nil,
+        resolve = ctx => {
+          val fieldName = ctx.arg(sortFieldArg)
+            .flatMap( f => ElasticRetriever.sortBy(s"$f.keyword",
+              ctx.arg(sortOrderArg).getOrElse(SortOrder.DESC))
+            )
+
           ctx.ctx.getKnownDrugs(
             Map("target.keyword" -> ctx.value.id),
-            ctx.arg(pageArg))),
+            ctx.arg(pageArg), fieldName)
+        }
+      ),
       Field("cancerBiomarkers", OptionType(cancerBiomarkersImp),
         description = Some("CancerBiomarkers"),
         arguments = pageArg :: Nil,
@@ -215,11 +266,17 @@ trait GQLEntities extends GQLArguments {
     AddFields(
       Field("knownDrugs", OptionType(knownDrugsImp),
         description = Some("Clinical Trial Drugs from evidences"),
-        arguments = pageArg :: Nil,
-        resolve = ctx =>
+        arguments = pageArg :: sortFieldArg :: sortOrderArg :: Nil,
+        resolve = ctx => {
+          val fieldName = ctx.arg(sortFieldArg)
+            .flatMap( f => ElasticRetriever.sortBy(s"$f.keyword",
+              ctx.arg(sortOrderArg).getOrElse(SortOrder.DESC))
+            )
           ctx.ctx.getKnownDrugs(
             Map("disease.keyword" -> ctx.value.id),
-            ctx.arg(pageArg))),
+            ctx.arg(pageArg), fieldName)
+        }
+      ),
 
       Field("relatedDiseases", OptionType(relatedDiseasesImp),
         description = Some("Related Targets"),
@@ -244,7 +301,7 @@ trait GQLEntities extends GQLArguments {
 
   val drugsFetcherCache = FetcherCache.simple
   val drugsFetcher = Fetcher(
-    config = FetcherConfig.maxBatchSize(Configuration.batchSize).caching(drugsFetcherCache),
+    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(drugsFetcherCache),
     fetch = (ctx: Backend, ids: Seq[String]) => {
       ctx.getDrugs(ids)
     })
@@ -254,8 +311,8 @@ trait GQLEntities extends GQLArguments {
   implicit val cancerBiomarkerImp = deriveObjectType[Backend, CancerBiomarker](
     ReplaceField("target", Field("target", targetImp, Some("Target"),
       resolve = r => targetsFetcher.defer(r.value.target))),
-    ReplaceField("disease", Field("disease", diseaseImp, Some("Disease"),
-      resolve = r => diseasesFetcher.defer(r.value.disease)))
+    ReplaceField("disease", Field("disease", OptionType(diseaseImp), Some("Disease"),
+      resolve = r => diseasesFetcher.deferOpt(r.value.disease)))
   )
 
   implicit val cancerBiomarkersImp = deriveObjectType[Backend, CancerBiomarkers]()
@@ -294,11 +351,17 @@ trait GQLEntities extends GQLArguments {
     AddFields(
       Field("knownDrugs", OptionType(knownDrugsImp),
         description = Some("Clinical Trial Drugs from evidences"),
-        arguments = pageArg :: Nil,
-        resolve = ctx =>
+        arguments = pageArg :: sortFieldArg :: sortOrderArg :: Nil,
+        resolve = ctx => {
+          val fieldName = ctx.arg(sortFieldArg)
+            .flatMap( f => ElasticRetriever.sortBy(s"$f.keyword",
+              ctx.arg(sortOrderArg).getOrElse(SortOrder.DESC))
+            )
           ctx.ctx.getKnownDrugs(
             Map("drug.keyword" -> ctx.value.id),
-            ctx.arg(pageArg))),
+            ctx.arg(pageArg), fieldName)
+        }
+      ),
 
       Field("adverseEvents", OptionType(adverseEventsImp),
         description = Some("The FDA Adverse Event Reporting System (FAERS)"),
@@ -367,7 +430,8 @@ trait GQLEntities extends GQLArguments {
 }
 
 object GQLSchema extends GQLMeta with GQLEntities {
-  val resolvers = DeferredResolver.fetchers(targetsFetcher, drugsFetcher, diseasesFetcher, ecosFetcher)
+  val resolvers = DeferredResolver.fetchers(targetsFetcher, drugsFetcher,
+    diseasesFetcher, ecosFetcher, reactomeFetcher, expressionFetcher)
 
 
   lazy val msearchResultType = UnionType("EntityUnionType", types = List(targetImp, drugImp, diseaseImp))
