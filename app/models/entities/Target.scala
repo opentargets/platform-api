@@ -218,15 +218,16 @@ object Target {
 
     implicit val safetyCodeImpW = Json.writes[models.entities.SafetyCode]
     implicit val safetyCodeImpR: Reads[models.entities.SafetyCode] =
-    ((__ \ "mapped_term").readNullable[String].map {
+    (
+    (__ \ "code").readNullable[String].map {
+      case Some("") => None
+      case x => x
+    } and
+      (__ \ "mapped_term").readNullable[String].map {
       case Some("") => None
       case x => x
     } and
       (__ \ "term_in_paper").readNullable[String].map {
-        case Some("") => None
-        case x => x
-      } and
-      (__ \ "code").readNullable[String].map {
         case Some("") => None
         case x => x
       }
