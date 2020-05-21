@@ -75,14 +75,15 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
     }
   }
 
-  def getByIds[A](esIndex: String, ids: Seq[String], buildF: JsValue => Option[A]): Future[IndexedSeq[A]] = {
+  def getByIds[A](esIndex: String, ids: Seq[String], buildF: JsValue => Option[A],
+                  excludedFields: Seq[String] = Seq.empty): Future[IndexedSeq[A]] = {
     ids match {
       case Nil => Future.successful(IndexedSeq.empty)
       case _ =>
         val elems: Future[Response[SearchResponse]] = client.execute {
           val q = search(esIndex).query {
             idsQuery(ids)
-          } limit (Configuration.batchSize) trackTotalHits(true)
+          } limit (Configuration.batchSize) trackTotalHits(true) sourceExclude(excludedFields)
 
           logger.debug(client.show(q))
           q

@@ -84,6 +84,15 @@ trait GQLEntities extends GQLArguments {
       ctx.getExpressions(ids)
     })
 
+  implicit val mousePhenotypeHasId = HasId[MousePhenotypes, String](_.id)
+
+  val mousePhenotypeFetcherCache = FetcherCache.simple
+  val mousePhenotypeFetcher = Fetcher(
+    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(mousePhenotypeFetcherCache),
+    fetch = (ctx: Backend, ids: Seq[String]) => {
+      ctx.getMousePhenotypes(ids)
+    })
+
   implicit val reactomeHasId = HasId[Reactome, String](_.id)
 
   val reactomeFetcherCache = FetcherCache.simple
@@ -450,8 +459,13 @@ trait GQLEntities extends GQLArguments {
 }
 
 object GQLSchema extends GQLMeta with GQLEntities {
-  val resolvers = DeferredResolver.fetchers(targetsFetcher, drugsFetcher,
-    diseasesFetcher, ecosFetcher, reactomeFetcher, expressionFetcher)
+  val resolvers = DeferredResolver.fetchers(targetsFetcher,
+    drugsFetcher,
+    diseasesFetcher,
+    ecosFetcher,
+    reactomeFetcher,
+    expressionFetcher,
+    mousePhenotypeFetcher)
 
 
   lazy val msearchResultType = UnionType("EntityUnionType", types = List(targetImp, drugImp, diseaseImp))

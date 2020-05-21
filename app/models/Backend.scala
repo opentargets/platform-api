@@ -194,6 +194,14 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[ECO])
   }
 
+  def getMousePhenotypes(ids: Seq[String]): Future[IndexedSeq[MousePhenotypes]] = {
+    val targetIndexName = defaultESSettings.entities
+      .find(_.name == "mp").map(_.index).getOrElse("mp")
+
+    import MousePhenotype.JSONImplicits._
+    esRetriever.getByIds(targetIndexName, ids, fromJsValue[MousePhenotypes])
+  }
+
   def getExpressions(ids: Seq[String]): Future[IndexedSeq[Expressions]] = {
     val targetIndexName = defaultESSettings.entities
       .find(_.name == "expression").map(_.index).getOrElse("expression")

@@ -24,6 +24,7 @@ object Expression {
     implicit val cellTypeW = Json.writes[CellType]
     implicit val proteinExpressionW = Json.writes[ProteinExpression]
     implicit val expressionW = Json.writes[Expression]
+    implicit val expressionsW = Json.writes[Expressions]
 
     implicit val config = JsonConfiguration(SnakeCase)
 
