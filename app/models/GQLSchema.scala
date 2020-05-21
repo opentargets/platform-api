@@ -224,6 +224,11 @@ trait GQLEntities extends GQLArguments {
   implicit val safetyRiskInfoImp = deriveObjectType[Backend, SafetyRiskInfo]()
   implicit val safetyImp = deriveObjectType[Backend, Safety]()
 
+  implicit val genotypePhenotypeImp = deriveObjectType[Backend, GenotypePhenotype]()
+  implicit val mousePhenotypeImp = deriveObjectType[Backend, MousePhenotype]()
+  implicit val mouseGeneImp = deriveObjectType[Backend, MouseGene]()
+  implicit val mousePhenotypesImp = deriveObjectType[Backend, MousePhenotypes]()
+
   implicit val proteinImp = deriveObjectType[Backend, ProteinAnnotations]()
   implicit val genomicLocationImp = deriveObjectType[Backend, GenomicLocation]()
   implicit lazy val targetImp: ObjectType[Backend, Target] = deriveObjectType(
@@ -231,6 +236,12 @@ trait GQLEntities extends GQLArguments {
       ListType(reactomeImp), Some("Reactome node list"),
       resolve = r => reactomeFetcher.deferSeq(r.value.reactome))),
     AddFields(
+      Field("mousePhenotypes", ListType(mouseGeneImp),
+        description = Some("Mouse phenotypes by linked mouse Gene"),
+        resolve = r => DeferredValue(mousePhenotypeFetcher.deferOpt(r.value.id)).map {
+          case Some(mouseGenes) => mouseGenes.rows
+          case None => Seq.empty
+        }),
       Field("expressions", ListType(expressionImp),
         description = Some("Protein and baseline expression for this target"),
         resolve = r => DeferredValue(expressionFetcher.deferOpt(r.value.id)).map {

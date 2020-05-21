@@ -222,8 +222,10 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val targetIndexName = defaultESSettings.entities
       .find(_.name == "target").map(_.index).getOrElse("targets")
 
+    val excludedFields = List("mousePhenotypes*")
     import Target.JSONImplicits._
-    esRetriever.getByIds(targetIndexName, ids, fromJsValue[Target])
+    esRetriever.getByIds(targetIndexName, ids, fromJsValue[Target],
+      excludedFields = excludedFields)
   }
 
   def getDrugs(ids: Seq[String]): Future[IndexedSeq[Drug]] = {
