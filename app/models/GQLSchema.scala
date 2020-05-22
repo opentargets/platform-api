@@ -207,8 +207,8 @@ trait GQLEntities extends GQLArguments {
   implicit val hallmarksAttributeImp = deriveObjectType[Backend, HallmarkAttribute]()
   implicit val hallmarksImp = deriveObjectType[Backend, Hallmarks]()
 
-  implicit val orthologImp = deriveObjectType[Backend, Ortholog]()
-  implicit val orthologsImp = deriveObjectType[Backend, Orthologs]()
+//  implicit val orthologImp = deriveObjectType[Backend, Ortholog]()
+//  implicit val orthologsImp = deriveObjectType[Backend, Orthologs]()
 
   implicit val sourceLinkImp = deriveObjectType[Backend, SourceLink]()
   implicit val portalProbeImp = deriveObjectType[Backend, PortalProbe]()
@@ -228,6 +228,8 @@ trait GQLEntities extends GQLArguments {
   implicit val mousePhenotypeImp = deriveObjectType[Backend, MousePhenotype]()
   implicit val mouseGeneImp = deriveObjectType[Backend, MouseGene]()
   implicit val mousePhenotypesImp = deriveObjectType[Backend, MousePhenotypes]()
+
+  implicit val tepImp = deriveObjectType[Backend, Tep]()
 
   implicit val proteinImp = deriveObjectType[Backend, ProteinAnnotations]()
   implicit val genomicLocationImp = deriveObjectType[Backend, GenomicLocation]()

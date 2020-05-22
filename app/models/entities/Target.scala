@@ -99,6 +99,8 @@ case class ExperimentalToxicity(dataSource: String, dataSourceReferenceLink: Str
 case class Safety(adverseEffects: Seq[AdverseEffects], safetyRiskInfo: Seq[SafetyRiskInfo],
                   experimentalToxicity: Seq[ExperimentalToxicity])
 
+case class Tep(uri: String, name: String)
+
 case class Target(id: String,
                   approvedSymbol: String,
                   approvedName: String,
@@ -112,7 +114,7 @@ case class Target(id: String,
                   safety: Option[Safety],
                   chemicalProbes: Option[ChemicalProbes],
                   hallmarks: Option[Hallmarks],
-                  orthologs: Option[Orthologs],
+                  tep: Option[Tep],
                   tractability: Option[Tractability],
                   reactome: Seq[String]
                  )
@@ -166,20 +168,20 @@ object Target {
         (__ \ "other_modalities").readNullable[OtherModalities]
         )(Tractability.apply _)
 
-    implicit val orthologImpW = Json.writes[Ortholog]
-    implicit val orthologImpR: Reads[Ortholog] =
-      ((__ \ "ortholog_species").read[String] and
-        (__ \ "ortholog_species_name").read[String] and
-        (__ \ "ortholog_species_symbol").read[String] and
-        (__ \ "support").read[Seq[String]] and
-        (__ \ "ortholog_species_ensembl_gene").read[String] and
-        (__ \ "ortholog_species_db_id").read[String] and
-        (__ \ "ortholog_species_entrez_gene").read[String] and
-        (__ \ "ortholog_species_chr").read[String] and
-        (__ \ "ortholog_species_assert_ids").read[Seq[String]]
-      )(Ortholog.apply _)
-
-    implicit val orthologsImpF = Json.format[Orthologs]
+//    implicit val orthologImpW = Json.writes[Ortholog]
+//    implicit val orthologImpR: Reads[Ortholog] =
+//      ((__ \ "ortholog_species").read[String] and
+//        (__ \ "ortholog_species_name").read[String] and
+//        (__ \ "ortholog_species_symbol").read[String] and
+//        (__ \ "support").read[Seq[String]] and
+//        (__ \ "ortholog_species_ensembl_gene").read[String] and
+//        (__ \ "ortholog_species_db_id").read[String] and
+//        (__ \ "ortholog_species_entrez_gene").read[String] and
+//        (__ \ "ortholog_species_chr").read[String] and
+//        (__ \ "ortholog_species_assert_ids").read[Seq[String]]
+//      )(Ortholog.apply _)
+//
+//    implicit val orthologsImpF = Json.format[Orthologs]
 
     implicit val literatureReferenceImpW = Json.writes[LiteratureReference]
     implicit val literatureReferenceImpR: Reads[LiteratureReference] =
@@ -320,6 +322,8 @@ object Target {
         (__ \ "subunits").readWithDefault[Seq[String]](Seq.empty)
         )(ProteinAnnotations.apply _)
 
+    implicit val tepImpF = Json.format[Tep]
+
     implicit val genomicLocationImpW = Json.format[models.entities.GenomicLocation]
     implicit val targetImpW = Json.writes[models.entities.Target]
     implicit val targetImpR: Reads[models.entities.Target] = (
@@ -336,7 +340,7 @@ object Target {
       (JsPath \ "safety").readNullable[Safety] and
       (JsPath \ "chemicalProbes").readNullable[ChemicalProbes] and
       (JsPath \ "hallMarks").readNullable[Hallmarks] and
-      (JsPath \ "ortholog").readNullable[Orthologs] and
+      (JsPath \ "tep").readNullable[Tep] and
       (JsPath \ "tractability").readNullable[Tractability] and
       (JsPath \ "reactome").readWithDefault[Seq[String]](Seq.empty)
       )(Target.apply _)

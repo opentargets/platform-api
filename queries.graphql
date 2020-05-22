@@ -81,6 +81,10 @@ query test {
     hgncId
     nameSynonyms
     symbolSynonyms
+    tep {
+      uri
+      name
+    }
     genomicLocation {
       chromosome
       start
@@ -154,13 +158,6 @@ query test {
           pubmedId
           description
         }
-      }
-    }
-    orthologs {
-      yeast {
-        speciesId
-        name
-        symbol
       }
     }
     tractability {
