@@ -231,6 +231,9 @@ trait GQLEntities extends GQLArguments {
 
   implicit val tepImp = deriveObjectType[Backend, Tep]()
 
+  implicit val proteinClassPathNodeImp = deriveObjectType[Backend, ProteinClassPathNode]()
+  implicit val proteinClassPathImp = deriveObjectType[Backend, ProteinClassPath]()
+
   implicit val proteinImp = deriveObjectType[Backend, ProteinAnnotations]()
   implicit val genomicLocationImp = deriveObjectType[Backend, GenomicLocation]()
   implicit lazy val targetImp: ObjectType[Backend, Target] = deriveObjectType(

@@ -46,6 +46,7 @@ case class ProteinAnnotations(id: String, accessions: Seq[String],
                               similarities: Seq[String],
                               subcellularLocations: Seq[String],
                               subunits: Seq[String])
+//                              classes: Seq[ProteinClassPath])
 
 case class GenomicLocation(chromosome: String, start: Long, end: Long, strand: Int)
 
@@ -101,6 +102,10 @@ case class Safety(adverseEffects: Seq[AdverseEffects], safetyRiskInfo: Seq[Safet
 
 case class Tep(uri: String, name: String)
 
+case class ProteinClassPathNode(id: String, label: String)
+case class ProteinClassPath(l1: Option[ProteinClassPathNode], l2: Option[ProteinClassPathNode],
+                            l3: Option[ProteinClassPathNode], l4: Option[ProteinClassPathNode],
+                            l5: Option[ProteinClassPathNode], l6: Option[ProteinClassPathNode])
 case class Target(id: String,
                   approvedSymbol: String,
                   approvedName: String,
@@ -311,6 +316,9 @@ object Target {
         (__ \ "value" \ "evidence").read[String]
         )(GeneOntology.apply _)
 
+    implicit val proteinClassPathNodeImpF = Json.format[ProteinClassPathNode]
+    implicit val proteinClassPathImpF = Json.writes[ProteinClassPath]
+
     implicit val proteinImpW = Json.writes[models.entities.ProteinAnnotations]
     implicit val proteinImpR: Reads[models.entities.ProteinAnnotations] =
       ((__ \ "id").read[String] and
@@ -320,6 +328,7 @@ object Target {
         (__ \ "similarities").readWithDefault[Seq[String]](Seq.empty) and
         (__ \ "subcellularLocations").readWithDefault[Seq[String]](Seq.empty) and
         (__ \ "subunits").readWithDefault[Seq[String]](Seq.empty)
+//        (__ \ "classes").readWithDefault[Seq[ProteinClassPath]](Seq.empty)
         )(ProteinAnnotations.apply _)
 
     implicit val tepImpF = Json.format[Tep]
