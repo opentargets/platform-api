@@ -10,7 +10,7 @@ import com.sksamuel.elastic4s.requests.common.Operator
 import scala.concurrent.ExecutionContext.Implicits.global
 import com.sksamuel.elastic4s.requests.searches._
 import com.sksamuel.elastic4s.requests.searches.queries.funcscorer._
-import com.sksamuel.elastic4s.requests.searches.queries.matches.MultiMatchQuery
+import com.sksamuel.elastic4s.requests.searches.queries.matches.{MultiMatchQuery, MultiMatchQueryBuilderType}
 import com.sksamuel.elastic4s._
 import com.sksamuel.elastic4s.requests.searches.aggs.AbstractAggregation
 import models.entities.Configuration.ElasticsearchEntity
@@ -43,6 +43,68 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
         kv.toSeq.map(p => matchQuery(p._1, p._2))
       )
     } start(limitClause._1) limit(limitClause._2) aggs(aggs) trackTotalHits(true) sourceExclude(excludedFields)
+
+    // just log and execute the query
+    val elems: Future[Response[SearchResponse]] = client.execute {
+      val qq = sortByField match {
+        case Some(s) => q.sortBy(s)
+        case None => q
+      }
+
+      logger.debug(client.show(qq))
+      qq
+    }
+
+    elems.map {
+      case _: RequestFailure => (IndexedSeq.empty, JsNull)
+      case results: RequestSuccess[SearchResponse] =>
+        // parse the full body response into JsValue
+        // thus, we can apply Json Transformations from JSON Play
+        val result = Json.parse(results.body.get)
+
+        logger.debug(Json.prettyPrint(result))
+        val hits = (result \ "hits" \ "hits").get.as[JsArray].value
+        val aggs = (result \ "aggregations").getOrElse(JsNull)
+
+        val mappedHits = hits
+          .map(jObj => {
+            buildF(jObj)
+          }).withFilter(_.isDefined).map(_.get)
+
+        (mappedHits, aggs)
+    }
+  }
+
+  def getByFreeQuery[A](esIndex: String, queryString: String,
+                        kv: Map[String, String],
+                        pagination: Pagination,
+                        buildF: JsValue => Option[A],
+                        aggs: Iterable[AbstractAggregation] = Iterable.empty,
+                        sortByField: Option[sort.FieldSort] = None,
+                        excludedFields: Seq[String] = Seq.empty): Future[(IndexedSeq[A], JsValue)] = {
+    val limitClause = pagination.toES
+
+    val boolQ = boolQuery().should(
+      simpleStringQuery(queryString)
+        .defaultOperator("AND")
+        .minimumShouldMatch("0"),
+      multiMatchQuery(queryString)
+        .matchType(MultiMatchQueryBuilderType.PHRASE_PREFIX)
+        .prefixLength(1)
+        .boost(100D)
+        .fields("*")
+    )
+
+    val q = search(esIndex).bool {
+      must(boolQ)
+        .filter(
+          kv.toSeq.map(p => termQuery(p._1, p._2))
+        )
+    }.start(limitClause._1)
+      .limit(limitClause._2)
+      .aggs(aggs)
+      .trackTotalHits(true)
+      .sourceExclude(excludedFields)
 
     // just log and execute the query
     val elems: Future[Response[SearchResponse]] = client.execute {

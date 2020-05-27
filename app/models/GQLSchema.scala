@@ -34,6 +34,7 @@ trait GQLArguments {
     description = "List of entity names to search for (target, disease, drug,...)")
   val pageArg = Argument("page", OptionInputType(pagination))
   val queryString = Argument("queryString", StringType, description = "Query string")
+  val freeTextQuery = Argument("freeTextQuery", OptionInputType(StringType), description = "Query string")
   val efoId = Argument("efoId", StringType, description = "EFO ID" )
   val efoIds = Argument("efoIds", ListInputType(StringType), description = "EFO ID" )
   val networkExpansionId = Argument("networkExpansionId", OptionInputType(StringType), description = "Network expansion ID")
@@ -255,16 +256,12 @@ trait GQLEntities extends GQLArguments {
         }),
       Field("knownDrugs", OptionType(knownDrugsImp),
         description = Some("Clinical Trial Drugs from evidences"),
-        arguments = pageArg :: sortFieldArg :: sortOrderArg :: Nil,
+        arguments = freeTextQuery :: pageArg :: Nil,
         resolve = ctx => {
-          val fieldName = ctx.arg(sortFieldArg)
-            .flatMap( f => ElasticRetriever.sortBy(f.name,
-              ctx.arg(sortOrderArg).getOrElse(SortOrder.DESC))
-            )
-
-          ctx.ctx.getKnownDrugs(
-            Map("target.keyword" -> ctx.value.id),
-            ctx.arg(pageArg), fieldName)
+          ctx.ctx.getKnownDrugs(ctx.arg(freeTextQuery).getOrElse(""),
+            Map("target.raw" -> ctx.value.id),
+            ctx.arg(pageArg)
+          )
         }
       ),
       Field("cancerBiomarkers", OptionType(cancerBiomarkersImp),
@@ -311,15 +308,12 @@ trait GQLEntities extends GQLArguments {
     AddFields(
       Field("knownDrugs", OptionType(knownDrugsImp),
         description = Some("Clinical Trial Drugs from evidences"),
-        arguments = pageArg :: sortFieldArg :: sortOrderArg :: Nil,
+        arguments = freeTextQuery :: pageArg :: Nil,
         resolve = ctx => {
-          val fieldName = ctx.arg(sortFieldArg)
-            .flatMap( f => ElasticRetriever.sortBy(f.name,
-              ctx.arg(sortOrderArg).getOrElse(SortOrder.DESC))
-            )
           ctx.ctx.getKnownDrugs(
-            Map("disease.keyword" -> ctx.value.id),
-            ctx.arg(pageArg), fieldName)
+            ctx.arg(freeTextQuery).getOrElse(""),
+            Map("disease.raw" -> ctx.value.id),
+            ctx.arg(pageArg))
         }
       ),
 
@@ -396,15 +390,12 @@ trait GQLEntities extends GQLArguments {
     AddFields(
       Field("knownDrugs", OptionType(knownDrugsImp),
         description = Some("Clinical Trial Drugs from evidences"),
-        arguments = pageArg :: sortFieldArg :: sortOrderArg :: Nil,
+        arguments = freeTextQuery :: pageArg :: Nil,
         resolve = ctx => {
-          val fieldName = ctx.arg(sortFieldArg)
-            .flatMap( f => ElasticRetriever.sortBy(f.name,
-              ctx.arg(sortOrderArg).getOrElse(SortOrder.DESC))
-            )
           ctx.ctx.getKnownDrugs(
-            Map("drug.keyword" -> ctx.value.id),
-            ctx.arg(pageArg), fieldName)
+            ctx.arg(freeTextQuery).getOrElse(""),
+            Map("drug.raw" -> ctx.value.id),
+            ctx.arg(pageArg))
         }
       ),
 

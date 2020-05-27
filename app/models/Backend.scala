@@ -155,25 +155,24 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     }
   }
 
-  def getKnownDrugs(kv: Map[String, String], pagination: Option[Pagination],
-                    sortByField: Option[sort.FieldSort] = None):
+  def getKnownDrugs(queryString: String, kv: Map[String, String], pagination: Option[Pagination]):
   Future[Option[KnownDrugs]] = {
 
     val pag = pagination.getOrElse(Pagination.mkDefault)
-
+    val sortByField = sort.FieldSort(field = "clinical_trial_phase.raw").desc()
     val cbIndex = defaultESSettings.entities
       .find(_.name == "evidence_drug_direct").map(_.index).getOrElse("evidence_drug_direct")
 
     val aggs = Seq(
-      cardinalityAgg("uniqueTargets", "target.keyword"),
-      cardinalityAgg("uniqueDiseases", "disease.keyword"),
-      cardinalityAgg("uniqueDrugs", "drug.keyword"),
+      cardinalityAgg("uniqueTargets", "target.raw"),
+      cardinalityAgg("uniqueDiseases", "disease.raw"),
+      cardinalityAgg("uniqueDrugs", "drug.raw"),
 //      cardinalityAgg("uniqueClinicalTrials", "list_urls.url.keyword"),
-      valueCountAgg("rowsCount", "drug.keyword")
+      valueCountAgg("rowsCount", "drug.raw")
     )
 
     import KnownDrug.JSONImplicits._
-    esRetriever.getByIndexedQuery(cbIndex, kv, pag, fromJsValue[KnownDrug], aggs, sortByField).map {
+    esRetriever.getByFreeQuery(cbIndex, queryString, kv, pag, fromJsValue[KnownDrug], aggs, Some(sortByField)).map {
       case (Seq(), _) => None
       case (seq, agg) =>
         logger.debug(Json.prettyPrint(agg))
