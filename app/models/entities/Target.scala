@@ -29,7 +29,7 @@ case class Orthologs(chimpanzee: Option[Seq[Ortholog]],
                      zebrafish: Option[Seq[Ortholog]]
                     )
 
-case class LiteratureReference(pubmedId: Long, description: String)
+case class LiteratureReference(pubmedId: Option[Long], description: String)
 
 case class CancerHallmark(suppress: Boolean,
                     promote: Boolean,
@@ -190,7 +190,7 @@ object Target {
 
     implicit val literatureReferenceImpW = Json.writes[LiteratureReference]
     implicit val literatureReferenceImpR: Reads[LiteratureReference] =
-      ((__ \ "pmid").read[Long] and
+      ((__ \ "pmid").readNullable[Long] and
         (__ \ "description").read[String]
         )(LiteratureReference.apply _)
 
