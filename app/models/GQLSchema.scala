@@ -305,6 +305,7 @@ trait GQLEntities extends GQLArguments {
     ReplaceField("children", Field("children",
       ListType(diseaseImp), Some("Disease Children List"),
       resolve = r => diseasesFetcher.deferSeq(r.value.children))),
+    // this query uses diseases field that contains the disease itself and its descendants
     AddFields(
       Field("knownDrugs", OptionType(knownDrugsImp),
         description = Some("Clinical Trial Drugs from evidences"),
@@ -312,7 +313,7 @@ trait GQLEntities extends GQLArguments {
         resolve = ctx => {
           ctx.ctx.getKnownDrugs(
             ctx.arg(freeTextQuery).getOrElse(""),
-            Map("disease.raw" -> ctx.value.id),
+            Map("diseases.raw" -> ctx.value.id),
             ctx.arg(pageArg))
         }
       ),
@@ -320,7 +321,7 @@ trait GQLEntities extends GQLArguments {
       Field("relatedDiseases", OptionType(relatedDiseasesImp),
         description = Some("Related Targets"),
         arguments = pageArg :: Nil,
-        resolve = ctx =>
+        resolve = ctx =
           ctx.ctx.getRelatedDiseases(
             Map("A.keyword" -> ctx.value.id),
             ctx.arg(pageArg))),
