@@ -6,7 +6,7 @@ import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 
 case class URL(url: String, name: String)
-case class KnownDrug(approvedSymbol: String, label: String, prefName: String,
+case class KnownDrug(approvedSymbol: String, approvedName: String, label: String, prefName: String,
                      drugType: String, targetId: String, diseaseId: String,
                      drugId: String, phase: String, mechanismOfAction: String,
                      status: Option[String], activity: String, targetClass: Seq[String],
@@ -33,6 +33,7 @@ object KnownDrug {
     implicit val knownDrugImpW = Json.writes[KnownDrug]
     implicit val knownDrugImpR: Reads[KnownDrug] = (
       (__ \ "approvedSymbol").read[String] and
+      (__ \ "approvedName").read[String] and
       (__ \ "label").read[String] and
       (__ \ "prefName").read[String] and
       (__ \ "drug_type").read[String] and

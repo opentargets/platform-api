@@ -321,7 +321,7 @@ trait GQLEntities extends GQLArguments {
       Field("relatedDiseases", OptionType(relatedDiseasesImp),
         description = Some("Related Targets"),
         arguments = pageArg :: Nil,
-        resolve = ctx =
+        resolve = ctx =>
           ctx.ctx.getRelatedDiseases(
             Map("A.keyword" -> ctx.value.id),
             ctx.arg(pageArg))),
