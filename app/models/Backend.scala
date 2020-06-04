@@ -172,7 +172,8 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     )
 
     import KnownDrug.JSONImplicits._
-    esRetriever.getByFreeQuery(cbIndex, queryString, kv, pag, fromJsValue[KnownDrug], aggs, Some(sortByField)).map {
+    esRetriever.getByFreeQuery(cbIndex, queryString, kv, pag, fromJsValue[KnownDrug],
+      aggs, Some(sortByField), Seq("diseases")).map {
       case (Seq(), _) => None
       case (seq, agg) =>
         logger.debug(Json.prettyPrint(agg))
