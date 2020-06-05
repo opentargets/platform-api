@@ -305,7 +305,7 @@ trait GQLEntities extends GQLArguments {
     ReplaceField("children", Field("children",
       ListType(diseaseImp), Some("Disease Children List"),
       resolve = r => diseasesFetcher.deferSeq(r.value.children))),
-    // this query uses diseases field that contains the disease itself and its descendants
+    // this query uses id and descendants fields to search for indirect diseases
     AddFields(
       Field("knownDrugs", OptionType(knownDrugsImp),
         description = Some("Clinical Trial Drugs from evidences"),
@@ -313,7 +313,10 @@ trait GQLEntities extends GQLArguments {
         resolve = ctx => {
           ctx.ctx.getKnownDrugs(
             ctx.arg(freeTextQuery).getOrElse(""),
-            Map("diseases.raw" -> ctx.value.id),
+            Map(
+              "disease.raw" -> ctx.value.id,
+              "diseases.raw" -> ctx.value.id
+            ),
             ctx.arg(pageArg))
         }
       ),

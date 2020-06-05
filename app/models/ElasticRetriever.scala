@@ -98,7 +98,7 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
     val q = search(esIndex).bool {
       must(boolQ)
         .filter(
-          kv.toSeq.map(p => termQuery(p._1, p._2))
+          boolQuery().should(kv.toSeq.map(p => termQuery(p._1, p._2)))
         )
     }.start(limitClause._1)
       .limit(limitClause._2)

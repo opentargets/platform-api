@@ -173,7 +173,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
 
     import KnownDrug.JSONImplicits._
     esRetriever.getByFreeQuery(cbIndex, queryString, kv, pag, fromJsValue[KnownDrug],
-      aggs, Some(sortByField), Seq("diseases")).map {
+      aggs, Some(sortByField), Seq("ancestors", "descendants")).map {
       case (Seq(), _) => None
       case (seq, agg) =>
         logger.debug(Json.prettyPrint(agg))
@@ -241,7 +241,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       .find(_.name == "disease").map(_.index).getOrElse("diseases")
 
     import Disease.JSONImplicits._
-    esRetriever.getByIds(diseaseIndexName, ids, fromJsValue[Disease])
+    esRetriever.getByIds(diseaseIndexName, ids, fromJsValue[Disease], Seq("ancestors", "descendants"))
   }
 
   def search(qString: String, pagination: Option[Pagination],
