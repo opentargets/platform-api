@@ -315,7 +315,7 @@ trait GQLEntities extends GQLArguments {
             ctx.arg(freeTextQuery).getOrElse(""),
             Map(
               "disease.raw" -> ctx.value.id,
-              "diseases.raw" -> ctx.value.id
+              "descendants.raw" -> ctx.value.id
             ),
             ctx.arg(pageArg))
         }
