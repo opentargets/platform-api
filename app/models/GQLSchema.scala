@@ -155,7 +155,12 @@ trait GQLEntities extends GQLArguments {
       resolve = r => r.value.rows))
   )
 
-  implicit val ecoImp = deriveObjectType[Backend, ECO]()
+  implicit val ecoImp = deriveObjectType[Backend, ECO](
+    ObjectTypeDescription("Evidence & Conclusion Ontology (ECO) annotation"),
+
+    DocumentField("id", "ECO term id"),
+    DocumentField("label", "ECO term label")
+  )
 
   lazy implicit val reactomeImp: ObjectType[Backend, Reactome] = deriveObjectType[Backend, Reactome](
     AddFields(
@@ -177,7 +182,13 @@ trait GQLEntities extends GQLArguments {
     )
   )
 
-  implicit val tissueImp = deriveObjectType[Backend, Tissue]()
+  implicit val tissueImp = deriveObjectType[Backend, Tissue](
+    ObjectTypeDescription("Tissue, organ and anatomical system"),
+    DocumentField("id", "UBERON id"),
+    DocumentField("label", "UBERON tissue label"),
+    DocumentField("anatomicalSystems", "Anatomical systems membership"),
+    DocumentField("organs", "Organs membership"),
+  )
   implicit val rnaExpressionImp = deriveObjectType[Backend, RNAExpression]()
   implicit val cellTypeImp = deriveObjectType[Backend, CellType]()
   implicit val proteinExpressionImp = deriveObjectType[Backend, ProteinExpression]()
@@ -186,8 +197,20 @@ trait GQLEntities extends GQLArguments {
     ExcludeFields("id")
   )
 
-  implicit val adverseEventImp = deriveObjectType[Backend, AdverseEvent]()
-  implicit val adverseEventsImp = deriveObjectType[Backend, AdverseEvents]()
+  implicit val adverseEventImp = deriveObjectType[Backend, AdverseEvent](
+    ObjectTypeDescription("Significant adverse event entries"),
+    DocumentField("name", "Meddra term on adverse event"),
+    DocumentField("count", "Number of reports mentioning drug and adverse event"),
+    DocumentField("llr", "Log-likelihood ratio"),
+    DocumentField("criticalValue", "Critical Value for drug (deprecated)")
+  )
+
+  implicit val adverseEventsImp = deriveObjectType[Backend, AdverseEvents](
+    ObjectTypeDescription("Significant adverse events inferred from FAERS reports"),
+    DocumentField("count", "Total significant adverse events"),
+    DocumentField("critVal", "LLR critical value to define significance"),
+    DocumentField("rows", "Significant adverse event entries")
+  )
 
   implicit val datasourceSettingsJsonImp = Json.format[DatasourceSettings]
   val datasourceSettingsInputImp = deriveInputObjectType[DatasourceSettings](
@@ -211,9 +234,27 @@ trait GQLEntities extends GQLArguments {
 //  implicit val orthologImp = deriveObjectType[Backend, Ortholog]()
 //  implicit val orthologsImp = deriveObjectType[Backend, Orthologs]()
 
-  implicit val sourceLinkImp = deriveObjectType[Backend, SourceLink]()
-  implicit val portalProbeImp = deriveObjectType[Backend, PortalProbe]()
-  implicit val chemicalProbesImp = deriveObjectType[Backend, ChemicalProbes]()
+  implicit val sourceLinkImp = deriveObjectType[Backend, SourceLink](
+    ObjectTypeDescription("\"Datasource link\""),
+
+    DocumentField("source", "Source name"),
+    DocumentField("link", "Source full url")
+  )
+  implicit val portalProbeImp = deriveObjectType[Backend, PortalProbe](
+    ObjectTypeDescription("Chemical Probe entries (excluding Probeminer)"),
+
+    DocumentField("note", "Additional note"),
+    DocumentField("chemicalprobe", "Chemical probe name"),
+    DocumentField("gene", "Chemical probe target as reported by source"),
+    DocumentField("sourcelinks", "Sources")
+  )
+
+  implicit val chemicalProbesImp = deriveObjectType[Backend, ChemicalProbes](
+    ObjectTypeDescription("Set of potent, selective and cell-permeable chemical probes"),
+
+    DocumentField("probeminer", "Probeminer chemical probe url"),
+    DocumentField("rows", "Chemical probes entries in SGC or ChemicalProbes.org")
+  )
 
   implicit val experimentDetailsImp = deriveObjectType[Backend, ExperimentDetails]()
   implicit val experimentalToxicityImp = deriveObjectType[Backend, ExperimentalToxicity]()
@@ -221,7 +262,9 @@ trait GQLEntities extends GQLArguments {
   implicit val safetyReferenceImp = deriveObjectType[Backend, SafetyReference]()
   implicit val adverseEffectsActivationEffectsImp = deriveObjectType[Backend, AdverseEffectsActivationEffects]()
   implicit val adverseEffectsInhibitionEffectsImp = deriveObjectType[Backend, AdverseEffectsInhibitionEffects]()
-  implicit val adverseEffectsImp = deriveObjectType[Backend, AdverseEffects]()
+  implicit val adverseEffectsImp = deriveObjectType[Backend, AdverseEffects](
+    ObjectTypeDescription("Curated target safety effects")
+  )
   implicit val safetyRiskInfoImp = deriveObjectType[Backend, SafetyRiskInfo]()
   implicit val safetyImp = deriveObjectType[Backend, Safety]()
 
@@ -230,32 +273,65 @@ trait GQLEntities extends GQLArguments {
   implicit val mouseGeneImp = deriveObjectType[Backend, MouseGene]()
   implicit val mousePhenotypesImp = deriveObjectType[Backend, MousePhenotypes]()
 
-  implicit val tepImp = deriveObjectType[Backend, Tep]()
+  implicit val tepImp = deriveObjectType[Backend, Tep](
+    ObjectTypeDescription("Target Enabling Package (TEP)")
+  )
 
   implicit val proteinClassPathNodeImp = deriveObjectType[Backend, ProteinClassPathNode]()
   implicit val proteinClassPathImp = deriveObjectType[Backend, ProteinClassPath]()
 
-  implicit val proteinImp = deriveObjectType[Backend, ProteinAnnotations]()
+  implicit val proteinImp = deriveObjectType[Backend, ProteinAnnotations](
+    ObjectTypeDescription("Various protein coding annotation derived from Uniprot"),
+
+    DocumentField("id", "Uniprot reference accession"),
+    DocumentField("accessions", "All accessions"),
+    DocumentField("functions", "Protein function"),
+    DocumentField("pathways", "Pathway membership"),
+    DocumentField("similarities", "Protein similarities (families, etc.)"),
+    DocumentField("subcellularLocations", "Subcellular locations"),
+    DocumentField("subunits", "Protein subunits")
+  )
+
   implicit val genomicLocationImp = deriveObjectType[Backend, GenomicLocation]()
   implicit lazy val targetImp: ObjectType[Backend, Target] = deriveObjectType(
+    ObjectTypeDescription("Target entity"),
+    DocumentField("id", "Open Targets target id"),
+    DocumentField("approvedSymbol", "HGNC approved symbol"),
+    DocumentField("approvedName", "Approved gene name"),
+    DocumentField("bioType", "Molecule biotype"),
+    DocumentField("hgncId", "HGNC approved id"),
+    DocumentField("nameSynonyms", "Gene name synonyms"),
+    DocumentField("symbolSynonyms", "Symbol synonyms"),
+    DocumentField("genomicLocation", "Chromosomic location"),
+    DocumentField("proteinAnnotations", "Various protein coding annotation"),
+    DocumentField("geneOntology", "Gene Ontology annotations"),
+    DocumentField("safety", "Known target safety effects and target safety risk information"),
+    DocumentField("chemicalProbes", "Potent, selective and cell-permeable chemical probes"),
+    DocumentField("hallmarks", "Target-modulated essential alterations in cell physiology that dictate " +
+      "malignant growth"),
+    DocumentField("tep", "Target Enabling Package (TEP)"),
+    DocumentField("tractability", "Target druggability assessment"),
+    DocumentField("reactome", "Biological pathway membership from Reactome"),
+
     ReplaceField("reactome", Field("reactome",
-      ListType(reactomeImp), Some("Reactome node list"),
+      ListType(reactomeImp), None,
       resolve = r => reactomeFetcher.deferSeq(r.value.reactome))),
     AddFields(
       Field("mousePhenotypes", ListType(mouseGeneImp),
-        description = Some("Mouse phenotypes by linked mouse Gene"),
+        description = Some("Biological pathway membership from Reactome"),
         resolve = r => DeferredValue(mousePhenotypeFetcher.deferOpt(r.value.id)).map {
           case Some(mouseGenes) => mouseGenes.rows
           case None => Seq.empty
         }),
       Field("expressions", ListType(expressionImp),
-        description = Some("Protein and baseline expression for this target"),
+        description = Some("RNA and Protein baseline expression"),
         resolve = r => DeferredValue(expressionFetcher.deferOpt(r.value.id)).map {
           case Some(expressions) => expressions.rows
           case None => Seq.empty
         }),
       Field("knownDrugs", OptionType(knownDrugsImp),
-        description = Some("Clinical Trial Drugs from evidences"),
+        description = Some("Clinical precedence for drugs with investigational or approved indications " +
+          "targeting gene products according to their curated mechanism of action"),
         arguments = freeTextQuery :: pageArg :: Nil,
         resolve = ctx => {
           ctx.ctx.getKnownDrugs(ctx.arg(freeTextQuery).getOrElse(""),
@@ -265,7 +341,8 @@ trait GQLEntities extends GQLArguments {
         }
       ),
       Field("cancerBiomarkers", OptionType(cancerBiomarkersImp),
-        description = Some("CancerBiomarkers"),
+        description = Some("Clinical relevance and drug responses of tumor genomic alterations " +
+          "on the target"),
         arguments = pageArg :: Nil,
         resolve = ctx =>
           ctx.ctx.getCancerBiomarkers(
@@ -273,7 +350,7 @@ trait GQLEntities extends GQLArguments {
             ctx.arg(pageArg))),
 
       Field("relatedTargets", OptionType(relatedTargetsImp),
-        description = Some("Related Targets"),
+        description = Some("Similar targets based on their disease association profiles"),
         arguments = pageArg :: Nil,
         resolve = ctx =>
           ctx.ctx.getRelatedTargets(
@@ -290,25 +367,40 @@ trait GQLEntities extends GQLArguments {
             ctx.arg(pageArg)))
   ))
 
-  implicit val phenotypeImp = deriveObjectType[Backend, Phenotype]()
+  implicit val phenotypeImp = deriveObjectType[Backend, Phenotype](
+    ObjectTypeDescription("Clinical signs and symptoms observed in disease"),
+
+    DocumentField("url", "Disease or phenotype uri"),
+    DocumentField("name", "Disease or phenotype name"),
+    DocumentField("disease", "Disease or phenotype id")
+  )
   // disease
   implicit lazy val diseaseImp: ObjectType[Backend, Disease] = deriveObjectType(
+    ObjectTypeDescription("Disease or phenotype entity"),
+    DocumentField("id", "Open Targets disease id"),
+    DocumentField("name", "Disease name"),
+    DocumentField("description", "Disease description"),
+    DocumentField("synonyms", "Disease synonyms"),
+    DocumentField("phenotypes", "Clinical signs and symptoms observed in disease"),
+    DocumentField("isTherapeuticArea", "Is disease a therapeutic area itself"),
+
     ReplaceField("therapeuticAreas", Field("therapeuticAreas",
-      ListType(diseaseImp), Some("Disease List"),
+      ListType(diseaseImp), Some("Ancestor therapeutic area disease entities in ontology"),
       resolve = r => diseasesFetcher.deferSeq(r.value.therapeuticAreas))),
 //    ReplaceField("phenotypes", Field("phenotypes",
 //      ListType(diseaseImp), Some("Phenotype List"),
 //      resolve = r => diseasesFetcher.deferSeq(r.value.phenotypes))),
     ReplaceField("parents", Field("parents",
-      ListType(diseaseImp), Some("Disease Parents List"),
+      ListType(diseaseImp), Some("Disease parents entities in ontology"),
       resolve = r => diseasesFetcher.deferSeq(r.value.parents))),
     ReplaceField("children", Field("children",
-      ListType(diseaseImp), Some("Disease Children List"),
+      ListType(diseaseImp), Some("Disease children entities in ontology"),
       resolve = r => diseasesFetcher.deferSeq(r.value.children))),
     // this query uses id and ancestors fields to search for indirect diseases
     AddFields(
       Field("knownDrugs", OptionType(knownDrugsImp),
-        description = Some("Clinical Trial Drugs from evidences"),
+        description = Some("Clinical precedence for investigational or approved " +
+          "drugs indicated for disease and curated mechanism of action"),
         arguments = freeTextQuery :: pageArg :: Nil,
         resolve = ctx => {
           ctx.ctx.getKnownDrugs(
@@ -322,7 +414,7 @@ trait GQLEntities extends GQLArguments {
       ),
 
       Field("relatedDiseases", OptionType(relatedDiseasesImp),
-        description = Some("Related Targets"),
+        description = Some("Similar diseases based on their target association profiles"),
         arguments = pageArg :: Nil,
         resolve = ctx =>
           ctx.ctx.getRelatedDiseases(
@@ -350,15 +442,42 @@ trait GQLEntities extends GQLArguments {
     })
 
   // cancerbiomarkers
-  implicit val cancerBiomarkerSourceImp = deriveObjectType[Backend, CancerBiomarkerSource]()
+  implicit val cancerBiomarkerSourceImp = deriveObjectType[Backend, CancerBiomarkerSource](
+    ObjectTypeDescription("Detail on Cancer Biomarker sources"),
+
+    DocumentField("description", "Source description"),
+    DocumentField("link", "Source link"),
+    DocumentField("name", "Source name")
+  )
+
   implicit val cancerBiomarkerImp = deriveObjectType[Backend, CancerBiomarker](
-    ReplaceField("target", Field("target", targetImp, Some("Target"),
+    ObjectTypeDescription("Entry on clinical relevance and drug responses of tumor genomic " +
+      "alterations on the target"),
+
+    DocumentField("id", "Target symbol and variant id"),
+    DocumentField("associationType", "Drug responsiveness"),
+    DocumentField("drugName", "Drug family or name"),
+    DocumentField("evidenceLevel", "Source type"),
+    DocumentField("sources", "Sources"),
+    DocumentField("pubmedIds", "List of supporting publications"),
+    DocumentField("evidenceLevel", "Source type"),
+
+    ReplaceField("target", Field("target", targetImp, Some("Target entity"),
       resolve = r => targetsFetcher.defer(r.value.target))),
-    ReplaceField("disease", Field("disease", OptionType(diseaseImp), Some("Disease"),
+    ReplaceField("disease", Field("disease", OptionType(diseaseImp), Some("Disease entity"),
       resolve = r => diseasesFetcher.deferOpt(r.value.disease)))
   )
 
-  implicit val cancerBiomarkersImp = deriveObjectType[Backend, CancerBiomarkers]()
+  implicit val cancerBiomarkersImp = deriveObjectType[Backend, CancerBiomarkers](
+    ObjectTypeDescription("Set of clinical relevance and drug responses of tumor " +
+      "genomic alterations on the target entries"),
+
+    DocumentField("uniqueDrugs", "Number of unique drugs with response information"),
+    DocumentField("uniqueDiseases", "Number of unique cancer diseases with drug response information"),
+    DocumentField("uniqueBiomarkers", "Number of unique biomarkers with drug response information"),
+    DocumentField("count", "Number of entries"),
+    DocumentField("rows", "Cancer Biomarker entries")
+  )
 
   // howto doc https://sangria-graphql.org/learn/#macro-based-graphql-type-derivation
   implicit lazy val linkedDiseasesImp = deriveObjectType[Backend, LinkedIds](
@@ -389,11 +508,39 @@ trait GQLEntities extends GQLArguments {
   implicit lazy val indicationsImp = deriveObjectType[Backend, Indications]()
 
   implicit lazy val mechanismOfActionImp = deriveObjectType[Backend, MechanismsOfAction]()
-  implicit lazy val withdrawnNoticeImp = deriveObjectType[Backend, WithdrawnNotice]()
+  implicit lazy val withdrawnNoticeImp = deriveObjectType[Backend, WithdrawnNotice](
+    ObjectTypeDescription("Withdrawal reason"),
+
+    DocumentField("classes", "Withdrawal classes"),
+    DocumentField("countries", "Withdrawal countries"),
+    DocumentField("reasons", "Reason for withdrawal"),
+    DocumentField("year", "Year of withdrawal")
+  )
   implicit lazy val drugImp = deriveObjectType[Backend, Drug](
+    ObjectTypeDescription("Drug/Molecule entity"),
+    DocumentField("id", "Open Targets molecule id"),
+    DocumentField("name", "Molecule preferred name"),
+    DocumentField("synonyms", "Molecule synonyms"),
+    DocumentField("tradeNames", "Drug trade names"),
+    DocumentField("yearOfFirstApproval", "Year drug was approved for the first time"),
+    DocumentField("drugType", "Drug modality"),
+    DocumentField("maximumClinicalTrialPhase", "Maximum phase observed in clinical trial records and" +
+      " post-marketing package inserts"),
+    DocumentField("hasBeenWithdrawn", "Has drug been withdrawn from the market"),
+    DocumentField("withdrawnNotice", "Withdrawal reason"),
+    DocumentField("internalCompound", "Is this an private molecule not displayed " +
+      "in the Open Targets public version"),
+    DocumentField("mechanismsOfAction", "Mechanisms of action to produce intended " +
+      "pharmacological effects. Curated from scientific literature and post-marketing package inserts"),
+    DocumentField("indications", "Investigational and approved indications curated from clinical trial " +
+      "records and post-marketing package inserts"),
+    DocumentField("blackBoxWarning", "Alert on life-threteaning drug side effects provided by FDA"),
+    DocumentField("description", "Drug description"),
+
     AddFields(
       Field("knownDrugs", OptionType(knownDrugsImp),
-        description = Some("Clinical Trial Drugs from evidences"),
+        description = Some("Curated Clinical trial records and and post-marketing package inserts " +
+          "with a known mechanism of action"),
         arguments = freeTextQuery :: pageArg :: Nil,
         resolve = ctx => {
           ctx.ctx.getKnownDrugs(
@@ -404,16 +551,19 @@ trait GQLEntities extends GQLArguments {
       ),
 
       Field("adverseEvents", OptionType(adverseEventsImp),
-        description = Some("The FDA Adverse Event Reporting System (FAERS)"),
+        description = Some("Significant adverse events inferred from FAERS reports"),
         arguments = pageArg :: Nil,
         resolve = ctx =>
           ctx.ctx.getAdverseEvents(
             Map("chembl_id.keyword" -> ctx.value.id),
             ctx.arg(pageArg)))
     ),
-    ReplaceField("linkedDiseases", Field("linkedDiseases", linkedDiseasesImp, Some("Linked Diseases"),
+    ReplaceField("linkedDiseases", Field("linkedDiseases", linkedDiseasesImp,
+      Some("Therapeutic indications for drug based on clinical trial data or " +
+        "post-marketed drugs, when mechanism of action is known\""),
       resolve = r => r.value.linkedDiseases)),
-    ReplaceField("linkedTargets", Field("linkedTargets", linkedTargetsImp, Some("Linked Targets"),
+    ReplaceField("linkedTargets", Field("linkedTargets", linkedTargetsImp,
+      Some("Molecule targets based on drug mechanism of action"),
       resolve = r => r.value.linkedTargets))
   )
 
@@ -434,7 +584,7 @@ trait GQLEntities extends GQLArguments {
     "Compute Associations on the fly",
     fields[Backend, Unit](
       Field("meta", clickhouseSettingsImp,
-        Some("Meta information"),
+        None,
         resolve = _.ctx.defaultOTSettings.clickhouse),
       Field("byTargetFixed", associationsImp,
         description = Some("Associations for a fixed target"),
@@ -453,19 +603,55 @@ trait GQLEntities extends GQLArguments {
           ctx.arg(pageArg)))
     ))
 
-  implicit val URLImp: ObjectType[Backend, URL] = deriveObjectType[Backend, URL]()
+  implicit val URLImp: ObjectType[Backend, URL] = deriveObjectType[Backend, URL](
+    ObjectTypeDescription("Source URL for clinical trials, FDA and package inserts"),
+
+    DocumentField("url", "resource url"),
+    DocumentField("name", "resource name")
+  )
   implicit val knownDrugImp: ObjectType[Backend, KnownDrug] = deriveObjectType[Backend, KnownDrug](
+    ObjectTypeDescription("Clinical precedence entry for drugs with investigational or " +
+      "approved indications targeting gene products according to their curated mechanism of " +
+      "action. Entries are grouped by target, disease, drug, phase, status and mechanism of action"),
+    DocumentField("approvedSymbol", "Drug target approved symbol based on curated mechanism of action"),
+    DocumentField("label", "Curated disease indication"),
+    DocumentField("prefName", "Drug name"),
+    DocumentField("drugType", "Drug modality"),
+    DocumentField("targetId", "Drug target Open Targets id based on curated mechanism of action"),
+    DocumentField("diseaseId", "Curated disease indication Open Targets id"),
+    DocumentField("drugId", "Open Targets drug id"),
+    DocumentField("phase", "Clinical Trial phase"),
+    DocumentField("mechanismOfAction", "Mechanism of Action description"),
+    DocumentField("status", "Trial status"),
+    DocumentField("activity", "On-target drug pharmacological activity"),
+    DocumentField("targetClass", "Drug target class based on curated mechanism of action"),
+    DocumentField("ctIds", "Clinicaltrials.gov identifiers on entry trials"),
+    DocumentField("urls", "Source urls from clinical trials, FDA or package inserts"),
+
     AddFields(
       Field("disease", OptionType(diseaseImp),
+        description = Some("Curated disease indication entity"),
         resolve = r => diseasesFetcher.deferOpt(r.value.diseaseId)),
       Field("target", OptionType(targetImp),
+        description = Some("Drug target entity based on curated mechanism of action"),
         resolve = r => targetsFetcher.deferOpt(r.value.targetId)),
       Field("drug", OptionType(drugImp),
+        description = Some("Curated drug entity"),
         resolve = r => drugsFetcher.deferOpt(r.value.drugId))
     )
   )
 
-  implicit val knownDrugsImp: ObjectType[Backend, KnownDrugs] = deriveObjectType[Backend, KnownDrugs]()
+  implicit val knownDrugsImp: ObjectType[Backend, KnownDrugs] = deriveObjectType[Backend, KnownDrugs](
+    ObjectTypeDescription("Set of clinical precedence for drugs with investigational or " +
+      "approved indications targeting gene products according to their curated mechanism of action"),
+
+    DocumentField("uniqueDrugs", "Total unique drugs/molecules"),
+    DocumentField("uniqueDiseases", "Total unique diseases or phenotypes"),
+    DocumentField("uniqueTargets", "Total unique known mechanism of action targetsTotal " +
+      "unique known mechanism of action targets"),
+    DocumentField("count", "Total number of entries"),
+    DocumentField("rows", "Clinical precedence entries with known mechanism of action")
+  )
 
 }
 
