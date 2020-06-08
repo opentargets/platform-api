@@ -33,6 +33,8 @@ trait GQLArguments {
   val entityNames = Argument("entityNames", OptionInputType(ListInputType(StringType)),
     description = "List of entity names to search for (target, disease, drug,...)")
   val pageArg = Argument("page", OptionInputType(pagination))
+  val pageSize = Argument("size", OptionInputType(IntType))
+  val cursor = Argument("cursor", OptionInputType(ListInputType(StringType)))
   val queryString = Argument("queryString", StringType, description = "Query string")
   val freeTextQuery = Argument("freeTextQuery", OptionInputType(StringType), description = "Query string")
   val efoId = Argument("efoId", StringType, description = "EFO ID" )
@@ -332,11 +334,12 @@ trait GQLEntities extends GQLArguments {
       Field("knownDrugs", OptionType(knownDrugsImp),
         description = Some("Clinical precedence for drugs with investigational or approved indications " +
           "targeting gene products according to their curated mechanism of action"),
-        arguments = freeTextQuery :: pageArg :: Nil,
+        arguments = freeTextQuery :: pageSize :: cursor :: Nil,
         resolve = ctx => {
           ctx.ctx.getKnownDrugs(ctx.arg(freeTextQuery).getOrElse(""),
             Map("target.raw" -> ctx.value.id),
-            ctx.arg(pageArg)
+            ctx.arg(pageSize),
+            ctx.arg(cursor).getOrElse(Nil)
           )
         }
       ),
@@ -401,7 +404,7 @@ trait GQLEntities extends GQLArguments {
       Field("knownDrugs", OptionType(knownDrugsImp),
         description = Some("Clinical precedence for investigational or approved " +
           "drugs indicated for disease and curated mechanism of action"),
-        arguments = freeTextQuery :: pageArg :: Nil,
+        arguments = freeTextQuery :: pageSize :: cursor :: Nil,
         resolve = ctx => {
           ctx.ctx.getKnownDrugs(
             ctx.arg(freeTextQuery).getOrElse(""),
@@ -409,7 +412,9 @@ trait GQLEntities extends GQLArguments {
               "disease.raw" -> ctx.value.id,
               "ancestors.raw" -> ctx.value.id
             ),
-            ctx.arg(pageArg))
+            ctx.arg(pageSize),
+            ctx.arg(cursor).getOrElse(Nil)
+          )
         }
       ),
 
@@ -541,12 +546,14 @@ trait GQLEntities extends GQLArguments {
       Field("knownDrugs", OptionType(knownDrugsImp),
         description = Some("Curated Clinical trial records and and post-marketing package inserts " +
           "with a known mechanism of action"),
-        arguments = freeTextQuery :: pageArg :: Nil,
+        arguments = freeTextQuery :: pageSize :: cursor :: Nil,
         resolve = ctx => {
           ctx.ctx.getKnownDrugs(
             ctx.arg(freeTextQuery).getOrElse(""),
             Map("drug.raw" -> ctx.value.id),
-            ctx.arg(pageArg))
+            ctx.arg(pageSize),
+            ctx.arg(cursor).getOrElse(Nil)
+          )
         }
       ),
 

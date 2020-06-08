@@ -42,7 +42,11 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
       must(
         kv.toSeq.map(p => matchQuery(p._1, p._2))
       )
-    } start(limitClause._1) limit(limitClause._2) aggs(aggs) trackTotalHits(true) sourceExclude(excludedFields)
+    } .start(limitClause._1)
+      .limit(limitClause._2)
+      .aggs(aggs)
+      .trackTotalHits(true)
+      .sourceExclude(excludedFields)
 
     // just log and execute the query
     val elems: Future[Response[SearchResponse]] = client.execute {
@@ -81,7 +85,8 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
                         buildF: JsValue => Option[A],
                         aggs: Iterable[AbstractAggregation] = Iterable.empty,
                         sortByField: Option[sort.FieldSort] = None,
-                        excludedFields: Seq[String] = Seq.empty): Future[(IndexedSeq[A], JsValue)] = {
+                        excludedFields: Seq[String] = Seq.empty,
+                        searchAfter: Seq[String] = Nil): Future[(IndexedSeq[A], JsValue, Seq[String])] = {
     val limitClause = pagination.toES
 
     val boolQ = boolQuery().should(
@@ -105,11 +110,14 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
       .aggs(aggs)
       .trackTotalHits(true)
       .sourceExclude(excludedFields)
+      .searchAfter(searchAfter)
 
     // just log and execute the query
     val elems: Future[Response[SearchResponse]] = client.execute {
       val qq = sortByField match {
-        case Some(s) => q.sortBy(s)
+        case Some(s) =>
+          val tie = sort.FieldSort("_id").asc()
+          q.sortBy(s, tie)
         case None => q
       }
 
@@ -118,7 +126,7 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
     }
 
     elems.map {
-      case _: RequestFailure => (IndexedSeq.empty, JsNull)
+      case _: RequestFailure => (IndexedSeq.empty, JsNull, Nil)
       case results: RequestSuccess[SearchResponse] =>
         // parse the full body response into JsValue
         // thus, we can apply Json Transformations from JSON Play
@@ -133,7 +141,15 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
             buildF(jObj)
           }).withFilter(_.isDefined).map(_.get)
 
-        (mappedHits, aggs)
+        val hasNext = !(hits.size < limitClause._2)
+
+        val seAf =
+          if
+            (hasNext) (hits.last \ "sort").get.as[Seq[String]]
+          else
+            Nil
+
+        (mappedHits, aggs, seAf)
     }
   }
 

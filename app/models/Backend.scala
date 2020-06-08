@@ -155,10 +155,11 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     }
   }
 
-  def getKnownDrugs(queryString: String, kv: Map[String, String], pagination: Option[Pagination]):
+  def getKnownDrugs(queryString: String, kv: Map[String, String], sizeLimit: Option[Int],
+                    cursor: Seq[String]):
   Future[Option[KnownDrugs]] = {
 
-    val pag = pagination.getOrElse(Pagination.mkDefault)
+    val pag = Pagination(0, sizeLimit.getOrElse(Pagination.sizeDefault))
     val sortByField = sort.FieldSort(field = "clinical_trial_phase.raw").desc()
     val cbIndex = defaultESSettings.entities
       .find(_.name == "evidence_drug_direct").map(_.index).getOrElse("evidence_drug_direct")
@@ -173,16 +174,16 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
 
     import KnownDrug.JSONImplicits._
     esRetriever.getByFreeQuery(cbIndex, queryString, kv, pag, fromJsValue[KnownDrug],
-      aggs, Some(sortByField), Seq("ancestors", "descendants")).map {
-      case (Seq(), _) => None
-      case (seq, agg) =>
+      aggs, Some(sortByField), Seq("ancestors", "descendants"), cursor).map {
+      case (Seq(), _, _) => None
+      case (seq, agg, nextCursor) =>
         logger.debug(Json.prettyPrint(agg))
         val drugs = (agg \ "uniqueDrugs" \ "value").as[Long]
         val diseases = (agg \ "uniqueDiseases" \ "value").as[Long]
         val targets = (agg \ "uniqueTargets" \ "value").as[Long]
 //        val clinicalTrials = (agg \ "uniqueClinicalTrials" \ "value").as[Long]
         val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
-        Some(KnownDrugs(drugs, diseases, targets, rowsCount, seq))
+        Some(KnownDrugs(drugs, diseases, targets, rowsCount, nextCursor, seq))
     }
   }
 

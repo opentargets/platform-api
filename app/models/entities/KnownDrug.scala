@@ -16,6 +16,7 @@ case class KnownDrugs(uniqueDrugs: Long,
                       uniqueDiseases: Long,
                       uniqueTargets: Long,
                       count: Long,
+                      cursor: Seq[String],
                       rows: Seq[KnownDrug])
 
 object KnownDrug {
