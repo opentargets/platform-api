@@ -21,7 +21,7 @@ object OtarProject {
     implicit val otarProjectImpR = Json.reads[OtarProject]
 
     implicit val otarProjectsImpW = Json.writes[OtarProjects]
-    implicit val expressionsR: Reads[Expressions] =
+    implicit val otarProjectsImpR: Reads[OtarProjects] =
       (
         (__ \ "efo_id").read[String] and
         (__ \ "projects").readWithDefault[Seq[OtarProject]](Seq.empty)

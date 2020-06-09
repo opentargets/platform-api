@@ -205,7 +205,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
 
   def getOtarProjects(ids: Seq[String]): Future[IndexedSeq[OtarProjects]] = {
     val otarsIndexName = defaultESSettings.entities
-      .find(_.name == "otars").map(_.index).getOrElse("otars")
+      .find(_.name == "otar_projects").map(_.index).getOrElse("otar_projects")
 
     import OtarProject.JSONImplicits._
     esRetriever.getByIds(otarsIndexName, ids, fromJsValue[OtarProjects])
