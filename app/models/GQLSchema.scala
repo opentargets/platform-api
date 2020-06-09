@@ -215,7 +215,7 @@ trait GQLEntities extends GQLArguments {
     DocumentField("name", "Meddra term on adverse event"),
     DocumentField("count", "Number of reports mentioning drug and adverse event"),
     DocumentField("llr", "Log-likelihood ratio"),
-    DocumentField("criticalValue", "Critical Value for drug (deprecated)")
+    ExcludeFields("criticalValue")
   )
 
   implicit val adverseEventsImp = deriveObjectType[Backend, AdverseEvents](
