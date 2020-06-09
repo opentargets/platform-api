@@ -87,6 +87,17 @@ trait GQLEntities extends GQLArguments {
       ctx.getExpressions(ids)
     })
 
+
+  implicit val otarProjectsHasId = HasId[OtarProjects, String](_.efoId)
+
+  val otarProjectsFetcherCache = FetcherCache.simple
+  val otarProjectsFetcher = Fetcher(
+    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(otarProjectsFetcherCache),
+    fetch = (ctx: Backend, ids: Seq[String]) => {
+      ctx.getOtarProjects(ids)
+    })
+
+
   implicit val mousePhenotypeHasId = HasId[MousePhenotypes, String](_.id)
 
   val mousePhenotypeFetcherCache = FetcherCache.simple
@@ -220,6 +231,9 @@ trait GQLEntities extends GQLArguments {
   )
   val datasourceSettingsListArg = Argument("datasources",
      OptionInputType(ListInputType(datasourceSettingsInputImp)))
+
+  implicit val otarProjectImp = deriveObjectType[Backend, OtarProject]()
+  implicit val otarProjectsImp = deriveObjectType[Backend, OtarProjects]()
 
   // howto doc https://sangria-graphql.org/learn/#macro-based-graphql-type-derivation
   implicit val geneObtologyImp = deriveObjectType[Backend, GeneOntology](
@@ -401,6 +415,12 @@ trait GQLEntities extends GQLArguments {
       resolve = r => diseasesFetcher.deferSeq(r.value.children))),
     // this query uses id and ancestors fields to search for indirect diseases
     AddFields(
+      Field("otarProjects", ListType(otarProjectImp),
+        description = Some("RNA and Protein baseline expression"),
+        resolve = r => DeferredValue(otarProjectsFetcher.deferOpt(r.value.id)).map {
+          case Some(otars) => otars.rows
+          case None => Seq.empty
+        }),
       Field("knownDrugs", OptionType(knownDrugsImp),
         description = Some("Clinical precedence for investigational or approved " +
           "drugs indicated for disease and curated mechanism of action"),
@@ -669,7 +689,8 @@ object GQLSchema extends GQLMeta with GQLEntities {
     ecosFetcher,
     reactomeFetcher,
     expressionFetcher,
-    mousePhenotypeFetcher)
+    mousePhenotypeFetcher,
+    otarProjectsFetcher)
 
 
   lazy val msearchResultType = UnionType("EntityUnionType", types = List(targetImp, drugImp, diseaseImp))

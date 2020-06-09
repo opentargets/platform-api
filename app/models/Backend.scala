@@ -203,6 +203,14 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[MousePhenotypes])
   }
 
+  def getOtarProjects(ids: Seq[String]): Future[IndexedSeq[OtarProjects]] = {
+    val otarsIndexName = defaultESSettings.entities
+      .find(_.name == "otars").map(_.index).getOrElse("otars")
+
+    import OtarProject.JSONImplicits._
+    esRetriever.getByIds(otarsIndexName, ids, fromJsValue[OtarProjects])
+  }
+
   def getExpressions(ids: Seq[String]): Future[IndexedSeq[Expressions]] = {
     val targetIndexName = defaultESSettings.entities
       .find(_.name == "expression").map(_.index).getOrElse("expression")
