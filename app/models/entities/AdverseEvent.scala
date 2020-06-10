@@ -15,7 +15,7 @@ object AdverseEvent {
     implicit val adverseEventImpW = Json.writes[AdverseEvent]
     implicit val adverseEventImpR: Reads[AdverseEvent] =
       ((JsPath \ "event").read[String] and
-        (JsPath \ "report_count").read[Long] and
+        (JsPath \ "count").read[Long] and
         (JsPath \ "llr").read[Double] and
         (JsPath \ "critval").read[Double]
       )(AdverseEvent.apply _)

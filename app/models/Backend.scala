@@ -5,6 +5,7 @@ import javax.inject.Inject
 import models.Helpers._
 import play.api.{Configuration, Environment, Logger}
 import com.sksamuel.elastic4s._
+import com.sksamuel.elastic4s.requests.searches._
 import com.sksamuel.elastic4s.http.JavaClient
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -67,7 +68,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     import DDRelation.JSONImplicits._
     val excludedFields = List("relatedInfo*")
     esRetriever.getByIndexedQuery(indexName, kv, pag, fromJsValue[DDRelation],
-      aggs, Some("score"), excludedFields).map {
+      aggs, ElasticRetriever.sortByDesc("score"), excludedFields).map {
       case (Seq(), _) => None
       case (seq, agg) =>
         logger.debug(Json.prettyPrint(agg))
@@ -93,7 +94,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     import DDRelation.JSONImplicits._
     val excludedFields = List("relatedInfo*")
     esRetriever.getByIndexedQuery(indexName, kv, pag, fromJsValue[DDRelation],
-      aggs, Some("score"), excludedFields).map {
+      aggs, ElasticRetriever.sortByDesc("score"), excludedFields).map {
       case (Seq(), _) => None
       case (seq, agg) =>
         logger.debug(Json.prettyPrint(agg))
@@ -116,7 +117,8 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     )
 
     import AdverseEvent.JSONImplicits._
-    esRetriever.getByIndexedQuery(indexName, kv, pag, fromJsValue[AdverseEvent], aggs, Some("llr")).map {
+    esRetriever.getByIndexedQuery(indexName, kv, pag, fromJsValue[AdverseEvent], aggs,
+      ElasticRetriever.sortByDesc("llr")).map {
       case (Seq(), _) => None
       case (seq, agg) =>
         logger.debug(Json.prettyPrint(agg))
@@ -153,33 +155,35 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     }
   }
 
-  def getKnownDrugs(kv: Map[String, String], pagination: Option[Pagination]):
+  def getKnownDrugs(queryString: String, kv: Map[String, String], sizeLimit: Option[Int],
+                    cursor: Seq[String]):
   Future[Option[KnownDrugs]] = {
 
-    val pag = pagination.getOrElse(Pagination.mkDefault)
-
+    val pag = Pagination(0, sizeLimit.getOrElse(Pagination.sizeDefault))
+    val sortByField = sort.FieldSort(field = "clinical_trial_phase.raw").desc()
     val cbIndex = defaultESSettings.entities
       .find(_.name == "evidence_drug_direct").map(_.index).getOrElse("evidence_drug_direct")
 
     val aggs = Seq(
-      cardinalityAgg("uniqueTargets", "target.keyword"),
-      cardinalityAgg("uniqueDiseases", "disease.keyword"),
-      cardinalityAgg("uniqueDrugs", "drug.keyword"),
+      cardinalityAgg("uniqueTargets", "target.raw"),
+      cardinalityAgg("uniqueDiseases", "disease.raw"),
+      cardinalityAgg("uniqueDrugs", "drug.raw"),
 //      cardinalityAgg("uniqueClinicalTrials", "list_urls.url.keyword"),
-      valueCountAgg("rowsCount", "drug.keyword")
+      valueCountAgg("rowsCount", "drug.raw")
     )
 
     import KnownDrug.JSONImplicits._
-    esRetriever.getByIndexedQuery(cbIndex, kv, pag, fromJsValue[KnownDrug], aggs).map {
-      case (Seq(), _) => None
-      case (seq, agg) =>
+    esRetriever.getByFreeQuery(cbIndex, queryString, kv, pag, fromJsValue[KnownDrug],
+      aggs, Some(sortByField), Seq("ancestors", "descendants"), cursor).map {
+      case (Seq(), _, _) => None
+      case (seq, agg, nextCursor) =>
         logger.debug(Json.prettyPrint(agg))
         val drugs = (agg \ "uniqueDrugs" \ "value").as[Long]
         val diseases = (agg \ "uniqueDiseases" \ "value").as[Long]
         val targets = (agg \ "uniqueTargets" \ "value").as[Long]
 //        val clinicalTrials = (agg \ "uniqueClinicalTrials" \ "value").as[Long]
         val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
-        Some(KnownDrugs(drugs, diseases, targets, rowsCount, seq))
+        Some(KnownDrugs(drugs, diseases, targets, rowsCount, nextCursor, seq))
     }
   }
 
@@ -191,12 +195,46 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[ECO])
   }
 
+  def getMousePhenotypes(ids: Seq[String]): Future[IndexedSeq[MousePhenotypes]] = {
+    val targetIndexName = defaultESSettings.entities
+      .find(_.name == "mp").map(_.index).getOrElse("mp")
+
+    import MousePhenotype.JSONImplicits._
+    esRetriever.getByIds(targetIndexName, ids, fromJsValue[MousePhenotypes])
+  }
+
+  def getOtarProjects(ids: Seq[String]): Future[IndexedSeq[OtarProjects]] = {
+    val otarsIndexName = defaultESSettings.entities
+      .find(_.name == "otar_projects").map(_.index).getOrElse("otar_projects")
+
+    import OtarProject.JSONImplicits._
+    esRetriever.getByIds(otarsIndexName, ids, fromJsValue[OtarProjects])
+  }
+
+  def getExpressions(ids: Seq[String]): Future[IndexedSeq[Expressions]] = {
+    val targetIndexName = defaultESSettings.entities
+      .find(_.name == "expression").map(_.index).getOrElse("expression")
+
+    import Expression.JSONImplicits._
+    esRetriever.getByIds(targetIndexName, ids, fromJsValue[Expressions])
+  }
+
+  def getReactomeNodes(ids: Seq[String]): Future[IndexedSeq[Reactome]] = {
+    val targetIndexName = defaultESSettings.entities
+      .find(_.name == "reactome").map(_.index).getOrElse("reactome")
+
+    import Reactome.JSONImplicits._
+    esRetriever.getByIds(targetIndexName, ids, fromJsValue[Reactome])
+  }
+
   def getTargets(ids: Seq[String]): Future[IndexedSeq[Target]] = {
     val targetIndexName = defaultESSettings.entities
       .find(_.name == "target").map(_.index).getOrElse("targets")
 
+    val excludedFields = List("mousePhenotypes*")
     import Target.JSONImplicits._
-    esRetriever.getByIds(targetIndexName, ids, fromJsValue[Target])
+    esRetriever.getByIds(targetIndexName, ids, fromJsValue[Target],
+      excludedFields = excludedFields)
   }
 
   def getDrugs(ids: Seq[String]): Future[IndexedSeq[Drug]] = {
@@ -212,7 +250,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       .find(_.name == "disease").map(_.index).getOrElse("diseases")
 
     import Disease.JSONImplicits._
-    esRetriever.getByIds(diseaseIndexName, ids, fromJsValue[Disease])
+    esRetriever.getByIds(diseaseIndexName, ids, fromJsValue[Disease], Seq("ancestors", "descendants"))
   }
 
   def search(qString: String, pagination: Option[Pagination],
