@@ -11,6 +11,8 @@ object Functions {
 
   def uniq(cols: Seq[Column]): Column = f("uniq", cols)
   def uniq(col: Column, cols: Column*): Column = uniq(col +: cols)
+  def distinct(cols: Seq[Column]): Column = f("distinct", cols)
+  def distinct(col: Column, cols: Column*): Column = distinct(col +: cols)
   def groupArray(col: Column): Column = f("groupArray", col)
   def groupArrayIf(col1: Column, col2: Column): Column = f("groupArrayIf", col1, col2)
   def arrayMap(lambda: String, cols: Column*): Column = f("arrayMap", Column(lambda) +: cols)

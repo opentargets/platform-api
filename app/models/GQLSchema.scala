@@ -606,6 +606,8 @@ trait GQLEntities extends GQLArguments {
   implicit lazy val associationImp = deriveObjectType[Backend, Association]()
   implicit lazy val associationsImp = deriveObjectType[Backend, Associations]()
 
+  implicit val evidenceSourceImp = deriveObjectType[Backend, EvidenceSource]()
+
   // implement associations
   val associationsObTheFlyGQLImp = ObjectType("AssociationsOnTheFly",
     "Compute Associations on the fly",
@@ -765,7 +767,10 @@ object GQLSchema extends GQLMeta with GQLEntities {
         }),
       Field("associationsOnTheFly", associationsObTheFlyGQLImp,
         Some("associations on the fly"),
-        resolve = ctx => ctx.value)
+        resolve = ctx => ctx.value),
+      Field("associationDatasources", ListType(evidenceSourceImp),
+        description = Some("The complete list of all possible datasources"),
+        resolve = ctx => ctx.ctx.getAssociationDatasources)
     ))
 
   val schema = Schema(query)

@@ -33,11 +33,15 @@ case class Associations(network: Option[LUTableSettings],
                         datasources: Seq[DatasourceSettings],
                         rows: Vector[Association])
 
+case class EvidenceSource(datasource: String, datatype: String)
+
 object Associations {
   object DBImplicits {
-    implicit val getAssociationRowFromDB: GetResult[Association] = {
+    implicit val getAssociationRowFromDB: GetResult[Association] =
       GetResult(r => Association(r.<<, r.<<, DSeqRep(r.<<)))
-    }
+
+    implicit val getEvidenceSourceFromDB: GetResult[EvidenceSource] =
+      GetResult(r => EvidenceSource(r.<<, r.<<))
   }
 
   object JSONImplicits {

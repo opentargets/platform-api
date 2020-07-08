@@ -16,6 +16,7 @@ import models.entities.Configuration.JSONImplicits._
 import Entities._
 import Entities.JSONImplicits._
 import models.entities.Associations._
+import models.entities.Associations.DBImplicits._
 import models.entities._
 import models.entities.HealthCheck.JSONImplicits._
 import play.api.db.slick.DatabaseConfigProvider
@@ -263,6 +264,9 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
 
     esRetriever.getSearchResultSet(entities, qString, pagination.getOrElse(Pagination.mkDefault))
   }
+
+  def getAssociationDatasources: Future[Vector[EvidenceSource]] =
+    dbRetriever.getUniqList[EvidenceSource](Seq("datasource_id", "datatype_id"), "ot.aotf_direct_d")
 
   def getAssociationsDiseaseFixed(id: String,
                                   datasources: Option[Seq[DatasourceSettings]],
