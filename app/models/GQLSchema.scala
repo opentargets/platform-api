@@ -44,6 +44,8 @@ trait GQLArguments {
   val ensemblIds = Argument("ensemblIds", ListInputType(StringType), description = "List of Ensembl IDs")
   val chemblId = Argument("chemblId", StringType, description = "Chembl ID" )
   val chemblIds = Argument("chemblIds", ListInputType(StringType), description = "List of Chembl IDs")
+  val indrectEvidences = Argument("enableIndirect", OptionInputType(BooleanType),
+    "Use disease ontology to capture evidences from all descendants to build associations")
 }
 
 trait GQLMeta {
@@ -133,6 +135,22 @@ trait GQLEntities extends GQLArguments {
   implicit val tractabilityAntibodyImp = deriveObjectType[Backend, TractabilityAntibody]()
   implicit val tractabilitySmallMoleculeImp = deriveObjectType[Backend, TractabilitySmallMolecule]()
   implicit val tractabilityImp = deriveObjectType[Backend, Tractability]()
+
+  implicit val associatedTargetImp = deriveObjectType[Backend, Association](
+    ObjectTypeName("AssociatedTarget"),
+    ObjectTypeDescription("Associated Target Entity"),
+    ReplaceField("id", Field("target",
+      targetImp, Some("Target"),
+      resolve = r => targetsFetcher.defer(r.value.id)))
+  )
+
+  implicit val associatedDiseaseImp = deriveObjectType[Backend, Association](
+    ObjectTypeName("AssociatedDisease"),
+    ObjectTypeDescription("Associated Disease Entity"),
+    ReplaceField("id", Field("disease",
+      diseaseImp, Some("Disease"),
+      resolve = r => diseasesFetcher.defer(r.value.id)))
+  )
 
   implicit val relatedTargetImp = deriveObjectType[Backend, DDRelation](
     ObjectTypeName("RelatedTarget"),
@@ -374,14 +392,20 @@ trait GQLEntities extends GQLArguments {
             Map("A.keyword" -> ctx.value.id),
             ctx.arg(pageArg))),
 
-      Field("associationsOnTheFly", associationsImp,
-        description = Some("Associations for a fixed target"),
-        arguments = datasourceSettingsListArg :: networkExpansionId :: pageArg :: Nil,
+      Field("associatedDiseases", ListType(associatedDiseaseImp),
+        description = Some("Ranked list of diseases associated to this target"),
+        arguments = indrectEvidences :: freeTextQuery :: pageArg :: Nil,
         resolve = ctx =>
-          ctx.ctx.getAssociationsTargetFixed(ctx.value.id,
-            ctx.arg(datasourceSettingsListArg),
-            ctx.arg(networkExpansionId),
-            ctx.arg(pageArg)))
+          ctx.ctx.getAssociationsByTarget(ctx.value.id, ctx.arg(indrectEvidences).getOrElse(false) ,ctx.arg(freeTextQuery), ctx.arg(pageArg)))
+
+//      Field("associationsOnTheFly", associationsImp,
+//        description = Some("Associations for a fixed target"),
+//        arguments = datasourceSettingsListArg :: networkExpansionId :: pageArg :: Nil,
+//        resolve = ctx =>
+//          ctx.ctx.getAssociationsTargetFixed(ctx.value.id,
+//            ctx.arg(datasourceSettingsListArg),
+//            ctx.arg(networkExpansionId),
+//            ctx.arg(pageArg)))
   ))
 
   implicit val phenotypeImp = deriveObjectType[Backend, Phenotype](
@@ -445,15 +469,20 @@ trait GQLEntities extends GQLArguments {
           ctx.ctx.getRelatedDiseases(
             Map("A.keyword" -> ctx.value.id),
             ctx.arg(pageArg))),
-
-      Field("associationsOnTheFly", associationsImp,
-        description = Some("Associations for a fixed disease"),
-        arguments = datasourceSettingsListArg :: networkExpansionId :: pageArg :: Nil,
+      Field("associatedTargets", ListType(associatedTargetImp),
+        description = Some("Ranked list of targets associated to this disease"),
+        arguments = indrectEvidences :: freeTextQuery :: pageArg :: Nil,
         resolve = ctx =>
-          ctx.ctx.getAssociationsDiseaseFixed(ctx.value.id,
-            ctx.arg(datasourceSettingsListArg),
-            ctx.arg(networkExpansionId),
-            ctx.arg(pageArg)))
+          ctx.ctx.getAssociationsByDisease(ctx.value.id, ctx.arg(indrectEvidences).getOrElse(true), ctx.arg(freeTextQuery), ctx.arg(pageArg)))
+
+//      Field("associationsOnTheFly", associationsImp,
+//        description = Some("Associations for a fixed disease"),
+//        arguments = datasourceSettingsListArg :: networkExpansionId :: pageArg :: Nil,
+//        resolve = ctx =>
+//          ctx.ctx.getAssociationsDiseaseFixed(ctx.value.id,
+//            ctx.arg(datasourceSettingsListArg),
+//            ctx.arg(networkExpansionId),
+//            ctx.arg(pageArg)))
     ))
 
   // drug
@@ -604,33 +633,33 @@ trait GQLEntities extends GQLArguments {
 
   implicit lazy val networkNodeImp = deriveObjectType[Backend, NetworkNode]()
   implicit lazy val associationImp = deriveObjectType[Backend, Association]()
-  implicit lazy val associationsImp = deriveObjectType[Backend, Associations]()
+//  implicit lazy val associationsImp = deriveObjectType[Backend, Associations]()
 
   implicit val evidenceSourceImp = deriveObjectType[Backend, EvidenceSource]()
 
   // implement associations
-  val associationsObTheFlyGQLImp = ObjectType("AssociationsOnTheFly",
-    "Compute Associations on the fly",
-    fields[Backend, Unit](
-      Field("meta", clickhouseSettingsImp,
-        None,
-        resolve = _.ctx.defaultOTSettings.clickhouse),
-      Field("byTargetFixed", associationsImp,
-        description = Some("Associations for a fixed target"),
-        arguments = ensemblId :: datasourceSettingsListArg :: networkExpansionId :: pageArg :: Nil,
-        resolve = ctx =>
-          ctx.ctx.getAssociationsTargetFixed(ctx.arg(ensemblId),
-            ctx.arg(datasourceSettingsListArg),
-            ctx.arg(networkExpansionId),
-            ctx.arg(pageArg))),
-      Field("byDiseaseFixed", associationsImp,
-        description = Some("Associations for a fixed disease"),
-        arguments = efoId :: datasourceSettingsListArg :: networkExpansionId :: pageArg :: Nil,
-        resolve = ctx => ctx.ctx.getAssociationsDiseaseFixed(ctx.arg(efoId),
-          ctx.arg(datasourceSettingsListArg),
-          ctx.arg(networkExpansionId),
-          ctx.arg(pageArg)))
-    ))
+//  val associationsObTheFlyGQLImp = ObjectType("AssociationsOnTheFly",
+//    "Compute Associations on the fly",
+//    fields[Backend, Unit](
+//      Field("meta", clickhouseSettingsImp,
+//        None,
+//        resolve = _.ctx.defaultOTSettings.clickhouse),
+//      Field("byTargetFixed", associationsImp,
+//        description = Some("Associations for a fixed target"),
+//        arguments = ensemblId :: datasourceSettingsListArg :: networkExpansionId :: pageArg :: Nil,
+//        resolve = ctx =>
+//          ctx.ctx.getAssociationsTargetFixed(ctx.arg(ensemblId),
+//            ctx.arg(datasourceSettingsListArg),
+//            ctx.arg(networkExpansionId),
+//            ctx.arg(pageArg))),
+//      Field("byDiseaseFixed", associationsImp,
+//        description = Some("Associations for a fixed disease"),
+//        arguments = efoId :: datasourceSettingsListArg :: networkExpansionId :: pageArg :: Nil,
+//        resolve = ctx => ctx.ctx.getAssociationsDiseaseFixed(ctx.arg(efoId),
+//          ctx.arg(datasourceSettingsListArg),
+//          ctx.arg(networkExpansionId),
+//          ctx.arg(pageArg)))
+//    ))
 
   implicit val URLImp: ObjectType[Backend, URL] = deriveObjectType[Backend, URL](
     ObjectTypeDescription("Source URL for clinical trials, FDA and package inserts"),
@@ -765,9 +794,9 @@ object GQLSchema extends GQLMeta with GQLEntities {
           val entities = ctx.arg(entityNames).getOrElse(Seq.empty)
           ctx.ctx.search(ctx.arg(queryString), ctx.arg(pageArg), entities)
         }),
-      Field("associationsOnTheFly", associationsObTheFlyGQLImp,
-        Some("associations on the fly"),
-        resolve = ctx => ctx.value),
+//      Field("associationsOnTheFly", associationsObTheFlyGQLImp,
+//        Some("associations on the fly"),
+//        resolve = ctx => ctx.value),
       Field("associationDatasources", ListType(evidenceSourceImp),
         description = Some("The complete list of all possible datasources"),
         resolve = ctx => ctx.ctx.getAssociationDatasources)

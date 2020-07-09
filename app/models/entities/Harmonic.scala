@@ -14,10 +14,10 @@ import slick.jdbc.GetResult
 object Harmonic {
 
 
-  private val maxVectorElementsDefault: Int = 100
-  private val pExponentDefault: Int = 2
+  val maxVectorElementsDefault: Int = 100
+  val pExponentDefault: Int = 2
 
-  private def maxValue(vSize: Int, pExponent: Int, maxScore: Double): Double =
+  def maxValue(vSize: Int, pExponent: Int, maxScore: Double): Double =
     (0 until vSize).foldLeft(0D)((acc: Double, n: Int) => acc + (maxScore / pow(1D + n,pExponent)))
 
   private def mkHSColumn(col: Column,
@@ -99,7 +99,7 @@ object Harmonic {
       val expCol = F.joinGet(lut.name, lut.field.get, qColValueCol).as(lut.field)
       val neighbourCol = expCol.name.as(Some("neighbour"))
       val innerSel = Query(Select(expCol +: Nil))
-      val sel = Query(Select(neighbourCol.name +: Nil), From(innerSel.toColumn), ArrayJoin(neighbourCol)).toColumn
+      val sel = Query(Select(neighbourCol.name +: Nil), From(innerSel.toColumn(None)), ArrayJoin(neighbourCol)).toColumn(None)
       val inn = F.in(qCol, sel)
       F.or(F.equals(qCol, qColValueCol), inn)
     })

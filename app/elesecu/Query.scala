@@ -3,8 +3,8 @@ package elesecu
 case class Query(sections: Seq[QuerySection]) extends Rep {
   override def toString: String = sections.map(_.rep).mkString("", "\n", "")
   override val rep: String = sections.map(_.rep).mkString("", " ", "")
-  def toColumn: Column = {
-    val q = sections.map(_.rep).mkString("(", " ", ")")
+  def toColumn(named: Option[String]): Column = {
+    val q = sections.map(_.rep).mkString("(", " ", ")") + s"${named.map(" " + _).getOrElse("")}"
     Column(RawExpression(q), None)
   }
 }

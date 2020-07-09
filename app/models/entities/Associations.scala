@@ -18,7 +18,12 @@ import slick.jdbc.GetResult
  * @param scorePerDS the list of harmonic scores one per datasource. the order of the scores
  *                   come fixed from the order of datasource list passed to the query
  */
-case class Association(id: String, score: Double, scorePerDS: Vector[Double])
+case class Association(id: String,
+                       score: Double,
+                       scorePerDS: Vector[Double],
+                       idPerDS: Vector[String],
+                       scorePerDT: Vector[Double],
+                       idPerDT: Vector[String])
 
 /**
  * Agroup of associations to one node.
@@ -38,7 +43,7 @@ case class EvidenceSource(datasource: String, datatype: String)
 object Associations {
   object DBImplicits {
     implicit val getAssociationRowFromDB: GetResult[Association] =
-      GetResult(r => Association(r.<<, r.<<, DSeqRep(r.<<)))
+      GetResult(r => Association(r.<<, r.<<, DSeqRep(r.<<), StrSeqRep(r.<<), DSeqRep(r.<<), StrSeqRep(r.<<)))
 
     implicit val getEvidenceSourceFromDB: GetResult[EvidenceSource] =
       GetResult(r => EvidenceSource(r.<<, r.<<))

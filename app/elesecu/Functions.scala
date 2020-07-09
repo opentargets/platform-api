@@ -19,6 +19,9 @@ object Functions {
   def any(col: Column): Column = f("any", col)
   def array(cols: Seq[Column]): Column = f("array", cols)
   def array(col: Column, cols: Column*): Column = f("array", col +: cols)
+  def tuple(cols: Seq[Column]): Column = f("tuple", cols)
+  def tuple(col: Column, cols: Column*): Column = f("tuple", col +: cols)
+  def tupleElement(tupleName: Column, n: Column): Column = f("tupleElement", tupleName, n)
   def joinGet(tableName: String, fieldName: String, col: Column): Column =
     f("joinGet", literal(tableName), literal(fieldName), col)
   def flatten(col: Column): Column = f("flatten", col)
@@ -28,8 +31,11 @@ object Functions {
     f("arraySlice", col, literal(pos), literal(size))
   def length(col: Column): Column = f("length", col)
   def range(col: Column): Column = f("range", col)
+  def range(start: Column, end: Column): Column = f("range", start, end)
   def arraySum(lambda: String, col1: Column, col2: Column): Column =
     f("arraySum", Column(lambda), col1, col2)
+
+  def count(col: Column): Column = f("count", col)
 
   def divide(col1: Column, col2: Column): Column = f("divide", col1, col2)
   def multiply(col1: Column, col2: Column): Column = f("multiply", col1, col2)
@@ -51,4 +57,7 @@ object Functions {
   def less(col1: Column, col2: Column): Column = f("less", col1, col2)
   def greaterOrEquals(col1: Column, col2: Column): Column = f("greaterOrEquals", col1, col2)
   def lessOrEquals(col1: Column, col2: Column): Column = f("lessOrEquals", col1, col2)
+
+  def ifThenElse(expr: Column, ifThen: Column, ifElse: Column): Column = f("if", expr, ifThen, ifElse)
+  def ngramSearchCaseInsensitive(col1: Column, col2: Column)= f("ngramSearchCaseInsensitive", col1, col2)
 }

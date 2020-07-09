@@ -63,11 +63,17 @@ case class LimitBy(size: Int, offset: Int = 0, by: Seq[Column]) extends QuerySec
   override lazy val rep: String = s"$name $size OFFSET $offset BY ${content.mkString("", ", ", "")}"
 }
 
-
-case class From(col: Column) extends QuerySection {
+case class From(col: Column, alias: Option[String]=None) extends QuerySection {
   override val content: Seq[Column] = Seq(col)
   override val name: String = "FROM"
-  override lazy val rep: String = s"$name ${content.mkString}"
+  override lazy val rep: String = s"$name ${content.mkString}${alias.map(" " + _).getOrElse("")}"
+}
+
+// TODO REFACTOR INTO PROPER TYPE
+case class FromSelect(select: QuerySection, alias: Option[String]=None) extends QuerySection {
+  override val content: Seq[Column] = select.content
+  override val name: String = "FROM"
+  override lazy val rep: String = s"$name (${select.name} ${content.mkString})${alias.map(" " + _).getOrElse("")}"
 }
 
 object QuerySection {

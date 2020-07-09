@@ -268,6 +268,20 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
   def getAssociationDatasources: Future[Vector[EvidenceSource]] =
     dbRetriever.getUniqList[EvidenceSource](Seq("datasource_id", "datatype_id"), "ot.aotf_direct_d")
 
+  def getAssociationsByDisease(id: String, indirect: Boolean, filter: Option[String], pagination: Option[Pagination]):
+  Future[Vector[Association]] = {
+    val defaultPagination = Pagination.mkDefault
+    val dsV = defaultOTSettings.clickhouse.harmonic.datasources
+    dbRetriever.getAssocationsByDisease(id, indirect, filter, dsV, pagination.getOrElse(defaultPagination))
+  }
+
+  def getAssociationsByTarget(id: String, indirect: Boolean, filter: Option[String], pagination: Option[Pagination]):
+  Future[Vector[Association]] = {
+    val defaultPagination = Pagination.mkDefault
+    val dsV = defaultOTSettings.clickhouse.harmonic.datasources
+    dbRetriever.getAssocationsByTarget(id, indirect, filter, dsV, pagination.getOrElse(defaultPagination))
+  }
+
   def getAssociationsDiseaseFixed(id: String,
                                   datasources: Option[Seq[DatasourceSettings]],
                                   expansionId: Option[String],
@@ -277,11 +291,12 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
 
     val defaultPagination = Pagination.mkDefault
     val dsV = datasources.getOrElse(defaultOTSettings.clickhouse.harmonic.datasources)
-    dbRetriever
-      .computeAssociationsDiseaseFixed(id,
-        expandedByLUT,
-        dsV,
-        pagination.getOrElse(defaultPagination))
+//    dbRetriever
+//      .computeAssociationsDiseaseFixed(id,
+//        expandedByLUT,
+//        dsV,
+//        pagination.getOrElse(defaultPagination))
+    ???
   }
 
   def getAssociationsTargetFixed(id: String,
@@ -293,10 +308,11 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
 
     val defaultPagination = Pagination.mkDefault
     val dsV = datasources.getOrElse(defaultOTSettings.clickhouse.harmonic.datasources)
-    dbRetriever
-      .computeAssociationsTargetFixed(id,
-        expandedByLUT,
-        dsV,
-        pagination.getOrElse(defaultPagination))
+//    dbRetriever
+//      .computeAssociationsTargetFixed(id,
+//        expandedByLUT,
+//        dsV,
+//        pagination.getOrElse(defaultPagination))
+    ???
   }
 }

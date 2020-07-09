@@ -72,98 +72,222 @@ class DatabaseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: OTS
     }
   }
 
-  def getAssocationsByDisease(id: String, indirect: Boolean, pagination: Pagination) = {
-    /**
-     * with if(weight = 0, 1.0, weight) as w,
-     * groupArray((datasource_harmonic, w, datasource_id)) as dss,
-     * groupUniqArray((datatype_harmonic, w, datatype_id)) as dts,
-     * count() as n,
-     * range(1, n+1) as idx_v,
-     * arrayReverseSort(dss) as dss_r,
-     * arraySum((a, b) -> (a.1 * a.2) / pow((b + 1), 2), dss_r, idx_v) as score
-     * select target_id as id,
-     * any(target_symbol) as symbol,
-     * any(target_name) as name,
-     * score,
-     * dss,
-     * dts,
-     * n
-     * from ot.aotf_indirect_d a
-     * left outer join (select v.1 as datasource_id, v.2 as weight
-     * from (select array(('europepmc', 0.2),('chembl', 1.0)) as v) array join v) w
-     * on (a.datasource_id = w.datasource_id)
-     * prewhere disease_id = 'EFO_0000692'
-     *  and (ngramSearchCaseInsensitive(target_symbol,'DR')
-     *    or ngramSearchCaseInsensitive(target_name, 'dr'))
-     * group by disease_id, target_id
-     * order by score desc;
-     */
-  }
+  def getAssocationsByDisease(id: String, indirect: Boolean, filter: Option[String],
+                              datasourceSettings: Seq[DatasourceSettings],
+                              pagination: Pagination) = {
+    val weights = F.array(datasourceSettings.map(s => F.tuple(literal(s.id), literal(s.weight)))).as(Some("v"))
+    val weightsIds = F.tupleElement(weights,literal(1)).as(Some("datasource_id"))
+    val weightsValues = F.tupleElement(weights,literal(2)).as(Some("weight"))
 
-  /** compute all associations for a disease specified by its `id`
-   * and the network expansion method by `expandedBy` field which has to
-   * be one of the names you can find in the configuration file in the section
-   * ot.clickhouse.disease.networks field name
-   * */
-  def computeAssociationsDiseaseFixed(id: String, expandedBy: Option[LUTableSettings],
-                                      datasourceSettings: Seq[DatasourceSettings],
-                                      pagination: Pagination) = {
+    val dbName = if (indirect) "ot.aotf_indirect_d" else "at.aotf_direct_d"
+    val dsName = Column("datasource_id")
+    val diseaseId = Column("disease_id")
+    val targetId = Column("target_id")
+    val targetSymbol = Column("target_symbol")
+    val targetName = Column("target_name")
+    val maxHS = literal(Harmonic.maxValue(maxVectorElementsDefault, pExponentDefault, 1.0))
+      .as(Some("max_hs_score"))
+    val weight = F.ifThenElse(F.equals(weightsValues.name, literal(0.0)), literal(1.0), weightsValues.name).as(Some("w"))
+    val dss = F.groupArray(F.tuple(column("datasource_harmonic"), weight.name, column("datasource_id"))).as(Some("dss"))
+    val dts = F.groupArray(F.tuple(column("datatype_harmonic"), weight.name, column("datatype_id"))).as(Some("dts"))
+    val N = F.count(literal(1)).as(Some("n"))
+    val range = F.range(literal(1), F.plus(N.name, literal(1))).as(Some("idx_v"))
+    val score = F.divide(F.arraySum("(a, b) -> (a.1 * a.2) / pow(b, 2)", F.arrayReverseSort(dss.name), range.name), maxHS.name).as(Some("score"))
 
-    val neighboursQ = expandedBy
-      .map(lut => Network(lut, id).as[NetworkNode].headOption).getOrElse(DBIOAction.successful(None))
+    val W = With(Seq(maxHS, weight, dss, dts, N, range, score))
+    val S = Select(Seq(
+      targetId.name,
+      score.name,
+      F.tupleElement(dss.name, literal(1)),
+      F.tupleElement(dss.name, literal(3)),
+      F.tupleElement(dts.name, literal(1)),
+      F.tupleElement(dts.name, literal(3)),
+    ))
 
-    val harmonicQ = Harmonic(config.clickhouse.target.associations.key,
-      config.clickhouse.disease.associations.key, id,
-      config.clickhouse.disease.associations.name,
-      datasourceSettings,
-      expandedBy,
-      pagination)
-
-    val plainQ = harmonicQ.as[Association]
-
-    logger.debug(harmonicQ.toString)
-
-    if (pagination.hasValidRange()) {
-      db.run(plainQ.asTry zip neighboursQ.asTry).map {
-        case (Success(v), Success(w)) =>
-          Associations(expandedBy, w, datasourceSettings, v)
-        case _ =>
-          logger.error("An exception was thrown after quering harmonic and neighbours")
-          Associations(expandedBy, None, datasourceSettings, Vector.empty)
-      }
-    } else {
-      Future.failed(InputParameterCheckError(
-        Vector(PaginationError(pagination.size))))
+    val filterQ = filter match {
+      case Some(f) =>
+        F.and(F.equals(diseaseId.name, literal(id)),
+          F.or(F.ngramSearchCaseInsensitive(targetSymbol.name, literal(f)),
+            F.ngramSearchCaseInsensitive(targetName.name, literal(f))))
+      case None =>
+        F.equals(diseaseId.name, literal(id))
     }
-  }
 
-  /** compute all associations for a disease specified by its `id`
-   * and the network expansion method by `expandedBy` field which has to
-   * be one of the names you can find in the configuration file in the section
-   * ot.clickhouse.disease.networks field name
-   * */
-  def computeAssociationsTargetFixed(id: String, expandedBy: Option[LUTableSettings],
-                                      datasourceSettings: Seq[DatasourceSettings],
-                                      pagination: Pagination) = {
+    val Fr = From(Column(dbName), Some("a"))
+    val P = PreWhere(filterQ)
+    val G = GroupBy(Seq(diseaseId.name, targetId.name))
+    val O = OrderBy(Seq(score.name.desc))
+    val L = Limit(pagination.offset, pagination.size)
+    val AJ = ArrayJoin(weights.name)
+    val S2 = Select(Seq(weightsIds, weightsValues))
+    val S3 = Select(Seq(weights))
+    val FrSel = FromSelect(S3)
 
-    val neighboursQ = expandedBy
-      .map(lut => Network(lut, id).as[NetworkNode].headOption).getOrElse(DBIOAction.successful(None))
+    val innerQ = Q(S2, FrSel, AJ).toColumn(Some("w"))
 
-    val harmonicQ = Harmonic(config.clickhouse.disease.associations.key,
-      config.clickhouse.target.associations.key, id,
-      config.clickhouse.target.associations.name,
-      datasourceSettings,
-      expandedBy,
-      pagination).as[Association]
+    val q =
+      sql"""
+        |#${W.rep}
+        |#${S.rep}
+        |#${Fr.rep}
+        |left outer join #${innerQ.rep}
+        |using (#${dsName.rep})
+        |#${P.rep}
+        |#${G.rep}
+        |#${O.rep}
+        |#${L.rep}
+        |""".stripMargin.as[Association]
 
-    logger.debug(harmonicQ.statements.mkString("\n"))
+    logger.debug(q.statements.mkString("\n"))
 
-    db.run(harmonicQ.asTry zip neighboursQ.asTry).map {
-      case (Success(v), Success(w)) =>
-        Associations(expandedBy, w, datasourceSettings, v)
+    db.run(q.asTry).map {
+      case Success(v) => v
       case _ =>
-        logger.error("An exception was thrown after quering harmonic and neighbours")
-        Associations(expandedBy, None, datasourceSettings, Vector.empty)
+        logger.error("An exception was thrown after quering harmonic associations fixing a disease " +
+          s"with query: ${q.statements.mkString(" ")}")
+        Vector.empty
+    }
+
+  }
+
+  def getAssocationsByTarget(id: String, indirect: Boolean, filter: Option[String],
+                              datasourceSettings: Seq[DatasourceSettings],
+                              pagination: Pagination) = {
+    val weights = F.array(datasourceSettings.map(s => F.tuple(literal(s.id), literal(s.weight)))).as(Some("v"))
+    val weightsIds = F.tupleElement(weights.name,literal(1)).as(Some("datasource_id"))
+    val weightsValues = F.tupleElement(weights.name,literal(2)).as(Some("weight"))
+
+    val dbName = if (indirect) "ot.aotf_indirect_d" else "ot.aotf_direct_d"
+    val dsName = Column("datasource_id")
+    val diseaseId = Column("disease_id")
+    val diseaseLabel = Column("disease_label")
+    val targetId = Column("target_id")
+    val maxHS = literal(Harmonic.maxValue(maxVectorElementsDefault, pExponentDefault, 1.0))
+      .as(Some("max_hs_score"))
+    val weight = F.ifThenElse(F.equals(weightsValues.name, literal(0.0)), literal(1.0), weightsValues.name).as(Some("w"))
+    val dss = F.groupArray(F.tuple(column("datasource_harmonic"), weight.name, column("datasource_id"))).as(Some("dss"))
+    val dts = F.groupArray(F.tuple(column("datatype_harmonic"), weight.name, column("datatype_id"))).as(Some("dts"))
+    val N = F.count(literal(1)).as(Some("n"))
+    val range = F.range(literal(1), F.plus(N.name, literal(1))).as(Some("idx_v"))
+    val score = F.divide(F.arraySum("(a, b) -> (a.1 * a.2) / pow(b, 2)", F.arrayReverseSort(dss.name), range.name), maxHS.name).as(Some("score"))
+
+    val W = With(Seq(maxHS, weight, dss, dts, N, range, score))
+    val S = Select(Seq(
+      diseaseId.name,
+      score.name,
+      F.tupleElement(dss.name, literal(1)),
+      F.tupleElement(dss.name, literal(3)),
+      F.tupleElement(dts.name, literal(1)),
+      F.tupleElement(dts.name, literal(3)),
+    ))
+
+    val filterQ = filter match {
+      case Some(f) =>
+        F.and(F.equals(targetId.name, literal(id)), F.ngramSearchCaseInsensitive(diseaseLabel.name, literal(f)))
+      case None =>
+        F.equals(targetId.name, literal(id))
+    }
+
+    val Fr = From(Column(dbName), Some("a"))
+    val P = PreWhere(filterQ)
+    val G = GroupBy(Seq(targetId.name, diseaseId.name))
+    val O = OrderBy(Seq(score.name.desc))
+    val L = Limit(pagination.offset, pagination.size)
+    val AJ = ArrayJoin(weights.name)
+    val S2 = Select(Seq(weightsIds, weightsValues))
+    val S3 = Select(Seq(weights))
+    val FrSel = FromSelect(S3)
+
+    val innerQ = Q(S2, FrSel, AJ).toColumn(Some("w"))
+
+    val q =
+      sql"""
+           |#${W.rep}
+           |#${S.rep}
+           |#${Fr.rep}
+           |left outer join #${innerQ.rep}
+           |using (#${dsName.rep})
+           |#${P.rep}
+           |#${G.rep}
+           |#${O.rep}
+           |#${L.rep}
+           |""".stripMargin.as[Association]
+
+    logger.debug(q.statements.mkString("\n"))
+
+    db.run(q.asTry).map {
+      case Success(v) => v
+      case _ =>
+        logger.error("An exception was thrown after quering harmonic associations fixing a disease " +
+          s"with query: ${q.statements.mkString(" ")}")
+        Vector.empty
     }
   }
+
+  /** compute all associations for a disease specified by its `id`
+   * and the network expansion method by `expandedBy` field which has to
+   * be one of the names you can find in the configuration file in the section
+   * ot.clickhouse.disease.networks field name
+   * */
+//  def computeAssociationsDiseaseFixed(id: String, expandedBy: Option[LUTableSettings],
+//                                      datasourceSettings: Seq[DatasourceSettings],
+//                                      pagination: Pagination) = {
+//
+//    val neighboursQ = expandedBy
+//      .map(lut => Network(lut, id).as[NetworkNode].headOption).getOrElse(DBIOAction.successful(None))
+//
+//    val harmonicQ = Harmonic(config.clickhouse.target.associations.key,
+//      config.clickhouse.disease.associations.key, id,
+//      config.clickhouse.disease.associations.name,
+//      datasourceSettings,
+//      expandedBy,
+//      pagination)
+//
+//    val plainQ = harmonicQ.as[Association]
+//
+//    logger.debug(harmonicQ.toString)
+//
+//    if (pagination.hasValidRange()) {
+//      db.run(plainQ.asTry zip neighboursQ.asTry).map {
+//        case (Success(v), Success(w)) =>
+//          Associations(expandedBy, w, datasourceSettings, v)
+//        case _ =>
+//          logger.error("An exception was thrown after quering harmonic and neighbours")
+//          Associations(expandedBy, None, datasourceSettings, Vector.empty)
+//      }
+//    } else {
+//      Future.failed(InputParameterCheckError(
+//        Vector(PaginationError(pagination.size))))
+//    }
+//  }
+
+  /** compute all associations for a disease specified by its `id`
+   * and the network expansion method by `expandedBy` field which has to
+   * be one of the names you can find in the configuration file in the section
+   * ot.clickhouse.disease.networks field name
+   * */
+//  def computeAssociationsTargetFixed(id: String, expandedBy: Option[LUTableSettings],
+//                                      datasourceSettings: Seq[DatasourceSettings],
+//                                      pagination: Pagination) = {
+//
+//    val neighboursQ = expandedBy
+//      .map(lut => Network(lut, id).as[NetworkNode].headOption).getOrElse(DBIOAction.successful(None))
+//
+//    val harmonicQ = Harmonic(config.clickhouse.disease.associations.key,
+//      config.clickhouse.target.associations.key, id,
+//      config.clickhouse.target.associations.name,
+//      datasourceSettings,
+//      expandedBy,
+//      pagination).as[Association]
+//
+//    logger.debug(harmonicQ.statements.mkString("\n"))
+//
+//    db.run(harmonicQ.asTry zip neighboursQ.asTry).map {
+//      case (Success(v), Success(w)) =>
+//        Associations(expandedBy, w, datasourceSettings, v)
+//      case _ =>
+//        logger.error("An exception was thrown after quering harmonic and neighbours")
+//        Associations(expandedBy, None, datasourceSettings, Vector.empty)
+//    }
+//  }
 }
