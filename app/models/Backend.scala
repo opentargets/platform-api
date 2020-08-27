@@ -282,6 +282,23 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     dbRetriever.getAssocationsByTarget(id, indirect, filter, dsV, pagination.getOrElse(defaultPagination))
   }
 
+  def getAssociations(tableName: String, A: String, As: Seq[String], Bs: Seq[String],
+                      BFilter: Option[String],
+
+                      pagination: Option[Pagination]):
+  Future[Vector[AssociationOTF]] = {
+    val defaultPagination = Pagination.mkDefault
+    val dsV = defaultOTSettings.clickhouse.harmonic.datasources
+    dbRetriever.getAssociationsOTF(
+      tableName,
+      A,
+      As.toSet,
+      Bs.toSet,
+      BFilter,
+      dsV,
+      pagination.getOrElse(defaultPagination))
+  }
+
   def getAssociationsDiseaseFixed(id: String,
                                   datasources: Option[Seq[DatasourceSettings]],
                                   expansionId: Option[String],

@@ -46,6 +46,12 @@ trait GQLArguments {
   val chemblIds = Argument("chemblIds", ListInputType(StringType), description = "List of Chembl IDs")
   val indrectEvidences = Argument("enableIndirect", OptionInputType(BooleanType),
     "Use disease ontology to capture evidences from all descendants to build associations")
+
+  val BFilterString = Argument("BFilter", OptionInputType(StringType))
+  val scoreSorting = Argument("orderByScore", StringType)
+  val AId = Argument("A", StringType)
+  val AIds = Argument("As", ListInputType(StringType))
+  val BIds = Argument("Bs", ListInputType(StringType))
 }
 
 trait GQLMeta {
@@ -135,6 +141,24 @@ trait GQLEntities extends GQLArguments {
   implicit val tractabilityAntibodyImp = deriveObjectType[Backend, TractabilityAntibody]()
   implicit val tractabilitySmallMoleculeImp = deriveObjectType[Backend, TractabilitySmallMolecule]()
   implicit val tractabilityImp = deriveObjectType[Backend, Tractability]()
+
+  implicit val scoredDataTypeImp = deriveObjectType[Backend, ScoredComponent]()
+  implicit val associatedOTFTargetImp = deriveObjectType[Backend, AssociationOTF](
+    ObjectTypeName("AssociatedOTFTarget"),
+    ObjectTypeDescription("Associated Target Entity"),
+    ReplaceField("id", Field("target",
+      targetImp, Some("Target"),
+      resolve = r => targetsFetcher.defer(r.value.id)))
+  )
+
+  implicit val associatedOTFDiseaseImp = deriveObjectType[Backend, AssociationOTF](
+    ObjectTypeName("AssociatedOTFDisease"),
+    ObjectTypeDescription("Associated Disease Entity"),
+    ReplaceField("id", Field("disease",
+      diseaseImp, Some("Disease"),
+      resolve = r => diseasesFetcher.defer(r.value.id)))
+  )
+
 
   implicit val associatedTargetImp = deriveObjectType[Backend, Association](
     ObjectTypeName("AssociatedTarget"),
@@ -794,9 +818,21 @@ object GQLSchema extends GQLMeta with GQLEntities {
           val entities = ctx.arg(entityNames).getOrElse(Seq.empty)
           ctx.ctx.search(ctx.arg(queryString), ctx.arg(pageArg), entities)
         }),
-//      Field("associationsOnTheFly", associationsObTheFlyGQLImp,
-//        Some("associations on the fly"),
-//        resolve = ctx => ctx.value),
+      //   val BFilterString = Argument("BFilter", StringType)
+      //  val scoreSorting = Argument("orderByScore", StringType)
+      //  val AId = Argument("A", StringType)
+      //  val AIds = Argument("As", ListInputType(StringType))
+      //  val BIds = Argument("Bs", ListInputType(StringType))
+      Field("aotfByDisease", ListType(associatedOTFTargetImp),
+        description = Some("associations on the fly"),
+        arguments = queryString :: AId :: AIds :: BIds :: BFilterString :: Nil,
+        resolve = ctx => ctx.ctx.getAssociations(
+          ctx arg queryString,
+          ctx arg AId,
+          ctx arg AIds,
+          ctx arg BIds,
+          ctx arg BFilterString,
+          None)),
       Field("associationDatasources", ListType(evidenceSourceImp),
         description = Some("The complete list of all possible datasources"),
         resolve = ctx => ctx.ctx.getAssociationDatasources)

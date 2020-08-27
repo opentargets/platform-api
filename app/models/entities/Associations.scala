@@ -25,6 +25,11 @@ case class Association(id: String,
                        scorePerDT: Vector[Double],
                        idPerDT: Vector[String])
 
+case class ScoredComponent(id: String, score: Double)
+case class AssociationOTF(id: String, score: Double,
+                          datatypeScores: Vector[ScoredComponent],
+                          datasourceScores: Vector[ScoredComponent])
+
 /**
  * Agroup of associations to one node.
  * @param network the configuration for the progagation network used
@@ -45,12 +50,34 @@ object Associations {
     implicit val getAssociationRowFromDB: GetResult[Association] =
       GetResult(r => Association(r.<<, r.<<, DSeqRep(r.<<), StrSeqRep(r.<<), DSeqRep(r.<<), StrSeqRep(r.<<)))
 
+    implicit val getAssociationOTFRowFromDB: GetResult[AssociationOTF] = {
+
+      GetResult(r => {
+        AssociationOTF(r.<<, r.<<,
+          TupleSeqRep[ScoredComponent](r.<<, tuple => {
+            val tokens = tuple.split(",")
+            val left = parseFastString(tokens(0))
+            val right = tokens(1).slice(0, tokens(1).length - 1).toDouble
+            ScoredComponent(left, right)
+          }).rep,
+          TupleSeqRep[ScoredComponent](r.<<, tuple => {
+            val tokens = tuple.split(",")
+            val left = parseFastString(tokens(0))
+            val right = tokens(1).slice(0, tokens(1).length - 1).toDouble
+            ScoredComponent(left, right)
+          }).rep
+        )
+      })
+    }
+
     implicit val getEvidenceSourceFromDB: GetResult[EvidenceSource] =
       GetResult(r => EvidenceSource(r.<<, r.<<))
   }
 
   object JSONImplicits {
     implicit val AssociationImp = Json.format[Association]
+    implicit val scoredDataTypeImp = Json.format[ScoredComponent]
+    implicit val AssociationOTFImp = Json.format[AssociationOTF]
     implicit val associationsImp = Json.format[Associations]
   }
 

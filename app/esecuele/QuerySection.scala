@@ -1,4 +1,4 @@
-package elesecu
+package esecuele
 
 abstract class QuerySection extends Rep {
   val name: String
@@ -68,6 +68,27 @@ case class From(col: Column, alias: Option[String]=None) extends QuerySection {
   override val name: String = "FROM"
   override lazy val rep: String = s"$name ${content.mkString}${alias.map(" " + _).getOrElse("")}"
 }
+
+case class Join(col: Column,
+                setOper: Option[String] = None,
+                modifier: Option[String] = None,
+                global: Boolean=false,
+                alias: Option[String]=None,
+                using: Seq[Column]=Seq.empty) extends QuerySection {
+  override val content: Seq[Column] = Seq(col)
+  override val name: String = "JOIN"
+  override lazy val rep: String =
+    Seq(
+      if (global) Some("GLOBAL") else None,
+      setOper,
+      modifier,
+      Some(name),
+      Some(content.mkString),
+      alias,
+      Some("USING " + using.mkString("(", ",", ")"))
+    ).filter(_.isDefined).map(_.get).mkString(" ").trim
+}
+
 
 // TODO REFACTOR INTO PROPER TYPE
 case class FromSelect(select: QuerySection, alias: Option[String]=None) extends QuerySection {

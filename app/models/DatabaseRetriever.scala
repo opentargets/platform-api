@@ -11,10 +11,10 @@ import slick.basic.DatabaseConfig
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
-import elesecu._
-import elesecu.{Query => Q}
-import elesecu.Column._
-import elesecu.{Functions => F}
+import esecuele._
+import esecuele.{Query => Q}
+import esecuele.Column._
+import esecuele.{Functions => F}
 import models.entities.Harmonic._
 import models.entities.Associations._
 import models.entities.Network.DBImplicits._
@@ -72,6 +72,186 @@ class DatabaseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: OTS
     }
   }
 
+  def buildAOTFQuery(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[String],
+                     BFilter: Option[String], orderScoreBy: Option[(String, String)],
+                     datasourceWeights: Seq[(String, Double)],
+                     nonPropagatedDatasources: Set[String],
+                     pagination: Pagination): Q = {
+
+    val A = column("A")
+    val B = column("B")
+    val DS = column("datasource_id")
+    val DT = column("datatype_id")
+    val AData = column("A_data")
+    val BData = column("B_data")
+    val T = column(tableName)
+
+    val WC = F.arrayJoin(F.array(datasourceWeights.map(s => F.tuple(literal(s._1), literal(s._2)))))
+      .as(Some("weightPair"))
+    val DSFieldWC = F.tupleElement(WC.name,literal(1)).as(Some("datasource_id"))
+    val WFieldWC = F.toNullable(F.tupleElement(WC.name, literal(2))).as(Some("weight"))
+
+    // transform weights vector into a table to extract each value of each tuple
+    val q = Q(
+      With(WC :: Nil),
+      Select(DSFieldWC :: WFieldWC :: Nil),
+      OrderBy(DSFieldWC.asc :: Nil)
+    )
+
+    val leftIdsC = F.arrayJoin(F.array(AIDs.map(literal).toSeq)).as(Some("AIDs"))
+    val leftIdsQ = Q(With(leftIdsC :: Nil), Select(leftIdsC.name :: Nil))
+
+    // build the boolean expression. Either with datasource propagation limitation (rna expression mainly)
+    // or not then all simplifies quite a lot
+    val nonPP = F.array(nonPropagatedDatasources.map(literal).toSeq)
+    val expressionLeft = if (nonPropagatedDatasources.nonEmpty) {
+      F.or(
+        F.and(
+          F.in(A, leftIdsQ.toColumn(None)),
+          F.notIn(DS, nonPP)),
+        F.and(
+          F.in(DS, nonPP),
+          F.equals(A, literal(AId))
+        )
+      )
+    } else
+      F.in(A, leftIdsQ.toColumn(None))
+
+    // in the case we also want to filter B set
+    val expressionLeftRight = if (BIDs.nonEmpty) {
+      val rightIdsC = F.arrayJoin(F.array(BIDs.map(literal).toSeq)).as(Some("B_ids"))
+      val rightIdsQ = Q(With(rightIdsC :: Nil), Select(rightIdsC.name :: Nil))
+      F.and(
+        expressionLeft,
+        F.in(B, rightIdsQ.toColumn(None)),
+      )
+    } else {
+      expressionLeft
+    }
+
+    val DSScore = F.arraySum(
+      None,
+      F.arrayMap(
+        "(x, y) -> x / pow(y, 2)",
+        F.arrayReverseSort(None,
+          F.groupArray(column("row_score"))
+        ),
+        F.arrayEnumerate(F.groupArray(column("row_score")))
+      )
+    ).as(Some("score_datasource"))
+
+    val DTAny = F.any(DT).as(Some(DT.rep))
+    val DSW = F.ifNull(F.any(column("weight")), literal(1.0)).as(Some("datasource_weight"))
+
+    val withDT = With(DSScore :: DTAny :: DSW :: Nil)
+    val selectDTScores = Select(B :: DSW.name :: DTAny.name :: DS :: DSScore.name :: Nil)
+    val fromT = From(T, Some("l"))
+    val joinWeights = Join(q.toColumn(None), Some("LEFT"), Some("OUTER"), false, Some("r"), DS :: Nil)
+    val preWhereQ = PreWhere(expressionLeftRight)
+    val groupByQ = GroupBy(B :: DS :: Nil)
+    val havingQ = BFilter match {
+      case Some(matchStr) => Some(Having(F.like(BData.name, literal(s"%$matchStr%"))))
+      case None => None
+    }
+
+    val aggByDatasourcesQ = Q(
+      withDT,
+      selectDTScores,
+      fromT,
+      Some(joinWeights),
+      Some(preWhereQ),
+      Some(groupByQ),
+      havingQ
+    )
+
+    // final query to build the associations
+    val maxHS = literal(Harmonic.maxValue(maxVectorElementsDefault, pExponentDefault, 1.0))
+      .as(Some("max_hs_score"))
+
+    val collectedDS = F.arrayReverseSort(Some("x -> x.2"), F.groupArray(
+      F.tuple(
+        F.divide(DSScore.name, maxHS.name),
+        F.divide(F.multiply(DSScore.name, DSW.name), maxHS.name),
+        DS,
+        DT
+      ))).as(Some("scores_vector"))
+
+
+    val collectedDScored = F.arrayMap(s"(i, j) -> (i.1, (i.2) / pow(j, 2), i.3, i.4)",
+        collectedDS.name,
+        F.arrayEnumerate(collectedDS.name)
+    ).as(Some("datasource_scores"))
+
+    val scoreOverall = F.divide(F.arraySum(None,F.tupleElement(collectedDScored.name, literal(2))),
+      maxHS.name).as(Some("score_overall"))
+
+    val scoreDSs = F.arrayMap("x -> (x.3, x.1)",collectedDScored.name).as(Some("score_ds"))
+    val scoreDTs = F.arrayMap("x -> (x.4, x.1)",collectedDScored.name).as(Some("score_dt"))
+    val uniqDTs = F.groupUniqArray(DT)
+
+    val mappedDTs = F.arrayMap(s"x -> (x, arrayReverseSort(arrayMap(b -> b.2, arrayFilter(a -> a.1 = x,${scoreDTs.name.rep}))))",
+      uniqDTs.name).as(Some("mapped_dts"))
+    val scoredDTs = F.arrayMap("x -> (x.1, arraySum((i, j) -> i / pow(j,2), x.2, arrayEnumerate(x.2)))",
+      mappedDTs.name).as(Some("datatype_scores"))
+
+    val withScores = With(
+      Seq(maxHS,
+        collectedDS,
+        collectedDScored,
+        scoreDSs,
+        scoreDTs,
+        uniqDTs,
+        mappedDTs,
+        scoredDTs,
+        scoreOverall)
+    )
+    val selectScores = Select(B :: scoreOverall.name :: scoredDTs.name :: scoreDSs.name :: Nil) // :: scoreDTs.name :: collectedDScored :: Nil)
+    val fromAgg = From(aggByDatasourcesQ.toColumn(None))
+    val groupByB = GroupBy(B :: Nil)
+    val orderBySome = orderScoreBy match {
+      case Some(p) => OrderBy((
+        if (p._2 == "desc") Column(p._1).desc
+        else Column(p._1).asc) :: Nil
+      )
+      case None => OrderBy(scoreOverall.desc :: Nil)
+    }
+
+    val limitC = Limit(pagination.offset, pagination.size)
+
+    val rootQ = Q(withScores, selectScores, fromAgg, groupByB, orderBySome, limitC)
+    logger.debug(rootQ.toString)
+
+    rootQ
+  }
+
+  def getAssociationsOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[String],
+                         BFilter: Option[String],
+                         datasourceSettings: Seq[DatasourceSettings],
+                         pagination: Pagination) = {
+    val weights = datasourceSettings.map(s => (s.id, s.weight))
+    val aotfQ = buildAOTFQuery(
+      tableName,
+      AId,
+      AIDs,
+      BIDs,
+      BFilter,
+      None,
+      weights,
+      Set("expression_atlas"),
+      pagination).as[AssociationOTF]
+
+    logger.debug(aotfQ.statements.mkString("\n"))
+
+    db.run(aotfQ.asTry).map {
+      case Success(v) => v
+      case Failure(ex)  =>
+        logger.error(ex.toString)
+        logger.error("harmonic associations query failed " +
+          s"with query: ${aotfQ.statements.mkString(" ")}")
+        Vector.empty
+    }
+  }
+
   def getAssocationsByDisease(id: String, indirect: Boolean, filter: Option[String],
                               datasourceSettings: Seq[DatasourceSettings],
                               pagination: Pagination) = {
@@ -91,10 +271,9 @@ class DatabaseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: OTS
     val dss = F.groupArray(F.tuple(column("datasource_harmonic"), weight.name, column("datasource_id"))).as(Some("dss"))
     val dts = F.groupArray(F.tuple(column("datatype_harmonic"), weight.name, column("datatype_id"))).as(Some("dts"))
     val N = F.count(literal(1)).as(Some("n"))
-    val range = F.range(literal(1), F.plus(N.name, literal(1))).as(Some("idx_v"))
-    val score = F.divide(F.arraySum("(a, b) -> (a.1 * a.2) / pow(b, 2)", F.arrayReverseSort(dss.name), range.name), maxHS.name).as(Some("score"))
+    val score = F.divide(F.arraySum(Some("(a, b) -> (a.1 * a.2) / pow(b, 2)"), F.arrayReverseSort(None, dss.name), F.arrayEnumerate(N.name)), maxHS.name).as(Some("score"))
 
-    val W = With(Seq(maxHS, weight, dss, dts, N, range, score))
+    val W = With(Seq(maxHS, weight, dss, dts, N, score))
     val S = Select(Seq(
       targetId.name,
       score.name,
@@ -169,7 +348,7 @@ class DatabaseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: OTS
     val dts = F.groupArray(F.tuple(column("datatype_harmonic"), weight.name, column("datatype_id"))).as(Some("dts"))
     val N = F.count(literal(1)).as(Some("n"))
     val range = F.range(literal(1), F.plus(N.name, literal(1))).as(Some("idx_v"))
-    val score = F.divide(F.arraySum("(a, b) -> (a.1 * a.2) / pow(b, 2)", F.arrayReverseSort(dss.name), range.name), maxHS.name).as(Some("score"))
+    val score = F.divide(F.arraySum(Some("(a, b) -> (a.1 * a.2) / pow(b, 2)"), F.arrayReverseSort(None, dss.name), range.name), maxHS.name).as(Some("score"))
 
     val W = With(Seq(maxHS, weight, dss, dts, N, range, score))
     val S = Select(Seq(

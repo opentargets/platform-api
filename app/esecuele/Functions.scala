@@ -1,6 +1,6 @@
-package elesecu
+package esecuele
 
-import elesecu.Column.{column, literal}
+import esecuele.Column.{column, literal}
 
 object Functions {
   private def f(name: String, cols: Seq[Column]): Column = column(cols.map(_.name).mkString(s"$name(", ",", ")"))
@@ -14,8 +14,10 @@ object Functions {
   def distinct(cols: Seq[Column]): Column = f("distinct", cols)
   def distinct(col: Column, cols: Column*): Column = distinct(col +: cols)
   def groupArray(col: Column): Column = f("groupArray", col)
+  def groupUniqArray(col: Column): Column = f("groupUniqArray", col)
   def groupArrayIf(col1: Column, col2: Column): Column = f("groupArrayIf", col1, col2)
   def arrayMap(lambda: String, cols: Column*): Column = f("arrayMap", Column(lambda) +: cols)
+  def arrayZip(col: Column, cols: Column*): Column = f("arrayZip", col +: cols)
   def any(col: Column): Column = f("any", col)
   def array(cols: Seq[Column]): Column = f("array", cols)
   def array(col: Column, cols: Column*): Column = f("array", col +: cols)
@@ -26,16 +28,30 @@ object Functions {
     f("joinGet", literal(tableName), literal(fieldName), col)
   def flatten(col: Column): Column = f("flatten", col)
   def arraySort(col: Column): Column = f("arraySort", col)
-  def arrayReverseSort(col: Column): Column = f("arrayReverseSort", col)
+  def arrayReverseSort(lambda: Option[String] = None, col: Column): Column = {
+    val params = lambda match {
+      case Some(lambdaF) => Column(lambdaF) +: col +: Nil
+      case None => col +: Nil
+    }
+    f("arrayReverseSort", params)
+  }
   def arraySlice(col: Column, pos: Int, size: Int): Column =
     f("arraySlice", col, literal(pos), literal(size))
   def length(col: Column): Column = f("length", col)
   def range(col: Column): Column = f("range", col)
   def range(start: Column, end: Column): Column = f("range", start, end)
-  def arraySum(lambda: String, col1: Column, col2: Column): Column =
-    f("arraySum", Column(lambda), col1, col2)
+  def arrayEnumerate(col: Column): Column = f("arrayEnumerate", col)
+  def arraySum(lambda: Option[String], col: Column, cols: Column*): Column = {
+    val params = lambda match {
+      case Some(lambdaF) => Column(lambdaF) +: col +: cols
+      case None => col +: cols
+    }
+    f("arraySum", params)
+  }
 
+  def arrayJoin(col: Column): Column = f("arrayJoin", col)
   def count(col: Column): Column = f("count", col)
+  def toNullable(col: Column): Column = f("toNullable", col)
 
   def divide(col1: Column, col2: Column): Column = f("divide", col1, col2)
   def multiply(col1: Column, col2: Column): Column = f("multiply", col1, col2)
@@ -51,6 +67,7 @@ object Functions {
   def like(col1: Column, col2: Column): Column = f("like", col1, col2)
   def notLike(col1: Column, col2: Column): Column = f("notLike", col1, col2)
 
+  def ifNull(col1: Column, col2: Column): Column = f("ifNull", col1, col2)
   def equals(col1: Column, col2: Column): Column = f("equals", col1, col2)
   def notEquals(col1: Column, col2: Column): Column = f("notEquals", col1, col2)
   def greater(col1: Column, col2: Column): Column = f("greater", col1, col2)
