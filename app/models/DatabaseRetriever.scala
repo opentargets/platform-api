@@ -82,8 +82,8 @@ class DatabaseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: OTS
     val B = column("B")
     val DS = column("datasource_id")
     val DT = column("datatype_id")
-    val AData = column("A_data")
-    val BData = column("B_data")
+    val AData = column("A_search")
+    val BData = column("B_search")
     val T = column(tableName)
 
     val WC = F.arrayJoin(F.array(datasourceWeights.map(s => F.tuple(literal(s._1), literal(s._2)))))
