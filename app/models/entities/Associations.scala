@@ -30,6 +30,10 @@ case class AssociationOTF(id: String, score: Double,
                           datatypeScores: Vector[ScoredComponent],
                           datasourceScores: Vector[ScoredComponent])
 
+case class AssociationsOTF(datasources: Seq[DatasourceSettings],
+                          count: Long,
+                          rows: Vector[AssociationOTF])
+
 /**
  * Agroup of associations to one node.
  * @param network the configuration for the progagation network used
@@ -46,6 +50,8 @@ case class Associations(network: Option[LUTableSettings],
 case class EvidenceSource(datasource: String, datatype: String)
 
 object Associations {
+  val empty = AssociationsOTF(Seq.empty, 0, Vector.empty)
+
   object DBImplicits {
     implicit val getAssociationRowFromDB: GetResult[Association] =
       GetResult(r => Association(r.<<, r.<<, DSeqRep(r.<<), StrSeqRep(r.<<), DSeqRep(r.<<), StrSeqRep(r.<<)))

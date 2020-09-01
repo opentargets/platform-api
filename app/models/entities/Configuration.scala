@@ -34,7 +34,7 @@ object Configuration {
   case class DiseaseSettings(associations: AssociationSettings,
                              networks: Seq[LUTableSettings])
 
-  case class DatasourceSettings(id: String, weight: Double)
+  case class DatasourceSettings(id: String, weight: Double, propagate: Boolean)
 
   case class HarmonicSettings(pExponent: Int, datasources: Seq[DatasourceSettings])
 

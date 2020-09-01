@@ -15,6 +15,7 @@ import models.entities.Configuration._
 import models.entities.Configuration.JSONImplicits._
 import Entities._
 import Entities.JSONImplicits._
+import models.db.QAOTF
 import models.entities.Associations._
 import models.entities.Associations.DBImplicits._
 import models.entities._
@@ -41,7 +42,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
   lazy val getESClient = ElasticClient(JavaClient(
     ElasticProperties(s"http://${defaultESSettings.host}:${defaultESSettings.port}")))
 
-  lazy val dbRetriever = new DatabaseRetriever(dbConfigProvider.get[ClickHouseProfile], defaultOTSettings)
+  lazy val dbRetriever = new ClickhouseRetriever(dbConfigProvider.get[ClickHouseProfile], defaultOTSettings)
 
   val allSearchableIndices = defaultESSettings.entities
     .withFilter(_.searchIndex.isDefined).map(_.searchIndex.get)
@@ -251,7 +252,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       .find(_.name == "disease").map(_.index).getOrElse("diseases")
 
     import Disease.JSONImplicits._
-    esRetriever.getByIds(diseaseIndexName, ids, fromJsValue[Disease], Seq("ancestors", "descendants"))
+    esRetriever.getByIds(diseaseIndexName, ids, fromJsValue[Disease])
   }
 
   def search(qString: String, pagination: Option[Pagination],
@@ -284,7 +285,6 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
 
   def getAssociations(tableName: String, A: String, As: Seq[String], Bs: Seq[String],
                       BFilter: Option[String],
-
                       pagination: Option[Pagination]):
   Future[Vector[AssociationOTF]] = {
     val defaultPagination = Pagination.mkDefault
@@ -301,18 +301,39 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
 
   def getAssociationsDiseaseFixed(id: String,
                                   datasources: Option[Seq[DatasourceSettings]],
-                                  expansionId: Option[String],
-                                  pagination: Option[Pagination]): Future[Associations] = {
-    val expandedByLUT: Option[LUTableSettings] =
-      expansionId.flatMap(x => dbRetriever.diseaseNetworks.get(x))
+                                  indirect: Boolean,
+                                  pagination: Option[Pagination]): Future[AssociationsOTF] = {
+    val page = pagination.getOrElse(Pagination.mkDefault)
+    val dss = datasources.getOrElse(defaultOTSettings.clickhouse.harmonic.datasources)
 
-    val defaultPagination = Pagination.mkDefault
-    val dsV = datasources.getOrElse(defaultOTSettings.clickhouse.harmonic.datasources)
-//    dbRetriever
-//      .computeAssociationsDiseaseFixed(id,
-//        expandedByLUT,
-//        dsV,
-//        pagination.getOrElse(defaultPagination))
+    val weights = dss.map(s => (s.id, s.weight))
+    val dontPropagate = dss.withFilter(!_.propagate).map(_.id).toSet
+    val aotfQ = QAOTF(
+      defaultOTSettings.clickhouse.disease.associations.name,
+      id,
+      _,
+      Set.empty,
+      None,
+      None,
+      weights,
+      dontPropagate,
+      page.offset, page.size)
+
+
+//    val d = getDiseases(Seq(id)) andThen {
+//      case Success(v: Vector[Disease]) => v.headOption match {
+//        case Some(d) =>
+//          // fill with direct or not
+//          val q = aotfQ(if (indirect) d.descendants.toSet else Set.empty)
+//
+//          getAssociations(defaultOTSettings.clickhouse.disease.associations.name,
+//            d.id, if (indirect) d.descendants else Seq.empty,
+//            Seq.empty, None, pagination) andThen()
+//        case None => Future.successful(Associations.empty)
+//      }
+//      case Failure(_) => Future.successful(Associations.empty)
+//    }
+
     ???
   }
 
