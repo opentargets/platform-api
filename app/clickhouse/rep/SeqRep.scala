@@ -1,5 +1,6 @@
 package clickhouse.rep
 
+import play.api.Logger
 import shapeless._
 
 /** Clickhouse supports Array of elements from different types and this is an approximation
@@ -54,7 +55,8 @@ object SeqRep {
       if (from.nonEmpty) {
         from.length match {
           case n if n > minLenTokensForStr =>
-            from.slice(1, n - 1).split("\\),\\(").map(f(_)).toVector
+            val offset: Int = minLenTokensForStr / 2
+            from.slice(offset, n - offset).split("\\),\\(").map(f(_)).toVector
           case _ => Vector.empty
         }
       } else

@@ -19,6 +19,8 @@ object Functions {
   def arrayMap(lambda: String, cols: Column*): Column = f("arrayMap", Column(lambda) +: cols)
   def arrayZip(col: Column, cols: Column*): Column = f("arrayZip", col +: cols)
   def any(col: Column): Column = f("any", col)
+  def lower(col: Column): Column = f("lower", col)
+  def upper(col: Column): Column = f("upper", col)
   def array(cols: Seq[Column]): Column = f("array", cols)
   def array(col: Column, cols: Column*): Column = f("array", col +: cols)
   def tuple(cols: Seq[Column]): Column = f("tuple", cols)

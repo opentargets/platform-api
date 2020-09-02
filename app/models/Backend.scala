@@ -23,6 +23,7 @@ import models.entities.HealthCheck.JSONImplicits._
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
 import play.db.NamedDatabase
+import esecuele._
 
 class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider: DatabaseConfigProvider,
                         config: Configuration,
@@ -52,6 +53,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     allSearchableIndices)
 
   // we must import the dsl
+
   import com.sksamuel.elastic4s.ElasticDsl._
 
   def getRelatedDiseases(kv: Map[String, String], pagination: Option[Pagination]):
@@ -130,7 +132,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
   }
 
   def getCancerBiomarkers(kv: Map[String, String], pagination: Option[Pagination]):
-    Future[Option[CancerBiomarkers]] = {
+  Future[Option[CancerBiomarkers]] = {
 
     val pag = pagination.getOrElse(Pagination.mkDefault)
 
@@ -170,7 +172,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       cardinalityAgg("uniqueTargets", "target.raw"),
       cardinalityAgg("uniqueDiseases", "disease.raw"),
       cardinalityAgg("uniqueDrugs", "drug.raw"),
-//      cardinalityAgg("uniqueClinicalTrials", "list_urls.url.keyword"),
+      //      cardinalityAgg("uniqueClinicalTrials", "list_urls.url.keyword"),
       valueCountAgg("rowsCount", "drug.raw")
     )
 
@@ -183,7 +185,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
         val drugs = (agg \ "uniqueDrugs" \ "value").as[Long]
         val diseases = (agg \ "uniqueDiseases" \ "value").as[Long]
         val targets = (agg \ "uniqueTargets" \ "value").as[Long]
-//        val clinicalTrials = (agg \ "uniqueClinicalTrials" \ "value").as[Long]
+        //        val clinicalTrials = (agg \ "uniqueClinicalTrials" \ "value").as[Long]
         val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
         Some(KnownDrugs(drugs, diseases, targets, rowsCount, nextCursor, seq))
     }
@@ -283,25 +285,10 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     dbRetriever.getAssocationsByTarget(id, indirect, filter, dsV, pagination.getOrElse(defaultPagination))
   }
 
-  def getAssociations(tableName: String, A: String, As: Seq[String], Bs: Seq[String],
-                      BFilter: Option[String],
-                      pagination: Option[Pagination]):
-  Future[Vector[AssociationOTF]] = {
-    val defaultPagination = Pagination.mkDefault
-    val dsV = defaultOTSettings.clickhouse.harmonic.datasources
-    dbRetriever.getAssociationsOTF(
-      tableName,
-      A,
-      As.toSet,
-      Bs.toSet,
-      BFilter,
-      dsV,
-      pagination.getOrElse(defaultPagination))
-  }
-
   def getAssociationsDiseaseFixed(id: String,
                                   datasources: Option[Seq[DatasourceSettings]],
                                   indirect: Boolean,
+                                  filter: Option[String],
                                   pagination: Option[Pagination]): Future[AssociationsOTF] = {
     val page = pagination.getOrElse(Pagination.mkDefault)
     val dss = datasources.getOrElse(defaultOTSettings.clickhouse.harmonic.datasources)
@@ -313,44 +300,78 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       id,
       _,
       Set.empty,
-      None,
+      filter,
       None,
       weights,
       dontPropagate,
       page.offset, page.size)
 
 
-//    val d = getDiseases(Seq(id)) andThen {
-//      case Success(v: Vector[Disease]) => v.headOption match {
-//        case Some(d) =>
-//          // fill with direct or not
-//          val q = aotfQ(if (indirect) d.descendants.toSet else Set.empty)
-//
-//          getAssociations(defaultOTSettings.clickhouse.disease.associations.name,
-//            d.id, if (indirect) d.descendants else Seq.empty,
-//            Seq.empty, None, pagination) andThen()
-//        case None => Future.successful(Associations.empty)
-//      }
-//      case Failure(_) => Future.successful(Associations.empty)
-//    }
+    getDiseases(Seq(id)) flatMap {
+      case v => v.headOption match {
+        case Some(d) =>
+          logger.debug(s"get disease id ${d.name}")
+          val dIDs = d.descendants.toSet + d.id
+          val q = aotfQ(if (indirect) dIDs else Set.empty)
+          val simpleQ = q.simpleQuery(0, 100000)
+          val fullQ = q.query
 
-    ???
+          dbRetriever.executeQuery[String, Query](simpleQ) flatMap {
+            case tIDs =>
+              logger.debug(s"get ${tIDs.size} targets")
+
+              dbRetriever.executeQuery[AssociationOTF, Query](fullQ) map {
+                case assocs => AssociationsOTF(dss, tIDs.size, assocs)
+              }
+          }
+
+        case None => Future.successful(Associations.empty)
+      }
+    }
   }
 
   def getAssociationsTargetFixed(id: String,
                                  datasources: Option[Seq[DatasourceSettings]],
-                                 expansionId: Option[String],
-                                 pagination: Option[Pagination]): Future[Associations] = {
-    val expandedByLUT: Option[LUTableSettings] =
-      expansionId.flatMap(x => dbRetriever.targetNetworks.get(x))
+                                 indirect: Boolean,
+                                 filter: Option[String],
+                                 pagination: Option[Pagination]): Future[AssociationsOTF] = {
+    val page = pagination.getOrElse(Pagination.mkDefault)
+    val dss = datasources.getOrElse(defaultOTSettings.clickhouse.harmonic.datasources)
 
-    val defaultPagination = Pagination.mkDefault
-    val dsV = datasources.getOrElse(defaultOTSettings.clickhouse.harmonic.datasources)
-//    dbRetriever
-//      .computeAssociationsTargetFixed(id,
-//        expandedByLUT,
-//        dsV,
-//        pagination.getOrElse(defaultPagination))
-    ???
+    val weights = dss.map(s => (s.id, s.weight))
+    val dontPropagate = dss.withFilter(!_.propagate).map(_.id).toSet
+    val aotfQ = QAOTF(
+      defaultOTSettings.clickhouse.target.associations.name,
+      id,
+      _,
+      Set.empty,
+      filter,
+      None,
+      weights,
+      dontPropagate,
+      page.offset, page.size)
+
+
+    getTargets(Seq(id)) flatMap {
+      case v => v.headOption match {
+        case Some(d) =>
+          logger.debug(s"get target id ${d.approvedSymbol}")
+          val tIDs = Set.empty + d.id
+          val q = aotfQ(if (indirect) tIDs else Set.empty)
+          val simpleQ = q.simpleQuery(0, 100000)
+          val fullQ = q.query
+
+          dbRetriever.executeQuery[String, Query](simpleQ) flatMap {
+            case dIDs =>
+              logger.debug(s"get ${dIDs.size} diseases")
+
+              dbRetriever.executeQuery[AssociationOTF, Query](fullQ) map {
+                case assocs => AssociationsOTF(dss, dIDs.size, assocs)
+              }
+          }
+
+        case None => Future.successful(Associations.empty)
+      }
+    }
   }
 }

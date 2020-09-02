@@ -5,6 +5,7 @@ import clickhouse.rep.SeqRep.Implicits._
 import models.entities.Configuration.{DatasourceSettings, LUTableSettings}
 import models.entities.Configuration.JSONImplicits._
 import models.entities.Network.JSONImplicits._
+import play.api.Logger
 import play.api.libs.json.Json
 import slick.jdbc.GetResult
 
@@ -53,23 +54,29 @@ object Associations {
   val empty = AssociationsOTF(Seq.empty, 0, Vector.empty)
 
   object DBImplicits {
+    val logger = Logger(this.getClass)
     implicit val getAssociationRowFromDB: GetResult[Association] =
       GetResult(r => Association(r.<<, r.<<, DSeqRep(r.<<), StrSeqRep(r.<<), DSeqRep(r.<<), StrSeqRep(r.<<)))
 
     implicit val getAssociationOTFRowFromDB: GetResult[AssociationOTF] = {
 
       GetResult(r => {
-        AssociationOTF(r.<<, r.<<,
-          TupleSeqRep[ScoredComponent](r.<<, tuple => {
+        val id: String = r.<<
+        val score: Double = r.<<
+        val tuples1: String = r.<<
+        val tuples2: String = r.<<
+
+        AssociationOTF(id, score,
+          TupleSeqRep[ScoredComponent](tuples1, tuple => {
             val tokens = tuple.split(",")
             val left = parseFastString(tokens(0))
-            val right = tokens(1).slice(0, tokens(1).length - 1).toDouble
+            val right = tokens(1).toDouble
             ScoredComponent(left, right)
           }).rep,
-          TupleSeqRep[ScoredComponent](r.<<, tuple => {
+          TupleSeqRep[ScoredComponent](tuples2, tuple => {
             val tokens = tuple.split(",")
             val left = parseFastString(tokens(0))
-            val right = tokens(1).slice(0, tokens(1).length - 1).toDouble
+            val right = tokens(1).toDouble
             ScoredComponent(left, right)
           }).rep
         )

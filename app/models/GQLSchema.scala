@@ -66,6 +66,13 @@ trait GQLEntities extends GQLArguments {
   val entityImp = InterfaceType("Entity", fields[Backend, Entity](
     Field("id", StringType, resolve = _.value.id)))
 
+  implicit val datasourceSettingsJsonImp = Json.format[DatasourceSettings]
+  implicit val datasourceSettingsInputImp = deriveInputObjectType[DatasourceSettings](
+    InputObjectTypeName("DatasourceSettingsInput")
+  )
+  val datasourceSettingsListArg = Argument("datasources",
+    OptionInputType(ListInputType(datasourceSettingsInputImp)))
+
   // target
   implicit val targetHasId = HasId[Target, String](_.id)
 
@@ -143,6 +150,7 @@ trait GQLEntities extends GQLArguments {
   implicit val tractabilityImp = deriveObjectType[Backend, Tractability]()
 
   implicit val scoredDataTypeImp = deriveObjectType[Backend, ScoredComponent]()
+
   implicit val associatedOTFTargetImp = deriveObjectType[Backend, AssociationOTF](
     ObjectTypeName("AssociatedOTFTarget"),
     ObjectTypeDescription("Associated Target Entity"),
@@ -266,13 +274,6 @@ trait GQLEntities extends GQLArguments {
     DocumentField("critVal", "LLR critical value to define significance"),
     DocumentField("rows", "Significant adverse event entries")
   )
-
-  implicit val datasourceSettingsJsonImp = Json.format[DatasourceSettings]
-  val datasourceSettingsInputImp = deriveInputObjectType[DatasourceSettings](
-    InputObjectTypeName("DatasourceSettingsInput")
-  )
-  val datasourceSettingsListArg = Argument("datasources",
-     OptionInputType(ListInputType(datasourceSettingsInputImp)))
 
   implicit val otarProjectImp = deriveObjectType[Backend, OtarProject]()
   implicit val otarProjectsImp = deriveObjectType[Backend, OtarProjects]()
@@ -660,6 +661,19 @@ trait GQLEntities extends GQLArguments {
 //  implicit lazy val associationsImp = deriveObjectType[Backend, Associations]()
 
   implicit val evidenceSourceImp = deriveObjectType[Backend, EvidenceSource]()
+  implicit val associatedOTFTargetsImp = deriveObjectType[Backend, AssociationsOTF](
+    ObjectTypeName("AssociatedTargetsOTF"),
+    ReplaceField("rows", Field("rows",
+      ListType(associatedOTFTargetImp), Some("Associated Targets using (On the fly method)"),
+      resolve = r => r.value.rows))
+  )
+
+  implicit val associatedOTFDiseasesImp = deriveObjectType[Backend, AssociationsOTF](
+    ObjectTypeName("AssociatedDiseasesOTF"),
+    ReplaceField("rows", Field("rows",
+      ListType(associatedOTFDiseaseImp), Some("Associated Targets using (On the fly method)"),
+      resolve = r => r.value.rows))
+  )
 
   // implement associations
 //  val associationsObTheFlyGQLImp = ObjectType("AssociationsOnTheFly",
@@ -818,21 +832,29 @@ object GQLSchema extends GQLMeta with GQLEntities {
           val entities = ctx.arg(entityNames).getOrElse(Seq.empty)
           ctx.ctx.search(ctx.arg(queryString), ctx.arg(pageArg), entities)
         }),
-      //   val BFilterString = Argument("BFilter", StringType)
-      //  val scoreSorting = Argument("orderByScore", StringType)
-      //  val AId = Argument("A", StringType)
-      //  val AIds = Argument("As", ListInputType(StringType))
-      //  val BIds = Argument("Bs", ListInputType(StringType))
-      Field("aotfByDisease", ListType(associatedOTFTargetImp),
+
+      Field("aotfByDisease", associatedOTFTargetsImp,
         description = Some("associations on the fly"),
-        arguments = queryString :: AId :: AIds :: BIds :: BFilterString :: Nil,
-        resolve = ctx => ctx.ctx.getAssociations(
-          ctx arg queryString,
+        arguments = AId :: indrectEvidences :: BFilterString :: pageArg :: Nil,
+        resolve = ctx => ctx.ctx.getAssociationsDiseaseFixed(
           ctx arg AId,
-          ctx arg AIds,
-          ctx arg BIds,
+          None,
+          ctx arg indrectEvidences getOrElse(true),
           ctx arg BFilterString,
-          None)),
+          ctx arg pageArg
+        )),
+
+      Field("aotfByTarget", associatedOTFDiseasesImp,
+        description = Some("associations on the fly"),
+        arguments = AId :: indrectEvidences :: BFilterString :: pageArg :: Nil,
+        resolve = ctx => ctx.ctx.getAssociationsTargetFixed(
+          ctx arg AId,
+          None,
+          ctx arg indrectEvidences getOrElse(false),
+          ctx arg BFilterString,
+          ctx arg pageArg
+        )),
+
       Field("associationDatasources", ListType(evidenceSourceImp),
         description = Some("The complete list of all possible datasources"),
         resolve = ctx => ctx.ctx.getAssociationDatasources)

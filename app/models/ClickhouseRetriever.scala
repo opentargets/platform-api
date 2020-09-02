@@ -71,8 +71,8 @@ class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: O
     }
   }
 
-  def executeQuery[A](q: Queryable)(implicit rconv: GetResult[A]) = {
-    logger.debug(s"execute query from eselecu Q ${q.query.toString}")
+  def executeQuery[A, B <: Q](q: B)(implicit rconv: GetResult[A]) = {
+    logger.debug(s"execute query from eselecu Q ${q.toString}")
     val qq = q.as[A]
 
     db.run(qq.asTry).map {

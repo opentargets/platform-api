@@ -14,7 +14,9 @@ abstract class Queryable {
 
 /**
  * QAOTF stands for Query for Associations on the fly computations
- * TODO add a simple query to get the total Bs in the result set
+ * TODO filter before computing
+ * TODO sorting by scores
+ * TODO using the AIDs and BIDs to the facets
  */
 case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[String],
                  BFilter: Option[String], orderScoreBy: Option[(String, String)],
@@ -59,7 +61,7 @@ case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[St
       OrderBy(DSFieldWC.asc :: Nil)
     )
 
-    val leftIdsC = F.arrayJoin(F.array(AIDs.map(literal).toSeq)).as(Some("AIDs"))
+    val leftIdsC = F.arrayJoin(F.array((AIDs + AId).map(literal).toSeq)).as(Some("AIDs"))
     val leftIdsQ = Q(With(leftIdsC :: Nil), Select(leftIdsC.name :: Nil))
 
     // build the boolean expression. Either with datasource propagation limitation (rna expression mainly)
@@ -99,7 +101,7 @@ case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[St
     val preWhereQ = PreWhere(expressionLeftRight)
     val groupByQ = GroupBy(B :: DS :: Nil)
     val havingQ = BFilter match {
-      case Some(matchStr) => Some(Having(F.like(BData.name, literal(s"%$matchStr%"))))
+      case Some(matchStr) => Some(Having(F.like(BData.name, F.lower(literal(s"%$matchStr%")))))
       case None => None
     }
 
@@ -112,6 +114,66 @@ case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[St
       Some(groupByQ),
       havingQ
     )
+  }
+
+  def simpleQuery(offset: Int, size: Int) = {
+    val leftIdsC = F.arrayJoin(F.array((AIDs + AId).map(literal).toSeq)).as(Some("AIDs"))
+    val leftIdsQ = Q(With(leftIdsC :: Nil), Select(leftIdsC.name :: Nil))
+
+    // build the boolean expression. Either with datasource propagation limitation (rna expression mainly)
+    // or not then all simplifies quite a lot
+    val nonPP = F.array(nonPropagatedDatasources.map(literal).toSeq)
+    val expressionLeft = if (nonPropagatedDatasources.nonEmpty) {
+      F.or(
+        F.and(
+          F.in(A, leftIdsQ.toColumn(None)),
+          F.notIn(DS, nonPP)),
+        F.and(
+          F.in(DS, nonPP),
+          F.equals(A, literal(AId))
+        )
+      )
+    } else
+      F.in(A, leftIdsQ.toColumn(None))
+
+    // in the case we also want to filter B set
+    val expressionLeftRight = if (BIDs.nonEmpty) {
+      val rightIdsC = F.arrayJoin(F.array(BIDs.map(literal).toSeq)).as(Some("B_ids"))
+      val rightIdsQ = Q(With(rightIdsC :: Nil), Select(rightIdsC.name :: Nil))
+      F.and(
+        expressionLeft,
+        F.in(B, rightIdsQ.toColumn(None)),
+      )
+    } else {
+      expressionLeft
+    }
+
+    val DTAny = F.any(DT).as(Some(DT.rep))
+
+    val withDT = With(DTAny :: Nil)
+    val selectDSScores = Select(B :: DTAny.name :: DS :: Nil)
+    val fromT = From(T, Some("l"))
+    val preWhereQ = PreWhere(expressionLeftRight)
+    val groupByQ = GroupBy(B :: DS :: Nil)
+
+    val aggDSQ = Q(
+      withDT,
+      selectDSScores,
+      fromT,
+      Some(preWhereQ),
+      Some(groupByQ)
+    )
+
+    val selectScores = Select(B :: Nil) // :: scoreDTs.name :: collectedDScored :: Nil)
+    val fromAgg = From(aggDSQ.toColumn(None))
+    val groupByB = GroupBy(B :: Nil)
+
+    val limitC = Limit(offset, size)
+
+    val rootQ = Q(selectScores, fromAgg, groupByB, limitC)
+    logger.debug(rootQ.toString)
+
+    rootQ
   }
 
   override val query = {
