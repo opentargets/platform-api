@@ -61,8 +61,8 @@ object Functions {
   def plus(col1: Column, col2: Column): Column = f("plus", col1, col2)
   def minus(col1: Column, col2: Column): Column = f("minus", col1, col2)
 
-  def or(col1: Column, col2: Column): Column = f("or", col1, col2)
-  def and(col1: Column, col2: Column): Column = f("and", col1, col2)
+  def or(col1: Column, col2: Column, cols: Column*): Column = f("or", col1 +: col2 +: cols)
+  def and(col1: Column, col2: Column, cols: Column*): Column = f("and", col1 +: col2 +: cols)
   def not(col: Column): Column = f("not", col)
   def in(col1: Column, col2: Column): Column = f("in", col1, col2)
   def notIn(col1: Column, col2: Column): Column = f("notIn", col1, col2)

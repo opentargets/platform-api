@@ -14,7 +14,6 @@ abstract class Queryable {
 
 /**
  * QAOTF stands for Query for Associations on the fly computations
- * TODO filter before computing
  * TODO sorting by scores
  * TODO using the AIDs and BIDs to the facets
  */
@@ -34,6 +33,19 @@ case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[St
   val T = column(tableName)
   val RowID = column("row_id")
   val RowScore = column("row_score")
+
+  val BFilterQ = BFilter flatMap  {
+    case matchStr =>
+      val tokens = matchStr.split(" ").map(s => {
+        F.like(BData.name, F.lower(literal(s"%${s.toLowerCase.trim}%")))
+      }).toList
+
+      tokens match {
+        case h :: Nil => Some(h)
+        case h1 :: h2 :: rest => Some(F.and(h1, h2, rest:_*))
+        case _ => None
+      }
+  }
 
   val DSScore = F.arraySum(
     None,
@@ -84,13 +96,17 @@ case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[St
     val expressionLeftRight = if (BIDs.nonEmpty) {
       val rightIdsC = F.arrayJoin(F.array(BIDs.map(literal).toSeq)).as(Some("B_ids"))
       val rightIdsQ = Q(With(rightIdsC :: Nil), Select(rightIdsC.name :: Nil))
+
       F.and(
         expressionLeft,
-        F.in(B, rightIdsQ.toColumn(None)),
-      )
+        F.in(B, rightIdsQ.toColumn(None)))
     } else {
       expressionLeft
     }
+
+    val expressionLeftRightWithBFilter = BFilterQ.map(f =>
+      F.and(f, expressionLeftRight)
+    ).getOrElse(expressionLeftRight)
 
     val DTAny = F.any(DT).as(Some(DT.rep))
 
@@ -98,12 +114,8 @@ case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[St
     val selectDSScores = Select(B :: DSW.name :: DTAny.name :: DS :: DSScore.name :: Nil)
     val fromT = From(T, Some("l"))
     val joinWeights = Join(q.toColumn(None), Some("LEFT"), Some("OUTER"), false, Some("r"), DS :: Nil)
-    val preWhereQ = PreWhere(expressionLeftRight)
+    val preWhereQ = PreWhere(expressionLeftRightWithBFilter)
     val groupByQ = GroupBy(B :: DS :: Nil)
-    val havingQ = BFilter match {
-      case Some(matchStr) => Some(Having(F.like(BData.name, F.lower(literal(s"%$matchStr%")))))
-      case None => None
-    }
 
     Q(
       withDT,
@@ -111,8 +123,7 @@ case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[St
       fromT,
       Some(joinWeights),
       Some(preWhereQ),
-      Some(groupByQ),
-      havingQ
+      Some(groupByQ)
     )
   }
 
@@ -148,12 +159,16 @@ case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[St
       expressionLeft
     }
 
+    val expressionLeftRightWithBFilter = BFilterQ.map(f =>
+      F.and(f, expressionLeftRight)
+    ).getOrElse(expressionLeftRight)
+
     val DTAny = F.any(DT).as(Some(DT.rep))
 
     val withDT = With(DTAny :: Nil)
     val selectDSScores = Select(B :: DTAny.name :: DS :: Nil)
     val fromT = From(T, Some("l"))
-    val preWhereQ = PreWhere(expressionLeftRight)
+    val preWhereQ = PreWhere(expressionLeftRightWithBFilter)
     val groupByQ = GroupBy(B :: DS :: Nil)
 
     val aggDSQ = Q(
@@ -198,14 +213,14 @@ case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[St
     val scoreOverall = F.divide(F.arraySum(None,F.tupleElement(collectedDScored.name, literal(2))),
       maxHS.name).as(Some("score_overall"))
 
-    val scoreDSs = F.arrayMap("x -> (x.3, x.1)",collectedDScored.name).as(Some("score_ds"))
+    val scoreDSs = F.arrayMap("x -> (x.3, x.1)",collectedDScored.name).as(Some("score_datasources"))
     val scoreDTs = F.arrayMap("x -> (x.4, x.1)",collectedDScored.name).as(Some("score_dt"))
     val uniqDTs = F.groupUniqArray(DT)
 
     val mappedDTs = F.arrayMap(s"x -> (x, arrayReverseSort(arrayMap(b -> b.2, arrayFilter(a -> a.1 = x,${scoreDTs.name.rep}))))",
       uniqDTs.name).as(Some("mapped_dts"))
     val scoredDTs = F.arrayMap("x -> (x.1, arraySum((i, j) -> i / pow(j,2), x.2, arrayEnumerate(x.2)))",
-      mappedDTs.name).as(Some("datatype_scores"))
+      mappedDTs.name).as(Some("score_datatypes"))
 
     val withScores = With(
       Seq(maxHS,

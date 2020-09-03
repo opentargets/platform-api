@@ -289,6 +289,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
                                   datasources: Option[Seq[DatasourceSettings]],
                                   indirect: Boolean,
                                   filter: Option[String],
+                                  orderBy: Option[(String, String)],
                                   pagination: Option[Pagination]): Future[AssociationsOTF] = {
     val page = pagination.getOrElse(Pagination.mkDefault)
     val dss = datasources.getOrElse(defaultOTSettings.clickhouse.harmonic.datasources)
@@ -301,7 +302,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       _,
       Set.empty,
       filter,
-      None,
+      orderBy,
       weights,
       dontPropagate,
       page.offset, page.size)
@@ -334,6 +335,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
                                  datasources: Option[Seq[DatasourceSettings]],
                                  indirect: Boolean,
                                  filter: Option[String],
+                                 orderBy: Option[(String, String)],
                                  pagination: Option[Pagination]): Future[AssociationsOTF] = {
     val page = pagination.getOrElse(Pagination.mkDefault)
     val dss = datasources.getOrElse(defaultOTSettings.clickhouse.harmonic.datasources)
@@ -346,7 +348,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       _,
       Set.empty,
       filter,
-      None,
+      orderBy,
       weights,
       dontPropagate,
       page.offset, page.size)

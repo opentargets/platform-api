@@ -24,11 +24,7 @@ import models.entities.Configuration._
 
 trait GQLArguments {
   implicit val paginationFormatImp = Json.format[Pagination]
-  implicit val sortOrderImp = deriveEnumType[SortOrder]()
-  implicit val sortEntityImp = deriveEnumType[SortEntity]()
 
-  val sortFieldArg = Argument("sortField", OptionInputType(sortEntityImp), description = "Sort field name")
-  val sortOrderArg = Argument("sortOrder", OptionInputType(sortOrderImp), description = "Sort type")
   val pagination = deriveInputObjectType[Pagination]()
   val entityNames = Argument("entityNames", OptionInputType(ListInputType(StringType)),
     description = "List of entity names to search for (target, disease, drug,...)")
@@ -48,7 +44,7 @@ trait GQLArguments {
     "Use disease ontology to capture evidences from all descendants to build associations")
 
   val BFilterString = Argument("BFilter", OptionInputType(StringType))
-  val scoreSorting = Argument("orderByScore", StringType)
+  val scoreSorting = Argument("orderByScore", OptionInputType(StringType))
   val AId = Argument("A", StringType)
   val AIds = Argument("As", ListInputType(StringType))
   val BIds = Argument("Bs", ListInputType(StringType))
@@ -835,23 +831,33 @@ object GQLSchema extends GQLMeta with GQLEntities {
 
       Field("aotfByDisease", associatedOTFTargetsImp,
         description = Some("associations on the fly"),
-        arguments = AId :: indrectEvidences :: BFilterString :: pageArg :: Nil,
+        arguments = AId :: indrectEvidences :: BFilterString :: scoreSorting :: pageArg :: Nil,
         resolve = ctx => ctx.ctx.getAssociationsDiseaseFixed(
           ctx arg AId,
           None,
           ctx arg indrectEvidences getOrElse(true),
           ctx arg BFilterString,
+          (ctx arg scoreSorting) map (_.split(" ").take(2).toList match {
+            case a :: b :: Nil => (a, b)
+            case a :: Nil => (a, "desc")
+            case _ => ("score_overall", "desc")
+          }),
           ctx arg pageArg
         )),
 
       Field("aotfByTarget", associatedOTFDiseasesImp,
         description = Some("associations on the fly"),
-        arguments = AId :: indrectEvidences :: BFilterString :: pageArg :: Nil,
+        arguments = AId :: indrectEvidences :: BFilterString :: scoreSorting :: pageArg :: Nil,
         resolve = ctx => ctx.ctx.getAssociationsTargetFixed(
           ctx arg AId,
           None,
           ctx arg indrectEvidences getOrElse(false),
           ctx arg BFilterString,
+          (ctx arg scoreSorting) map (_.split(" ").take(2).toList match {
+            case a :: b :: Nil => (a, b)
+            case a :: Nil => (a, "desc")
+            case _ => ("score_overall", "desc")
+          }),
           ctx arg pageArg
         )),
 
