@@ -33,6 +33,8 @@ case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[St
   val T = column(tableName)
   val RowID = column("row_id")
   val RowScore = column("row_score")
+  val maxHS = literal(Harmonic.maxValue(100000, pExponentDefault, 1.0))
+    .as(Some("max_hs_score"))
 
   val BFilterQ = BFilter flatMap  {
     case matchStr =>
@@ -192,10 +194,6 @@ case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[St
   }
 
   override val query = {
-    // final query to build the associations
-    val maxHS = literal(Harmonic.maxValue(maxVectorElementsDefault, pExponentDefault, 1.0))
-      .as(Some("max_hs_score"))
-
     val collectedDS = F.arrayReverseSort(Some("x -> x.2"), F.groupArray(
       F.tuple(
         F.divide(DSScore.name, maxHS.name),
@@ -211,7 +209,7 @@ case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[St
     ).as(Some("datasource_scores"))
 
     val scoreOverall = F.divide(F.arraySum(None,F.tupleElement(collectedDScored.name, literal(2))),
-      maxHS.name).as(Some("score_overall"))
+      maxHS.name).as(Some("score"))
 
     val scoreDSs = F.arrayMap("x -> (x.3, x.1)",collectedDScored.name).as(Some("score_datasources"))
     val scoreDTs = F.arrayMap("x -> (x.4, x.1)",collectedDScored.name).as(Some("score_dt"))
@@ -219,7 +217,7 @@ case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[St
 
     val mappedDTs = F.arrayMap(s"x -> (x, arrayReverseSort(arrayMap(b -> b.2, arrayFilter(a -> a.1 = x,${scoreDTs.name.rep}))))",
       uniqDTs.name).as(Some("mapped_dts"))
-    val scoredDTs = F.arrayMap("x -> (x.1, arraySum((i, j) -> i / pow(j,2), x.2, arrayEnumerate(x.2)))",
+    val scoredDTs = F.arrayMap(s"x -> (x.1, arraySum((i, j) -> i / pow(j,2), x.2, arrayEnumerate(x.2)) / ${maxHS.name.rep})",
       mappedDTs.name).as(Some("score_datatypes"))
 
     val withScores = With(
