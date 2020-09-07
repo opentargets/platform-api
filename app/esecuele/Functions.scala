@@ -9,6 +9,7 @@ object Functions {
   def apply(name: String, cols: Seq[Column]): Column = f(name, cols)
   def apply(name: String, col: Column, cols: Column*): Column = apply(name, col +:cols)
 
+  def set(cols: Seq[Column]): Column = f("", cols)
   def uniq(cols: Seq[Column]): Column = f("uniq", cols)
   def uniq(col: Column, cols: Column*): Column = uniq(col +: cols)
   def distinct(cols: Seq[Column]): Column = f("distinct", cols)
@@ -26,6 +27,8 @@ object Functions {
   def tuple(cols: Seq[Column]): Column = f("tuple", cols)
   def tuple(col: Column, cols: Column*): Column = f("tuple", col +: cols)
   def tupleElement(tupleName: Column, n: Column): Column = f("tupleElement", tupleName, n)
+  def arrayElement(tupleName: Column, n: Column): Column = f("arrayElement", tupleName, n)
+  def indexOf(tupleName: Column, n: Column): Column = f("indexOf", tupleName, n)
   def joinGet(tableName: String, fieldName: String, col: Column): Column =
     f("joinGet", literal(tableName), literal(fieldName), col)
   def flatten(col: Column): Column = f("flatten", col)
@@ -40,6 +43,7 @@ object Functions {
   def arraySlice(col: Column, pos: Int, size: Int): Column =
     f("arraySlice", col, literal(pos), literal(size))
   def length(col: Column): Column = f("length", col)
+  def concat(col1: Column, col2: Column, cols: Column*): Column = f("concat", col1 +: col2 +: cols)
   def range(col: Column): Column = f("range", col)
   def range(start: Column, end: Column): Column = f("range", start, end)
   def arrayEnumerate(col: Column): Column = f("arrayEnumerate", col)

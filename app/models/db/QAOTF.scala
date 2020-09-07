@@ -75,16 +75,15 @@ case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[St
       OrderBy(DSFieldWC.asc :: Nil)
     )
 
-    val leftIdsC = F.arrayJoin(F.array((AIDs + AId).map(literal).toSeq)).as(Some("AIDs"))
-    val leftIdsQ = Q(With(leftIdsC :: Nil), Select(leftIdsC.name :: Nil))
+    val leftIdsC = F.set((AIDs + AId).map(literal).toSeq)
 
     // build the boolean expression. Either with datasource propagation limitation (rna expression mainly)
     // or not then all simplifies quite a lot
-    val nonPP = F.array(nonPropagatedDatasources.map(literal).toSeq)
+    val nonPP = F.set(nonPropagatedDatasources.map(literal).toSeq)
     val expressionLeft = if (nonPropagatedDatasources.nonEmpty) {
       F.or(
         F.and(
-          F.in(A, leftIdsQ.toColumn(None)),
+          F.in(A, leftIdsC),
           F.notIn(DS, nonPP)),
         F.and(
           F.in(DS, nonPP),
@@ -92,16 +91,15 @@ case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[St
         )
       )
     } else
-      F.in(A, leftIdsQ.toColumn(None))
+      F.in(A, leftIdsC)
 
     // in the case we also want to filter B set
     val expressionLeftRight = if (BIDs.nonEmpty) {
-      val rightIdsC = F.arrayJoin(F.array(BIDs.map(literal).toSeq)).as(Some("B_ids"))
-      val rightIdsQ = Q(With(rightIdsC :: Nil), Select(rightIdsC.name :: Nil))
+      val rightIdsC = F.set(BIDs.map(literal).toSeq)
 
       F.and(
         expressionLeft,
-        F.in(B, rightIdsQ.toColumn(None)))
+        F.in(B, rightIdsC))
     } else {
       expressionLeft
     }
@@ -130,16 +128,15 @@ case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[St
   }
 
   def simpleQuery(offset: Int, size: Int) = {
-    val leftIdsC = F.arrayJoin(F.array((AIDs + AId).map(literal).toSeq)).as(Some("AIDs"))
-    val leftIdsQ = Q(With(leftIdsC :: Nil), Select(leftIdsC.name :: Nil))
+    val leftIdsC = F.set((AIDs + AId).map(literal).toSeq)
 
     // build the boolean expression. Either with datasource propagation limitation (rna expression mainly)
     // or not then all simplifies quite a lot
-    val nonPP = F.array(nonPropagatedDatasources.map(literal).toSeq)
+    val nonPP = F.set(nonPropagatedDatasources.map(literal).toSeq)
     val expressionLeft = if (nonPropagatedDatasources.nonEmpty) {
       F.or(
         F.and(
-          F.in(A, leftIdsQ.toColumn(None)),
+          F.in(A, leftIdsC),
           F.notIn(DS, nonPP)),
         F.and(
           F.in(DS, nonPP),
@@ -147,15 +144,14 @@ case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[St
         )
       )
     } else
-      F.in(A, leftIdsQ.toColumn(None))
+      F.in(A, leftIdsC)
 
     // in the case we also want to filter B set
     val expressionLeftRight = if (BIDs.nonEmpty) {
-      val rightIdsC = F.arrayJoin(F.array(BIDs.map(literal).toSeq)).as(Some("B_ids"))
-      val rightIdsQ = Q(With(rightIdsC :: Nil), Select(rightIdsC.name :: Nil))
+      val rightIdsC = F.set(BIDs.map(literal).toSeq)
       F.and(
         expressionLeft,
-        F.in(B, rightIdsQ.toColumn(None)),
+        F.in(B, rightIdsC),
       )
     } else {
       expressionLeft
@@ -220,6 +216,13 @@ case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[St
     val scoredDTs = F.arrayMap(s"x -> (x.1, arraySum((i, j) -> i / pow(j,2), x.2, arrayEnumerate(x.2)) / ${maxHS.name.rep})",
       mappedDTs.name).as(Some("score_datatypes"))
 
+    val orderColumn = orderScoreBy.getOrElse((scoreOverall.name.rep, "desc"))
+    val jointColumns = F.concat(scoredDTs.name, scoreDSs.name)
+    val orderByC = F.ifThenElse(
+      F.notEquals(F.indexOf(F.tupleElement(jointColumns.name, literal(1)),literal(orderColumn._1)), literal(0)),
+      F.tupleElement(F.arrayElement(jointColumns.name, F.indexOf(F.tupleElement(jointColumns.name, literal(1)),literal(orderColumn._1))), literal(2)),
+      literal(0.0)).as(Some("score_indexed"))
+
     val withScores = With(
       Seq(maxHS,
         collectedDS,
@@ -229,17 +232,24 @@ case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[St
         uniqDTs,
         mappedDTs,
         scoredDTs,
-        scoreOverall)
+        scoreOverall,
+        jointColumns,
+        orderByC)
     )
     val selectScores = Select(B :: scoreOverall.name :: scoredDTs.name :: scoreDSs.name :: Nil) // :: scoreDTs.name :: collectedDScored :: Nil)
     val fromAgg = From(queryGroupByDS.toColumn(None))
     val groupByB = GroupBy(B :: Nil)
-    val orderBySome = orderScoreBy match {
-      case Some(p) => OrderBy((
-        if (p._2 == "desc") Column(p._1).desc
-        else Column(p._1).asc) :: Nil
-      )
-      case None => OrderBy(scoreOverall.desc :: Nil)
+    val orderBySome = orderColumn match {
+      case ("score", order) =>
+        OrderBy((
+          if (order == "desc") scoreOverall.name.desc
+          else scoreOverall.name.asc) :: Nil
+        )
+      case (_ , order) =>
+        OrderBy((
+          if (order == "desc") orderByC.name.desc
+          else orderByC.name.asc) :: Nil
+        )
     }
 
     val limitC = Limit(offset, size)
