@@ -14,8 +14,18 @@ abstract class Queryable {
 
 /**
  * QAOTF stands for Query for Associations on the fly computations
- * TODO sorting by scores
- * TODO using the AIDs and BIDs to the facets
+ *
+ * @param tableName table name to use for the associations on the fly query build
+ * @param AId the left ID will be fixed and it is required. It is required as no
+ *            propagation is still around
+ * @param AIDs a set of optional left IDs to use as unioni with the single ID
+ * @param BIDs an optional list of right IDs to fix to build the associations before the computations
+ * @param BFilter before compute the numbers we restrict the right ids by text prefixing
+ * @param orderScoreBy Ordering, ist is a pair with name and mode of sorting ("score", "desc")
+ * @param datasourceWeights List of weights to use
+ * @param nonPropagatedDatasources List of datasources to not propagate
+ * @param offset where to start the chunk of rows to return
+ * @param size how many rows to return in a chunk
  */
 case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[String],
                  BFilter: Option[String], orderScoreBy: Option[(String, String)],
@@ -77,8 +87,6 @@ case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[St
 
     val leftIdsC = F.set((AIDs + AId).map(literal).toSeq)
 
-    // build the boolean expression. Either with datasource propagation limitation (rna expression mainly)
-    // or not then all simplifies quite a lot
     val nonPP = F.set(nonPropagatedDatasources.map(literal).toSeq)
     val expressionLeft = if (nonPropagatedDatasources.nonEmpty) {
       F.or(
@@ -130,8 +138,6 @@ case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[St
   def simpleQuery(offset: Int, size: Int) = {
     val leftIdsC = F.set((AIDs + AId).map(literal).toSeq)
 
-    // build the boolean expression. Either with datasource propagation limitation (rna expression mainly)
-    // or not then all simplifies quite a lot
     val nonPP = F.set(nonPropagatedDatasources.map(literal).toSeq)
     val expressionLeft = if (nonPropagatedDatasources.nonEmpty) {
       F.or(

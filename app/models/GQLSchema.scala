@@ -15,11 +15,12 @@ import entities.Configuration.JSONImplicits._
 import play.api.{Configuration, Logger}
 import play.api.mvc.CookieBaker
 import sangria.execution.deferred._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
 import com.sksamuel.elastic4s.requests.searches._
 import com.sksamuel.elastic4s.requests.searches.sort._
-
+import models.GQLSchema.{associatedOTFDiseasesImp, associatedOTFTargetsImp}
 import models.entities.Configuration._
 
 trait GQLArguments {
@@ -47,7 +48,7 @@ trait GQLArguments {
   val scoreSorting = Argument("orderByScore", OptionInputType(StringType))
   val AId = Argument("A", StringType)
   val AIds = Argument("As", ListInputType(StringType))
-  val BIds = Argument("Bs", ListInputType(StringType))
+  val BIds = Argument("Bs", OptionInputType(ListInputType(StringType)))
 }
 
 trait GQLMeta {
@@ -147,24 +148,7 @@ trait GQLEntities extends GQLArguments {
 
   implicit val scoredDataTypeImp = deriveObjectType[Backend, ScoredComponent]()
 
-  implicit val associatedOTFTargetImp = deriveObjectType[Backend, AssociationOTF](
-    ObjectTypeName("AssociatedOTFTarget"),
-    ObjectTypeDescription("Associated Target Entity"),
-    ReplaceField("id", Field("target",
-      targetImp, Some("Target"),
-      resolve = r => targetsFetcher.defer(r.value.id)))
-  )
-
-  implicit val associatedOTFDiseaseImp = deriveObjectType[Backend, AssociationOTF](
-    ObjectTypeName("AssociatedOTFDisease"),
-    ObjectTypeDescription("Associated Disease Entity"),
-    ReplaceField("id", Field("disease",
-      diseaseImp, Some("Disease"),
-      resolve = r => diseasesFetcher.defer(r.value.id)))
-  )
-
-
-  implicit val associatedTargetImp = deriveObjectType[Backend, Association](
+  implicit val associatedOTFTargetImp = deriveObjectType[Backend, Association](
     ObjectTypeName("AssociatedTarget"),
     ObjectTypeDescription("Associated Target Entity"),
     ReplaceField("id", Field("target",
@@ -172,7 +156,7 @@ trait GQLEntities extends GQLArguments {
       resolve = r => targetsFetcher.defer(r.value.id)))
   )
 
-  implicit val associatedDiseaseImp = deriveObjectType[Backend, Association](
+  implicit val associatedOTFDiseaseImp = deriveObjectType[Backend, Association](
     ObjectTypeName("AssociatedDisease"),
     ObjectTypeDescription("Associated Disease Entity"),
     ReplaceField("id", Field("disease",
@@ -413,20 +397,22 @@ trait GQLEntities extends GQLArguments {
             Map("A.keyword" -> ctx.value.id),
             ctx.arg(pageArg))),
 
-      Field("associatedDiseases", ListType(associatedDiseaseImp),
-        description = Some("Ranked list of diseases associated to this target"),
-        arguments = indrectEvidences :: freeTextQuery :: pageArg :: Nil,
-        resolve = ctx =>
-          ctx.ctx.getAssociationsByTarget(ctx.value.id, ctx.arg(indrectEvidences).getOrElse(false) ,ctx.arg(freeTextQuery), ctx.arg(pageArg)))
-
-//      Field("associationsOnTheFly", associationsImp,
-//        description = Some("Associations for a fixed target"),
-//        arguments = datasourceSettingsListArg :: networkExpansionId :: pageArg :: Nil,
-//        resolve = ctx =>
-//          ctx.ctx.getAssociationsTargetFixed(ctx.value.id,
-//            ctx.arg(datasourceSettingsListArg),
-//            ctx.arg(networkExpansionId),
-//            ctx.arg(pageArg)))
+      Field("associatedDiseases", associatedOTFDiseasesImp,
+        description = Some("associations on the fly"),
+        arguments = BIds :: indrectEvidences :: datasourceSettingsListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
+        resolve = ctx => ctx.ctx.getAssociationsTargetFixed(
+          ctx.value.id,
+          ctx arg datasourceSettingsListArg,
+          ctx arg indrectEvidences getOrElse(false),
+          ctx arg BIds map (_.toSet) getOrElse(Set.empty),
+          ctx arg BFilterString,
+          (ctx arg scoreSorting) map (_.split(" ").take(2).toList match {
+            case a :: b :: Nil => (a, b)
+            case a :: Nil => (a, "desc")
+            case _ => ("score", "desc")
+          }),
+          ctx arg pageArg
+        )),
   ))
 
   implicit val phenotypeImp = deriveObjectType[Backend, Phenotype](
@@ -490,20 +476,23 @@ trait GQLEntities extends GQLArguments {
           ctx.ctx.getRelatedDiseases(
             Map("A.keyword" -> ctx.value.id),
             ctx.arg(pageArg))),
-      Field("associatedTargets", ListType(associatedTargetImp),
-        description = Some("Ranked list of targets associated to this disease"),
-        arguments = indrectEvidences :: freeTextQuery :: pageArg :: Nil,
-        resolve = ctx =>
-          ctx.ctx.getAssociationsByDisease(ctx.value.id, ctx.arg(indrectEvidences).getOrElse(true), ctx.arg(freeTextQuery), ctx.arg(pageArg)))
 
-//      Field("associationsOnTheFly", associationsImp,
-//        description = Some("Associations for a fixed disease"),
-//        arguments = datasourceSettingsListArg :: networkExpansionId :: pageArg :: Nil,
-//        resolve = ctx =>
-//          ctx.ctx.getAssociationsDiseaseFixed(ctx.value.id,
-//            ctx.arg(datasourceSettingsListArg),
-//            ctx.arg(networkExpansionId),
-//            ctx.arg(pageArg)))
+      Field("associatedTargets", associatedOTFTargetsImp,
+        description = Some("associations on the fly"),
+        arguments = BIds :: indrectEvidences :: datasourceSettingsListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
+        resolve = ctx => ctx.ctx.getAssociationsDiseaseFixed(
+          ctx.value.id,
+          ctx arg datasourceSettingsListArg,
+          ctx arg indrectEvidences getOrElse(true),
+          ctx arg BIds map (_.toSet) getOrElse(Set.empty),
+          ctx arg BFilterString,
+          (ctx arg scoreSorting) map (_.split(" ").take(2).toList match {
+            case a :: b :: Nil => (a, b)
+            case a :: Nil => (a, "desc")
+            case _ => ("score", "desc")
+          }),
+          ctx arg pageArg
+        ))
     ))
 
   // drug
@@ -653,47 +642,21 @@ trait GQLEntities extends GQLArguments {
   implicit val clickhouseSettingsImp = deriveObjectType[Backend, ClickhouseSettings]()
 
   implicit lazy val networkNodeImp = deriveObjectType[Backend, NetworkNode]()
-  implicit lazy val associationImp = deriveObjectType[Backend, Association]()
-//  implicit lazy val associationsImp = deriveObjectType[Backend, Associations]()
 
   implicit val evidenceSourceImp = deriveObjectType[Backend, EvidenceSource]()
-  implicit val associatedOTFTargetsImp = deriveObjectType[Backend, AssociationsOTF](
-    ObjectTypeName("AssociatedTargetsOTF"),
+  implicit val associatedOTFTargetsImp = deriveObjectType[Backend, Associations](
+    ObjectTypeName("AssociatedTargets"),
     ReplaceField("rows", Field("rows",
       ListType(associatedOTFTargetImp), Some("Associated Targets using (On the fly method)"),
       resolve = r => r.value.rows))
   )
 
-  implicit val associatedOTFDiseasesImp = deriveObjectType[Backend, AssociationsOTF](
-    ObjectTypeName("AssociatedDiseasesOTF"),
+  implicit val associatedOTFDiseasesImp = deriveObjectType[Backend, Associations](
+    ObjectTypeName("AssociatedDiseases"),
     ReplaceField("rows", Field("rows",
       ListType(associatedOTFDiseaseImp), Some("Associated Targets using (On the fly method)"),
       resolve = r => r.value.rows))
   )
-
-  // implement associations
-//  val associationsObTheFlyGQLImp = ObjectType("AssociationsOnTheFly",
-//    "Compute Associations on the fly",
-//    fields[Backend, Unit](
-//      Field("meta", clickhouseSettingsImp,
-//        None,
-//        resolve = _.ctx.defaultOTSettings.clickhouse),
-//      Field("byTargetFixed", associationsImp,
-//        description = Some("Associations for a fixed target"),
-//        arguments = ensemblId :: datasourceSettingsListArg :: networkExpansionId :: pageArg :: Nil,
-//        resolve = ctx =>
-//          ctx.ctx.getAssociationsTargetFixed(ctx.arg(ensemblId),
-//            ctx.arg(datasourceSettingsListArg),
-//            ctx.arg(networkExpansionId),
-//            ctx.arg(pageArg))),
-//      Field("byDiseaseFixed", associationsImp,
-//        description = Some("Associations for a fixed disease"),
-//        arguments = efoId :: datasourceSettingsListArg :: networkExpansionId :: pageArg :: Nil,
-//        resolve = ctx => ctx.ctx.getAssociationsDiseaseFixed(ctx.arg(efoId),
-//          ctx.arg(datasourceSettingsListArg),
-//          ctx.arg(networkExpansionId),
-//          ctx.arg(pageArg)))
-//    ))
 
   implicit val URLImp: ObjectType[Backend, URL] = deriveObjectType[Backend, URL](
     ObjectTypeDescription("Source URL for clinical trials, FDA and package inserts"),
@@ -829,37 +792,39 @@ object GQLSchema extends GQLMeta with GQLEntities {
           ctx.ctx.search(ctx.arg(queryString), ctx.arg(pageArg), entities)
         }),
 
-      Field("aotfByDisease", associatedOTFTargetsImp,
-        description = Some("associations on the fly"),
-        arguments = AId :: indrectEvidences :: BFilterString :: scoreSorting :: pageArg :: Nil,
-        resolve = ctx => ctx.ctx.getAssociationsDiseaseFixed(
-          ctx arg AId,
-          None,
-          ctx arg indrectEvidences getOrElse(true),
-          ctx arg BFilterString,
-          (ctx arg scoreSorting) map (_.split(" ").take(2).toList match {
-            case a :: b :: Nil => (a, b)
-            case a :: Nil => (a, "desc")
-            case _ => ("score_overall", "desc")
-          }),
-          ctx arg pageArg
-        )),
-
-      Field("aotfByTarget", associatedOTFDiseasesImp,
-        description = Some("associations on the fly"),
-        arguments = AId :: indrectEvidences :: BFilterString :: scoreSorting :: pageArg :: Nil,
-        resolve = ctx => ctx.ctx.getAssociationsTargetFixed(
-          ctx arg AId,
-          None,
-          ctx arg indrectEvidences getOrElse(false),
-          ctx arg BFilterString,
-          (ctx arg scoreSorting) map (_.split(" ").take(2).toList match {
-            case a :: b :: Nil => (a, b)
-            case a :: Nil => (a, "desc")
-            case _ => ("score_overall", "desc")
-          }),
-          ctx arg pageArg
-        )),
+//      Field("aotfByDisease", associatedOTFTargetsImp,
+//        description = Some("associations on the fly"),
+//        arguments = AId :: BIds :: indrectEvidences :: datasourceSettingsListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
+//        resolve = ctx => ctx.ctx.getAssociationsDiseaseFixed(
+//          ctx arg AId,
+//          ctx arg datasourceSettingsListArg,
+//          ctx arg indrectEvidences getOrElse(true),
+//          ctx arg BIds map (_.toSet) getOrElse(Set.empty),
+//          ctx arg BFilterString,
+//          (ctx arg scoreSorting) map (_.split(" ").take(2).toList match {
+//            case a :: b :: Nil => (a, b)
+//            case a :: Nil => (a, "desc")
+//            case _ => ("score", "desc")
+//          }),
+//          ctx arg pageArg
+//        )),
+//
+//      Field("aotfByTarget", associatedOTFDiseasesImp,
+//        description = Some("associations on the fly"),
+//        arguments = AId :: BIds :: indrectEvidences :: datasourceSettingsListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
+//        resolve = ctx => ctx.ctx.getAssociationsTargetFixed(
+//          ctx arg AId,
+//          ctx arg datasourceSettingsListArg,
+//          ctx arg indrectEvidences getOrElse(false),
+//          ctx arg BIds map (_.toSet) getOrElse(Set.empty),
+//          ctx arg BFilterString,
+//          (ctx arg scoreSorting) map (_.split(" ").take(2).toList match {
+//            case a :: b :: Nil => (a, b)
+//            case a :: Nil => (a, "desc")
+//            case _ => ("score", "desc")
+//          }),
+//          ctx arg pageArg
+//        )),
 
       Field("associationDatasources", ListType(evidenceSourceImp),
         description = Some("The complete list of all possible datasources"),

@@ -10,11 +10,8 @@ import com.sksamuel.elastic4s.http.JavaClient
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
-import scala.util.{Failure, Success}
 import models.entities.Configuration._
 import models.entities.Configuration.JSONImplicits._
-import Entities._
-import Entities.JSONImplicits._
 import models.db.QAOTF
 import models.entities.Associations._
 import models.entities.Associations.DBImplicits._
@@ -271,26 +268,13 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
   def getAssociationDatasources: Future[Vector[EvidenceSource]] =
     dbRetriever.getUniqList[EvidenceSource](Seq("datasource_id", "datatype_id"), "ot.aotf_direct_d")
 
-  def getAssociationsByDisease(id: String, indirect: Boolean, filter: Option[String], pagination: Option[Pagination]):
-  Future[Vector[Association]] = {
-    val defaultPagination = Pagination.mkDefault
-    val dsV = defaultOTSettings.clickhouse.harmonic.datasources
-    dbRetriever.getAssocationsByDisease(id, indirect, filter, dsV, pagination.getOrElse(defaultPagination))
-  }
-
-  def getAssociationsByTarget(id: String, indirect: Boolean, filter: Option[String], pagination: Option[Pagination]):
-  Future[Vector[Association]] = {
-    val defaultPagination = Pagination.mkDefault
-    val dsV = defaultOTSettings.clickhouse.harmonic.datasources
-    dbRetriever.getAssocationsByTarget(id, indirect, filter, dsV, pagination.getOrElse(defaultPagination))
-  }
-
   def getAssociationsDiseaseFixed(id: String,
                                   datasources: Option[Seq[DatasourceSettings]],
                                   indirect: Boolean,
+                                  targetSet: Set[String],
                                   filter: Option[String],
                                   orderBy: Option[(String, String)],
-                                  pagination: Option[Pagination]): Future[AssociationsOTF] = {
+                                  pagination: Option[Pagination]): Future[Associations] = {
     val page = pagination.getOrElse(Pagination.mkDefault)
     val dss = datasources.getOrElse(defaultOTSettings.clickhouse.harmonic.datasources)
 
@@ -300,7 +284,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       defaultOTSettings.clickhouse.disease.associations.name,
       id,
       _,
-      Set.empty,
+      targetSet,
       filter,
       orderBy,
       weights,
@@ -321,8 +305,8 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
             case tIDs =>
               logger.debug(s"get ${tIDs.size} targets")
 
-              dbRetriever.executeQuery[AssociationOTF, Query](fullQ) map {
-                case assocs => AssociationsOTF(dss, tIDs.size, assocs)
+              dbRetriever.executeQuery[Association, Query](fullQ) map {
+                case assocs => Associations(dss, tIDs.size, assocs)
               }
           }
 
@@ -334,9 +318,10 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
   def getAssociationsTargetFixed(id: String,
                                  datasources: Option[Seq[DatasourceSettings]],
                                  indirect: Boolean,
+                                 diseaseSet: Set[String],
                                  filter: Option[String],
                                  orderBy: Option[(String, String)],
-                                 pagination: Option[Pagination]): Future[AssociationsOTF] = {
+                                 pagination: Option[Pagination]): Future[Associations] = {
     val page = pagination.getOrElse(Pagination.mkDefault)
     val dss = datasources.getOrElse(defaultOTSettings.clickhouse.harmonic.datasources)
 
@@ -346,7 +331,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       defaultOTSettings.clickhouse.target.associations.name,
       id,
       _,
-      Set.empty,
+      diseaseSet,
       filter,
       orderBy,
       weights,
@@ -367,8 +352,8 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
             case dIDs =>
               logger.debug(s"get ${dIDs.size} diseases")
 
-              dbRetriever.executeQuery[AssociationOTF, Query](fullQ) map {
-                case assocs => AssociationsOTF(dss, dIDs.size, assocs)
+              dbRetriever.executeQuery[Association, Query](fullQ) map {
+                case assocs => Associations(dss, dIDs.size, assocs)
               }
           }
 

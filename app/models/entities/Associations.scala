@@ -9,56 +9,31 @@ import play.api.Logger
 import play.api.libs.json.Json
 import slick.jdbc.GetResult
 
+case class ScoredComponent(id: String, score: Double)
+
 /**
  * this is one side of an full association as the other part is fixed. In this
  * case those are T <-> D and an association is built based on a harmonic computation
  * where the overall score is `score` and each datasource contribution is contained
  * in `scorePerDS` vector
- * @param id the Id of the entity which is associated
- * @param score the overall harmonic sum score built up from its datasource contriutions
- * @param scorePerDS the list of harmonic scores one per datasource. the order of the scores
- *                   come fixed from the order of datasource list passed to the query
  */
-case class Association(id: String,
-                       score: Double,
-                       scorePerDS: Vector[Double],
-                       idPerDS: Vector[String],
-                       scorePerDT: Vector[Double],
-                       idPerDT: Vector[String])
+case class Association(id: String, score: Double,
+                       datatypeScores: Vector[ScoredComponent],
+                       datasourceScores: Vector[ScoredComponent])
 
-case class ScoredComponent(id: String, score: Double)
-case class AssociationOTF(id: String, score: Double,
-                          datatypeScores: Vector[ScoredComponent],
-                          datasourceScores: Vector[ScoredComponent])
-
-case class AssociationsOTF(datasources: Seq[DatasourceSettings],
-                          count: Long,
-                          rows: Vector[AssociationOTF])
-
-/**
- * Agroup of associations to one node.
- * @param network the configuration for the progagation network used
- * @param node the `NetworkNode` contains the id used for the associations
- *             and its neighbours
- * @param datasources the list of `DatasourceSettings` per datasource
- * @param rows list of `Association` objects
- */
-case class Associations(network: Option[LUTableSettings],
-                        node: Option[NetworkNode],
-                        datasources: Seq[DatasourceSettings],
+case class Associations(datasources: Seq[DatasourceSettings],
+                        count: Long,
                         rows: Vector[Association])
 
 case class EvidenceSource(datasource: String, datatype: String)
 
 object Associations {
-  val empty = AssociationsOTF(Seq.empty, 0, Vector.empty)
+  val empty = Associations(Seq.empty, 0, Vector.empty)
 
   object DBImplicits {
     val logger = Logger(this.getClass)
-    implicit val getAssociationRowFromDB: GetResult[Association] =
-      GetResult(r => Association(r.<<, r.<<, DSeqRep(r.<<), StrSeqRep(r.<<), DSeqRep(r.<<), StrSeqRep(r.<<)))
 
-    implicit val getAssociationOTFRowFromDB: GetResult[AssociationOTF] = {
+    implicit val getAssociationOTFRowFromDB: GetResult[Association] = {
 
       GetResult(r => {
         val id: String = r.<<
@@ -66,7 +41,7 @@ object Associations {
         val tuples1: String = r.<<
         val tuples2: String = r.<<
 
-        AssociationOTF(id, score,
+        Association(id, score,
           TupleSeqRep[ScoredComponent](tuples1, tuple => {
             val tokens = tuple.split(",")
             val left = parseFastString(tokens(0))
@@ -88,10 +63,8 @@ object Associations {
   }
 
   object JSONImplicits {
-    implicit val AssociationImp = Json.format[Association]
     implicit val scoredDataTypeImp = Json.format[ScoredComponent]
-    implicit val AssociationOTFImp = Json.format[AssociationOTF]
-    implicit val associationsImp = Json.format[Associations]
+    implicit val AssociationOTFImp = Json.format[Association]
   }
 
 }
