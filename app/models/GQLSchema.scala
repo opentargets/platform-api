@@ -792,40 +792,6 @@ object GQLSchema extends GQLMeta with GQLEntities {
           ctx.ctx.search(ctx.arg(queryString), ctx.arg(pageArg), entities)
         }),
 
-//      Field("aotfByDisease", associatedOTFTargetsImp,
-//        description = Some("associations on the fly"),
-//        arguments = AId :: BIds :: indrectEvidences :: datasourceSettingsListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
-//        resolve = ctx => ctx.ctx.getAssociationsDiseaseFixed(
-//          ctx arg AId,
-//          ctx arg datasourceSettingsListArg,
-//          ctx arg indrectEvidences getOrElse(true),
-//          ctx arg BIds map (_.toSet) getOrElse(Set.empty),
-//          ctx arg BFilterString,
-//          (ctx arg scoreSorting) map (_.split(" ").take(2).toList match {
-//            case a :: b :: Nil => (a, b)
-//            case a :: Nil => (a, "desc")
-//            case _ => ("score", "desc")
-//          }),
-//          ctx arg pageArg
-//        )),
-//
-//      Field("aotfByTarget", associatedOTFDiseasesImp,
-//        description = Some("associations on the fly"),
-//        arguments = AId :: BIds :: indrectEvidences :: datasourceSettingsListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
-//        resolve = ctx => ctx.ctx.getAssociationsTargetFixed(
-//          ctx arg AId,
-//          ctx arg datasourceSettingsListArg,
-//          ctx arg indrectEvidences getOrElse(false),
-//          ctx arg BIds map (_.toSet) getOrElse(Set.empty),
-//          ctx arg BFilterString,
-//          (ctx arg scoreSorting) map (_.split(" ").take(2).toList match {
-//            case a :: b :: Nil => (a, b)
-//            case a :: Nil => (a, "desc")
-//            case _ => ("score", "desc")
-//          }),
-//          ctx arg pageArg
-//        )),
-
       Field("associationDatasources", ListType(evidenceSourceImp),
         description = Some("The complete list of all possible datasources"),
         resolve = ctx => ctx.ctx.getAssociationDatasources)
