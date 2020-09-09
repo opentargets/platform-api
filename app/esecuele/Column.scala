@@ -1,4 +1,4 @@
-package elesecu
+package esecuele
 
 case class Column(raw: Expression, alias: Option[String]) extends Rep {
   lazy val rep: String = {

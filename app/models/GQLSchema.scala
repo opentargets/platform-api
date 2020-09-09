@@ -15,20 +15,17 @@ import entities.Configuration.JSONImplicits._
 import play.api.{Configuration, Logger}
 import play.api.mvc.CookieBaker
 import sangria.execution.deferred._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
 import com.sksamuel.elastic4s.requests.searches._
 import com.sksamuel.elastic4s.requests.searches.sort._
-
+import models.GQLSchema.{associatedOTFDiseasesImp, associatedOTFTargetsImp}
 import models.entities.Configuration._
 
 trait GQLArguments {
   implicit val paginationFormatImp = Json.format[Pagination]
-  implicit val sortOrderImp = deriveEnumType[SortOrder]()
-  implicit val sortEntityImp = deriveEnumType[SortEntity]()
 
-  val sortFieldArg = Argument("sortField", OptionInputType(sortEntityImp), description = "Sort field name")
-  val sortOrderArg = Argument("sortOrder", OptionInputType(sortOrderImp), description = "Sort type")
   val pagination = deriveInputObjectType[Pagination]()
   val entityNames = Argument("entityNames", OptionInputType(ListInputType(StringType)),
     description = "List of entity names to search for (target, disease, drug,...)")
@@ -44,6 +41,14 @@ trait GQLArguments {
   val ensemblIds = Argument("ensemblIds", ListInputType(StringType), description = "List of Ensembl IDs")
   val chemblId = Argument("chemblId", StringType, description = "Chembl ID" )
   val chemblIds = Argument("chemblIds", ListInputType(StringType), description = "List of Chembl IDs")
+  val indrectEvidences = Argument("enableIndirect", OptionInputType(BooleanType),
+    "Use disease ontology to capture evidences from all descendants to build associations")
+
+  val BFilterString = Argument("BFilter", OptionInputType(StringType))
+  val scoreSorting = Argument("orderByScore", OptionInputType(StringType))
+  val AId = Argument("A", StringType)
+  val AIds = Argument("As", ListInputType(StringType))
+  val BIds = Argument("Bs", OptionInputType(ListInputType(StringType)))
 }
 
 trait GQLMeta {
@@ -57,6 +62,13 @@ trait GQLEntities extends GQLArguments {
 
   val entityImp = InterfaceType("Entity", fields[Backend, Entity](
     Field("id", StringType, resolve = _.value.id)))
+
+  implicit val datasourceSettingsJsonImp = Json.format[DatasourceSettings]
+  implicit val datasourceSettingsInputImp = deriveInputObjectType[DatasourceSettings](
+    InputObjectTypeName("DatasourceSettingsInput")
+  )
+  val datasourceSettingsListArg = Argument("datasources",
+    OptionInputType(ListInputType(datasourceSettingsInputImp)))
 
   // target
   implicit val targetHasId = HasId[Target, String](_.id)
@@ -133,6 +145,24 @@ trait GQLEntities extends GQLArguments {
   implicit val tractabilityAntibodyImp = deriveObjectType[Backend, TractabilityAntibody]()
   implicit val tractabilitySmallMoleculeImp = deriveObjectType[Backend, TractabilitySmallMolecule]()
   implicit val tractabilityImp = deriveObjectType[Backend, Tractability]()
+
+  implicit val scoredDataTypeImp = deriveObjectType[Backend, ScoredComponent]()
+
+  implicit val associatedOTFTargetImp = deriveObjectType[Backend, Association](
+    ObjectTypeName("AssociatedTarget"),
+    ObjectTypeDescription("Associated Target Entity"),
+    ReplaceField("id", Field("target",
+      targetImp, Some("Target"),
+      resolve = r => targetsFetcher.defer(r.value.id)))
+  )
+
+  implicit val associatedOTFDiseaseImp = deriveObjectType[Backend, Association](
+    ObjectTypeName("AssociatedDisease"),
+    ObjectTypeDescription("Associated Disease Entity"),
+    ReplaceField("id", Field("disease",
+      diseaseImp, Some("Disease"),
+      resolve = r => diseasesFetcher.defer(r.value.id)))
+  )
 
   implicit val relatedTargetImp = deriveObjectType[Backend, DDRelation](
     ObjectTypeName("RelatedTarget"),
@@ -224,13 +254,6 @@ trait GQLEntities extends GQLArguments {
     DocumentField("critVal", "LLR critical value to define significance"),
     DocumentField("rows", "Significant adverse event entries")
   )
-
-  implicit val datasourceSettingsJsonImp = Json.format[DatasourceSettings]
-  val datasourceSettingsInputImp = deriveInputObjectType[DatasourceSettings](
-    InputObjectTypeName("DatasourceSettingsInput")
-  )
-  val datasourceSettingsListArg = Argument("datasources",
-     OptionInputType(ListInputType(datasourceSettingsInputImp)))
 
   implicit val otarProjectImp = deriveObjectType[Backend, OtarProject]()
   implicit val otarProjectsImp = deriveObjectType[Backend, OtarProjects]()
@@ -374,14 +397,22 @@ trait GQLEntities extends GQLArguments {
             Map("A.keyword" -> ctx.value.id),
             ctx.arg(pageArg))),
 
-      Field("associationsOnTheFly", associationsImp,
-        description = Some("Associations for a fixed target"),
-        arguments = datasourceSettingsListArg :: networkExpansionId :: pageArg :: Nil,
-        resolve = ctx =>
-          ctx.ctx.getAssociationsTargetFixed(ctx.value.id,
-            ctx.arg(datasourceSettingsListArg),
-            ctx.arg(networkExpansionId),
-            ctx.arg(pageArg)))
+      Field("associatedDiseases", associatedOTFDiseasesImp,
+        description = Some("associations on the fly"),
+        arguments = BIds :: indrectEvidences :: datasourceSettingsListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
+        resolve = ctx => ctx.ctx.getAssociationsTargetFixed(
+          ctx.value.id,
+          ctx arg datasourceSettingsListArg,
+          ctx arg indrectEvidences getOrElse(false),
+          ctx arg BIds map (_.toSet) getOrElse(Set.empty),
+          ctx arg BFilterString,
+          (ctx arg scoreSorting) map (_.split(" ").take(2).toList match {
+            case a :: b :: Nil => (a, b)
+            case a :: Nil => (a, "desc")
+            case _ => ("score", "desc")
+          }),
+          ctx arg pageArg
+        )),
   ))
 
   implicit val phenotypeImp = deriveObjectType[Backend, Phenotype](
@@ -446,14 +477,22 @@ trait GQLEntities extends GQLArguments {
             Map("A.keyword" -> ctx.value.id),
             ctx.arg(pageArg))),
 
-      Field("associationsOnTheFly", associationsImp,
-        description = Some("Associations for a fixed disease"),
-        arguments = datasourceSettingsListArg :: networkExpansionId :: pageArg :: Nil,
-        resolve = ctx =>
-          ctx.ctx.getAssociationsDiseaseFixed(ctx.value.id,
-            ctx.arg(datasourceSettingsListArg),
-            ctx.arg(networkExpansionId),
-            ctx.arg(pageArg)))
+      Field("associatedTargets", associatedOTFTargetsImp,
+        description = Some("associations on the fly"),
+        arguments = BIds :: indrectEvidences :: datasourceSettingsListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
+        resolve = ctx => ctx.ctx.getAssociationsDiseaseFixed(
+          ctx.value.id,
+          ctx arg datasourceSettingsListArg,
+          ctx arg indrectEvidences getOrElse(true),
+          ctx arg BIds map (_.toSet) getOrElse(Set.empty),
+          ctx arg BFilterString,
+          (ctx arg scoreSorting) map (_.split(" ").take(2).toList match {
+            case a :: b :: Nil => (a, b)
+            case a :: Nil => (a, "desc")
+            case _ => ("score", "desc")
+          }),
+          ctx arg pageArg
+        ))
     ))
 
   // drug
@@ -603,32 +642,21 @@ trait GQLEntities extends GQLArguments {
   implicit val clickhouseSettingsImp = deriveObjectType[Backend, ClickhouseSettings]()
 
   implicit lazy val networkNodeImp = deriveObjectType[Backend, NetworkNode]()
-  implicit lazy val associationImp = deriveObjectType[Backend, Association]()
-  implicit lazy val associationsImp = deriveObjectType[Backend, Associations]()
 
-  // implement associations
-  val associationsObTheFlyGQLImp = ObjectType("AssociationsOnTheFly",
-    "Compute Associations on the fly",
-    fields[Backend, Unit](
-      Field("meta", clickhouseSettingsImp,
-        None,
-        resolve = _.ctx.defaultOTSettings.clickhouse),
-      Field("byTargetFixed", associationsImp,
-        description = Some("Associations for a fixed target"),
-        arguments = ensemblId :: datasourceSettingsListArg :: networkExpansionId :: pageArg :: Nil,
-        resolve = ctx =>
-          ctx.ctx.getAssociationsTargetFixed(ctx.arg(ensemblId),
-            ctx.arg(datasourceSettingsListArg),
-            ctx.arg(networkExpansionId),
-            ctx.arg(pageArg))),
-      Field("byDiseaseFixed", associationsImp,
-        description = Some("Associations for a fixed disease"),
-        arguments = efoId :: datasourceSettingsListArg :: networkExpansionId :: pageArg :: Nil,
-        resolve = ctx => ctx.ctx.getAssociationsDiseaseFixed(ctx.arg(efoId),
-          ctx.arg(datasourceSettingsListArg),
-          ctx.arg(networkExpansionId),
-          ctx.arg(pageArg)))
-    ))
+  implicit val evidenceSourceImp = deriveObjectType[Backend, EvidenceSource]()
+  implicit val associatedOTFTargetsImp = deriveObjectType[Backend, Associations](
+    ObjectTypeName("AssociatedTargets"),
+    ReplaceField("rows", Field("rows",
+      ListType(associatedOTFTargetImp), Some("Associated Targets using (On the fly method)"),
+      resolve = r => r.value.rows))
+  )
+
+  implicit val associatedOTFDiseasesImp = deriveObjectType[Backend, Associations](
+    ObjectTypeName("AssociatedDiseases"),
+    ReplaceField("rows", Field("rows",
+      ListType(associatedOTFDiseaseImp), Some("Associated Targets using (On the fly method)"),
+      resolve = r => r.value.rows))
+  )
 
   implicit val URLImp: ObjectType[Backend, URL] = deriveObjectType[Backend, URL](
     ObjectTypeDescription("Source URL for clinical trials, FDA and package inserts"),
@@ -763,9 +791,10 @@ object GQLSchema extends GQLMeta with GQLEntities {
           val entities = ctx.arg(entityNames).getOrElse(Seq.empty)
           ctx.ctx.search(ctx.arg(queryString), ctx.arg(pageArg), entities)
         }),
-      Field("associationsOnTheFly", associationsObTheFlyGQLImp,
-        Some("associations on the fly"),
-        resolve = ctx => ctx.value)
+
+      Field("associationDatasources", ListType(evidenceSourceImp),
+        description = Some("The complete list of all possible datasources"),
+        resolve = ctx => ctx.ctx.getAssociationDatasources)
     ))
 
   val schema = Schema(query)

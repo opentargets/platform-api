@@ -2,9 +2,9 @@ package models.entities
 
 import clickhouse.rep.SeqRep._
 import clickhouse.rep.SeqRep.Implicits._
-import elesecu._
-import elesecu.{Functions => F}
-import elesecu.Query
+import esecuele._
+import esecuele.{Functions => F}
+import esecuele.Query
 import models.entities.Configuration.LUTableSettings
 import play.api.libs.json.Json
 import slick.jdbc.GetResult

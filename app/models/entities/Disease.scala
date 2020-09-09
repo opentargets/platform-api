@@ -15,6 +15,8 @@ case class Disease(id: String,
                    synonyms: Seq[String],
                    parents: Seq[String],
                    children: Seq[String],
+                   ancestors: Seq[String],
+                   descendants: Seq[String],
                    phenotypes: Seq[Phenotype],
                    isTherapeuticArea: Boolean
                   )
@@ -39,6 +41,8 @@ object Disease {
         (__ \ "synonyms").read[Seq[String]] and
         (__ \ "parents").read[Seq[String]] and
         (__ \ "children").read[Seq[String]] and
+        (__ \ "ancestors").read[Seq[String]] and
+        (__ \ "descendants").read[Seq[String]] and
         (__ \ "phenotypes" \ "rows").readWithDefault[Seq[Phenotype]](Seq.empty) and
         (__ \ "ontology" \ "isTherapeuticArea").read[Boolean]
     )(Disease.apply _)

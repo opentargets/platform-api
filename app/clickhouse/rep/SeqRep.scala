@@ -1,5 +1,8 @@
 package clickhouse.rep
 
+import play.api.Logger
+import shapeless._
+
 /** Clickhouse supports Array of elements from different types and this is an approximation
   * to it.
   *
@@ -15,6 +18,8 @@ sealed abstract class SeqRep[T, C[_]](val from: String) {
 }
 
 object SeqRep {
+  def parseFastString(str: String) = str.slice(1, str.length - 1)
+
   sealed abstract class NumSeqRep[T](override val from: String, val f: String => T) extends SeqRep[T, Vector](from) {
     override protected def parse(from: String): SeqT = {
       if (from.nonEmpty) {
@@ -38,6 +43,20 @@ object SeqRep {
         from.length match {
           case n if n > minLenTokensForStr =>
             from.slice(1, n - 1).split(",").map(t => t.slice(1, t.length - 1)).toVector
+          case _ => Vector.empty
+        }
+      } else
+        Vector.empty
+    }
+  }
+
+  case class TupleSeqRep[T](override val from: String, val f: String => T) extends SeqRep[T, Vector](from) {
+    override protected def parse(from: String): SeqT = {
+      if (from.nonEmpty) {
+        from.length match {
+          case n if n > minLenTokensForStr =>
+            val offset: Int = minLenTokensForStr / 2
+            from.slice(offset, n - offset).split("\\),\\(").map(f(_)).toVector
           case _ => Vector.empty
         }
       } else
