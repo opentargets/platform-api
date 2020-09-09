@@ -401,7 +401,7 @@ trait GQLEntities extends GQLArguments {
         description = Some("associations on the fly"),
         arguments = BIds :: indrectEvidences :: datasourceSettingsListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
         resolve = ctx => ctx.ctx.getAssociationsTargetFixed(
-          ctx.value.id,
+          ctx.value,
           ctx arg datasourceSettingsListArg,
           ctx arg indrectEvidences getOrElse(false),
           ctx arg BIds map (_.toSet) getOrElse(Set.empty),
@@ -481,7 +481,7 @@ trait GQLEntities extends GQLArguments {
         description = Some("associations on the fly"),
         arguments = BIds :: indrectEvidences :: datasourceSettingsListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
         resolve = ctx => ctx.ctx.getAssociationsDiseaseFixed(
-          ctx.value.id,
+          ctx.value,
           ctx arg datasourceSettingsListArg,
           ctx arg indrectEvidences getOrElse(true),
           ctx arg BIds map (_.toSet) getOrElse(Set.empty),

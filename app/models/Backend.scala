@@ -268,7 +268,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
   def getAssociationDatasources: Future[Vector[EvidenceSource]] =
     dbRetriever.getUniqList[EvidenceSource](Seq("datasource_id", "datatype_id"), "ot.aotf_direct_d")
 
-  def getAssociationsDiseaseFixed(id: String,
+  def getAssociationsDiseaseFixed(disease: Disease,
                                   datasources: Option[Seq[DatasourceSettings]],
                                   indirect: Boolean,
                                   targetSet: Set[String],
@@ -282,7 +282,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val dontPropagate = dss.withFilter(!_.propagate).map(_.id).toSet
     val aotfQ = QAOTF(
       defaultOTSettings.clickhouse.disease.associations.name,
-      id,
+      disease.id,
       _,
       targetSet,
       filter,
@@ -292,30 +292,23 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       page.offset, page.size)
 
 
-    getDiseases(Seq(id)) flatMap {
-      case v => v.headOption match {
-        case Some(d) =>
-          logger.debug(s"get disease id ${d.name}")
-          val dIDs = d.descendants.toSet + d.id
-          val q = aotfQ(if (indirect) dIDs else Set.empty)
-          val simpleQ = q.simpleQuery(0, 100000)
-          val fullQ = q.query
+    logger.debug(s"get disease id ${disease.name}")
+    val dIDs = disease.descendants.toSet + disease.id
+    val q = aotfQ(if (indirect) dIDs else Set.empty)
+    val simpleQ = q.simpleQuery(0, 100000)
+    val fullQ = q.query
 
-          dbRetriever.executeQuery[String, Query](simpleQ) flatMap {
-            case tIDs =>
-              logger.debug(s"get ${tIDs.size} targets")
+    dbRetriever.executeQuery[String, Query](simpleQ) flatMap {
+      case tIDs =>
+        logger.debug(s"get ${tIDs.size} targets")
 
-              dbRetriever.executeQuery[Association, Query](fullQ) map {
-                case assocs => Associations(dss, tIDs.size, assocs)
-              }
-          }
-
-        case None => Future.successful(Associations.empty)
-      }
+        dbRetriever.executeQuery[Association, Query](fullQ) map {
+          case assocs => Associations(dss, tIDs.size, assocs)
+        }
     }
   }
 
-  def getAssociationsTargetFixed(id: String,
+  def getAssociationsTargetFixed(target: Target,
                                  datasources: Option[Seq[DatasourceSettings]],
                                  indirect: Boolean,
                                  diseaseSet: Set[String],
@@ -329,7 +322,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val dontPropagate = dss.withFilter(!_.propagate).map(_.id).toSet
     val aotfQ = QAOTF(
       defaultOTSettings.clickhouse.target.associations.name,
-      id,
+      target.id,
       _,
       diseaseSet,
       filter,
@@ -339,26 +332,19 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       page.offset, page.size)
 
 
-    getTargets(Seq(id)) flatMap {
-      case v => v.headOption match {
-        case Some(d) =>
-          logger.debug(s"get target id ${d.approvedSymbol}")
-          val tIDs = Set.empty + d.id
-          val q = aotfQ(if (indirect) tIDs else Set.empty)
-          val simpleQ = q.simpleQuery(0, 100000)
-          val fullQ = q.query
+    logger.debug(s"get target id ${target.approvedSymbol}")
+    val tIDs = Set.empty + target.id
+    val q = aotfQ(if (indirect) tIDs else Set.empty)
+    val simpleQ = q.simpleQuery(0, 100000)
+    val fullQ = q.query
 
-          dbRetriever.executeQuery[String, Query](simpleQ) flatMap {
-            case dIDs =>
-              logger.debug(s"get ${dIDs.size} diseases")
+    dbRetriever.executeQuery[String, Query](simpleQ) flatMap {
+      case dIDs =>
+        logger.debug(s"get ${dIDs.size} diseases")
 
-              dbRetriever.executeQuery[Association, Query](fullQ) map {
-                case assocs => Associations(dss, dIDs.size, assocs)
-              }
-          }
-
-        case None => Future.successful(Associations.empty)
-      }
+        dbRetriever.executeQuery[Association, Query](fullQ) map {
+          case assocs => Associations(dss, dIDs.size, assocs)
+        }
     }
   }
 }
