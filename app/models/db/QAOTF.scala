@@ -215,7 +215,7 @@ case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[St
 
     val scoreDSs = F.arrayMap("x -> (x.3, x.1)",collectedDScored.name).as(Some("score_datasources"))
     val scoreDTs = F.arrayMap("x -> (x.4, x.1)",collectedDScored.name).as(Some("score_dt"))
-    val uniqDTs = F.groupUniqArray(DT)
+    val uniqDTs = F.groupUniqArray(DT).as(Some("datatypes_v"))
 
     val mappedDTs = F.arrayMap(s"x -> (x, arrayReverseSort(arrayMap(b -> b.2, arrayFilter(a -> a.1 = x,${scoreDTs.name.rep}))))",
       uniqDTs.name).as(Some("mapped_dts"))
