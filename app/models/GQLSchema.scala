@@ -641,8 +641,11 @@ trait GQLEntities extends GQLArguments {
   implicit val harmonicSettingsImp = deriveObjectType[Backend, HarmonicSettings]()
   implicit val clickhouseSettingsImp = deriveObjectType[Backend, ClickhouseSettings]()
 
-  implicit lazy val networkNodeImp = deriveObjectType[Backend, NetworkNode]()
+  lazy implicit val networkNodeImp = deriveObjectType[Backend, NetworkNode]()
 
+  lazy implicit val aggregationImp: ObjectType[Backend, Aggregation] = deriveObjectType[Backend, Aggregation]()
+  lazy implicit val namedAggregationImp: ObjectType[Backend, NamedAggregation] = deriveObjectType[Backend, NamedAggregation]()
+  lazy implicit val aggregationsImp: ObjectType[Backend, Aggregations] = deriveObjectType[Backend, Aggregations]()
   implicit val evidenceSourceImp = deriveObjectType[Backend, EvidenceSource]()
   implicit val associatedOTFTargetsImp = deriveObjectType[Backend, Associations](
     ObjectTypeName("AssociatedTargets"),

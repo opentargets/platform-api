@@ -22,13 +22,14 @@ case class Association(id: String, score: Double,
                        datasourceScores: Vector[ScoredComponent])
 
 case class Associations(datasources: Seq[DatasourceSettings],
+                        aggregations: Option[Aggregations],
                         count: Long,
                         rows: Vector[Association])
 
 case class EvidenceSource(datasource: String, datatype: String)
 
 object Associations {
-  val empty = Associations(Seq.empty, 0, Vector.empty)
+  val empty = Associations(Seq.empty, None, 0, Vector.empty)
 
   object DBImplicits {
     val logger = Logger(this.getClass)

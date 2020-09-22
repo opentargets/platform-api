@@ -13,6 +13,7 @@ import com.sksamuel.elastic4s.requests.searches.queries.funcscorer._
 import com.sksamuel.elastic4s.requests.searches.queries.matches.{MultiMatchQuery, MultiMatchQueryBuilderType}
 import com.sksamuel.elastic4s._
 import com.sksamuel.elastic4s.requests.searches.aggs.AbstractAggregation
+import com.sksamuel.elastic4s.requests.searches.queries.BoolQuery
 import models.entities.Configuration.ElasticsearchEntity
 import models.entities._
 import models.entities.SearchResult.JSONImplicits._
@@ -27,7 +28,36 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
 
   import com.sksamuel.elastic4s.ElasticDsl._
 
-  /** Based on the query asked by `getByIndexedQuery` and aggregation is applied */
+  /** This fn represents a query where each kv from the map is used in
+   * a bool must. Based on the query asked by `getByIndexedQuery` and aggregation is applied */
+  def getAggregationsByQuery[A](esIndex: String, boolQuery: BoolQuery,
+                                aggs: Iterable[AbstractAggregation] = Iterable.empty): Future[JsValue] = {
+    val q = search(esIndex).bool {
+      boolQuery
+    }.start(0)
+      .limit(0)
+      .aggs(aggs)
+      .trackTotalHits(true)
+
+    // just log and execute the query
+    val elems: Future[Response[SearchResponse]] = client.execute {
+      logger.debug(client.show(q))
+      q
+    }
+
+    elems.map {
+      case _: RequestFailure => JsNull
+      case results: RequestSuccess[SearchResponse] =>
+        // parse the full body response into JsValue
+        // thus, we can apply Json Transformations from JSON Play
+        val result = Json.parse(results.body.get)
+
+        logger.debug(Json.prettyPrint(result))
+        val hits = (result \ "hits" \ "hits").get.as[JsArray].value
+        val aggs = (result \ "aggregations").getOrElse(JsNull)
+        aggs
+    }
+  }
 
   /** This fn represents a query where each kv from the map is used in
    * a bool must. Based on the query asked by `getByIndexedQuery` and aggregation is applied */
@@ -42,7 +72,7 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
       must(
         kv.toSeq.map(p => matchQuery(p._1, p._2))
       )
-    } .start(limitClause._1)
+    }.start(limitClause._1)
       .limit(limitClause._2)
       .aggs(aggs)
       .trackTotalHits(true)
@@ -145,7 +175,7 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
 
         val seAf =
           if
-            (hasNext) (hits.last \ "sort").get.as[Seq[String]]
+          (hasNext) (hits.last \ "sort").get.as[Seq[String]]
           else
             Nil
 
@@ -161,7 +191,7 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
         val elems: Future[Response[SearchResponse]] = client.execute {
           val q = search(esIndex).query {
             idsQuery(ids)
-          } limit (Configuration.batchSize) trackTotalHits(true) sourceExclude(excludedFields)
+          } limit (Configuration.batchSize) trackTotalHits (true) sourceExclude (excludedFields)
 
           logger.debug(client.show(q))
           q
@@ -277,11 +307,13 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
 }
 
 object ElasticRetriever {
-  /***
+  /** *
    * SortBy case class use the `fieldName` to sort by and asc if `desc` is false
    * otherwise desc
    */
   def sortByAsc(fieldName: String) = Some(sort.FieldSort(fieldName).asc())
+
   def sortByDesc(fieldName: String) = Some(sort.FieldSort(fieldName).desc())
+
   def sortBy(fieldName: String, order: sort.SortOrder) = Some(sort.FieldSort(field = fieldName, order = order))
 }

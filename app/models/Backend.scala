@@ -7,6 +7,7 @@ import play.api.{Configuration, Environment, Logger}
 import com.sksamuel.elastic4s._
 import com.sksamuel.elastic4s.requests.searches._
 import com.sksamuel.elastic4s.http.JavaClient
+import com.sksamuel.elastic4s.requests.searches.aggs.{CardinalityAggregation, CompositeAggregation, NestedAggregation, ReverseNestedAggregation, TermsAggregation, TermsValueSource}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
@@ -16,6 +17,7 @@ import models.db.QAOTF
 import models.entities.Associations._
 import models.entities.Associations.DBImplicits._
 import models.entities._
+import models.entities.Aggregations.JSONImplicits._
 import models.entities.HealthCheck.JSONImplicits._
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
@@ -274,7 +276,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
                                   targetSet: Set[String],
                                   filter: Option[String],
                                   orderBy: Option[(String, String)],
-                                  pagination: Option[Pagination]): Future[Associations] = {
+                                  pagination: Option[Pagination]) = {
     val page = pagination.getOrElse(Pagination.mkDefault)
     val dss = datasources.getOrElse(defaultOTSettings.clickhouse.harmonic.datasources)
 
@@ -298,13 +300,90 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val simpleQ = q.simpleQuery(0, 100000)
     val fullQ = q.query
 
-    dbRetriever.executeQuery[String, Query](simpleQ) flatMap {
+    val evidencesIndexName = defaultESSettings.entities
+      .find(_.name == "evidences_aotf").map(_.index).getOrElse("evidences_aotf")
+
+    val uniqueTargetsAgg = CardinalityAggregation("uniques", Some("target_id.keyword"))
+    val reverseTargetsAgg = ReverseNestedAggregation("uniques", None, Seq(uniqueTargetsAgg))
+
+    val queryAggs = Seq(
+      uniqueTargetsAgg,
+      TermsAggregation("dataTypes", Some("datatype_id.keyword"),
+        size = Some(100),
+        subaggs = Seq(
+          uniqueTargetsAgg,
+          TermsAggregation("aggs", Some("datasource_id.keyword"),
+            size = Some(100),
+            subaggs = Seq(
+              uniqueTargetsAgg
+            )
+          )
+        )
+      ),
+      NestedAggregation("pathwayTypes", path = "facet_reactome",
+        subaggs = Seq(
+          TermsAggregation("aggs", Some("facet_reactome.l1.keyword"), size = Some(100),
+            subaggs = Seq(
+              TermsAggregation("aggs", Some("facet_reactome.l2.keyword"), size = Some(100),
+                subaggs = Seq(reverseTargetsAgg)),
+              reverseTargetsAgg
+            )
+          ),
+          reverseTargetsAgg
+        )
+      ),
+      NestedAggregation("targetClasses", path = "facet_classes",
+        subaggs = Seq(
+          TermsAggregation("aggs", Some("facet_classes.l1.keyword"), size = Some(100),
+            subaggs = Seq(
+              TermsAggregation("aggs", Some("facet_classes.l2.keyword"), size = Some(100),
+                subaggs = Seq(reverseTargetsAgg)),
+              reverseTargetsAgg
+            )
+          ),
+          reverseTargetsAgg
+        )
+      )
+    )
+
+    val esQ = esRetriever.getAggregationsByQuery(evidencesIndexName,
+      boolQuery()
+        .withShould(boolQuery()
+          .withMust(termsQuery("disease_id.keyword", dIDs))
+          .withMust(not(termsQuery("datasource_id.keyword", dontPropagate)))
+        )
+        .withShould(boolQuery()
+          .withMust(termQuery("disease_id.keyword", disease.id))
+          .withMust(termsQuery("datasource_id.keyword", dontPropagate))
+        ),
+      queryAggs) map {
+      case obj: JsObject =>
+        logger.debug(Json.prettyPrint(obj))
+
+        val uniques = (obj \ "uniques" \ "value").as[Long]
+        val restAggs = (obj - "uniques").fields map {
+          pair =>
+            NamedAggregation(pair._1,
+              (pair._2 \ "uniques" \\ "value").headOption.map(jv => jv.as[Long]),
+              (pair._2 \\ "buckets").head.as[Array[Aggregation]])
+        }
+
+        Some(Aggregations(uniques, restAggs))
+
+      case _ => None
+    }
+
+    val dbQ = dbRetriever.executeQuery[String, Query](simpleQ) flatMap {
       case tIDs =>
         logger.debug(s"get ${tIDs.size} targets")
 
         dbRetriever.executeQuery[Association, Query](fullQ) map {
-          case assocs => Associations(dss, tIDs.size, assocs)
+          case assocs => (tIDs.size, assocs)
         }
+    }
+
+    dbQ zip esQ map {
+      pair => Associations(dss, pair._2, pair._1._1, pair._1._2)
     }
   }
 
@@ -338,13 +417,71 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val simpleQ = q.simpleQuery(0, 100000)
     val fullQ = q.query
 
-    dbRetriever.executeQuery[String, Query](simpleQ) flatMap {
+    val evidencesIndexName = defaultESSettings.entities
+      .find(_.name == "evidences_aotf").map(_.index).getOrElse("evidences_aotf")
+
+    val uniqueDiseasesAgg = CardinalityAggregation("uniques", Some("disease_id.keyword"))
+
+    val queryAggs = Seq(
+      uniqueDiseasesAgg,
+      TermsAggregation("datatypes", Some("datatype_id.keyword"),
+        size = Some(100),
+        subaggs = Seq(
+          uniqueDiseasesAgg,
+          TermsAggregation("datasources", Some("datasource_id.keyword"),
+            size = Some(100),
+            subaggs = Seq(
+              uniqueDiseasesAgg
+            )
+          )
+        )
+      ),
+      TermsAggregation("therapeuticAreas", Some("facet_therapeuticAreas.keyword"),
+        size = Some(100),
+        subaggs = Seq(
+          uniqueDiseasesAgg
+        )
+      )
+    )
+
+    val esQ = esRetriever.getAggregationsByQuery(evidencesIndexName,
+      boolQuery()
+        .withShould(boolQuery()
+          .withMust(termsQuery("target_id.keyword", tIDs))
+          .withMust(not(termsQuery("datasource_id.keyword", dontPropagate)))
+        )
+        .withShould(boolQuery()
+          .withMust(termQuery("target_id.keyword", target.id))
+          .withMust(termsQuery("datasource_id.keyword", dontPropagate))
+        ),
+      queryAggs) map {
+      case obj: JsObject =>
+        logger.debug(Json.prettyPrint(obj))
+
+        val uniques = (obj \ "uniques" \ "value").as[Long]
+        val restAggs = (obj - "uniques").fields map {
+          pair =>
+            NamedAggregation(pair._1,
+              (pair._2 \ "uniques" \\ "value").headOption.map(jv => jv.as[Long]),
+              (pair._2 \\ "buckets").head.as[Array[Aggregation]])
+        }
+
+        Some(Aggregations(uniques, restAggs))
+
+      case _ => None
+    }
+
+    val dbQ = dbRetriever.executeQuery[String, Query](simpleQ) flatMap {
       case dIDs =>
         logger.debug(s"get ${dIDs.size} diseases")
 
         dbRetriever.executeQuery[Association, Query](fullQ) map {
-          case assocs => Associations(dss, dIDs.size, assocs)
+          case assocs => (dIDs.size, assocs)
         }
+    }
+
+    dbQ zip esQ map {
+      pair => Associations(dss, pair._2, pair._1._1, pair._1._2)
     }
   }
 }
