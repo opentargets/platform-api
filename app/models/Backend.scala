@@ -296,7 +296,8 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
 
     logger.debug(s"get disease id ${disease.name}")
     val dIDs = disease.descendants.toSet + disease.id
-    val q = aotfQ(if (indirect) dIDs else Set.empty)
+    val indirectIDs = if (indirect) dIDs else Set.empty[String]
+    val q = aotfQ(indirectIDs)
     val simpleQ = q.simpleQuery(0, 100000)
     val fullQ = q.query
 
@@ -349,12 +350,11 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val esQ = esRetriever.getAggregationsByQuery(evidencesIndexName,
       boolQuery()
         .withShould(boolQuery()
-          .withMust(termsQuery("disease_id.keyword", dIDs))
+          .withMust(termsQuery("disease_id.keyword", indirectIDs))
           .withMust(not(termsQuery("datasource_id.keyword", dontPropagate)))
         )
         .withShould(boolQuery()
           .withMust(termQuery("disease_id.keyword", disease.id))
-          .withMust(termsQuery("datasource_id.keyword", dontPropagate))
         ),
       queryAggs) map {
       case obj: JsObject =>
@@ -413,7 +413,8 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
 
     logger.debug(s"get target id ${target.approvedSymbol}")
     val tIDs = Set.empty + target.id
-    val q = aotfQ(if (indirect) tIDs else Set.empty)
+    val indirectIDs = if (indirect) tIDs else Set.empty[String]
+    val q = aotfQ(indirectIDs)
     val simpleQ = q.simpleQuery(0, 100000)
     val fullQ = q.query
 
@@ -447,12 +448,11 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val esQ = esRetriever.getAggregationsByQuery(evidencesIndexName,
       boolQuery()
         .withShould(boolQuery()
-          .withMust(termsQuery("target_id.keyword", tIDs))
+          .withMust(termsQuery("target_id.keyword", indirectIDs))
           .withMust(not(termsQuery("datasource_id.keyword", dontPropagate)))
         )
         .withShould(boolQuery()
           .withMust(termQuery("target_id.keyword", target.id))
-          .withMust(termsQuery("datasource_id.keyword", dontPropagate))
         ),
       queryAggs) map {
       case obj: JsObject =>
