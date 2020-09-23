@@ -464,22 +464,32 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
 
     val queryAggs = Seq(
       uniqueDiseasesAgg,
-      TermsAggregation("datatypes", Some("datatype_id.keyword"),
-        size = Some(100),
+      FilterAggregation("dataTypes", boolQuery(),
         subaggs = Seq(
           uniqueDiseasesAgg,
-          TermsAggregation("datasources", Some("datasource_id.keyword"),
+          TermsAggregation("aggs", Some("datatype_id.keyword"),
+            size = Some(100),
+            subaggs = Seq(
+              uniqueDiseasesAgg,
+              TermsAggregation("aggs", Some("datasource_id.keyword"),
+                size = Some(100),
+                subaggs = Seq(
+                  uniqueDiseasesAgg
+                )
+              )
+            )
+          )
+        )
+      ),
+      FilterAggregation("therapeuticAreas", boolQuery(),
+        subaggs = Seq(
+          uniqueDiseasesAgg,
+          TermsAggregation("aggs", Some("facet_therapeuticAreas.keyword"),
             size = Some(100),
             subaggs = Seq(
               uniqueDiseasesAgg
             )
           )
-        )
-      ),
-      TermsAggregation("therapeuticAreas", Some("facet_therapeuticAreas.keyword"),
-        size = Some(100),
-        subaggs = Seq(
-          uniqueDiseasesAgg
         )
       )
     )
