@@ -304,7 +304,8 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val evidencesIndexName = defaultESSettings.entities
       .find(_.name == "evidences_aotf").map(_.index).getOrElse("evidences_aotf")
 
-    val uniqueTargetsAgg = CardinalityAggregation("uniques", Some("target_id.keyword"))
+    val uniqueTargetsAgg = CardinalityAggregation("uniques", Some("target_id.keyword"),
+    precisionThreshold = Some(40000))
     val reverseTargetsAgg = ReverseNestedAggregation("uniques", None, Seq(uniqueTargetsAgg))
 
     val queryAggs = Seq(
@@ -421,7 +422,8 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val evidencesIndexName = defaultESSettings.entities
       .find(_.name == "evidences_aotf").map(_.index).getOrElse("evidences_aotf")
 
-    val uniqueDiseasesAgg = CardinalityAggregation("uniques", Some("disease_id.keyword"))
+    val uniqueDiseasesAgg = CardinalityAggregation("uniques", Some("disease_id.keyword"),
+      precisionThreshold = Some(40000))
 
     val queryAggs = Seq(
       uniqueDiseasesAgg,

@@ -92,11 +92,9 @@ case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[St
       F.or(
         F.and(
           F.in(A, leftIdsC),
-          F.notIn(DS, nonPP)),
-        F.and(
-          F.in(DS, nonPP),
-          F.equals(A, literal(AId))
-        )
+          F.notIn(DS, nonPP)
+        ),
+        F.equals(A, literal(AId))
       )
     } else
       F.in(A, leftIdsC)
@@ -143,11 +141,9 @@ case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[St
       F.or(
         F.and(
           F.in(A, leftIdsC),
-          F.notIn(DS, nonPP)),
-        F.and(
-          F.in(DS, nonPP),
-          F.equals(A, literal(AId))
-        )
+          F.notIn(DS, nonPP)
+        ),
+        F.equals(A, literal(AId))
       )
     } else
       F.in(A, leftIdsC)
