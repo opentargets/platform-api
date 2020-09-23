@@ -7,7 +7,7 @@ import play.api.{Configuration, Environment, Logger}
 import com.sksamuel.elastic4s._
 import com.sksamuel.elastic4s.requests.searches._
 import com.sksamuel.elastic4s.http.JavaClient
-import com.sksamuel.elastic4s.requests.searches.aggs.{CardinalityAggregation, CompositeAggregation, NestedAggregation, ReverseNestedAggregation, TermsAggregation, TermsValueSource}
+import com.sksamuel.elastic4s.requests.searches.aggs.{CardinalityAggregation, CompositeAggregation, FilterAggregation, NestedAggregation, ReverseNestedAggregation, TermsAggregation, TermsValueSource}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
@@ -305,16 +305,32 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       .find(_.name == "evidences_aotf").map(_.index).getOrElse("evidences_aotf")
 
     val uniqueTargetsAgg = CardinalityAggregation("uniques", Some("target_id.keyword"),
-    precisionThreshold = Some(40000))
+      precisionThreshold = Some(40000))
     val reverseTargetsAgg = ReverseNestedAggregation("uniques", None, Seq(uniqueTargetsAgg))
 
     val queryAggs = Seq(
       uniqueTargetsAgg,
-      TermsAggregation("dataTypes", Some("datatype_id.keyword"),
-        size = Some(100),
+      FilterAggregation("dataTypes", boolQuery(),
         subaggs = Seq(
           uniqueTargetsAgg,
-          TermsAggregation("aggs", Some("datasource_id.keyword"),
+          TermsAggregation("aggs", Some("datatype_id.keyword"),
+            size = Some(100),
+            subaggs = Seq(
+              uniqueTargetsAgg,
+              TermsAggregation("aggs", Some("datasource_id.keyword"),
+                size = Some(100),
+                subaggs = Seq(
+                  uniqueTargetsAgg
+                )
+              )
+            )
+          )
+        )
+      ),
+      FilterAggregation("tractabilitySmallmolecule", boolQuery(),
+        subaggs = Seq(
+          uniqueTargetsAgg,
+          TermsAggregation("aggs", Some("facet_tractability_smallmolecule.keyword"),
             size = Some(100),
             subaggs = Seq(
               uniqueTargetsAgg
@@ -322,28 +338,49 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
           )
         )
       ),
-      NestedAggregation("pathwayTypes", path = "facet_reactome",
+      FilterAggregation("tractabilityAntibody", boolQuery(),
         subaggs = Seq(
-          TermsAggregation("aggs", Some("facet_reactome.l1.keyword"), size = Some(100),
+          uniqueTargetsAgg,
+          TermsAggregation("aggs", Some("facet_tractability_antibody.keyword"),
+            size = Some(100),
             subaggs = Seq(
-              TermsAggregation("aggs", Some("facet_reactome.l2.keyword"), size = Some(100),
-                subaggs = Seq(reverseTargetsAgg)),
-              reverseTargetsAgg
+              uniqueTargetsAgg
             )
-          ),
-          reverseTargetsAgg
+          )
         )
       ),
-      NestedAggregation("targetClasses", path = "facet_classes",
+      FilterAggregation("pathwayTypes", boolQuery(),
         subaggs = Seq(
-          TermsAggregation("aggs", Some("facet_classes.l1.keyword"), size = Some(100),
+          uniqueTargetsAgg,
+          NestedAggregation("aggs", path = "facet_reactome",
             subaggs = Seq(
-              TermsAggregation("aggs", Some("facet_classes.l2.keyword"), size = Some(100),
-                subaggs = Seq(reverseTargetsAgg)),
+              TermsAggregation("aggs", Some("facet_reactome.l1.keyword"), size = Some(100),
+                subaggs = Seq(
+                  TermsAggregation("aggs", Some("facet_reactome.l2.keyword"), size = Some(100),
+                    subaggs = Seq(reverseTargetsAgg)),
+                  reverseTargetsAgg
+                )
+              ),
               reverseTargetsAgg
             )
-          ),
-          reverseTargetsAgg
+          )
+        )
+      ),
+      FilterAggregation("targetClasses", boolQuery(),
+        subaggs = Seq(
+          uniqueTargetsAgg,
+          NestedAggregation("aggs", path = "facet_classes",
+            subaggs = Seq(
+              TermsAggregation("aggs", Some("facet_classes.l1.keyword"), size = Some(100),
+                subaggs = Seq(
+                  TermsAggregation("aggs", Some("facet_classes.l2.keyword"), size = Some(100),
+                    subaggs = Seq(reverseTargetsAgg)),
+                  reverseTargetsAgg
+                )
+              ),
+              reverseTargetsAgg
+            )
+          )
         )
       )
     )
@@ -361,7 +398,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       case obj: JsObject =>
         logger.debug(Json.prettyPrint(obj))
 
-        val uniques = (obj \ "uniques" \ "value").as[Long]
+        val uniques = (obj \ "uniques" \\ "value").head.as[Long]
         val restAggs = (obj - "uniques").fields map {
           pair =>
             NamedAggregation(pair._1,
@@ -460,7 +497,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       case obj: JsObject =>
         logger.debug(Json.prettyPrint(obj))
 
-        val uniques = (obj \ "uniques" \ "value").as[Long]
+        val uniques = (obj \ "uniques" \\ "value").head.as[Long]
         val restAggs = (obj - "uniques").fields map {
           pair =>
             NamedAggregation(pair._1,
