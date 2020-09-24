@@ -8,6 +8,7 @@ import com.sksamuel.elastic4s._
 import com.sksamuel.elastic4s.requests.searches._
 import com.sksamuel.elastic4s.http.JavaClient
 import com.sksamuel.elastic4s.requests.searches.aggs.{CardinalityAggregation, CompositeAggregation, FilterAggregation, NestedAggregation, ReverseNestedAggregation, TermsAggregation, TermsValueSource}
+import com.sksamuel.elastic4s.requests.searches.queries.BoolQuery
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
@@ -273,6 +274,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
   def getAssociationsDiseaseFixed(disease: Disease,
                                   datasources: Option[Seq[DatasourceSettings]],
                                   indirect: Boolean,
+                                  aggregationSettings: AggregationSettings,
                                   targetSet: Set[String],
                                   filter: Option[String],
                                   orderBy: Option[(String, String)],
@@ -304,13 +306,24 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val evidencesIndexName = defaultESSettings.entities
       .find(_.name == "evidences_aotf").map(_.index).getOrElse("evidences_aotf")
 
+    val mappings = Map(
+      "dataTypes" -> AggregationMapping("datatype_id", IndexedSeq("datatype_id", "datasource_id"), false),
+      "tractabilitySmallmolecule" -> AggregationMapping("facet_tractability_smallmolecule", IndexedSeq.empty, false),
+      "tractabilityAntibody" -> AggregationMapping("facet_tractability_antibody", IndexedSeq.empty, false),
+      "pathwayTypes" -> AggregationMapping("facet_reactome", IndexedSeq("l1", "l2"), true),
+      "targetClasses" -> AggregationMapping("facet_classes", IndexedSeq("l1", "l2"), true)
+    )
+
+    val queries = ElasticRetriever.aggregationFilterProducer(aggregationSettings, mappings)
+    val filtersMap = queries._2
+
     val uniqueTargetsAgg = CardinalityAggregation("uniques", Some("target_id.keyword"),
       precisionThreshold = Some(40000))
     val reverseTargetsAgg = ReverseNestedAggregation("uniques", None, Seq(uniqueTargetsAgg))
 
     val queryAggs = Seq(
-      uniqueTargetsAgg,
-      FilterAggregation("dataTypes", boolQuery(),
+      FilterAggregation("uniques", queries._1, subaggs = Seq(uniqueTargetsAgg)),
+      FilterAggregation("dataTypes", filtersMap("dataTypes"),
         subaggs = Seq(
           uniqueTargetsAgg,
           TermsAggregation("aggs", Some("datatype_id.keyword"),
@@ -327,7 +340,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
           )
         )
       ),
-      FilterAggregation("tractabilitySmallmolecule", boolQuery(),
+      FilterAggregation("tractabilitySmallmolecule", filtersMap("tractabilitySmallmolecule"),
         subaggs = Seq(
           uniqueTargetsAgg,
           TermsAggregation("aggs", Some("facet_tractability_smallmolecule.keyword"),
@@ -338,7 +351,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
           )
         )
       ),
-      FilterAggregation("tractabilityAntibody", boolQuery(),
+      FilterAggregation("tractabilityAntibody", filtersMap("tractabilityAntibody"),
         subaggs = Seq(
           uniqueTargetsAgg,
           TermsAggregation("aggs", Some("facet_tractability_antibody.keyword"),
@@ -349,7 +362,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
           )
         )
       ),
-      FilterAggregation("pathwayTypes", boolQuery(),
+      FilterAggregation("pathwayTypes", filtersMap("pathwayTypes"),
         subaggs = Seq(
           uniqueTargetsAgg,
           NestedAggregation("aggs", path = "facet_reactome",
@@ -366,7 +379,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
           )
         )
       ),
-      FilterAggregation("targetClasses", boolQuery(),
+      FilterAggregation("targetClasses", filtersMap("targetClasses"),
         subaggs = Seq(
           uniqueTargetsAgg,
           NestedAggregation("aggs", path = "facet_classes",
@@ -428,6 +441,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
   def getAssociationsTargetFixed(target: Target,
                                  datasources: Option[Seq[DatasourceSettings]],
                                  indirect: Boolean,
+                                 aggregationSettings: AggregationSettings,
                                  diseaseSet: Set[String],
                                  filter: Option[String],
                                  orderBy: Option[(String, String)],
@@ -459,12 +473,20 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val evidencesIndexName = defaultESSettings.entities
       .find(_.name == "evidences_aotf").map(_.index).getOrElse("evidences_aotf")
 
+    val mappings = Map(
+      "dataTypes" -> AggregationMapping("datatype_id", IndexedSeq("datatype_id", "datasource_id"), false),
+      "therapeuticAreas" -> AggregationMapping("facet_therapeuticAreas", IndexedSeq.empty, false)
+    )
+
+    val queries = ElasticRetriever.aggregationFilterProducer(aggregationSettings, mappings)
+    val filtersMap = queries._2
+
     val uniqueDiseasesAgg = CardinalityAggregation("uniques", Some("disease_id.keyword"),
       precisionThreshold = Some(40000))
 
     val queryAggs = Seq(
-      uniqueDiseasesAgg,
-      FilterAggregation("dataTypes", boolQuery(),
+      FilterAggregation("uniques", queries._1, subaggs = Seq(uniqueDiseasesAgg)),
+      FilterAggregation("dataTypes", filtersMap("dataTypes"),
         subaggs = Seq(
           uniqueDiseasesAgg,
           TermsAggregation("aggs", Some("datatype_id.keyword"),
@@ -481,7 +503,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
           )
         )
       ),
-      FilterAggregation("therapeuticAreas", boolQuery(),
+      FilterAggregation("therapeuticAreas", filtersMap("therapeuticAreas"),
         subaggs = Seq(
           uniqueDiseasesAgg,
           TermsAggregation("aggs", Some("facet_therapeuticAreas.keyword"),

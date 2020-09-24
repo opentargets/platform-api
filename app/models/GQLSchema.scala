@@ -34,12 +34,12 @@ trait GQLArguments {
   val cursor = Argument("cursor", OptionInputType(ListInputType(StringType)))
   val queryString = Argument("queryString", StringType, description = "Query string")
   val freeTextQuery = Argument("freeTextQuery", OptionInputType(StringType), description = "Query string")
-  val efoId = Argument("efoId", StringType, description = "EFO ID" )
-  val efoIds = Argument("efoIds", ListInputType(StringType), description = "EFO ID" )
+  val efoId = Argument("efoId", StringType, description = "EFO ID")
+  val efoIds = Argument("efoIds", ListInputType(StringType), description = "EFO ID")
   val networkExpansionId = Argument("networkExpansionId", OptionInputType(StringType), description = "Network expansion ID")
-  val ensemblId = Argument("ensemblId", StringType, description = "Ensembl ID" )
+  val ensemblId = Argument("ensemblId", StringType, description = "Ensembl ID")
   val ensemblIds = Argument("ensemblIds", ListInputType(StringType), description = "List of Ensembl IDs")
-  val chemblId = Argument("chemblId", StringType, description = "Chembl ID" )
+  val chemblId = Argument("chemblId", StringType, description = "Chembl ID")
   val chemblIds = Argument("chemblIds", ListInputType(StringType), description = "List of Chembl IDs")
   val indrectEvidences = Argument("enableIndirect", OptionInputType(BooleanType),
     "Use disease ontology to capture evidences from all descendants to build associations")
@@ -69,6 +69,14 @@ trait GQLEntities extends GQLArguments {
   )
   val datasourceSettingsListArg = Argument("datasources",
     OptionInputType(ListInputType(datasourceSettingsInputImp)))
+
+  implicit val aggregationFilterJsonImp = Json.format[AggregationFilter]
+  implicit val aggregationFilterImp = deriveInputObjectType[AggregationFilter](
+    InputObjectTypeName("AggregationFilterInput")
+  )
+
+  val aggregationFiltersListArg = Argument("aggregationFilters",
+    OptionInputType(ListInputType(aggregationFilterImp)))
 
   // target
   implicit val targetHasId = HasId[Target, String](_.id)
@@ -270,8 +278,8 @@ trait GQLEntities extends GQLArguments {
   implicit val hallmarksAttributeImp = deriveObjectType[Backend, HallmarkAttribute]()
   implicit val hallmarksImp = deriveObjectType[Backend, Hallmarks]()
 
-//  implicit val orthologImp = deriveObjectType[Backend, Ortholog]()
-//  implicit val orthologsImp = deriveObjectType[Backend, Orthologs]()
+  //  implicit val orthologImp = deriveObjectType[Backend, Ortholog]()
+  //  implicit val orthologsImp = deriveObjectType[Backend, Orthologs]()
 
   implicit val sourceLinkImp = deriveObjectType[Backend, SourceLink](
     ObjectTypeDescription("\"Datasource link\""),
@@ -399,12 +407,16 @@ trait GQLEntities extends GQLArguments {
 
       Field("associatedDiseases", associatedOTFDiseasesImp,
         description = Some("associations on the fly"),
-        arguments = BIds :: indrectEvidences :: datasourceSettingsListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
+        arguments = BIds :: indrectEvidences :: datasourceSettingsListArg :: aggregationFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
         resolve = ctx => ctx.ctx.getAssociationsTargetFixed(
           ctx.value,
           ctx arg datasourceSettingsListArg,
-          ctx arg indrectEvidences getOrElse(false),
-          ctx arg BIds map (_.toSet) getOrElse(Set.empty),
+          ctx arg indrectEvidences getOrElse (false),
+          ctx arg aggregationFiltersListArg match {
+            case Some(v) => AggregationSettings(v)
+            case None => AggregationSettings.empty
+          },
+          ctx arg BIds map (_.toSet) getOrElse (Set.empty),
           ctx arg BFilterString,
           (ctx arg scoreSorting) map (_.split(" ").take(2).toList match {
             case a :: b :: Nil => (a, b)
@@ -413,7 +425,7 @@ trait GQLEntities extends GQLArguments {
           }),
           ctx arg pageArg
         )),
-  ))
+    ))
 
   implicit val phenotypeImp = deriveObjectType[Backend, Phenotype](
     ObjectTypeDescription("Clinical signs and symptoms observed in disease"),
@@ -435,9 +447,9 @@ trait GQLEntities extends GQLArguments {
     ReplaceField("therapeuticAreas", Field("therapeuticAreas",
       ListType(diseaseImp), Some("Ancestor therapeutic area disease entities in ontology"),
       resolve = r => diseasesFetcher.deferSeq(r.value.therapeuticAreas))),
-//    ReplaceField("phenotypes", Field("phenotypes",
-//      ListType(diseaseImp), Some("Phenotype List"),
-//      resolve = r => diseasesFetcher.deferSeq(r.value.phenotypes))),
+    //    ReplaceField("phenotypes", Field("phenotypes",
+    //      ListType(diseaseImp), Some("Phenotype List"),
+    //      resolve = r => diseasesFetcher.deferSeq(r.value.phenotypes))),
     ReplaceField("parents", Field("parents",
       ListType(diseaseImp), Some("Disease parents entities in ontology"),
       resolve = r => diseasesFetcher.deferSeq(r.value.parents))),
@@ -479,12 +491,16 @@ trait GQLEntities extends GQLArguments {
 
       Field("associatedTargets", associatedOTFTargetsImp,
         description = Some("associations on the fly"),
-        arguments = BIds :: indrectEvidences :: datasourceSettingsListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
+        arguments = BIds :: indrectEvidences :: datasourceSettingsListArg :: aggregationFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
         resolve = ctx => ctx.ctx.getAssociationsDiseaseFixed(
           ctx.value,
           ctx arg datasourceSettingsListArg,
-          ctx arg indrectEvidences getOrElse(true),
-          ctx arg BIds map (_.toSet) getOrElse(Set.empty),
+          ctx arg indrectEvidences getOrElse (true),
+          ctx arg aggregationFiltersListArg match {
+            case Some(v) => AggregationSettings(v)
+            case None => AggregationSettings.empty
+          },
+          ctx arg BIds map (_.toSet) getOrElse (Set.empty),
           ctx arg BFilterString,
           (ctx arg scoreSorting) map (_.split(" ").take(2).toList match {
             case a :: b :: Nil => (a, b)

@@ -5,6 +5,13 @@ import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 
+case class AggregationFilter(name: String, path: Seq[String])
+case class AggregationSettings(filters: Seq[AggregationFilter])
+object AggregationSettings {
+  val empty = AggregationSettings(Seq.empty)
+}
+case class AggregationMapping(key: String, pathKeys: IndexedSeq[String], nested: Boolean)
+
 case class Aggregation(key: String, uniques: Long, aggs: Option[Seq[Aggregation]])
 case class NamedAggregation(name: String, uniques: Option[Long], rows: Seq[Aggregation])
 case class Aggregations(uniques: Long, aggs: Seq[NamedAggregation])
@@ -25,5 +32,7 @@ object Aggregations {
     implicit val namedAggregationImpFormat = Json.format[NamedAggregation]
     implicit val aggregationsImpFormat = Json.writes[Aggregations]
 
+    implicit val aggregationFilterImpFormat = Json.format[AggregationFilter]
+    implicit val aggregationSettingsImpFormat = Json.format[AggregationSettings]
   }
 }

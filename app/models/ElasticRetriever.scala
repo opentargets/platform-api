@@ -13,7 +13,8 @@ import com.sksamuel.elastic4s.requests.searches.queries.funcscorer._
 import com.sksamuel.elastic4s.requests.searches.queries.matches.{MultiMatchQuery, MultiMatchQueryBuilderType}
 import com.sksamuel.elastic4s._
 import com.sksamuel.elastic4s.requests.searches.aggs.AbstractAggregation
-import com.sksamuel.elastic4s.requests.searches.queries.BoolQuery
+import com.sksamuel.elastic4s.requests.searches.queries.{BoolQuery, NestedQuery}
+import com.sksamuel.elastic4s.requests.searches.queries.term.TermQuery
 import models.entities.Configuration.ElasticsearchEntity
 import models.entities._
 import models.entities.SearchResult.JSONImplicits._
@@ -306,7 +307,55 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
   }
 }
 
-object ElasticRetriever {
+object ElasticRetriever extends Logging {
+
+  def aggregationFilterProducer(settings: AggregationSettings, mappings: Map[String, AggregationMapping]) = {
+    val filtersByName = settings.filters.groupBy(_.name).filterKeys(mappings.contains).map {
+      case (facet, filters) =>
+        val mappedFacet = mappings(facet)
+        val ff = filters.foldLeft(BoolQuery()) {
+          (b, filter) =>
+            val termKey = filter.path.zipWithIndex.last
+            val termLevel = mappedFacet.pathKeys.lift
+            val termPrefix = if (mappedFacet.nested) s"${mappedFacet.key}." else ""
+            val keyName = termPrefix + s"${termLevel(termKey._2).getOrElse(mappedFacet.key)}.keyword"
+            b.withShould(TermQuery(keyName, termKey._1))
+        }
+
+        if (mappedFacet.nested) {
+          facet -> NestedQuery(mappedFacet.key, ff)
+        } else {
+          facet -> ff
+        }
+
+    }.withDefaultValue(BoolQuery())
+
+    val overallFilters = filtersByName.foldLeft(BoolQuery()) {
+      case (b, f) => b.withMust(f._2)
+    }
+
+    val namesR = mappings.keys.toList.reverse
+    if (namesR.size > 1) {
+      val mappedMappgings = mappings.map(p => p._1 -> filtersByName(p._1))
+        .toList.combinations(namesR.size - 1).toList
+
+      val cartesianProd = (namesR zip mappedMappgings).toMap
+        .mapValues(_.foldLeft(BoolQuery()) {
+          (b, q) => b.withMust(q._2)
+        })
+
+      logger.debug(s"overall filters $overallFilters")
+      cartesianProd foreach {
+        el =>
+          logger.debug(s"cartesian product ${el._1} -> ${el._2.toString}")
+      }
+
+      (overallFilters, cartesianProd)
+    } else {
+      (overallFilters, Map.empty[String, BoolQuery].withDefaultValue(BoolQuery()))
+    }
+  }
+
   /** *
    * SortBy case class use the `fieldName` to sort by and asc if `desc` is false
    * otherwise desc
