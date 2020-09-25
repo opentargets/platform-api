@@ -270,7 +270,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       defaultOTSettings.clickhouse.disease.associations.name,
       disease.id,
       _,
-      targetSet,
+      _,
       filter,
       orderBy,
       weights,
@@ -281,9 +281,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     logger.debug(s"get disease id ${disease.name}")
     val dIDs = disease.descendants.toSet + disease.id
     val indirectIDs = if (indirect) dIDs else Set.empty[String]
-    val q = aotfQ(indirectIDs)
-    val simpleQ = q.simpleQuery(0, 100000)
-    val fullQ = q.query
+    val simpleQ = aotfQ(indirectIDs, targetSet).simpleQuery(0, 100000)
 
     val evidencesIndexName = defaultESSettings.entities
       .find(_.name == "evidences_aotf").map(_.index).getOrElse("evidences_aotf")
@@ -304,7 +302,9 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val reverseTargetsAgg = ReverseNestedAggregation("uniques", None, Seq(uniqueTargetsAgg))
 
     val queryAggs = Seq(
-      FilterAggregation("uniques", queries._1, subaggs = Seq(uniqueTargetsAgg)),
+      FilterAggregation("uniques", queries._1, subaggs = Seq(
+        uniqueTargetsAgg,
+        TermsAggregation("ids",field = Some("target_id.keyword"), size = Some(40000)))),
       FilterAggregation("dataTypes", filtersMap("dataTypes"),
         subaggs = Seq(
           uniqueTargetsAgg,
@@ -393,6 +393,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       case obj: JsObject =>
         logger.debug(Json.prettyPrint(obj))
 
+        val ids = (obj \ "uniques" \ "ids" \ "buckets" \\ "key").map(_.as[String]).toSet
         val uniques = (obj \ "uniques" \\ "value").head.as[Long]
         val restAggs = (obj - "uniques").fields map {
           pair =>
@@ -401,22 +402,24 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
               (pair._2 \\ "buckets").head.as[Array[entities.Aggregation]])
         }
 
-        Some(Aggregations(uniques, restAggs))
+        Some((Aggregations(uniques, restAggs), ids))
 
       case _ => None
     }
 
-    val dbQ = dbRetriever.executeQuery[String, Query](simpleQ) flatMap {
-      case tIDs =>
-        logger.debug(s"get ${tIDs.size} targets")
+    // TODO not getting same number of returned targets
+    (dbRetriever.executeQuery[String, Query](simpleQ) zip esQ ) flatMap {
+      case (tIDs, esR) =>
+        val tids = esR.map(_._2 intersect tIDs.toSet).getOrElse(tIDs.toSet)
+        val fullQ = aotfQ(indirectIDs, tids).query
+
+        logger.debug(s"get simpleQ n ${tIDs.size} " +
+          s"agg n ${esR.map(_._2.size).getOrElse(-1)} " +
+          s"inter n ${tids.size}")
 
         dbRetriever.executeQuery[Association, Query](fullQ) map {
-          case assocs => (tIDs.size, assocs)
+          case assocs => Associations(dss, esR.map(_._1), tids.size, assocs)
         }
-    }
-
-    dbQ zip esQ map {
-      pair => Associations(dss, pair._2, pair._1._1, pair._1._2)
     }
   }
 
@@ -524,17 +527,17 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       case _ => None
     }
 
-    val dbQ = dbRetriever.executeQuery[String, Query](simpleQ) flatMap {
+    dbRetriever.executeQuery[String, Query](simpleQ) flatMap {
       case dIDs =>
         logger.debug(s"get ${dIDs.size} diseases")
 
-        dbRetriever.executeQuery[Association, Query](fullQ) map {
+        val assocsQ = dbRetriever.executeQuery[Association, Query](fullQ) map {
           case assocs => (dIDs.size, assocs)
         }
-    }
 
-    dbQ zip esQ map {
-      pair => Associations(dss, pair._2, pair._1._1, pair._1._2)
+        assocsQ zip esQ map {
+          pair => Associations(dss, pair._2, pair._1._1, pair._1._2)
+        }
     }
   }
 }
