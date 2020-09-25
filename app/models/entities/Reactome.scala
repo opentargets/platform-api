@@ -14,8 +14,6 @@ case class Reactome(id: String, label: String,
 }
 
 object Reactome {
-  val logger = Logger(this.getClass)
-
   implicit val reactomeNodeImpW = Json.writes[Reactome]
 
   implicit val config = JsonConfiguration(SnakeCase)

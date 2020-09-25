@@ -1,6 +1,6 @@
 package models.entities
 
-import play.api.{Logger, Logging}
+import play.api.Logging
 import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._

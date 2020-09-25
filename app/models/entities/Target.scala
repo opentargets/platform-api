@@ -1,6 +1,6 @@
 package models.entities
 
-import play.api.Logger
+import play.api.{Logger, Logging}
 import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
@@ -136,9 +136,7 @@ case class Target(id: String,
                   reactome: Seq[String]
                  )
 
-object Target {
-  val logger = Logger(this.getClass)
-
+object Target extends Logging {
   implicit val tractabilityAntibodyCategoriesImpW = Json.writes[TractabilityAntibodyCategories]
   implicit val tractabilityAntibodyCategoriesImpR: Reads[TractabilityAntibodyCategories] =
     ((__ \ "predicted_tractable_med_low_confidence").read[Double] and

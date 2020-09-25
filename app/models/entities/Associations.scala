@@ -1,11 +1,7 @@
 package models.entities
 
 import clickhouse.rep.SeqRep._
-import clickhouse.rep.SeqRep.Implicits._
-import models.entities.Configuration.{DatasourceSettings, LUTableSettings}
-import models.entities.Configuration.JSONImplicits._
-import models.entities.Network.JSONImplicits._
-import play.api.Logger
+import models.entities.Configuration._
 import play.api.libs.json.Json
 import slick.jdbc.GetResult
 

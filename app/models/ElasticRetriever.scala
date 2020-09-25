@@ -17,8 +17,7 @@ import com.sksamuel.elastic4s.requests.searches.queries.{BoolQuery, NestedQuery}
 import com.sksamuel.elastic4s.requests.searches.queries.term.TermQuery
 import models.entities.Configuration.ElasticsearchEntity
 import models.entities._
-import models.entities.SearchResult.JSONImplicits._
-import play.api.Logger
+import models.entities.SearchResults._
 import play.api.libs.json._
 
 import scala.concurrent.Future

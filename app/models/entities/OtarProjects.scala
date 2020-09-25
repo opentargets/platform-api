@@ -11,9 +11,7 @@ case class OtarProject(otarCode: String, status: String, projectName: String, re
 
 case class OtarProjects(efoId: String, rows: Seq[OtarProject])
 
-object OtarProject {
-  val logger = Logger(this.getClass)
-
+object OtarProjects {
   implicit val otarProjectImpW = Json.writes[OtarProject]
 
   implicit val config = JsonConfiguration(SnakeCase)

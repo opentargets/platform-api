@@ -1,6 +1,5 @@
 package models.entities
 
-import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
@@ -10,8 +9,6 @@ case class AdverseEvent(name: String, count: Long, llr: Double, criticalValue: D
 case class AdverseEvents(count: Long, critVal: Double, rows: Seq[AdverseEvent])
 
 object AdverseEvent {
-  val logger = Logger(this.getClass)
-
   implicit val adverseEventImpW = Json.writes[AdverseEvent]
   implicit val adverseEventImpR: Reads[AdverseEvent] =
     ((JsPath \ "event").read[String] and

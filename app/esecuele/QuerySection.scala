@@ -48,6 +48,7 @@ case class OrderBy(content: Seq[Column]) extends QuerySection {
   override val name: String = "ORDER BY"
   override lazy val rep: String = s"$name ${content.mkString("", ", ", "")}"
 }
+
 //LIMIT 1 OFFSET 0 BY disease_id
 //limit 10 OFFSET 0;
 
@@ -63,7 +64,7 @@ case class LimitBy(size: Int, offset: Int = 0, by: Seq[Column]) extends QuerySec
   override lazy val rep: String = s"$name $size OFFSET $offset BY ${content.mkString("", ", ", "")}"
 }
 
-case class From(col: Column, alias: Option[String]=None) extends QuerySection {
+case class From(col: Column, alias: Option[String] = None) extends QuerySection {
   override val content: Seq[Column] = Seq(col)
   override val name: String = "FROM"
   override lazy val rep: String = s"$name ${content.mkString}${alias.map(" " + _).getOrElse("")}"
@@ -72,9 +73,9 @@ case class From(col: Column, alias: Option[String]=None) extends QuerySection {
 case class Join(col: Column,
                 setOper: Option[String] = None,
                 modifier: Option[String] = None,
-                global: Boolean=false,
-                alias: Option[String]=None,
-                using: Seq[Column]=Seq.empty) extends QuerySection {
+                global: Boolean = false,
+                alias: Option[String] = None,
+                using: Seq[Column] = Seq.empty) extends QuerySection {
   override val content: Seq[Column] = Seq(col)
   override val name: String = "JOIN"
   override lazy val rep: String =
@@ -91,7 +92,7 @@ case class Join(col: Column,
 
 
 // TODO REFACTOR INTO PROPER TYPE
-case class FromSelect(select: QuerySection, alias: Option[String]=None) extends QuerySection {
+case class FromSelect(select: QuerySection, alias: Option[String] = None) extends QuerySection {
   override val content: Seq[Column] = select.content
   override val name: String = "FROM"
   override lazy val rep: String = s"$name (${select.name} ${content.mkString})${alias.map(" " + _).getOrElse("")}"

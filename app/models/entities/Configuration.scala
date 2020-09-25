@@ -1,6 +1,5 @@
 package models.entities
 
-import models.entities
 import play.api.libs.json.Json
 
 object Configuration {

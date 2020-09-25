@@ -17,7 +17,7 @@ case class MouseGene(id: String, symbol: String, phenotypes: Seq[MousePhenotype]
 
 case class MousePhenotypes(id: String, rows: Seq[MouseGene])
 
-object MousePhenotype extends Logging {
+object MousePhenotypes extends Logging {
 
   implicit val genotypePhenotypeW = Json.writes[GenotypePhenotype]
   implicit val mousePhenotypeW = Json.writes[MousePhenotype]

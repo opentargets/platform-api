@@ -17,6 +17,7 @@ case class Pagination(index: Int, size: Int) {
     case (i, s) => s"LIMIT ${i * s} , $s"
     case _ => s"LIMIT ${Pagination.indexDefault}, ${Pagination.sizeDefault}"
   }
+
   val toES: (Int, Int) = (index, size) match {
     case (0, 0) => (0, Pagination.sizeDefault)
     case (0, s) => (0, s)
@@ -32,5 +33,5 @@ object Pagination {
   val indexDefault: Int = 0
   def mkDefault: Pagination = Pagination(indexDefault, sizeDefault)
 
-  implicit val paginationJSONImp = Json.format[Pagination]
+  implicit val paginationJSONImp = Json.format[models.entities.Pagination]
 }

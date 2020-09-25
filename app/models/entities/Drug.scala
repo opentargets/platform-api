@@ -49,7 +49,6 @@ case class Drug(id: String,
                 description: Option[String])
 
 object Drug {
-  val logger = Logger(this.getClass)
   implicit val linkedIdsImpW = Json.format[models.entities.LinkedIds]
   implicit val withdrawnNoticeImpW = Json.format[models.entities.WithdrawnNotice]
   implicit val referenceImpW = Json.format[models.entities.Reference]

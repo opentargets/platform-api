@@ -22,9 +22,6 @@ case class SearchResults(hits: Seq[SearchResult],
 
 object SearchResults {
   val empty = SearchResults(Seq.empty, None, 0)
-}
-
-object SearchResult extends Logging {
   implicit val searchResultAggsCategoryImpW = Json.writes[models.entities.SearchResultAggCategory]
   implicit val searchResultAggsEntityImpW = Json.writes[models.entities.SearchResultAggEntity]
   implicit val searchResultAggsImpW = Json.writes[models.entities.SearchResultAggs]

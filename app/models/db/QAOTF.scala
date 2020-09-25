@@ -6,7 +6,7 @@ import esecuele.Column._
 import esecuele.{Query => Q}
 import models.entities.Harmonic
 import models.entities.Harmonic.{maxVectorElementsDefault, pExponentDefault}
-import play.api.Logger
+import play.api.{Logger, Logging}
 
 abstract class Queryable {
   def query: Query
@@ -31,9 +31,7 @@ case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[St
                  BFilter: Option[String], orderScoreBy: Option[(String, String)],
                  datasourceWeights: Seq[(String, Double)],
                  nonPropagatedDatasources: Set[String],
-                 offset: Int, size: Int) extends Queryable {
-  val logger = Logger(this.getClass)
-
+                 offset: Int, size: Int) extends Queryable with Logging {
   val A = column("A")
   val B = column("B")
   val DS = column("datasource_id")

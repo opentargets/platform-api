@@ -3,23 +3,20 @@ package models
 import clickhouse.ClickHouseProfile
 import javax.inject.Inject
 import models.Helpers._
-import play.api.{Configuration, Environment, Logger}
+import play.api.{Configuration, Environment, Logging}
 import com.sksamuel.elastic4s._
 import com.sksamuel.elastic4s.requests.searches._
 import com.sksamuel.elastic4s.http.JavaClient
-import com.sksamuel.elastic4s.requests.searches.aggs.{CardinalityAggregation, CompositeAggregation, FilterAggregation, NestedAggregation, ReverseNestedAggregation, TermsAggregation, TermsValueSource}
-import com.sksamuel.elastic4s.requests.searches.queries.BoolQuery
+import com.sksamuel.elastic4s.requests.searches.aggs._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
-import models.entities.Configuration._
-import models.entities.Configuration.JSONImplicits._
 import models.db.QAOTF
-import models.entities.Associations._
-import models.entities.Associations.DBImplicits._
 import models.entities._
-import models.entities.Aggregations.JSONImplicits._
-import models.entities.HealthCheck.JSONImplicits._
+import models.entities.Configuration._
+import models.entities.CancerBiomarkers._
+import models.entities.Aggregations._
+import models.entities.Associations._
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
 import play.db.NamedDatabase
@@ -27,8 +24,7 @@ import esecuele._
 
 class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider: DatabaseConfigProvider,
                         config: Configuration,
-                        env: Environment) {
-  val logger = Logger(this.getClass)
+                        env: Environment) extends Logging {
 
   val defaultOTSettings = loadConfigurationObject[OTSettings]("ot", config)
   val defaultESSettings = defaultOTSettings.elasticsearch
@@ -69,7 +65,6 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       maxAgg("maxCountAOrB", "countAOrB")
     )
 
-    import DDRelation.JSONImplicits._
     val excludedFields = List("relatedInfo*")
     esRetriever.getByIndexedQuery(indexName, kv, pag, fromJsValue[DDRelation],
       aggs, ElasticRetriever.sortByDesc("score"), excludedFields).map {
@@ -95,7 +90,6 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       maxAgg("maxCountAOrB", "countAOrB")
     )
 
-    import DDRelation.JSONImplicits._
     val excludedFields = List("relatedInfo*")
     esRetriever.getByIndexedQuery(indexName, kv, pag, fromJsValue[DDRelation],
       aggs, ElasticRetriever.sortByDesc("score"), excludedFields).map {
@@ -120,7 +114,6 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       valueCountAgg("eventCount", "event.keyword")
     )
 
-    import AdverseEvent.JSONImplicits._
     esRetriever.getByIndexedQuery(indexName, kv, pag, fromJsValue[AdverseEvent], aggs,
       ElasticRetriever.sortByDesc("llr")).map {
       case (Seq(), _) => None
@@ -146,7 +139,6 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       valueCountAgg("rowsCount", "id.keyword")
     )
 
-    import CancerBiomarker.JSONImplicits._
     esRetriever.getByIndexedQuery(cbIndex, kv, pag, fromJsValue[CancerBiomarker], aggs).map {
       case (Seq(), _) => None
       case (seq, agg) =>
@@ -176,7 +168,6 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       valueCountAgg("rowsCount", "drug.raw")
     )
 
-    import KnownDrug.JSONImplicits._
     esRetriever.getByFreeQuery(cbIndex, queryString, kv, pag, fromJsValue[KnownDrug],
       aggs, Some(sortByField), Seq("ancestors", "descendants"), cursor).map {
       case (Seq(), _, _) => None
@@ -195,7 +186,6 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val targetIndexName = defaultESSettings.entities
       .find(_.name == "eco").map(_.index).getOrElse("ecos")
 
-    import ECO.JSONImplicits._
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[ECO])
   }
 
@@ -203,7 +193,6 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val targetIndexName = defaultESSettings.entities
       .find(_.name == "mp").map(_.index).getOrElse("mp")
 
-    import MousePhenotype.JSONImplicits._
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[MousePhenotypes])
   }
 
@@ -211,7 +200,6 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val otarsIndexName = defaultESSettings.entities
       .find(_.name == "otar_projects").map(_.index).getOrElse("otar_projects")
 
-    import OtarProject.JSONImplicits._
     esRetriever.getByIds(otarsIndexName, ids, fromJsValue[OtarProjects])
   }
 
@@ -219,7 +207,6 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val targetIndexName = defaultESSettings.entities
       .find(_.name == "expression").map(_.index).getOrElse("expression")
 
-    import Expression.JSONImplicits._
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[Expressions])
   }
 
@@ -227,7 +214,6 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val targetIndexName = defaultESSettings.entities
       .find(_.name == "reactome").map(_.index).getOrElse("reactome")
 
-    import Reactome.JSONImplicits._
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[Reactome])
   }
 
@@ -236,7 +222,6 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       .find(_.name == "target").map(_.index).getOrElse("targets")
 
     val excludedFields = List("mousePhenotypes*")
-    import Target.JSONImplicits._
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[Target],
       excludedFields = excludedFields)
   }
@@ -244,8 +229,6 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
   def getDrugs(ids: Seq[String]): Future[IndexedSeq[Drug]] = {
     val drugIndexName = defaultESSettings.entities
       .find(_.name == "drug").map(_.index).getOrElse("drugs")
-
-    import Drug.JSONImplicits._
     esRetriever.getByIds(drugIndexName, ids, fromJsValue[Drug])
   }
 
@@ -253,7 +236,6 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val diseaseIndexName = defaultESSettings.entities
       .find(_.name == "disease").map(_.index).getOrElse("diseases")
 
-    import Disease.JSONImplicits._
     esRetriever.getByIds(diseaseIndexName, ids, fromJsValue[Disease])
   }
 
@@ -416,7 +398,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
           pair =>
             NamedAggregation(pair._1,
               (pair._2 \ "uniques" \\ "value").headOption.map(jv => jv.as[Long]),
-              (pair._2 \\ "buckets").head.as[Array[Aggregation]])
+              (pair._2 \\ "buckets").head.as[Array[entities.Aggregation]])
         }
 
         Some(Aggregations(uniques, restAggs))
@@ -534,7 +516,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
           pair =>
             NamedAggregation(pair._1,
               (pair._2 \ "uniques" \\ "value").headOption.map(jv => jv.as[Long]),
-              (pair._2 \\ "buckets").head.as[Array[Aggregation]])
+              (pair._2 \\ "buckets").head.as[Array[entities.Aggregation]])
         }
 
         Some(Aggregations(uniques, restAggs))

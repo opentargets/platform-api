@@ -1,7 +1,5 @@
 package models.entities
 
-import models.Helpers.logger
-import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
@@ -20,9 +18,7 @@ case class Expression(tissue: Tissue, rna: RNAExpression, protein: ProteinExpres
 case class Expressions(id: String, rows: Seq[Expression])
 
 
-object Expression {
-  val logger = Logger(this.getClass)
-
+object Expressions {
   implicit val tissueW = Json.writes[Tissue]
   implicit val rnaExpressionW = Json.writes[RNAExpression]
   implicit val cellTypeW = Json.writes[CellType]

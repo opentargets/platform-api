@@ -1,8 +1,5 @@
 package clickhouse.rep
 
-import play.api.Logger
-import shapeless._
-
 /** Clickhouse supports Array of elements from different types and this is an approximation
   * to it.
   *

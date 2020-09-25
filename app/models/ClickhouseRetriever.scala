@@ -4,12 +4,12 @@ import clickhouse.ClickHouseProfile
 import esecuele.Column._
 import esecuele.{Functions => F, Query => Q, _}
 import models.db.{QAOTF, Queryable}
-import models.entities.Associations.DBImplicits._
+import models.entities.Associations._
 import models.entities.Configuration.{DatasourceSettings, LUTableSettings, OTSettings}
 import models.entities.Harmonic._
-import models.entities.Network.DBImplicits._
+import models.entities.Network._
 import models.entities._
-import play.api.Logger
+import play.api.{Logger, Logging}
 import slick.basic.DatabaseConfig
 import slick.jdbc.{GetResult, SQLActionBuilder}
 
@@ -17,14 +17,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
-class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: OTSettings) {
+class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: OTSettings) extends Logging {
   import dbConfig.profile.api._
 
   implicit private def toSQL(q: Q): SQLActionBuilder = sql"""#${q.rep}"""
   implicit private def toSQL(q: Queryable): SQLActionBuilder = sql"""#${q.query.rep}"""
 
   val db = dbConfig.db
-  val logger = Logger(this.getClass)
   val chSettings = config.clickhouse
   val datasources = chSettings.harmonic.datasources.toVector
   val diseaseNetworks = chSettings.disease.networks.map(x => x.name -> x).toMap

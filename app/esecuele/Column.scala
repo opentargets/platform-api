@@ -12,14 +12,18 @@ case class Column(raw: Expression, alias: Option[String]) extends Rep {
   override def toString: String = rep
 
   def as(newAlias: Option[String]): Column = Column(raw, newAlias)
+
   def name: Column = alias.map(Column.apply).getOrElse(expr)
+
   def expr: Column = Column(raw, None)
+
   def asc: Column = Column(RawExpression(name.rep + " ASC"), None)
+
   def desc: Column = Column(RawExpression(name.rep + " DESC"), None)
 }
 
 object Column {
-  private def parse(expr: String): Column  = {
+  private def parse(expr: String): Column = {
     // can produce an adt for a full parse using a proper parsing library
     val tokens = List(expr.trim.stripSuffix(",").trim)
 
@@ -30,7 +34,9 @@ object Column {
   }
 
   def apply(expression: Expression): Column = Column(expression, None)
+
   def apply(name: String): Column = parse(name)
+
   def apply(ex: String, asName: String): Column = parse(ex).as(Some(asName))
 
   def column(name: String): Column = Column(name)

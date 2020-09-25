@@ -3,16 +3,28 @@ package models.gql
 import models.entities.Configuration._
 import models.entities.Pagination._
 import models.entities._
-import play.api.libs.json.Json
+import play.api.libs.json._
 import sangria.macros.derive._
 import sangria.schema._
+import sangria.marshalling.playJson._
+import sangria.schema.AstSchemaBuilder._
 
-object GQLArguments {
-  import GQLImplicits._
+object Arguments {
+  import Objects._
+  import Aggregations._
+
+  val paginationGQLImp = deriveInputObjectType[Pagination]()
+
+  val datasourceSettingsInputImp = deriveInputObjectType[DatasourceSettings](
+    InputObjectTypeName("DatasourceSettingsInput")
+  )
+
+  val aggregationFilterImp = deriveInputObjectType[AggregationFilter]()
 
   val entityNames = Argument("entityNames", OptionInputType(ListInputType(StringType)),
     description = "List of entity names to search for (target, disease, drug,...)")
-  val pageArg = Argument("page", OptionInputType(paginationImp))
+
+  val pageArg = Argument("page", OptionInputType(paginationGQLImp))
   val pageSize = Argument("size", OptionInputType(IntType))
   val cursor = Argument("cursor", OptionInputType(ListInputType(StringType)))
   val queryString = Argument("queryString", StringType, description = "Query string")

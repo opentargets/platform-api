@@ -14,7 +14,7 @@ case class CancerBiomarker(id: String, associationType: String, disease: String,
 case class CancerBiomarkers(uniqueDrugs: Long, uniqueDiseases: Long, uniqueBiomarkers: Long,
                             count: Long, rows: Seq[CancerBiomarker])
 
-object CancerBiomarker {
+object CancerBiomarkers {
   implicit val cancerBiomarkerSourceImpW = Json.writes[models.entities.CancerBiomarkerSource]
   implicit val cancerBiomarkerSourceImpR: Reads[models.entities.CancerBiomarkerSource] =
     ((JsPath \ "description").readNullable[String] and
