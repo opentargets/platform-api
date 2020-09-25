@@ -309,8 +309,8 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
 
 object ElasticRetriever extends Logging {
 
-  def aggregationFilterProducer(settings: AggregationSettings, mappings: Map[String, AggregationMapping]) = {
-    val filtersByName = settings.filters.groupBy(_.name).filterKeys(mappings.contains).map {
+  def aggregationFilterProducer(filters: Seq[AggregationFilter], mappings: Map[String, AggregationMapping]) = {
+    val filtersByName = filters.groupBy(_.name).filterKeys(mappings.contains).map {
       case (facet, filters) =>
         val mappedFacet = mappings(facet)
         val ff = filters.foldLeft(BoolQuery()) {

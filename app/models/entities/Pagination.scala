@@ -1,5 +1,7 @@
 package models.entities
 
+import play.api.libs.json.Json
+
 /** Pagination case class takes an index from 0..page-1 and size indicate
  * the batch of each page.
  * */
@@ -29,4 +31,6 @@ object Pagination {
   val sizeDefault: Int = 25
   val indexDefault: Int = 0
   def mkDefault: Pagination = Pagination(indexDefault, sizeDefault)
+
+  implicit val paginationJSONImp = Json.format[Pagination]
 }

@@ -19,16 +19,12 @@ object Network {
     val w = Where(F.equals(colId, Column.literal(id)))
     val l = Limit(0, 1)
 
-    Query(s,f, w, l)
+    Query(s, f, w, l)
   }
 
-  object DBImplicits {
-    implicit val getNetworkNodeFromDB: GetResult[NetworkNode] = {
-      GetResult(r => NetworkNode(r.<<, StrSeqRep(r.<<)))
-    }
+  implicit val getNetworkNodeFromDB: GetResult[NetworkNode] = {
+    GetResult(r => NetworkNode(r.<<, StrSeqRep(r.<<)))
   }
 
-  object JSONImplicits {
-    implicit val networkNodeImp = Json.format[NetworkNode]
-  }
+  implicit val networkNodeImp = Json.format[NetworkNode]
 }

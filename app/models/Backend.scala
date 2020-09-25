@@ -274,7 +274,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
   def getAssociationsDiseaseFixed(disease: Disease,
                                   datasources: Option[Seq[DatasourceSettings]],
                                   indirect: Boolean,
-                                  aggregationSettings: AggregationSettings,
+                                  aggregationFilters: Seq[AggregationFilter],
                                   targetSet: Set[String],
                                   filter: Option[String],
                                   orderBy: Option[(String, String)],
@@ -314,7 +314,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       "targetClasses" -> AggregationMapping("facet_classes", IndexedSeq("l1", "l2"), true)
     )
 
-    val queries = ElasticRetriever.aggregationFilterProducer(aggregationSettings, mappings)
+    val queries = ElasticRetriever.aggregationFilterProducer(aggregationFilters, mappings)
     val filtersMap = queries._2
 
     val uniqueTargetsAgg = CardinalityAggregation("uniques", Some("target_id.keyword"),
@@ -441,7 +441,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
   def getAssociationsTargetFixed(target: Target,
                                  datasources: Option[Seq[DatasourceSettings]],
                                  indirect: Boolean,
-                                 aggregationSettings: AggregationSettings,
+                                 aggregationFilters: Seq[AggregationFilter],
                                  diseaseSet: Set[String],
                                  filter: Option[String],
                                  orderBy: Option[(String, String)],
@@ -478,7 +478,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       "therapeuticAreas" -> AggregationMapping("facet_therapeuticAreas", IndexedSeq.empty, false)
     )
 
-    val queries = ElasticRetriever.aggregationFilterProducer(aggregationSettings, mappings)
+    val queries = ElasticRetriever.aggregationFilterProducer(aggregationFilters, mappings)
     val filtersMap = queries._2
 
     val uniqueDiseasesAgg = CardinalityAggregation("uniques", Some("disease_id.keyword"),

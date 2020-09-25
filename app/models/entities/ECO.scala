@@ -10,7 +10,5 @@ case class ECO(id: String, label: String)
 object ECO {
   val logger = Logger(this.getClass)
 
-  object JSONImplicits {
-    implicit val ecoImpF = Json.format[models.entities.ECO]
-  }
+  implicit val ecoImpF = Json.format[models.entities.ECO]
 }

@@ -13,9 +13,5 @@ case class DDRelation(id: String, A: String, B: String,
 case class DDRelations(maxCountAOrB: Long, count: Long, rows: Seq[DDRelation])
 
 object DDRelation {
-  val logger = Logger(this.getClass)
-
-  object JSONImplicits {
-    implicit val adverseEventImpF = Json.format[DDRelation]
-  }
+  implicit val adverseEventImpF = Json.format[DDRelation]
 }

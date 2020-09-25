@@ -13,7 +13,6 @@ import slick.jdbc.GetResult
 
 object Harmonic {
 
-
   val maxVectorElementsDefault: Int = 100
   val pExponentDefault: Int = 2
 

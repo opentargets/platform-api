@@ -1,6 +1,7 @@
 package models
 
 import play.api.libs.json.Json
+import play.api.Logging
 import sangria.schema._
 import sangria.macros._
 import sangria.macros.derive._
@@ -11,8 +12,7 @@ import sangria.schema.AstSchemaBuilder._
 import sangria.util._
 import entities._
 import entities.Configuration._
-import entities.Configuration.JSONImplicits._
-import play.api.{Configuration, Logger}
+import play.api.Configuration
 import play.api.mvc.CookieBaker
 import sangria.execution.deferred._
 
@@ -20,63 +20,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
 import com.sksamuel.elastic4s.requests.searches._
 import com.sksamuel.elastic4s.requests.searches.sort._
-import models.GQLSchema.{associatedOTFDiseasesImp, associatedOTFTargetsImp}
-import models.entities.Configuration._
+import models.gql.GQLImplicits._
+import models.gql.GQLArguments._
 
-trait GQLArguments {
-  implicit val paginationFormatImp = Json.format[Pagination]
-
-  val pagination = deriveInputObjectType[Pagination]()
-  val entityNames = Argument("entityNames", OptionInputType(ListInputType(StringType)),
-    description = "List of entity names to search for (target, disease, drug,...)")
-  val pageArg = Argument("page", OptionInputType(pagination))
-  val pageSize = Argument("size", OptionInputType(IntType))
-  val cursor = Argument("cursor", OptionInputType(ListInputType(StringType)))
-  val queryString = Argument("queryString", StringType, description = "Query string")
-  val freeTextQuery = Argument("freeTextQuery", OptionInputType(StringType), description = "Query string")
-  val efoId = Argument("efoId", StringType, description = "EFO ID")
-  val efoIds = Argument("efoIds", ListInputType(StringType), description = "EFO ID")
-  val networkExpansionId = Argument("networkExpansionId", OptionInputType(StringType), description = "Network expansion ID")
-  val ensemblId = Argument("ensemblId", StringType, description = "Ensembl ID")
-  val ensemblIds = Argument("ensemblIds", ListInputType(StringType), description = "List of Ensembl IDs")
-  val chemblId = Argument("chemblId", StringType, description = "Chembl ID")
-  val chemblIds = Argument("chemblIds", ListInputType(StringType), description = "List of Chembl IDs")
-  val indrectEvidences = Argument("enableIndirect", OptionInputType(BooleanType),
-    "Use disease ontology to capture evidences from all descendants to build associations")
-
-  val BFilterString = Argument("BFilter", OptionInputType(StringType))
-  val scoreSorting = Argument("orderByScore", OptionInputType(StringType))
-  val AId = Argument("A", StringType)
-  val AIds = Argument("As", ListInputType(StringType))
-  val BIds = Argument("Bs", OptionInputType(ListInputType(StringType)))
-}
-
-trait GQLMeta {
-  implicit val metaDataVersionImp = deriveObjectType[Backend, DataVersion]()
-  implicit val metaAPIVersionImp = deriveObjectType[Backend, APIVersion]()
-  implicit val metaImp = deriveObjectType[Backend, Meta]()
-}
-
-trait GQLEntities extends GQLArguments {
-  val logger = Logger(this.getClass)
-
+trait GQLEntities extends Logging {
   val entityImp = InterfaceType("Entity", fields[Backend, Entity](
     Field("id", StringType, resolve = _.value.id)))
-
-  implicit val datasourceSettingsJsonImp = Json.format[DatasourceSettings]
-  implicit val datasourceSettingsInputImp = deriveInputObjectType[DatasourceSettings](
-    InputObjectTypeName("DatasourceSettingsInput")
-  )
-  val datasourceSettingsListArg = Argument("datasources",
-    OptionInputType(ListInputType(datasourceSettingsInputImp)))
-
-  implicit val aggregationFilterJsonImp = Json.format[AggregationFilter]
-  implicit val aggregationFilterImp = deriveInputObjectType[AggregationFilter](
-    InputObjectTypeName("AggregationFilterInput")
-  )
-
-  val aggregationFiltersListArg = Argument("aggregationFilters",
-    OptionInputType(ListInputType(aggregationFilterImp)))
 
   // target
   implicit val targetHasId = HasId[Target, String](_.id)
@@ -412,10 +361,7 @@ trait GQLEntities extends GQLArguments {
           ctx.value,
           ctx arg datasourceSettingsListArg,
           ctx arg indrectEvidences getOrElse (false),
-          ctx arg aggregationFiltersListArg match {
-            case Some(v) => AggregationSettings(v)
-            case None => AggregationSettings.empty
-          },
+          ctx arg aggregationFiltersListArg getOrElse (Seq.empty),
           ctx arg BIds map (_.toSet) getOrElse (Set.empty),
           ctx arg BFilterString,
           (ctx arg scoreSorting) map (_.split(" ").take(2).toList match {
@@ -496,10 +442,7 @@ trait GQLEntities extends GQLArguments {
           ctx.value,
           ctx arg datasourceSettingsListArg,
           ctx arg indrectEvidences getOrElse (true),
-          ctx arg aggregationFiltersListArg match {
-            case Some(v) => AggregationSettings(v)
-            case None => AggregationSettings.empty
-          },
+          ctx arg aggregationFiltersListArg getOrElse (Seq.empty),
           ctx arg BIds map (_.toSet) getOrElse (Set.empty),
           ctx arg BFilterString,
           (ctx arg scoreSorting) map (_.split(" ").take(2).toList match {
@@ -729,7 +672,7 @@ trait GQLEntities extends GQLArguments {
 
 }
 
-object GQLSchema extends GQLMeta with GQLEntities {
+object GQLSchema extends GQLEntities {
   val resolvers = DeferredResolver.fetchers(targetsFetcher,
     drugsFetcher,
     diseasesFetcher,
@@ -757,6 +700,9 @@ object GQLSchema extends GQLMeta with GQLEntities {
           }
         }))
   )
+
+  import SearchResult._
+  import SearchResults._
   implicit val searchResultsImp = deriveObjectType[Backend, models.entities.SearchResults]()
 
   val searchResultsGQLImp = ObjectType("SearchResults",
