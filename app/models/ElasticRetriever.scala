@@ -308,6 +308,10 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
 
 object ElasticRetriever extends Logging {
 
+  /** aggregationFilterProducer returns a tuple where the first element is the overall list
+   * of filters and the second is a map with the cartesian product of each aggregation with
+   * the complementary list of filters
+   */
   def aggregationFilterProducer(filters: Seq[AggregationFilter], mappings: Map[String, AggregationMapping]) = {
     val filtersByName = filters.groupBy(_.name).filterKeys(mappings.contains).map {
       case (facet, filters) =>
