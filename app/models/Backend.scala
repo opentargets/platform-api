@@ -512,8 +512,16 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       page.offset, page.size)
 
     logger.debug(s"get target id ${target.approvedSymbol}")
-    val tIDs = Set.empty + target.id
-    val indirectIDs = if (indirect) tIDs else Set.empty[String]
+    val indirectIDs = if (indirect) {
+      val interactions = getTargetInteractions(target.id, None, pagination = Some(Pagination(0, 10000))) map {
+        case Some(ints) => ints.rows.withFilter(_.targetB.startsWith("ENSG")).map(_.targetB).toSet + target.id
+        case None => Set.empty + target.id
+      }
+
+      interactions.await
+
+    } else Set.empty[String]
+
     val simpleQ = aotfQ(indirectIDs, diseaseSet).simpleQuery(0, 100000)
 
     val evidencesIndexName = defaultESSettings.entities
