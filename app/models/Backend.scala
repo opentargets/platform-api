@@ -275,6 +275,30 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     }
   }
 
+  def getTargetInteractionEvidences(interaction: Interaction):
+  Future[IndexedSeq[InteractionEvidence]] = {
+
+    val pag = Pagination(0, 10000)
+
+    val cbIndex = defaultESSettings.entities
+      .find(_.name == "network_evidence").map(_.index).getOrElse("network_evidence")
+
+    val kv = List(
+      "interactionResources.sourceDatabase.keyword" -> interaction.sourceDatabase,
+      "targetA.keyword" -> interaction.targetA,
+      "targetB.keyword" -> interaction.targetB,
+      "intA.keyword" -> interaction.intA,
+      "intB.keyword" -> interaction.intB,
+      "intABiologicalRole.keyword" -> interaction.intABiologicalRole,
+      "intBBiologicalRole.keyword" -> interaction.intBBiologicalRole
+    ).toMap
+
+    esRetriever.getByIndexedQuery(cbIndex, kv, pag, fromJsValue[InteractionEvidence]).map {
+      case (Seq(), _) => IndexedSeq.empty
+      case (seq, _) => seq
+    }
+  }
+
   def search(qString: String, pagination: Option[Pagination],
              entityNames: Seq[String]): Future[SearchResults] = {
     val entities = for {

@@ -2,6 +2,7 @@ package models.gql
 
 import models._
 import models.entities._
+import models.entities.Interactions._
 import models.entities.Configuration._
 import play.api.Logging
 import sangria.macros.derive._
@@ -33,13 +34,22 @@ object Objects extends Logging {
   implicit val metaAPIVersionImp = deriveObjectType[Backend, APIVersion]()
   implicit val metaImp = deriveObjectType[Backend, Meta]()
 
+  implicit val interactionSpeciesImp = deriveObjectType[Backend, InteractionSpecies]()
+  implicit val interactionResourcesImp = deriveObjectType[Backend, InteractionResources]()
+  implicit val interactionEvidenceImp = deriveObjectType[Backend, InteractionEvidence]()
+
   implicit val interactionImp = deriveObjectType[Backend, Interaction](
     ReplaceField("targetA", Field("targetA",
       OptionType(targetImp), Some("Target entity"),
       resolve = r => targetsFetcher.deferOpt(r.value.targetA))),
     ReplaceField("targetB", Field("targetB",
       OptionType(targetImp), Some("Target entity"),
-      resolve = r => targetsFetcher.deferOpt(r.value.targetB)))
+      resolve = r => targetsFetcher.deferOpt(r.value.targetB))),
+    AddFields(
+      Field("evidences", ListType(interactionEvidenceImp),
+        description = Some("List of evidences for this interaction"),
+        resolve = r => r.ctx.getTargetInteractionEvidences(r.value)
+      ))
   )
 
   implicit val interactionsImp = deriveObjectType[Backend, Interactions]()
