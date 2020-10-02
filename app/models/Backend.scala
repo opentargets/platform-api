@@ -13,6 +13,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
 import models.db.QAOTF
 import models.entities._
+import models.entities.Interactions._
 import models.entities.Configuration._
 import models.entities.CancerBiomarkers._
 import models.entities.Aggregations._
@@ -52,10 +53,12 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
 
   import com.sksamuel.elastic4s.ElasticDsl._
 
-  def getRelatedDiseases(kv: Map[String, String], pagination: Option[Pagination]):
+  def getRelatedDiseases(id: String, pagination: Option[Pagination]):
   Future[Option[DDRelations]] = {
 
     val pag = pagination.getOrElse(Pagination.mkDefault)
+
+    val kv = Map("A.keyword" -> id)
 
     val indexName = defaultESSettings.entities
       .find(_.name == "disease_relation").map(_.index).getOrElse("disease_relation")
@@ -77,13 +80,15 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     }
   }
 
-  def getRelatedTargets(kv: Map[String, String], pagination: Option[Pagination]):
+  def getRelatedTargets(id: String, pagination: Option[Pagination]):
   Future[Option[DDRelations]] = {
 
     val pag = pagination.getOrElse(Pagination.mkDefault)
 
     val indexName = defaultESSettings.entities
       .find(_.name == "target_relation").map(_.index).getOrElse("target_relation")
+
+    val kv = Map("A.keyword" -> id)
 
     val aggs = Seq(
       valueCountAgg("relationCount", "B.keyword"),
@@ -102,13 +107,15 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     }
   }
 
-  def getAdverseEvents(kv: Map[String, String], pagination: Option[Pagination]):
+  def getAdverseEvents(id: String, pagination: Option[Pagination]):
   Future[Option[AdverseEvents]] = {
 
     val pag = pagination.getOrElse(Pagination.mkDefault)
 
     val indexName = defaultESSettings.entities
       .find(_.name == "faers").map(_.index).getOrElse("faers")
+
+    val kv = Map("chembl_id.keyword" -> id)
 
     val aggs = Seq(
       valueCountAgg("eventCount", "event.keyword")
@@ -124,13 +131,15 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     }
   }
 
-  def getCancerBiomarkers(kv: Map[String, String], pagination: Option[Pagination]):
+  def getCancerBiomarkers(id: String, pagination: Option[Pagination]):
   Future[Option[CancerBiomarkers]] = {
 
     val pag = pagination.getOrElse(Pagination.mkDefault)
 
     val cbIndex = defaultESSettings.entities
       .find(_.name == "cancerBiomarker").map(_.index).getOrElse("cancerbiomarkers")
+
+    val kv = Map("target.keyword" -> id)
 
     val aggs = Seq(
       cardinalityAgg("uniqueDrugs", "drugName.keyword"),
@@ -237,6 +246,33 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       .find(_.name == "disease").map(_.index).getOrElse("diseases")
 
     esRetriever.getByIds(diseaseIndexName, ids, fromJsValue[Disease])
+  }
+
+  def getTargetInteractions(id: String, dbName: Option[String], pagination: Option[Pagination]):
+  Future[Option[Interactions]] = {
+
+    val pag = pagination.getOrElse(Pagination.mkDefault)
+
+    val cbIndex = defaultESSettings.entities
+      .find(_.name == "network").map(_.index).getOrElse("network")
+
+    val kv = List(
+      Some("targetA.keyword" -> id),
+      dbName.map("sourceDatabase.keyword" -> _)
+    ).flatten.toMap
+
+    val aggs = Seq(
+      valueCountAgg("rowsCount", "targetA.keyword")
+    )
+
+    esRetriever.getByIndexedQuery(cbIndex, kv, pag, fromJsValue[Interaction], aggs).map {
+      case (Seq(), _) => None
+      case (seq, agg) =>
+        logger.debug(Json.prettyPrint(agg))
+
+        val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
+        Some(Interactions(rowsCount, seq))
+    }
   }
 
   def search(qString: String, pagination: Option[Pagination],

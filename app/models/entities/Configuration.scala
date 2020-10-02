@@ -25,13 +25,11 @@ object Configuration {
 
   case class LUTableSettings(label: String, name: String, key: String, field: Option[String])
 
-  case class AssociationSettings(label: String, name: String, key: String)
+  case class AssociationSettings(label: String, name: String)
 
-  case class TargetSettings(associations: AssociationSettings,
-                            networks: Seq[LUTableSettings])
+  case class TargetSettings(associations: AssociationSettings)
 
-  case class DiseaseSettings(associations: AssociationSettings,
-                             networks: Seq[LUTableSettings])
+  case class DiseaseSettings(associations: AssociationSettings)
 
   case class DatasourceSettings(id: String, weight: Double, propagate: Boolean)
 

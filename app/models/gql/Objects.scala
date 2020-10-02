@@ -33,6 +33,17 @@ object Objects extends Logging {
   implicit val metaAPIVersionImp = deriveObjectType[Backend, APIVersion]()
   implicit val metaImp = deriveObjectType[Backend, Meta]()
 
+  implicit val interactionImp = deriveObjectType[Backend, Interaction](
+    ReplaceField("targetA", Field("targetA",
+      OptionType(targetImp), Some("Target entity"),
+      resolve = r => targetsFetcher.deferOpt(r.value.targetA))),
+    ReplaceField("targetB", Field("targetB",
+      OptionType(targetImp), Some("Target entity"),
+      resolve = r => targetsFetcher.deferOpt(r.value.targetB)))
+  )
+
+  implicit val interactionsImp = deriveObjectType[Backend, Interactions]()
+
   implicit lazy val targetImp: ObjectType[Backend, Target] = deriveObjectType(
     ObjectTypeDescription("Target entity"),
     DocumentField("id", "Open Targets target id"),
@@ -57,6 +68,11 @@ object Objects extends Logging {
       ListType(reactomeImp), None,
       resolve = r => reactomeFetcher.deferSeq(r.value.reactome))),
     AddFields(
+      Field("interactions", OptionType(interactionsImp),
+        description = Some("Biological pathway membership from Reactome"),
+        arguments = databaseName :: pageArg :: Nil,
+        resolve = r => r.ctx.getTargetInteractions(r.value.id, r arg databaseName, r arg pageArg)
+      ),
       Field("mousePhenotypes", ListType(mouseGeneImp),
         description = Some("Biological pathway membership from Reactome"),
         resolve = r => DeferredValue(mousePhenotypeFetcher.deferOpt(r.value.id)).map {
@@ -87,7 +103,7 @@ object Objects extends Logging {
         arguments = pageArg :: Nil,
         resolve = ctx =>
           ctx.ctx.getCancerBiomarkers(
-            Map("target.keyword" -> ctx.value.id),
+            ctx.value.id,
             ctx.arg(pageArg))),
 
       Field("relatedTargets", OptionType(relatedTargetsImp),
@@ -95,7 +111,7 @@ object Objects extends Logging {
         arguments = pageArg :: Nil,
         resolve = ctx =>
           ctx.ctx.getRelatedTargets(
-            Map("A.keyword" -> ctx.value.id),
+            ctx.value.id,
             ctx.arg(pageArg))),
 
       Field("associatedDiseases", associatedOTFDiseasesImp,
@@ -169,7 +185,7 @@ object Objects extends Logging {
         arguments = pageArg :: Nil,
         resolve = ctx =>
           ctx.ctx.getRelatedDiseases(
-            Map("A.keyword" -> ctx.value.id),
+            ctx.value.id,
             ctx.arg(pageArg))),
 
       Field("associatedTargets", associatedOTFTargetsImp,
@@ -511,7 +527,7 @@ object Objects extends Logging {
         arguments = pageArg :: Nil,
         resolve = ctx =>
           ctx.ctx.getAdverseEvents(
-            Map("chembl_id.keyword" -> ctx.value.id),
+            ctx.value.id,
             ctx.arg(pageArg)))
     ),
     ReplaceField("linkedDiseases", Field("linkedDiseases", linkedDiseasesImp,
@@ -530,8 +546,6 @@ object Objects extends Logging {
   implicit val diseaseSettingsImp = deriveObjectType[Backend, DiseaseSettings]()
   implicit val harmonicSettingsImp = deriveObjectType[Backend, HarmonicSettings]()
   implicit val clickhouseSettingsImp = deriveObjectType[Backend, ClickhouseSettings]()
-
-  lazy implicit val networkNodeImp = deriveObjectType[Backend, NetworkNode]()
 
   lazy implicit val aggregationImp: ObjectType[Backend, Aggregation] = deriveObjectType[Backend, Aggregation]()
   lazy implicit val namedAggregationImp: ObjectType[Backend, NamedAggregation] = deriveObjectType[Backend, NamedAggregation]()

@@ -2,14 +2,12 @@ package models
 
 import clickhouse.ClickHouseProfile
 import esecuele.Column._
-import esecuele.{Functions => F, Query => Q, _}
+import esecuele.{Query => Q, _}
 import models.db.{QAOTF, Queryable}
 import models.entities.Associations._
 import models.entities.Configuration.{DatasourceSettings, LUTableSettings, OTSettings}
-import models.entities.Harmonic._
-import models.entities.Network._
 import models.entities._
-import play.api.{Logger, Logging}
+import play.api.Logging
 import slick.basic.DatabaseConfig
 import slick.jdbc.{GetResult, SQLActionBuilder}
 
@@ -25,28 +23,6 @@ class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: O
 
   val db = dbConfig.db
   val chSettings = config.clickhouse
-  val datasources = chSettings.harmonic.datasources.toVector
-  val diseaseNetworks = chSettings.disease.networks.map(x => x.name -> x).toMap
-  val targetNetworks = chSettings.target.networks.map(x => x.name -> x).toMap
-
-  def getDatasourceSettings: Future[Vector[DatasourceSettings]] =
-    Future.successful(datasources)
-
-  def getTargetNetworkList: Future[Vector[LUTableSettings]] =
-    Future.successful(chSettings.target.networks.toVector)
-
-  def getDiseaseNetworkList: Future[Vector[LUTableSettings]] =
-    Future.successful(chSettings.disease.networks.toVector)
-
-  def getNodeNeighbours(netSetttings: LUTableSettings, id: String): Future[Option[NetworkNode]] = {
-    val q = Network(netSetttings, id).as[NetworkNode]
-    db.run(q.asTry) map {
-      case Success(x) => x.headOption
-      case Failure(exception) =>
-        logger.error(exception.getMessage)
-        None
-    }
-  }
 
   def getUniqList[A](of: Seq[String], from: String)(implicit rconv: GetResult[A]): Future[Vector[A]] = {
     getUniqList[A](of, Column(from))(rconv)
