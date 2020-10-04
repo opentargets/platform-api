@@ -267,7 +267,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     )
 
     esRetriever.getByIndexedQuery(cbIndex, kv, pag, fromJsValue[Interaction], aggs,
-      Some(sort.FieldSort("", order = SortOrder.DESC))).map {
+      Some(sort.FieldSort("scoring", order = SortOrder.DESC))).map {
       case (Seq(), _) => None
       case (seq, agg) =>
         logger.debug(Json.prettyPrint(agg))
