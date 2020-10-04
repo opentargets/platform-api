@@ -8,6 +8,7 @@ import com.sksamuel.elastic4s._
 import com.sksamuel.elastic4s.requests.searches._
 import com.sksamuel.elastic4s.http.JavaClient
 import com.sksamuel.elastic4s.requests.searches.aggs._
+import com.sksamuel.elastic4s.requests.searches.sort.{SortMode, SortOrder}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
@@ -265,7 +266,8 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       valueCountAgg("rowsCount", "targetA.keyword")
     )
 
-    esRetriever.getByIndexedQuery(cbIndex, kv, pag, fromJsValue[Interaction], aggs).map {
+    esRetriever.getByIndexedQuery(cbIndex, kv, pag, fromJsValue[Interaction], aggs,
+      Some(sort.FieldSort("", order = SortOrder.DESC))).map {
       case (Seq(), _) => None
       case (seq, agg) =>
         logger.debug(Json.prettyPrint(agg))
