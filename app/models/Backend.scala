@@ -313,7 +313,8 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
   }
 
   def getAssociationDatasources: Future[Vector[EvidenceSource]] =
-    dbRetriever.getUniqList[EvidenceSource](Seq("datasource_id", "datatype_id"), "ot.aotf_direct_d")
+    dbRetriever.getUniqList[EvidenceSource](Seq("datasource_id", "datatype_id"),
+      defaultOTSettings.clickhouse.disease.associations.name)
 
   def getAssociationsDiseaseFixed(disease: Disease,
                                   datasources: Option[Seq[DatasourceSettings]],
