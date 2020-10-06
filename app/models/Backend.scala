@@ -119,7 +119,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val kv = Map("chembl_id.keyword" -> id)
 
     val aggs = Seq(
-      valueCountAgg("eventCount", "event.keyword")
+      valueCountAgg("eventCount", "name.keyword")
     )
 
     esRetriever.getByIndexedQuery(indexName, kv, pag, fromJsValue[AdverseEvent], aggs,
