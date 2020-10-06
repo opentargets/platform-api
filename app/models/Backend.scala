@@ -123,7 +123,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     )
 
     esRetriever.getByIndexedQuery(indexName, kv, pag, fromJsValue[AdverseEvent], aggs,
-      ElasticRetriever.sortByDesc("llr")).map {
+      ElasticRetriever.sortByDesc("logLR")).map {
       case (Seq(), _) => None
       case (seq, agg) =>
         logger.debug(Json.prettyPrint(agg))

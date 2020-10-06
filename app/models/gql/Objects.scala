@@ -324,14 +324,14 @@ object Objects extends Logging {
     ObjectTypeDescription("Significant adverse event entries"),
     DocumentField("name", "Meddra term on adverse event"),
     DocumentField("count", "Number of reports mentioning drug and adverse event"),
-    DocumentField("llr", "Log-likelihood ratio"),
+    DocumentField("logLR", "Log-likelihood ratio"),
     ExcludeFields("criticalValue")
   )
 
   implicit val adverseEventsImp = deriveObjectType[Backend, AdverseEvents](
     ObjectTypeDescription("Significant adverse events inferred from FAERS reports"),
     DocumentField("count", "Total significant adverse events"),
-    DocumentField("critVal", "LLR critical value to define significance"),
+    DocumentField("criticalValue", "LLR critical value to define significance"),
     DocumentField("rows", "Significant adverse event entries")
   )
 

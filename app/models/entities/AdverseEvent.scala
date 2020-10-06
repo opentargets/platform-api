@@ -4,16 +4,10 @@ import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 
-case class AdverseEvent(name: String, count: Long, llr: Double, criticalValue: Double)
+case class AdverseEvent(name: String, count: Long, logLR: Double, criticalValue: Double)
 
-case class AdverseEvents(count: Long, critVal: Double, rows: Seq[AdverseEvent])
+case class AdverseEvents(count: Long, criticalValue: Double, rows: Seq[AdverseEvent])
 
 object AdverseEvent {
-  implicit val adverseEventImpW = Json.writes[AdverseEvent]
-  implicit val adverseEventImpR: Reads[AdverseEvent] =
-    ((JsPath \ "event").read[String] and
-      (JsPath \ "count").read[Long] and
-      (JsPath \ "llr").read[Double] and
-      (JsPath \ "critval").read[Double]
-      ) (AdverseEvent.apply _)
+  implicit val adverseEventImpJSON = Json.format[AdverseEvent]
 }
