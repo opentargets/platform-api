@@ -3,22 +3,22 @@ package models
 import clickhouse.ClickHouseProfile
 import javax.inject.Inject
 import models.Helpers._
-import play.api.{Configuration, Environment, Logger}
+import play.api.{Configuration, Environment, Logging}
 import com.sksamuel.elastic4s._
 import com.sksamuel.elastic4s.requests.searches._
 import com.sksamuel.elastic4s.http.JavaClient
-import com.sksamuel.elastic4s.requests.searches.aggs.{CardinalityAggregation, CompositeAggregation, FilterAggregation, NestedAggregation, ReverseNestedAggregation, TermsAggregation, TermsValueSource}
+import com.sksamuel.elastic4s.requests.searches.aggs._
+import com.sksamuel.elastic4s.requests.searches.sort.{SortMode, SortOrder}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
-import models.entities.Configuration._
-import models.entities.Configuration.JSONImplicits._
 import models.db.QAOTF
-import models.entities.Associations._
-import models.entities.Associations.DBImplicits._
 import models.entities._
-import models.entities.Aggregations.JSONImplicits._
-import models.entities.HealthCheck.JSONImplicits._
+import models.entities.Interactions._
+import models.entities.Configuration._
+import models.entities.CancerBiomarkers._
+import models.entities.Aggregations._
+import models.entities.Associations._
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
 import play.db.NamedDatabase
@@ -26,8 +26,7 @@ import esecuele._
 
 class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider: DatabaseConfigProvider,
                         config: Configuration,
-                        env: Environment) {
-  val logger = Logger(this.getClass)
+                        env: Environment) extends Logging {
 
   val defaultOTSettings = loadConfigurationObject[OTSettings]("ot", config)
   val defaultESSettings = defaultOTSettings.elasticsearch
@@ -55,10 +54,12 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
 
   import com.sksamuel.elastic4s.ElasticDsl._
 
-  def getRelatedDiseases(kv: Map[String, String], pagination: Option[Pagination]):
+  def getRelatedDiseases(id: String, pagination: Option[Pagination]):
   Future[Option[DDRelations]] = {
 
     val pag = pagination.getOrElse(Pagination.mkDefault)
+
+    val kv = Map("A.keyword" -> id)
 
     val indexName = defaultESSettings.entities
       .find(_.name == "disease_relation").map(_.index).getOrElse("disease_relation")
@@ -68,7 +69,6 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       maxAgg("maxCountAOrB", "countAOrB")
     )
 
-    import DDRelation.JSONImplicits._
     val excludedFields = List("relatedInfo*")
     esRetriever.getByIndexedQuery(indexName, kv, pag, fromJsValue[DDRelation],
       aggs, ElasticRetriever.sortByDesc("score"), excludedFields).map {
@@ -81,7 +81,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     }
   }
 
-  def getRelatedTargets(kv: Map[String, String], pagination: Option[Pagination]):
+  def getRelatedTargets(id: String, pagination: Option[Pagination]):
   Future[Option[DDRelations]] = {
 
     val pag = pagination.getOrElse(Pagination.mkDefault)
@@ -89,12 +89,13 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val indexName = defaultESSettings.entities
       .find(_.name == "target_relation").map(_.index).getOrElse("target_relation")
 
+    val kv = Map("A.keyword" -> id)
+
     val aggs = Seq(
       valueCountAgg("relationCount", "B.keyword"),
       maxAgg("maxCountAOrB", "countAOrB")
     )
 
-    import DDRelation.JSONImplicits._
     val excludedFields = List("relatedInfo*")
     esRetriever.getByIndexedQuery(indexName, kv, pag, fromJsValue[DDRelation],
       aggs, ElasticRetriever.sortByDesc("score"), excludedFields).map {
@@ -107,7 +108,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     }
   }
 
-  def getAdverseEvents(kv: Map[String, String], pagination: Option[Pagination]):
+  def getAdverseEvents(id: String, pagination: Option[Pagination]):
   Future[Option[AdverseEvents]] = {
 
     val pag = pagination.getOrElse(Pagination.mkDefault)
@@ -115,13 +116,14 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val indexName = defaultESSettings.entities
       .find(_.name == "faers").map(_.index).getOrElse("faers")
 
+    val kv = Map("chembl_id.keyword" -> id)
+
     val aggs = Seq(
-      valueCountAgg("eventCount", "event.keyword")
+      valueCountAgg("eventCount", "name.keyword")
     )
 
-    import AdverseEvent.JSONImplicits._
     esRetriever.getByIndexedQuery(indexName, kv, pag, fromJsValue[AdverseEvent], aggs,
-      ElasticRetriever.sortByDesc("llr")).map {
+      ElasticRetriever.sortByDesc("logLR")).map {
       case (Seq(), _) => None
       case (seq, agg) =>
         logger.debug(Json.prettyPrint(agg))
@@ -130,13 +132,15 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     }
   }
 
-  def getCancerBiomarkers(kv: Map[String, String], pagination: Option[Pagination]):
+  def getCancerBiomarkers(id: String, pagination: Option[Pagination]):
   Future[Option[CancerBiomarkers]] = {
 
     val pag = pagination.getOrElse(Pagination.mkDefault)
 
     val cbIndex = defaultESSettings.entities
       .find(_.name == "cancerBiomarker").map(_.index).getOrElse("cancerbiomarkers")
+
+    val kv = Map("target.keyword" -> id)
 
     val aggs = Seq(
       cardinalityAgg("uniqueDrugs", "drugName.keyword"),
@@ -145,7 +149,6 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       valueCountAgg("rowsCount", "id.keyword")
     )
 
-    import CancerBiomarker.JSONImplicits._
     esRetriever.getByIndexedQuery(cbIndex, kv, pag, fromJsValue[CancerBiomarker], aggs).map {
       case (Seq(), _) => None
       case (seq, agg) =>
@@ -175,7 +178,6 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       valueCountAgg("rowsCount", "drug.raw")
     )
 
-    import KnownDrug.JSONImplicits._
     esRetriever.getByFreeQuery(cbIndex, queryString, kv, pag, fromJsValue[KnownDrug],
       aggs, Some(sortByField), Seq("ancestors", "descendants"), cursor).map {
       case (Seq(), _, _) => None
@@ -194,7 +196,6 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val targetIndexName = defaultESSettings.entities
       .find(_.name == "eco").map(_.index).getOrElse("ecos")
 
-    import ECO.JSONImplicits._
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[ECO])
   }
 
@@ -202,7 +203,6 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val targetIndexName = defaultESSettings.entities
       .find(_.name == "mp").map(_.index).getOrElse("mp")
 
-    import MousePhenotype.JSONImplicits._
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[MousePhenotypes])
   }
 
@@ -210,7 +210,6 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val otarsIndexName = defaultESSettings.entities
       .find(_.name == "otar_projects").map(_.index).getOrElse("otar_projects")
 
-    import OtarProject.JSONImplicits._
     esRetriever.getByIds(otarsIndexName, ids, fromJsValue[OtarProjects])
   }
 
@@ -218,7 +217,6 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val targetIndexName = defaultESSettings.entities
       .find(_.name == "expression").map(_.index).getOrElse("expression")
 
-    import Expression.JSONImplicits._
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[Expressions])
   }
 
@@ -226,7 +224,6 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val targetIndexName = defaultESSettings.entities
       .find(_.name == "reactome").map(_.index).getOrElse("reactome")
 
-    import Reactome.JSONImplicits._
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[Reactome])
   }
 
@@ -235,7 +232,6 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       .find(_.name == "target").map(_.index).getOrElse("targets")
 
     val excludedFields = List("mousePhenotypes*")
-    import Target.JSONImplicits._
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[Target],
       excludedFields = excludedFields)
   }
@@ -243,8 +239,6 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
   def getDrugs(ids: Seq[String]): Future[IndexedSeq[Drug]] = {
     val drugIndexName = defaultESSettings.entities
       .find(_.name == "drug").map(_.index).getOrElse("drugs")
-
-    import Drug.JSONImplicits._
     esRetriever.getByIds(drugIndexName, ids, fromJsValue[Drug])
   }
 
@@ -252,8 +246,59 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val diseaseIndexName = defaultESSettings.entities
       .find(_.name == "disease").map(_.index).getOrElse("diseases")
 
-    import Disease.JSONImplicits._
     esRetriever.getByIds(diseaseIndexName, ids, fromJsValue[Disease])
+  }
+
+  def getTargetInteractions(id: String, dbName: Option[String], pagination: Option[Pagination]):
+  Future[Option[Interactions]] = {
+
+    val pag = pagination.getOrElse(Pagination.mkDefault)
+
+    val cbIndex = defaultESSettings.entities
+      .find(_.name == "network").map(_.index).getOrElse("network")
+
+    val kv = List(
+      Some("targetA.keyword" -> id),
+      dbName.map("sourceDatabase.keyword" -> _)
+    ).flatten.toMap
+
+    val aggs = Seq(
+      valueCountAgg("rowsCount", "targetA.keyword")
+    )
+
+    esRetriever.getByIndexedQuery(cbIndex, kv, pag, fromJsValue[Interaction], aggs,
+      Some(sort.FieldSort("scoring", order = SortOrder.DESC))).map {
+      case (Seq(), _) => None
+      case (seq, agg) =>
+        logger.debug(Json.prettyPrint(agg))
+
+        val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
+        Some(Interactions(rowsCount, seq))
+    }
+  }
+
+  def getTargetInteractionEvidences(interaction: Interaction):
+  Future[IndexedSeq[InteractionEvidence]] = {
+
+    val pag = Pagination(0, 10000)
+
+    val cbIndex = defaultESSettings.entities
+      .find(_.name == "network_evidence").map(_.index).getOrElse("network_evidence")
+
+    val kv = List(
+      "interactionResources.sourceDatabase.keyword" -> interaction.sourceDatabase,
+      "targetA.keyword" -> interaction.targetA,
+      "targetB.keyword" -> interaction.targetB,
+      "intA.keyword" -> interaction.intA,
+      "intB.keyword" -> interaction.intB,
+      "intABiologicalRole.keyword" -> interaction.intABiologicalRole,
+      "intBBiologicalRole.keyword" -> interaction.intBBiologicalRole
+    ).toMap
+
+    esRetriever.getByIndexedQuery(cbIndex, kv, pag, fromJsValue[InteractionEvidence]).map {
+      case (Seq(), _) => IndexedSeq.empty
+      case (seq, _) => seq
+    }
   }
 
   def search(qString: String, pagination: Option[Pagination],
@@ -268,11 +313,13 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
   }
 
   def getAssociationDatasources: Future[Vector[EvidenceSource]] =
-    dbRetriever.getUniqList[EvidenceSource](Seq("datasource_id", "datatype_id"), "ot.aotf_direct_d")
+    dbRetriever.getUniqList[EvidenceSource](Seq("datasource_id", "datatype_id"),
+      defaultOTSettings.clickhouse.disease.associations.name)
 
   def getAssociationsDiseaseFixed(disease: Disease,
                                   datasources: Option[Seq[DatasourceSettings]],
                                   indirect: Boolean,
+                                  aggregationFilters: Seq[AggregationFilter],
                                   targetSet: Set[String],
                                   filter: Option[String],
                                   orderBy: Option[(String, String)],
@@ -286,7 +333,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       defaultOTSettings.clickhouse.disease.associations.name,
       disease.id,
       _,
-      targetSet,
+      _,
       filter,
       orderBy,
       weights,
@@ -297,20 +344,31 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     logger.debug(s"get disease id ${disease.name}")
     val dIDs = disease.descendants.toSet + disease.id
     val indirectIDs = if (indirect) dIDs else Set.empty[String]
-    val q = aotfQ(indirectIDs)
-    val simpleQ = q.simpleQuery(0, 100000)
-    val fullQ = q.query
+    val simpleQ = aotfQ(indirectIDs, targetSet).simpleQuery(0, 100000)
 
     val evidencesIndexName = defaultESSettings.entities
       .find(_.name == "evidences_aotf").map(_.index).getOrElse("evidences_aotf")
+
+    val mappings = Map(
+      "dataTypes" -> AggregationMapping("datatype_id", IndexedSeq("datatype_id", "datasource_id"), false),
+      "tractabilitySmallmolecule" -> AggregationMapping("facet_tractability_smallmolecule", IndexedSeq.empty, false),
+      "tractabilityAntibody" -> AggregationMapping("facet_tractability_antibody", IndexedSeq.empty, false),
+      "pathwayTypes" -> AggregationMapping("facet_reactome", IndexedSeq("l1", "l2"), true),
+      "targetClasses" -> AggregationMapping("facet_classes", IndexedSeq("l1", "l2"), true)
+    )
+
+    val queries = ElasticRetriever.aggregationFilterProducer(aggregationFilters, mappings)
+    val filtersMap = queries._2
 
     val uniqueTargetsAgg = CardinalityAggregation("uniques", Some("target_id.keyword"),
       precisionThreshold = Some(40000))
     val reverseTargetsAgg = ReverseNestedAggregation("uniques", None, Seq(uniqueTargetsAgg))
 
     val queryAggs = Seq(
-      uniqueTargetsAgg,
-      FilterAggregation("dataTypes", boolQuery(),
+      FilterAggregation("uniques", queries._1, subaggs = Seq(
+        uniqueTargetsAgg,
+        TermsAggregation("ids", field = Some("target_id.keyword"), size = Some(40000)))),
+      FilterAggregation("dataTypes", filtersMap("dataTypes"),
         subaggs = Seq(
           uniqueTargetsAgg,
           TermsAggregation("aggs", Some("datatype_id.keyword"),
@@ -327,7 +385,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
           )
         )
       ),
-      FilterAggregation("tractabilitySmallmolecule", boolQuery(),
+      FilterAggregation("tractabilitySmallmolecule", filtersMap("tractabilitySmallmolecule"),
         subaggs = Seq(
           uniqueTargetsAgg,
           TermsAggregation("aggs", Some("facet_tractability_smallmolecule.keyword"),
@@ -338,7 +396,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
           )
         )
       ),
-      FilterAggregation("tractabilityAntibody", boolQuery(),
+      FilterAggregation("tractabilityAntibody", filtersMap("tractabilityAntibody"),
         subaggs = Seq(
           uniqueTargetsAgg,
           TermsAggregation("aggs", Some("facet_tractability_antibody.keyword"),
@@ -349,7 +407,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
           )
         )
       ),
-      FilterAggregation("pathwayTypes", boolQuery(),
+      FilterAggregation("pathwayTypes", filtersMap("pathwayTypes"),
         subaggs = Seq(
           uniqueTargetsAgg,
           NestedAggregation("aggs", path = "facet_reactome",
@@ -366,7 +424,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
           )
         )
       ),
-      FilterAggregation("targetClasses", boolQuery(),
+      FilterAggregation("targetClasses", filtersMap("targetClasses"),
         subaggs = Seq(
           uniqueTargetsAgg,
           NestedAggregation("aggs", path = "facet_classes",
@@ -398,36 +456,44 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       case obj: JsObject =>
         logger.debug(Json.prettyPrint(obj))
 
+        val ids = (obj \ "uniques" \ "ids" \ "buckets" \\ "key").map(_.as[String]).toSet
         val uniques = (obj \ "uniques" \\ "value").head.as[Long]
         val restAggs = (obj - "uniques").fields map {
           pair =>
             NamedAggregation(pair._1,
               (pair._2 \ "uniques" \\ "value").headOption.map(jv => jv.as[Long]),
-              (pair._2 \\ "buckets").head.as[Array[Aggregation]])
+              (pair._2 \\ "buckets").head.as[Array[entities.Aggregation]])
         }
 
-        Some(Aggregations(uniques, restAggs))
+        Some((Aggregations(uniques, restAggs), ids))
 
       case _ => None
     }
 
-    val dbQ = dbRetriever.executeQuery[String, Query](simpleQ) flatMap {
-      case tIDs =>
-        logger.debug(s"get ${tIDs.size} targets")
+    // TODO use option to enable or disable the computation of each of the sides
+    (dbRetriever.executeQuery[String, Query](simpleQ) zip esQ) flatMap {
+      case (tIDs, esR) =>
+        val tids = esR.map(_._2 intersect tIDs.toSet).getOrElse(tIDs.toSet)
+        val fullQ = aotfQ(indirectIDs, tids).query
 
-        dbRetriever.executeQuery[Association, Query](fullQ) map {
-          case assocs => (tIDs.size, assocs)
+        logger.debug(s"disease fixed get simpleQ n ${tIDs.size} " +
+          s"agg n ${esR.map(_._2.size).getOrElse(-1)} " +
+          s"inter n ${tids.size}")
+
+        if (tids.nonEmpty) {
+          dbRetriever.executeQuery[Association, Query](fullQ) map {
+            case assocs => Associations(dss, esR.map(_._1), tids.size, assocs)
+          }
+        } else {
+          Future.successful(Associations(dss, esR.map(_._1), tids.size, Vector.empty))
         }
-    }
-
-    dbQ zip esQ map {
-      pair => Associations(dss, pair._2, pair._1._1, pair._1._2)
     }
   }
 
   def getAssociationsTargetFixed(target: Target,
                                  datasources: Option[Seq[DatasourceSettings]],
                                  indirect: Boolean,
+                                 aggregationFilters: Seq[AggregationFilter],
                                  diseaseSet: Set[String],
                                  filter: Option[String],
                                  orderBy: Option[(String, String)],
@@ -441,30 +507,45 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       defaultOTSettings.clickhouse.target.associations.name,
       target.id,
       _,
-      diseaseSet,
+      _,
       filter,
       orderBy,
       weights,
       dontPropagate,
       page.offset, page.size)
 
-
     logger.debug(s"get target id ${target.approvedSymbol}")
-    val tIDs = Set.empty + target.id
-    val indirectIDs = if (indirect) tIDs else Set.empty[String]
-    val q = aotfQ(indirectIDs)
-    val simpleQ = q.simpleQuery(0, 100000)
-    val fullQ = q.query
+    val indirectIDs = if (indirect) {
+      val interactions = getTargetInteractions(target.id, None, pagination = Some(Pagination(0, 10000))) map {
+        case Some(ints) => ints.rows.withFilter(_.targetB.startsWith("ENSG")).map(_.targetB).toSet + target.id
+        case None => Set.empty + target.id
+      }
+
+      interactions.await
+
+    } else Set.empty[String]
+
+    val simpleQ = aotfQ(indirectIDs, diseaseSet).simpleQuery(0, 100000)
 
     val evidencesIndexName = defaultESSettings.entities
       .find(_.name == "evidences_aotf").map(_.index).getOrElse("evidences_aotf")
+
+    val mappings = Map(
+      "dataTypes" -> AggregationMapping("datatype_id", IndexedSeq("datatype_id", "datasource_id"), false),
+      "therapeuticAreas" -> AggregationMapping("facet_therapeuticAreas", IndexedSeq.empty, false)
+    )
+
+    val queries = ElasticRetriever.aggregationFilterProducer(aggregationFilters, mappings)
+    val filtersMap = queries._2
 
     val uniqueDiseasesAgg = CardinalityAggregation("uniques", Some("disease_id.keyword"),
       precisionThreshold = Some(40000))
 
     val queryAggs = Seq(
-      uniqueDiseasesAgg,
-      FilterAggregation("dataTypes", boolQuery(),
+      FilterAggregation("uniques", queries._1, subaggs = Seq(
+        uniqueDiseasesAgg,
+        TermsAggregation("ids", field = Some("disease_id.keyword"), size = Some(40000)))),
+      FilterAggregation("dataTypes", filtersMap("dataTypes"),
         subaggs = Seq(
           uniqueDiseasesAgg,
           TermsAggregation("aggs", Some("datatype_id.keyword"),
@@ -481,7 +562,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
           )
         )
       ),
-      FilterAggregation("therapeuticAreas", boolQuery(),
+      FilterAggregation("therapeuticAreas", filtersMap("therapeuticAreas"),
         subaggs = Seq(
           uniqueDiseasesAgg,
           TermsAggregation("aggs", Some("facet_therapeuticAreas.keyword"),
@@ -507,30 +588,36 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       case obj: JsObject =>
         logger.debug(Json.prettyPrint(obj))
 
+        val ids = (obj \ "uniques" \ "ids" \ "buckets" \\ "key").map(_.as[String]).toSet
         val uniques = (obj \ "uniques" \\ "value").head.as[Long]
         val restAggs = (obj - "uniques").fields map {
           pair =>
             NamedAggregation(pair._1,
               (pair._2 \ "uniques" \\ "value").headOption.map(jv => jv.as[Long]),
-              (pair._2 \\ "buckets").head.as[Array[Aggregation]])
+              (pair._2 \\ "buckets").head.as[Array[entities.Aggregation]])
         }
 
-        Some(Aggregations(uniques, restAggs))
+        Some((Aggregations(uniques, restAggs), ids))
 
       case _ => None
     }
 
-    val dbQ = dbRetriever.executeQuery[String, Query](simpleQ) flatMap {
-      case dIDs =>
-        logger.debug(s"get ${dIDs.size} diseases")
+    (dbRetriever.executeQuery[String, Query](simpleQ) zip esQ) flatMap {
+      case (dIDs, esR) =>
+        val dids = esR.map(_._2 intersect dIDs.toSet).getOrElse(dIDs.toSet)
+        val fullQ = aotfQ(indirectIDs, dids).query
 
-        dbRetriever.executeQuery[Association, Query](fullQ) map {
-          case assocs => (dIDs.size, assocs)
+        logger.debug(s"target fixed get simpleQ n ${dIDs.size} " +
+          s"agg n ${esR.map(_._2.size).getOrElse(-1)} " +
+          s"inter n ${dids.size}")
+
+        if (dids.nonEmpty) {
+          dbRetriever.executeQuery[Association, Query](fullQ) map {
+            case assocs => Associations(dss, esR.map(_._1), dids.size, assocs)
+          }
+        } else {
+          Future.successful(Associations(dss, esR.map(_._1), dids.size, Vector.empty))
         }
-    }
-
-    dbQ zip esQ map {
-      pair => Associations(dss, pair._2, pair._1._1, pair._1._2)
     }
   }
 }

@@ -1,6 +1,7 @@
 package controllers.api.v4.graphql
 
 import javax.inject._
+import models.entities.TooComplexQueryError
 import models.entities.Violations._
 import models.{Backend, GQLSchema}
 import play.api.libs.json._
@@ -11,7 +12,7 @@ import sangria.parser.{QueryParser, SyntaxError}
 
 import scala.concurrent._
 import scala.util.{Failure, Success}
-import models.Entities._
+import models.entities.TooComplexQueryError._
 
 @Singleton
 class GraphQLController @Inject()(implicit ec: ExecutionContext, dbTables: Backend, cc: ControllerComponents)

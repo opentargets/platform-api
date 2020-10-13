@@ -3,11 +3,9 @@ package models
 import better.files._
 import com.typesafe.config.{ConfigObject, ConfigRenderOptions}
 import play.api.libs.json._
-import play.api.Configuration
-import play.api.Logger
+import play.api.{Configuration, Logging}
 
-object Helpers {
-  val logger = Logger(this.getClass)
+object Helpers  extends Logging {
   /** Given a `filename`, the function fully loads the content into an option and
     * maps it with `Json.parse`
     * @param filename fully filename of a resource file

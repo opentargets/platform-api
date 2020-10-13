@@ -1,6 +1,5 @@
 package controllers
 
-
 import javax.inject._
 import models.Backend
 import play.api.mvc._

@@ -1,6 +1,5 @@
 package models.entities
 
-import models.entities
 import play.api.libs.json.Json
 
 object Configuration {
@@ -26,13 +25,11 @@ object Configuration {
 
   case class LUTableSettings(label: String, name: String, key: String, field: Option[String])
 
-  case class AssociationSettings(label: String, name: String, key: String)
+  case class AssociationSettings(label: String, name: String)
 
-  case class TargetSettings(associations: AssociationSettings,
-                            networks: Seq[LUTableSettings])
+  case class TargetSettings(associations: AssociationSettings)
 
-  case class DiseaseSettings(associations: AssociationSettings,
-                             networks: Seq[LUTableSettings])
+  case class DiseaseSettings(associations: AssociationSettings)
 
   case class DatasourceSettings(id: String, weight: Double, propagate: Boolean)
 
@@ -49,26 +46,20 @@ object Configuration {
    * */
   case class OTSettings(meta: Meta, elasticsearch: ElasticsearchSettings, clickhouse: ClickhouseSettings)
 
-  /** json implicits keeps all configuration units JSON-enabled using macros
-   * from Json.format Json.reads and Json.writes
-   * */
-  object JSONImplicits {
-    implicit val metaDataVersionImp = Json.format[DataVersion]
-    implicit val metaAPIVersionImp = Json.format[APIVersion]
-    implicit val metaImp = Json.format[Meta]
+  implicit val metaDataVersionJSONImp = Json.format[DataVersion]
+  implicit val metaAPIVersionJSONImp = Json.format[APIVersion]
+  implicit val metaJSONImp = Json.format[Meta]
 
-    implicit val esEntities = Json.format[ElasticsearchEntity]
-    implicit val esSettingsImp = Json.format[ElasticsearchSettings]
+  implicit val esEntitiesJSONImp = Json.format[ElasticsearchEntity]
+  implicit val esSettingsJSONImp = Json.format[ElasticsearchSettings]
 
-    implicit val luTableImp = Json.format[LUTableSettings]
-    implicit val associationSettingsImp = Json.format[AssociationSettings]
-    implicit val datasourceSettingsImp = Json.format[DatasourceSettings]
-    implicit val harmonicSettingsImp = Json.format[HarmonicSettings]
-    implicit val targetSettingsImp = Json.format[TargetSettings]
-    implicit val diseaseSettingsImp = Json.format[DiseaseSettings]
-    implicit val clickhouseSettingsImp = Json.format[ClickhouseSettings]
+  implicit val luTableJSONImp = Json.format[LUTableSettings]
+  implicit val associationSettingsJSONImp = Json.format[AssociationSettings]
+  implicit val datasourceSettingsJSONImp = Json.format[DatasourceSettings]
+  implicit val harmonicSettingsJSONImp = Json.format[HarmonicSettings]
+  implicit val targetSettingsJSONImp = Json.format[TargetSettings]
+  implicit val diseaseSettingsJSONImp = Json.format[DiseaseSettings]
+  implicit val clickhouseSettingsJSONImp = Json.format[ClickhouseSettings]
 
-    implicit val otSettingsImp = Json.format[OTSettings]
-  }
-
+  implicit val otSettingsJSONImp = Json.format[OTSettings]
 }
