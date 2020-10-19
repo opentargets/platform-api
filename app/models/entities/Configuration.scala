@@ -37,7 +37,7 @@ object Configuration {
 
   /** ClickHouse settings stores the configuration for the entities it handles.
    * Target Disease and Harmonic settings used to compute associations on the fly
-   * and LUTs for network expansions
+   * and LUTs for interaction expansions
    * */
   case class ClickhouseSettings(target: TargetSettings, disease: DiseaseSettings, harmonic: HarmonicSettings)
 

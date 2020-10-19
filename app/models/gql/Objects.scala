@@ -551,7 +551,7 @@ object Objects extends Logging {
   )
 
   implicit val datasourceSettingsImp = deriveObjectType[Backend, DatasourceSettings]()
-  implicit val networkSettingsImp = deriveObjectType[Backend, LUTableSettings]()
+  implicit val interactionSettingsImp = deriveObjectType[Backend, LUTableSettings]()
   implicit val associationSettingsImp = deriveObjectType[Backend, AssociationSettings]()
   implicit val targetSettingsImp = deriveObjectType[Backend, TargetSettings]()
   implicit val diseaseSettingsImp = deriveObjectType[Backend, DiseaseSettings]()
