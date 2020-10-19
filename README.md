@@ -13,6 +13,28 @@ Eg. localhost:9200  (tunnelling or locally installed)
 
 ## How to use
 
+## How to deploy to Google AppEngine 
+
+The first step is tag to the new release. 
+
+```bash
+git tag -a 0.46.3 -m "Release 0.46.3"
+git push origin 0.46.3
+git push --tags
+```
+
+The file Dockerfile contains the instruction to build and copy the jar.
+To create the distribution 
+
+```sbt dist```
+
+
+The final step is running deploy script 
+```
+bash deploy_gcloud.bash 0.46.3
+```
+
+
 # Copyright
 
 Copyright 2014-2018 Biogen, Celgene Corporation, EMBL - European Bioinformatics Institute, GlaxoSmithKline, Takeda Pharmaceutical Company and Wellcome Sanger Institute

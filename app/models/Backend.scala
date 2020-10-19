@@ -255,7 +255,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val pag = pagination.getOrElse(Pagination.mkDefault)
 
     val cbIndex = defaultESSettings.entities
-      .find(_.name == "network").map(_.index).getOrElse("network")
+      .find(_.name == "interaction").map(_.index).getOrElse("interaction")
 
     val kv = List(
       Some("targetA.keyword" -> id),
@@ -283,7 +283,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     val pag = Pagination(0, 10000)
 
     val cbIndex = defaultESSettings.entities
-      .find(_.name == "network_evidence").map(_.index).getOrElse("network_evidence")
+      .find(_.name == "interaction_evidence").map(_.index).getOrElse("interaction_evidence")
 
     val kv = List(
       "interactionResources.sourceDatabase.keyword" -> interaction.sourceDatabase,
