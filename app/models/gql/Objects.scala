@@ -508,8 +508,6 @@ object Objects extends Logging {
       " post-marketing package inserts"),
     DocumentField("hasBeenWithdrawn", "Has drug been withdrawn from the market"),
     DocumentField("withdrawnNotice", "Withdrawal reason"),
-    DocumentField("internalCompound", "Is this an private molecule not displayed " +
-      "in the Open Targets public version"),
     DocumentField("mechanismsOfAction", "Mechanisms of action to produce intended " +
       "pharmacological effects. Curated from scientific literature and post-marketing package inserts"),
     DocumentField("indications", "Investigational and approved indications curated from clinical trial " +
@@ -540,11 +538,11 @@ object Objects extends Logging {
             ctx.value.id,
             ctx.arg(pageArg)))
     ),
-    ReplaceField("linkedDiseases", Field("linkedDiseases", linkedDiseasesImp,
+    ReplaceField("linkedDiseases", Field("linkedDiseases", OptionType(linkedDiseasesImp),
       Some("Therapeutic indications for drug based on clinical trial data or " +
         "post-marketed drugs, when mechanism of action is known\""),
       resolve = r => r.value.linkedDiseases)),
-    ReplaceField("linkedTargets", Field("linkedTargets", linkedTargetsImp,
+    ReplaceField("linkedTargets", Field("linkedTargets", OptionType(linkedTargetsImp),
       Some("Molecule targets based on drug mechanism of action"),
       resolve = r => r.value.linkedTargets))
   )
