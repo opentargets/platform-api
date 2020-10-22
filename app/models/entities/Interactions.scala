@@ -13,7 +13,7 @@ case class InteractionResources(databaseVersion: String,
                                 sourceDatabase: String)
 
 case class InteractionEvidence(causalInteraction: Boolean,
-                               evidenceScore: Option[Long],
+                               evidenceScore: Option[Double],
                                expansionMethodMiIdentifier: Option[String],
                                expansionMethodShortName: Option[String],
                                hostOrganismScientificName: Option[String],
