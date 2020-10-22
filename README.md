@@ -18,8 +18,8 @@ Eg. localhost:9200  (tunnelling or locally installed)
 The first step is tag to the new release. 
 
 ```bash
-git tag -a 0.46.3 -m "Release 0.46.3"
-git push origin 0.46.3
+git tag -a 0.46.4 -m "Release 0.46.4"
+git push origin 0.46.4
 git push --tags
 ```
 
