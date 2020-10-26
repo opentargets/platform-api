@@ -34,6 +34,7 @@ object Objects extends Logging {
   implicit val metaAPIVersionImp = deriveObjectType[Backend, APIVersion]()
   implicit val metaImp = deriveObjectType[Backend, Meta]()
 
+  implicit val interactionEvidencePDM = deriveObjectType[Backend, InteractionEvidencePDM]()
   implicit val interactionSpeciesImp = deriveObjectType[Backend, InteractionSpecies]()
   implicit val interactionResourcesImp = deriveObjectType[Backend, InteractionResources]()
   implicit val interactionEvidenceImp = deriveObjectType[Backend, InteractionEvidence]()
@@ -548,7 +549,7 @@ object Objects extends Logging {
   )
 
   implicit val datasourceSettingsImp = deriveObjectType[Backend, DatasourceSettings]()
-  implicit val networkSettingsImp = deriveObjectType[Backend, LUTableSettings]()
+  implicit val interactionSettingsImp = deriveObjectType[Backend, LUTableSettings]()
   implicit val associationSettingsImp = deriveObjectType[Backend, AssociationSettings]()
   implicit val targetSettingsImp = deriveObjectType[Backend, TargetSettings]()
   implicit val diseaseSettingsImp = deriveObjectType[Backend, DiseaseSettings]()

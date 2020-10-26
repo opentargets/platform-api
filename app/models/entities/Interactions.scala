@@ -2,6 +2,10 @@ package models.entities
 
 import play.api.libs.json._
 
+
+// Class to represent participantDetectionMethod
+case class InteractionEvidencePDM( miIdentifier: Option[String], shortName:Option[String])
+
 case class InteractionSpecies(mnemonic: Option[String], scientificName: Option[String],
                               taxonId: Option[Long])
 
@@ -9,7 +13,7 @@ case class InteractionResources(databaseVersion: String,
                                 sourceDatabase: String)
 
 case class InteractionEvidence(causalInteraction: Boolean,
-                               evidenceScore: Option[Long],
+                               evidenceScore: Option[Double],
                                expansionMethodMiIdentifier: Option[String],
                                expansionMethodShortName: Option[String],
                                hostOrganismScientificName: Option[String],
@@ -23,10 +27,8 @@ case class InteractionEvidence(causalInteraction: Boolean,
                                interactionScore: Option[Double],
                                interactionTypeMiIdentifier: Option[String],
                                interactionTypeShortName: Option[String],
-                               participantDetectionMethodMiIdentifierA: Option[String],
-                               participantDetectionMethodMiIdentifierB: Option[String],
-                               participantDetectionMethodShortNameA: Option[String],
-                               participantDetectionMethodShortNameB: Option[String],
+                               participantDetectionMethodA: Option[IndexedSeq[InteractionEvidencePDM]],
+                               participantDetectionMethodB: Option[IndexedSeq[InteractionEvidencePDM]],
                                speciesA: Option[InteractionSpecies],
                                speciesB: Option[InteractionSpecies],
                                pubmedId: Option[String]
@@ -44,6 +46,7 @@ case class Interactions(count: Long, rows: IndexedSeq[Interaction])
 
 
 object Interactions {
+  implicit val interactionEvidencePDMJSONImp = Json.format[InteractionEvidencePDM]
   implicit val interactionSpeciesJSONImp = Json.format[InteractionSpecies]
   implicit val interactionResourcesJSONImp = Json.format[InteractionResources]
   implicit val interactionEvidenceJSONImp = Json.format[InteractionEvidence]
