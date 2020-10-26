@@ -109,6 +109,68 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
     }
   }
 
+  def getByMustWithSearch[A](esIndex: String, queryString: Option[String],
+                        kv: Map[String, Seq[String]],
+                        pagination: Pagination,
+                        buildF: JsValue => Option[A],
+                        aggs: Iterable[AbstractAggregation] = Iterable.empty,
+                        sortByField: Option[sort.FieldSort] = None,
+                        excludedFields: Seq[String] = Seq.empty,
+                        searchAfter: Option[Seq[String]] = None): Future[(IndexedSeq[A], Long, Option[Seq[String]])] = {
+    val limitClause = pagination.toES
+
+    val mustTerms = kv.toSeq.map(p => termsQuery(p._1, p._2))
+
+    val q = search(esIndex).bool {
+      must(mustTerms)
+    }.start(limitClause._1)
+      .limit(limitClause._2)
+      .aggs(aggs)
+      .trackTotalHits(true)
+      .sourceExclude(excludedFields)
+      .searchAfter(searchAfter.getOrElse(Nil))
+
+    // just log and execute the query
+    val elems: Future[Response[SearchResponse]] = client.execute {
+      val qq = sortByField match {
+        case Some(s) =>
+          val tie = sort.FieldSort("id.keyword").asc()
+          q.sortBy(s, tie)
+        case None => q
+      }
+
+      logger.debug(client.show(qq))
+      qq
+    }
+
+    elems.map {
+      case _: RequestFailure => (IndexedSeq.empty, 0, None)
+      case results: RequestSuccess[SearchResponse] =>
+        // parse the full body response into JsValue
+        // thus, we can apply Json Transformations from JSON Play
+        val result = Json.parse(results.body.get)
+
+        logger.debug(Json.prettyPrint(result))
+        val hits = (result \ "hits" \ "hits").get.as[JsArray].value
+        val totalHits = results.result.totalHits
+
+        val mappedHits = hits
+          .map(jObj => {
+            buildF(jObj)
+          }).withFilter(_.isDefined).map(_.get)
+
+        val hasNext = !(hits.size < limitClause._2)
+
+        val seAf =
+          if
+          (hasNext) (hits.last \ "sort").get.asOpt[Seq[String]]
+          else
+            None
+
+        (mappedHits, totalHits, seAf)
+    }
+  }
+
   def getByFreeQuery[A](esIndex: String, queryString: String,
                         kv: Map[String, String],
                         pagination: Pagination,

@@ -7,7 +7,7 @@ version := "latest"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala, PlayLogback)
 
-scalaVersion := "2.12.10"
+scalaVersion := "2.12.12"
 maintainer := "ops@opentargets.org"
 
 javacOptions ++= Seq( "-encoding", "UTF-8" )

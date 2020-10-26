@@ -1,6 +1,8 @@
 package models
 
 import clickhouse.ClickHouseProfile
+import com.google.common.base.Charsets
+import com.google.common.io.BaseEncoding
 import javax.inject.Inject
 import models.Helpers._
 import play.api.{Configuration, Environment, Logging}
@@ -14,6 +16,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
 import models.db.QAOTF
 import models.entities._
+import models.entities.Evidence._
+import models.entities.Evidences._
 import models.entities.Interactions._
 import models.entities.Configuration._
 import models.entities.CancerBiomarkers._
@@ -189,6 +193,50 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
         //        val clinicalTrials = (agg \ "uniqueClinicalTrials" \ "value").as[Long]
         val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
         Some(KnownDrugs(drugs, diseases, targets, rowsCount, nextCursor, seq))
+    }
+  }
+
+  /**
+   * get evidences by multiple parameters
+   *
+   * @param queryString
+   * @param datasourceIds if None translates to '*'
+   * @param targetIds
+   * @param diseaseIds
+   * @param orderBy
+   * @param sizeLimit
+   * @param cursor
+   * @return
+   */
+  def getEvidences(queryString: Option[String], datasourceIds: Option[Seq[String]], targetIds: Seq[String], diseaseIds: Seq[String],
+                   orderBy: Option[(String, String)], sizeLimit: Option[Int], cursor: Option[Seq[String]]):
+  Future[Evidences] = {
+
+    val pag = Pagination(0, sizeLimit.getOrElse(Pagination.sizeDefault))
+    val sortByField = orderBy.flatMap {
+      p => ElasticRetriever.sortBy(p._1, if (p._2 == "desc") SortOrder.Desc else SortOrder.Asc)
+    }
+
+    val cbIndexPrefix = defaultESSettings.entities
+      .find(_.name == "evidences").map(_.index).getOrElse("evidence_datasource_")
+
+    val cbIndex = datasourceIds.map(_.map(cbIndexPrefix.concat).mkString(",")).getOrElse(cbIndexPrefix.concat("*"))
+
+    val aggs = Seq(
+      valueCountAgg("rowsCount", "id.keyword")
+    )
+
+    val kv = Map(
+      "targetId.keyword" -> targetIds,
+      "diseaseId.keyword" -> diseaseIds
+    )
+
+    esRetriever.getByMustWithSearch(cbIndex, None, kv, pag,
+      fromJsValue[JsValue],
+      aggs, sortByField, Seq.empty, cursor).map {
+      case (Seq(), _, _) => Evidences.empty
+      case (seq, n, nextCursor) =>
+        Evidences(n, nextCursor, seq)
     }
   }
 

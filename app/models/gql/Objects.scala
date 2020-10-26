@@ -9,7 +9,7 @@ import sangria.macros.derive._
 import sangria.schema._
 import sangria.marshalling.playJson._
 import sangria.schema.AstSchemaBuilder._
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue, Json}
 import play.api.Logging
 import sangria.schema._
 import sangria.macros._
@@ -25,9 +25,11 @@ import sangria.execution.deferred._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
-
 import Arguments._
 import Fetchers._
+import play.api.libs.json.JsValue.jsValueToJsLookup
+import models.entities.Evidence._
+import models.entities.Evidences._
 
 object Objects extends Logging {
   implicit val metaDataVersionImp = deriveObjectType[Backend, DataVersion]()
@@ -55,6 +57,86 @@ object Objects extends Logging {
 
   implicit val interactionsImp = deriveObjectType[Backend, Interactions]()
 
+  implicit val labelledElementImp = deriveObjectType[Backend, LabelledElement]()
+  implicit val labelledUriImp = deriveObjectType[Backend, LabelledUri]()
+  implicit val knownMutationImp = deriveObjectType[Backend, EvidenceVariation]()
+  implicit val minedSentencedImp = deriveObjectType[Backend, EvidenceTextMiningSentence]()
+
+  val evidenceImp = ObjectType("Evidence",
+    "Evidence for a Target-Disease pair",
+    fields[Backend, JsValue](
+      Field("id", StringType, description = Some("Evidence identifier"), resolve = js => (js.value \ "id").as[String]),
+      Field("score", FloatType, description = Some("Evidence score"), resolve = js => (js.value \ "score").as[Double]),
+      Field("target", targetImp, description = Some("Target evidence"), resolve = js => {
+        val tId = (js.value \ "targetId").as[String]
+        targetsFetcher.defer(tId)
+      }),
+      Field("disease", diseaseImp, description = Some("Disease evidence"), resolve = js => {
+        val dId = (js.value \ "diseaseId").as[String]
+        diseasesFetcher.defer(dId)
+      }),
+      Field("variantId", OptionType(StringType), description = Some("Variant evidence"), resolve = js => (js.value \ "variantId").asOpt[String]),
+      Field("variantRsId", OptionType(StringType), description = Some("Variant dbSNP identifier"), resolve = js => (js.value \ "variantRsId").asOpt[String]),
+      Field("evidenceResourceScoreType", OptionType(StringType), description = Some("Type of score from resource"), resolve = js => (js.value \ "evidenceResourceScoreType").asOpt[String]),
+      Field("evidenceConfidenceIntervalLower", OptionType(StringType), description = Some("Confidence interval lower-bound  "), resolve = js => (js.value \ "evidenceConfidenceIntervalLower").asOpt[String]),
+      Field("evidenceVariant2diseaseGwasSampleSize", OptionType(StringType), description = Some("Sample size"), resolve = js => (js.value \ "evidenceVariant2diseaseGwasSampleSize").asOpt[String]),
+      Field("evidenceVariations", OptionType(ListType(knownMutationImp)), description = None, resolve = js => (js.value \ "evidenceVariations").asOpt[Seq[EvidenceVariation]]),
+      Field("drug", OptionType(drugImp), description = None, resolve = js => {
+        val drugId = (js.value \ "drugId").asOpt[String]
+        drugsFetcher.deferOpt(drugId)
+      }),
+      Field("evidenceCohortShortName", OptionType(StringType), description = None, resolve = js => (js.value \ "evidenceCohortShortName").asOpt[String]),
+      Field("evidenceDiseaseModelAssociatedModelPhenotypes", OptionType(ListType(labelledElementImp)), description = None, resolve = js => (js.value \ "evidenceDiseaseModelAssociatedModelPhenotypes").asOpt[Seq[LabelledElement]]),
+      Field("evidenceDiseaseModelAssociatedHumanPhenotypes", OptionType(ListType(labelledElementImp)), description = None, resolve = js => (js.value \ "evidenceDiseaseModelAssociatedHumanPhenotypes").asOpt[Seq[LabelledElement]]),
+      Field("evidenceSignificantDriverMethods", OptionType(ListType(StringType)), description = None, resolve = js => (js.value \ "evidenceSignificantDriverMethods").asOpt[Seq[String]]),
+      Field("evidenceResourceScoreExponent", OptionType(LongType), description = None, resolve = js => (js.value \ "evidenceResourceScoreExponent").asOpt[Long]),
+      Field("evidenceLog2FoldChangePercentileRank", OptionType(LongType), description = None, resolve = js => (js.value \ "evidenceLog2FoldChangePercentileRank").asOpt[Long]),
+      Field("evidenceBiologicalModelAllelicComposition", OptionType(StringType), description = None, resolve = js => (js.value \ "evidenceBiologicalModelAllelicComposition").asOpt[String]),
+      Field("evidenceConfidence", OptionType(StringType), description = None, resolve = js => (js.value \ "evidenceConfidence").asOpt[String]),
+      Field("evidenceClinicalPhase", OptionType(LongType), description = None, resolve = js => (js.value \ "evidenceClinicalPhase").asOpt[Long]),
+      Field("evidenceResourceScore", OptionType(FloatType), description = None, resolve = js => (js.value \ "evidenceResourceScore").asOpt[Double]),
+      Field("evidenceVariantFunctionalConsequence", OptionType(StringType), description = None, resolve = js => (js.value \ "evidenceVariantFunctionalConsequence").asOpt[String]),
+      Field("evidenceVariantFunctionalConsequenceScore", OptionType(FloatType), description = None, resolve = js => (js.value \ "evidenceVariantFunctionalConsequenceScore").asOpt[Double]),
+      Field("evidenceBiologicalModelGeneticBackground", OptionType(StringType), description = None, resolve = js => (js.value \ "evidenceBiologicalModelGeneticBackground").asOpt[String]),
+      Field("evidenceDrugMechanismOfAction", OptionType(StringType), description = None, resolve = js => (js.value \ "evidenceDrugMechanismOfAction").asOpt[String]),
+      Field("evidenceClinicalUrls", OptionType(ListType(labelledUriImp)), description = None, resolve = js => (js.value \ "evidenceClinicalUrls").asOpt[Seq[LabelledUri]]),
+      Field("evidenceExperimentOverview", OptionType(StringType), description = None, resolve = js => (js.value \ "evidenceExperimentOverview").asOpt[String]),
+      Field("evidenceLiterature", OptionType(ListType(StringType)), description = None, resolve = js => (js.value \ "evidenceLiterature").asOpt[Seq[String]]),
+      Field("evidenceVariant2diseaseCases", OptionType(StringType), description = None, resolve = js => (js.value \ "evidenceVariant2diseaseCases").asOpt[String]),
+      Field("evidenceAllelicRequirement", OptionType(StringType), description = None, resolve = js => (js.value \ "evidenceAllelicRequirement").asOpt[String]),
+      Field("evidencePathwayName", OptionType(StringType), description = None, resolve = js => (js.value \ "evidencePathwayName").asOpt[String]),
+      Field("datasourceId", StringType, description = None, resolve = js => (js.value \ "datasourceId").as[String]),
+      Field("datatypeId", StringType, description = None, resolve = js => (js.value \ "datatypeId").as[String]),
+      Field("evidenceConfidenceIntervalUpper", OptionType(FloatType), description = None, resolve = js => (js.value \ "evidenceConfidenceIntervalUpper").asOpt[Double]),
+      Field("evidenceClinicalStatus", OptionType(StringType), description = None, resolve = js => (js.value \ "evidenceClinicalStatus").asOpt[String]),
+      Field("evidenceLog2FoldChangeValue", OptionType(FloatType), description = None, resolve = js => (js.value \ "evidenceLog2FoldChangeValue").asOpt[Double]),
+      Field("evidenceOddsRatio", OptionType(FloatType), description = None, resolve = js => (js.value \ "evidenceOddsRatio").asOpt[Double]),
+      Field("evidenceCohortDescription", OptionType(StringType), description = None, resolve = js => (js.value \ "evidenceCohortDescription").asOpt[String]),
+      Field("evidencePublicationYear", OptionType(LongType), description = None, resolve = js => (js.value \ "evidencePublicationYear").asOpt[Long]),
+      Field("diseaseFromSource", OptionType(StringType), description = None, resolve = js => (js.value \ "diseaseFromSource").asOpt[String]),
+
+      Field("evidenceTextMiningSentences", OptionType(ListType(minedSentencedImp)), description = None, resolve = js => (js.value \ "evidenceTextMiningSentences").asOpt[Seq[EvidenceTextMiningSentence]]),
+      Field("evidenceRecordId", OptionType(StringType), description = None, resolve = js => (js.value \ "evidenceRecordId").asOpt[String]),
+      Field("evidenceStudyId", OptionType(StringType), description = None, resolve = js => (js.value \ "evidenceStudyId").asOpt[String]),
+      Field("evidenceClinicalSignificance", OptionType(StringType), description = None, resolve = js => (js.value \ "evidenceClinicalSignificance").asOpt[String]),
+
+      Field("evidenceCohortId", OptionType(StringType), description = None, resolve = js => (js.value \ "evidenceCohortId").asOpt[String]),
+      Field("evidenceVariant2diseaseResourceScoreMantissa", OptionType(LongType), description = None, resolve = js => (js.value \ "evidenceVariant2diseaseResourceScoreMantissa").asOpt[Long]),
+      Field("evidenceLocus2GeneScore", OptionType(FloatType), description = None, resolve = js => (js.value \ "evidenceLocus2GeneScore").asOpt[Double]),
+      Field("evidenceDrugActionType", OptionType(StringType), description = None, resolve = js => (js.value \ "evidenceDrugActionType").asOpt[String]),
+      Field("evidencePathwayId", OptionType(StringType), description = None, resolve = js => (js.value \ "evidencePathwayId").asOpt[String]),
+      Field("evidencePublicationFirstAuthor", OptionType(StringType), description = None, resolve = js => (js.value \ "evidencePublicationFirstAuthor").asOpt[String]),
+      Field("evidenceContrast", OptionType(StringType), description = None, resolve = js => (js.value \ "evidenceContrast").asOpt[String])
+    ))
+
+  val evidencesImp = ObjectType("Evidences",
+    "Evidence for a Target-Disease pair",
+    fields[Backend, Evidences](
+      Field("count", LongType, description = None, resolve = _.value.count),
+      Field("cursor", OptionType(ListType(StringType)), description = None, resolve = _.value.cursor),
+      Field("rows", ListType(evidenceImp), description = None, resolve = _.value.rows)
+    ))
+
   implicit lazy val targetImp: ObjectType[Backend, Target] = deriveObjectType(
     ObjectTypeDescription("Target entity"),
     DocumentField("id", "Open Targets target id"),
@@ -79,6 +161,17 @@ object Objects extends Logging {
       ListType(reactomeImp), None,
       resolve = r => reactomeFetcher.deferSeq(r.value.reactome))),
     AddFields(
+      Field("evidences", evidencesImp,
+        description = Some("The complete list of all possible datasources"),
+        arguments = efoIds :: optQueryString :: datasourceIdsArg :: pageSize :: cursor :: Nil,
+        resolve = ctx => {
+          ctx.ctx.getEvidences(ctx arg optQueryString, ctx arg datasourceIdsArg,
+            Seq(ctx.value.id),
+            ctx arg efoIds,
+            Some(("targetId.keyword", "desc")),
+            ctx arg pageSize,
+            ctx arg cursor)
+        }),
       Field("interactions", OptionType(interactionsImp),
         description = Some("Biological pathway membership from Reactome"),
         arguments = databaseName :: pageArg :: Nil,
@@ -127,11 +220,11 @@ object Objects extends Logging {
 
       Field("associatedDiseases", associatedOTFDiseasesImp,
         description = Some("associations on the fly"),
-        arguments = BIds :: indrectEvidences :: datasourceSettingsListArg :: aggregationFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
+        arguments = BIds :: indirectEvidences :: datasourceSettingsListArg :: aggregationFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
         resolve = ctx => ctx.ctx.getAssociationsTargetFixed(
           ctx.value,
           ctx arg datasourceSettingsListArg,
-          ctx arg indrectEvidences getOrElse (false),
+          ctx arg indirectEvidences getOrElse (false),
           ctx arg aggregationFiltersListArg getOrElse (Seq.empty),
           ctx arg BIds map (_.toSet) getOrElse (Set.empty),
           ctx arg BFilterString,
@@ -168,6 +261,19 @@ object Objects extends Logging {
       resolve = r => diseasesFetcher.deferSeq(r.value.children))),
     // this query uses id and ancestors fields to search for indirect diseases
     AddFields(
+      Field("evidences", evidencesImp,
+        description = Some("The complete list of all possible datasources"),
+        arguments = ensemblIds :: indirectEvidences :: optQueryString :: datasourceIdsArg :: pageSize :: cursor :: Nil,
+        resolve = ctx => {
+          val indirects = ctx.arg(indirectEvidences).getOrElse(true)
+          val efos = if (indirects) ctx.value.id +: ctx.value.descendants else ctx.value.id +: Nil
+          ctx.ctx.getEvidences(ctx arg optQueryString, ctx arg datasourceIdsArg,
+            ctx arg ensemblIds,
+            efos,
+            Some(("targetId.keyword", "desc")),
+            ctx arg pageSize,
+            ctx arg cursor)
+        }),
       Field("otarProjects", ListType(otarProjectImp),
         description = Some("RNA and Protein baseline expression"),
         resolve = r => DeferredValue(otarProjectsFetcher.deferOpt(r.value.id)).map {
@@ -201,11 +307,11 @@ object Objects extends Logging {
 
       Field("associatedTargets", associatedOTFTargetsImp,
         description = Some("associations on the fly"),
-        arguments = BIds :: indrectEvidences :: datasourceSettingsListArg :: aggregationFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
+        arguments = BIds :: indirectEvidences :: datasourceSettingsListArg :: aggregationFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
         resolve = ctx => ctx.ctx.getAssociationsDiseaseFixed(
           ctx.value,
           ctx arg datasourceSettingsListArg,
-          ctx arg indrectEvidences getOrElse (true),
+          ctx arg indirectEvidences getOrElse (true),
           ctx arg aggregationFiltersListArg getOrElse (Seq.empty),
           ctx arg BIds map (_.toSet) getOrElse (Set.empty),
           ctx arg BFilterString,

@@ -113,7 +113,6 @@ object GQLSchema {
           val entities = ctx.arg(entityNames).getOrElse(Seq.empty)
           ctx.ctx.search(ctx.arg(queryString), ctx.arg(pageArg), entities)
         }),
-
       Field("associationDatasources", ListType(evidenceSourceImp),
         description = Some("The complete list of all possible datasources"),
         resolve = ctx => ctx.ctx.getAssociationDatasources)

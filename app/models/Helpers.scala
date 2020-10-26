@@ -3,7 +3,11 @@ package models
 import better.files._
 import com.typesafe.config.{ConfigObject, ConfigRenderOptions}
 import play.api.libs.json._
-import play.api.{Configuration, Logging}
+import play.api._
+import sangria.schema._
+import sangria.macros._
+import sangria.macros.derive._
+import sangria.ast
 
 object Helpers  extends Logging {
   /** Given a `filename`, the function fully loads the content into an option and
