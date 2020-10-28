@@ -7,12 +7,11 @@ case class LabelledElement(id: String, label: String)
 case class LabelledUri(url: String, niceName: String)
 
 case class EvidenceVariation(functionalConsequence: String,
-                             inheritancePattern: String,
-                             numberMutatedSamples: Long,
-                             numberSamplesTested: Long,
-                             numberSamplesWithMutationType: Long,
-                             preferredName: String,
-                             roleInCancer: String)
+                             inheritancePattern: Option[String],
+                             variantAminoacidDescription: Option[String],
+                             numberMutatedSamples: Option[Long],
+                             numberSamplesTested: Option[Long],
+                             numberSamplesWithMutationType: Option[Long])
 
 case class EvidenceTextMiningSentence(dEnd: Long, dStart: Long, section: String, tEnd: Long, tStart: Long, text: String)
 

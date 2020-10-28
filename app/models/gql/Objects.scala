@@ -78,8 +78,8 @@ object Objects extends Logging {
       Field("variantId", OptionType(StringType), description = Some("Variant evidence"), resolve = js => (js.value \ "variantId").asOpt[String]),
       Field("variantRsId", OptionType(StringType), description = Some("Variant dbSNP identifier"), resolve = js => (js.value \ "variantRsId").asOpt[String]),
       Field("evidenceResourceScoreType", OptionType(StringType), description = Some("Type of score from resource"), resolve = js => (js.value \ "evidenceResourceScoreType").asOpt[String]),
-      Field("evidenceConfidenceIntervalLower", OptionType(StringType), description = Some("Confidence interval lower-bound  "), resolve = js => (js.value \ "evidenceConfidenceIntervalLower").asOpt[String]),
-      Field("evidenceStudySampleSize", OptionType(StringType), description = Some("Sample size"), resolve = js => (js.value \ "evidenceStudySampleSize").asOpt[String]),
+      Field("evidenceConfidenceIntervalLower", OptionType(FloatType), description = Some("Confidence interval lower-bound  "), resolve = js => (js.value \ "evidenceConfidenceIntervalLower").asOpt[Double]),
+      Field("evidenceStudySampleSize", OptionType(LongType), description = Some("Sample size"), resolve = js => (js.value \ "evidenceStudySampleSize").asOpt[Long]),
       Field("evidenceVariations", OptionType(ListType(knownMutationImp)), description = None, resolve = js => (js.value \ "evidenceVariations").asOpt[Seq[EvidenceVariation]]),
       Field("drug", OptionType(drugImp), description = None, resolve = js => {
         val drugId = (js.value \ "drugId").asOpt[String]
@@ -103,6 +103,7 @@ object Objects extends Logging {
       Field("evidenceExperimentOverview", OptionType(StringType), description = None, resolve = js => (js.value \ "evidenceExperimentOverview").asOpt[String]),
       Field("evidenceLiterature", OptionType(ListType(StringType)), description = None, resolve = js => (js.value \ "evidenceLiterature").asOpt[Seq[String]]),
       Field("evidenceStudyCases", OptionType(StringType), description = None, resolve = js => (js.value \ "evidenceStudyCases").asOpt[String]),
+      Field("evidenceStudyOverview", OptionType(StringType), description = None, resolve = js => (js.value \ "evidenceStudyOverview").asOpt[String]),
       Field("evidenceAllelicRequirement", OptionType(StringType), description = None, resolve = js => (js.value \ "evidenceAllelicRequirement").asOpt[String]),
       Field("evidencePathwayName", OptionType(StringType), description = None, resolve = js => (js.value \ "evidencePathwayName").asOpt[String]),
       Field("datasourceId", StringType, description = None, resolve = js => (js.value \ "datasourceId").as[String]),
