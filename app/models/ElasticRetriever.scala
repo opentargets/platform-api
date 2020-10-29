@@ -110,21 +110,19 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
   }
 
   def getByMustWithSearch[A](esIndex: String, queryString: Option[String],
-                        kv: Map[String, Seq[String]],
-                        pagination: Pagination,
-                        buildF: JsValue => Option[A],
-                        aggs: Iterable[AbstractAggregation] = Iterable.empty,
-                        sortByField: Option[sort.FieldSort] = None,
-                        excludedFields: Seq[String] = Seq.empty,
-                        searchAfter: Option[Seq[String]] = None): Future[(IndexedSeq[A], Long, Option[Seq[String]])] = {
-    val limitClause = pagination.toES
+                             kv: Map[String, Seq[String]],
+                             pageSize: Int,
+                             buildF: JsValue => Option[A],
+                             aggs: Iterable[AbstractAggregation] = Iterable.empty,
+                             sortByField: Option[sort.FieldSort] = None,
+                             excludedFields: Seq[String] = Seq.empty,
+                             searchAfter: Option[Seq[String]] = None): Future[(IndexedSeq[A], Long, Option[Seq[String]])] = {
 
     val mustTerms = kv.toSeq.map(p => termsQuery(p._1, p._2))
 
     val q = search(esIndex).bool {
       must(mustTerms)
-    }.start(limitClause._1)
-      .limit(limitClause._2)
+    }.size(pageSize)
       .aggs(aggs)
       .trackTotalHits(true)
       .sourceExclude(excludedFields)
@@ -159,7 +157,7 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
             buildF(jObj)
           }).withFilter(_.isDefined).map(_.get)
 
-        val hasNext = !(hits.size < limitClause._2)
+        val hasNext = !(hits.size < pageSize)
 
         val seAf =
           if

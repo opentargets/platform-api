@@ -196,23 +196,13 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     }
   }
 
-  /**
-   * get evidences by multiple parameters
-   *
-   * @param queryString
-   * @param datasourceIds if None translates to '*'
-   * @param targetIds
-   * @param diseaseIds
-   * @param orderBy
-   * @param sizeLimit
-   * @param cursor
-   * @return
-   */
+  // TODO CHECK RESULTS ARE SIZE 0 OR OPTIMISE FIELDS TO BRING BACK
+  /** get evidences by multiple parameters */
   def getEvidences(queryString: Option[String], datasourceIds: Option[Seq[String]], targetIds: Seq[String], diseaseIds: Seq[String],
                    orderBy: Option[(String, String)], sizeLimit: Option[Int], cursor: Option[Seq[String]]):
   Future[Evidences] = {
 
-    val pag = Pagination(0, sizeLimit.getOrElse(Pagination.sizeDefault))
+    val pag = sizeLimit.getOrElse(Pagination.sizeDefault)
     val sortByField = orderBy.flatMap {
       p => ElasticRetriever.sortBy(p._1, if (p._2 == "desc") SortOrder.Desc else SortOrder.Asc)
     }
@@ -222,10 +212,6 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
 
     val cbIndex = datasourceIds.map(_.map(cbIndexPrefix.concat).mkString(",")).getOrElse(cbIndexPrefix.concat("*"))
 
-    val aggs = Seq(
-      valueCountAgg("rowsCount", "id.keyword")
-    )
-
     val kv = Map(
       "targetId.keyword" -> targetIds,
       "diseaseId.keyword" -> diseaseIds
@@ -233,7 +219,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
 
     esRetriever.getByMustWithSearch(cbIndex, None, kv, pag,
       fromJsValue[JsValue],
-      aggs, sortByField, Seq.empty, cursor).map {
+      Seq.empty, sortByField, Seq.empty, cursor).map {
       case (Seq(), _, _) => Evidences.empty
       case (seq, n, nextCursor) =>
         Evidences(n, nextCursor, seq)
