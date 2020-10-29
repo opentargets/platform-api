@@ -220,7 +220,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
     esRetriever.getByMustWithSearch(cbIndex, None, kv, pag,
       fromJsValue[JsValue],
       Seq.empty, sortByField, Seq.empty, cursor).map {
-      case (Seq(), _, _) => Evidences.empty
+      case (Seq(), n, _) => Evidences.empty(withTotal = n)
       case (seq, n, nextCursor) =>
         Evidences(n, nextCursor, seq)
     }

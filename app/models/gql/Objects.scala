@@ -112,7 +112,6 @@ object Objects extends Logging {
       Field("log2FoldChangeValue", OptionType(FloatType), description = None, resolve = js => (js.value \ "log2FoldChangeValue").asOpt[Double]),
       Field("oddsRatio", OptionType(FloatType), description = None, resolve = js => (js.value \ "oddsRatio").asOpt[Double]),
       Field("cohortDescription", OptionType(StringType), description = None, resolve = js => (js.value \ "cohortDescription").asOpt[String]),
-      Field("cohortDescription", OptionType(StringType), description = None, resolve = js => (js.value \ "cohortDescription").asOpt[String]),
       Field("publicationYear", OptionType(LongType), description = None, resolve = js => (js.value \ "publicationYear").asOpt[Long]),
       Field("diseaseFromSource", OptionType(StringType), description = None, resolve = js => (js.value \ "diseaseFromSource").asOpt[String]),
 

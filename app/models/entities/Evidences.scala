@@ -7,5 +7,5 @@ case class Evidences(count: Long,
                      rows: IndexedSeq[JsValue])
 
 object Evidences {
-  val empty = Evidences(0, None, IndexedSeq.empty)
+  def empty(withTotal: Long = 0) = Evidences(withTotal, None, IndexedSeq.empty)
 }

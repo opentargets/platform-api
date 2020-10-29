@@ -157,7 +157,7 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
             buildF(jObj)
           }).withFilter(_.isDefined).map(_.get)
 
-        val hasNext = !(hits.size < pageSize)
+        val hasNext = !(hits.size < pageSize) && pageSize > 0
 
         val seAf =
           if
@@ -165,6 +165,7 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
           else
             None
 
+        logger.debug(s"total hits : ${totalHits}")
         (mappedHits, totalHits, seAf)
     }
   }
