@@ -165,7 +165,6 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
           else
             None
 
-        logger.debug(s"total hits : ${totalHits}")
         (mappedHits, totalHits, seAf)
     }
   }
