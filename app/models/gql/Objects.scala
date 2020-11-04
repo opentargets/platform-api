@@ -88,7 +88,7 @@ object Objects extends Logging {
       Field("cohortShortName", OptionType(StringType), description = None, resolve = js => (js.value \ "cohortShortName").asOpt[String]),
       Field("diseaseModelAssociatedModelPhenotypes", OptionType(ListType(labelledElementImp)), description = None, resolve = js => (js.value \ "diseaseModelAssociatedModelPhenotypes").asOpt[Seq[LabelledElement]]),
       Field("diseaseModelAssociatedHumanPhenotypes", OptionType(ListType(labelledElementImp)), description = None, resolve = js => (js.value \ "diseaseModelAssociatedHumanPhenotypes").asOpt[Seq[LabelledElement]]),
-      Field("significantDriverMethods", OptionType(ListType(StringType)), description = None, resolve = js => (js.value \ "dignificantDriverMethods").asOpt[Seq[String]]),
+      Field("significantDriverMethods", OptionType(ListType(StringType)), description = None, resolve = js => (js.value \ "significantDriverMethods").asOpt[Seq[String]]),
       Field("resourceScoreExponent", OptionType(LongType), description = None, resolve = js => (js.value \ "resourceScoreExponent").asOpt[Long]),
       Field("log2FoldChangePercentileRank", OptionType(LongType), description = None, resolve = js => (js.value \ "log2FoldChangePercentileRank").asOpt[Long]),
       Field("biologicalModelAllelicComposition", OptionType(StringType), description = None, resolve = js => (js.value \ "biologicalModelAllelicComposition").asOpt[String]),
