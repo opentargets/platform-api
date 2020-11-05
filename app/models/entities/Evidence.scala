@@ -6,7 +6,7 @@ case class LabelledElement(id: String, label: String)
 
 case class LabelledUri(url: String, niceName: String)
 
-case class EvidenceVariation(functionalConsequence: String,
+case class EvidenceVariation(functionalConsequenceId: String,
                              inheritancePattern: Option[String],
                              variantAminoacidDescription: Option[String],
                              numberMutatedSamples: Option[Long],
