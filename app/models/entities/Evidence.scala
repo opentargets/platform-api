@@ -92,7 +92,6 @@ object Evidence {
       Field("variantFunctionalConsequenceScore", OptionType(FloatType), description = None, resolve = js => (js.value \ "variantFunctionalConsequenceScore").asOpt[Double]),
       Field("biologicalModelGeneticBackground", OptionType(StringType), description = None, resolve = js => (js.value \ "biologicalModelGeneticBackground").asOpt[String]),
       Field("clinicalUrls", OptionType(ListType(labelledUriImp)), description = None, resolve = js => (js.value \ "clinicalUrls").asOpt[Seq[JsValue]]),
-      Field("experimentOverview", OptionType(StringType), description = None, resolve = js => (js.value \ "experimentOverview").asOpt[String]),
       Field("literature", OptionType(ListType(StringType)), description = None, resolve = js => (js.value \ "literature").asOpt[Seq[String]]),
       Field("studyCases", OptionType(StringType), description = None, resolve = js => (js.value \ "studyCases").asOpt[String]),
       Field("studyOverview", OptionType(StringType), description = None, resolve = js => (js.value \ "studyOverview").asOpt[String]),
