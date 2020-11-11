@@ -12,7 +12,7 @@ import com.sksamuel.elastic4s.http.JavaClient
 import com.sksamuel.elastic4s.requests.searches.aggs._
 import com.sksamuel.elastic4s.requests.searches.sort.{SortMode, SortOrder}
 
-import scala.concurrent.ExecutionContext.Implicits.global
+// import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
 import models.db.QAOTF
 import models.entities._
@@ -27,13 +27,14 @@ import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
 import play.db.NamedDatabase
 import esecuele._
+import play.api.libs.json.Json.toJson
 
-class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider: DatabaseConfigProvider,
+class Backend @Inject()(implicit ec: ExecutionContext, @NamedDatabase("default") protected val dbConfigProvider: DatabaseConfigProvider,
                         config: Configuration,
                         env: Environment) extends Logging {
 
-  val defaultOTSettings = loadConfigurationObject[OTSettings]("ot", config)
-  val defaultESSettings = defaultOTSettings.elasticsearch
+  implicit val defaultOTSettings = loadConfigurationObject[OTSettings]("ot", config)
+  implicit val defaultESSettings = defaultOTSettings.elasticsearch
 
   /** return meta information loaded from ot.meta settings */
   lazy val getMeta: Meta = defaultOTSettings.meta
@@ -45,12 +46,12 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
   lazy val getESClient = ElasticClient(JavaClient(
     ElasticProperties(s"http://${defaultESSettings.host}:${defaultESSettings.port}")))
 
-  lazy val dbRetriever = new ClickhouseRetriever(dbConfigProvider.get[ClickHouseProfile], defaultOTSettings)
+  implicit lazy val dbRetriever = new ClickhouseRetriever(dbConfigProvider.get[ClickHouseProfile], defaultOTSettings)
 
   val allSearchableIndices = defaultESSettings.entities
     .withFilter(_.searchIndex.isDefined).map(_.searchIndex.get)
 
-  lazy val esRetriever = new ElasticRetriever(getESClient,
+  implicit lazy val esRetriever = new ElasticRetriever(getESClient,
     defaultESSettings.highlightFields,
     allSearchableIndices)
 
@@ -190,7 +191,6 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
         val drugs = (agg \ "uniqueDrugs" \ "value").as[Long]
         val diseases = (agg \ "uniqueDiseases" \ "value").as[Long]
         val targets = (agg \ "uniqueTargets" \ "value").as[Long]
-        //        val clinicalTrials = (agg \ "uniqueClinicalTrials" \ "value").as[Long]
         val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
         Some(KnownDrugs(drugs, diseases, targets, rowsCount, nextCursor, seq))
     }
@@ -198,7 +198,7 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
 
   // TODO CHECK RESULTS ARE SIZE 0 OR OPTIMISE FIELDS TO BRING BACK
   /** get evidences by multiple parameters */
-  def getEvidences(queryString: Option[String], datasourceIds: Option[Seq[String]], targetIds: Seq[String], diseaseIds: Seq[String],
+  def getEvidences(datasourceIds: Option[Seq[String]], targetIds: Seq[String], diseaseIds: Seq[String],
                    orderBy: Option[(String, String)], sizeLimit: Option[Int], cursor: Option[Seq[String]]):
   Future[Evidences] = {
 
@@ -281,58 +281,6 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       .find(_.name == "disease").map(_.index).getOrElse("diseases")
 
     esRetriever.getByIds(diseaseIndexName, ids, fromJsValue[Disease])
-  }
-
-  def getTargetInteractions(id: String, dbName: Option[String], pagination: Option[Pagination]):
-  Future[Option[Interactions]] = {
-
-    val pag = pagination.getOrElse(Pagination.mkDefault)
-
-    val cbIndex = defaultESSettings.entities
-      .find(_.name == "interaction").map(_.index).getOrElse("interaction")
-
-    val kv = List(
-      Some("targetA.keyword" -> id),
-      dbName.map("sourceDatabase.keyword" -> _)
-    ).flatten.toMap
-
-    val aggs = Seq(
-      valueCountAgg("rowsCount", "targetA.keyword")
-    )
-
-    esRetriever.getByIndexedQuery(cbIndex, kv, pag, fromJsValue[Interaction], aggs,
-      Some(sort.FieldSort("scoring", order = SortOrder.DESC))).map {
-      case (Seq(), _) => None
-      case (seq, agg) =>
-        logger.debug(Json.prettyPrint(agg))
-
-        val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
-        Some(Interactions(rowsCount, seq))
-    }
-  }
-
-  def getTargetInteractionEvidences(interaction: Interaction):
-  Future[IndexedSeq[InteractionEvidence]] = {
-
-    val pag = Pagination(0, 10000)
-
-    val cbIndex = defaultESSettings.entities
-      .find(_.name == "interaction_evidence").map(_.index).getOrElse("interaction_evidence")
-
-    val kv = List(
-      "interactionResources.sourceDatabase.keyword" -> interaction.sourceDatabase,
-      "targetA.keyword" -> interaction.targetA,
-      "targetB.keyword" -> interaction.targetB,
-      "intA.keyword" -> interaction.intA,
-      "intB.keyword" -> interaction.intB,
-      "intABiologicalRole.keyword" -> interaction.intABiologicalRole,
-      "intBBiologicalRole.keyword" -> interaction.intBBiologicalRole
-    ).toMap
-
-    esRetriever.getByIndexedQuery(cbIndex, kv, pag, fromJsValue[InteractionEvidence]).map {
-      case (Seq(), _) => IndexedSeq.empty
-      case (seq, _) => seq
-    }
   }
 
   def search(qString: String, pagination: Option[Pagination],
@@ -548,16 +496,17 @@ class Backend @Inject()(@NamedDatabase("default") protected val dbConfigProvider
       dontPropagate,
       page.offset, page.size)
 
-    logger.debug(s"get target id ${target.approvedSymbol}")
-    val indirectIDs = if (indirect) {
-      val interactions = getTargetInteractions(target.id, None, pagination = Some(Pagination(0, 10000))) map {
-        case Some(ints) => ints.rows.withFilter(_.targetB.startsWith("ENSG")).map(_.targetB).toSet + target.id
-        case None => Set.empty + target.id
-      }
-
-      interactions.await
-
-    } else Set.empty[String]
+    logger.debug(s"get target id ${target.approvedSymbol} ACTUALLY DISABLED!")
+    val indirectIDs = Set.empty + target.id
+//    val indirectIDs = if (indirect) {
+//      val interactions = getTargetInteractions(target.id, None, pagination = Some(Pagination(0, 10000))) map {
+//        case Some(ints) => ints.rows.withFilter(_.targetB.startsWith("ENSG")).map(_.targetB).toSet + target.id
+//        case None => Set.empty + target.id
+//      }
+//
+//      interactions.await
+//
+//    } else Set.empty[String]
 
     val simpleQ = aotfQ(indirectIDs, diseaseSet).simpleQuery(0, 100000)
 

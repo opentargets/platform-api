@@ -36,27 +36,6 @@ object Objects extends Logging {
   implicit val metaAPIVersionImp = deriveObjectType[Backend, APIVersion]()
   implicit val metaImp = deriveObjectType[Backend, Meta]()
 
-  implicit val interactionEvidencePDM = deriveObjectType[Backend, InteractionEvidencePDM]()
-  implicit val interactionSpeciesImp = deriveObjectType[Backend, InteractionSpecies]()
-  implicit val interactionResourcesImp = deriveObjectType[Backend, InteractionResources]()
-  implicit val interactionEvidenceImp = deriveObjectType[Backend, InteractionEvidence]()
-
-  implicit val interactionImp = deriveObjectType[Backend, Interaction](
-    ReplaceField("targetA", Field("targetA",
-      OptionType(targetImp), Some("Target entity"),
-      resolve = r => targetsFetcher.deferOpt(r.value.targetA))),
-    ReplaceField("targetB", Field("targetB",
-      OptionType(targetImp), Some("Target entity"),
-      resolve = r => targetsFetcher.deferOpt(r.value.targetB))),
-    AddFields(
-      Field("evidences", ListType(interactionEvidenceImp),
-        description = Some("List of evidences for this interaction"),
-        resolve = r => r.ctx.getTargetInteractionEvidences(r.value)
-      ))
-  )
-
-  implicit val interactionsImp = deriveObjectType[Backend, Interactions]()
-
   implicit lazy val targetImp: ObjectType[Backend, Target] = deriveObjectType(
     ObjectTypeDescription("Target entity"),
     DocumentField("id", "Open Targets target id"),
@@ -83,19 +62,23 @@ object Objects extends Logging {
     AddFields(
       Field("evidences", evidencesImp,
         description = Some("The complete list of all possible datasources"),
-        arguments = efoIds :: optQueryString :: datasourceIdsArg :: pageSize :: cursor :: Nil,
+        arguments = efoIds :: datasourceIdsArg :: pageSize :: cursor :: Nil,
         resolve = ctx => {
-          ctx.ctx.getEvidences(ctx arg optQueryString, ctx arg datasourceIdsArg,
+          ctx.ctx.getEvidences(ctx arg datasourceIdsArg,
             Seq(ctx.value.id),
             ctx arg efoIds,
             Some(("targetId.keyword", "desc")),
             ctx arg pageSize,
             ctx arg cursor)
         }),
-      Field("interactions", OptionType(interactionsImp),
+      Field("interactions", OptionType(interactions),
         description = Some("Biological pathway membership from Reactome"),
         arguments = databaseName :: pageArg :: Nil,
-        resolve = r => r.ctx.getTargetInteractions(r.value.id, r arg databaseName, r arg pageArg)
+        resolve = r => {
+          import r.ctx._
+
+          Interactions.find(r.value.id, r arg databaseName, r arg pageArg)
+        }
       ),
       Field("mousePhenotypes", ListType(mouseGeneImp),
         description = Some("Biological pathway membership from Reactome"),
@@ -183,11 +166,11 @@ object Objects extends Logging {
     AddFields(
       Field("evidences", evidencesImp,
         description = Some("The complete list of all possible datasources"),
-        arguments = ensemblIds :: indirectEvidences :: optQueryString :: datasourceIdsArg :: pageSize :: cursor :: Nil,
+        arguments = ensemblIds :: indirectEvidences  :: datasourceIdsArg :: pageSize :: cursor :: Nil,
         resolve = ctx => {
           val indirects = ctx.arg(indirectEvidences).getOrElse(true)
           val efos = if (indirects) ctx.value.id +: ctx.value.descendants else ctx.value.id +: Nil
-          ctx.ctx.getEvidences(ctx arg optQueryString, ctx arg datasourceIdsArg,
+          ctx.ctx.getEvidences(ctx arg datasourceIdsArg,
             ctx arg ensemblIds,
             efos,
             Some(("targetId.keyword", "desc")),
