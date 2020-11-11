@@ -1,16 +1,19 @@
 package models.entities
 
+import com.sksamuel.elastic4s.ElasticDsl.boolQuery
+import com.sksamuel.elastic4s.requests.searches.aggs.TermsAggregation
 import models.{Backend, ElasticRetriever}
 import models.Helpers.fromJsValue
 import models.entities.Configuration.ElasticsearchSettings
 import models.gql.Fetchers.targetsFetcher
 import models.gql.Objects.targetImp
+import play.api.Logging
 import play.api.libs.json._
 import sangria.schema._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-object Interaction {
+object Interaction extends Logging {
 
   case class Key(intA: String, intB: String, targetA: String, targetB: String, intABiologicalRole: String, intBBiologicalRole: String,
                  sourceDatabase: String)
@@ -49,7 +52,6 @@ object Interaction {
       Field("interactionDetectionMethodMiIdentifier", StringType, description = None, resolve = js => (js.value \ "interactionDetectionMethodMiIdentifier").as[String]),
       Field("interactionDetectionMethodShortName", StringType, description = None, resolve = js => (js.value \ "interactionDetectionMethodShortName").as[String]),
       Field("interactionIdentifier", OptionType(StringType), description = None, resolve = js => (js.value \ "interactionIdentifier").asOpt[String]),
-      Field("interactionResources", interactionResources, description = None, resolve = js => (js.value \ "interactionResources").as[JsValue]),
 
       Field("interactionScore", OptionType(FloatType), description = None, resolve = js => (js.value \ "interactionScore").asOpt[Double]),
       Field("interactionTypeMiIdentifier", OptionType(StringType), description = None, resolve = js => (js.value \ "interactionTypeMiIdentifier").asOpt[String]),
