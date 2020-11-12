@@ -497,16 +497,16 @@ class Backend @Inject()(implicit ec: ExecutionContext, @NamedDatabase("default")
       page.offset, page.size)
 
     logger.debug(s"get target id ${target.approvedSymbol} ACTUALLY DISABLED!")
-    val indirectIDs = Set.empty + target.id
-//    val indirectIDs = if (indirect) {
-//      val interactions = getTargetInteractions(target.id, None, pagination = Some(Pagination(0, 10000))) map {
-//        case Some(ints) => ints.rows.withFilter(_.targetB.startsWith("ENSG")).map(_.targetB).toSet + target.id
-//        case None => Set.empty + target.id
-//      }
-//
-//      interactions.await
-//
-//    } else Set.empty[String]
+    val indirectIDs = if (indirect) {
+      val interactions = Interactions.find(target.id, None, pagination = Some(Pagination(0, 10000))) map {
+        case Some(ints) => ints.rows
+          .withFilter(_("targetB").as[String].startsWith("ENSG")).map(_("targetB").as[String]).toSet + target.id
+        case None => Set.empty + target.id
+      }
+
+      interactions.await
+
+    } else Set.empty[String]
 
     val simpleQ = aotfQ(indirectIDs, diseaseSet).simpleQuery(0, 100000)
 
