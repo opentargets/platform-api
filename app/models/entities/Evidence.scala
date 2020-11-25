@@ -70,7 +70,6 @@ object Evidence {
       Field("variantId", OptionType(StringType), description = Some("Variant evidence"), resolve = js => (js.value \ "variantId").asOpt[String]),
       Field("variantRsId", OptionType(StringType), description = Some("Variant dbSNP identifier"), resolve = js => (js.value \ "variantRsId").asOpt[String]),
       Field("targetModulation", OptionType(StringType), description = None, resolve = js => (js.value \ "targetModulation").asOpt[String]),
-      Field("resourceScoreType", OptionType(StringType), description = Some("Type of score from resource"), resolve = js => (js.value \ "resourceScoreType").asOpt[String]),
       Field("confidenceIntervalLower", OptionType(FloatType), description = Some("Confidence interval lower-bound  "), resolve = js => (js.value \ "confidenceIntervalLower").asOpt[Double]),
       Field("studySampleSize", OptionType(LongType), description = Some("Sample size"), resolve = js => (js.value \ "studySampleSize").asOpt[Long]),
       Field("variants", OptionType(ListType(evidenceVariationImp)), description = None, resolve = js => (js.value \ "variants").asOpt[Seq[JsValue]]),
