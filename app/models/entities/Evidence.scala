@@ -107,7 +107,7 @@ object Evidence {
       Field("oddsRatio", OptionType(FloatType), description = None, resolve = js => (js.value \ "oddsRatio").asOpt[Double]),
       Field("cohortDescription", OptionType(StringType), description = None, resolve = js => (js.value \ "cohortDescription").asOpt[String]),
       Field("publicationYear", OptionType(LongType), description = None, resolve = js => (js.value \ "publicationYear").asOpt[Long]),
-      Field("diseaseFromSource", OptionType(ListType(StringType)), description = None, resolve = js => (js.value \ "diseaseFromSource").asOpt[Seq[String]]),
+      Field("diseaseFromSource", OptionType(StringType), description = None, resolve = js => (js.value \ "diseaseFromSource").asOpt[String]),
       Field("targetFromSource", OptionType(StringType), description = None, resolve = js => (js.value \ "targetFromSource").asOpt[String]),
       Field("targetModulation", OptionType(StringType), description = None, resolve = js => (js.value \ "targetModulation").asOpt[String]),
 
