@@ -71,7 +71,7 @@ object Interaction extends Logging {
       }),
       Field("intB", StringType, description = None, resolve = js => (js.value \ "intB").as[String]),
       Field("targetB", OptionType(targetImp), description = None, resolve = js => {
-        val tID = (js.value \ "targetA").as[String]
+        val tID = (js.value \ "targetB").as[String]
         targetsFetcher.deferOpt(tID)
       }),
       Field("intABiologicalRole", StringType, description = None, resolve = js => (js.value \ "intABiologicalRole").as[String]),
