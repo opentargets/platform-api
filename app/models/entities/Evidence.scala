@@ -32,7 +32,6 @@ object Evidence {
         val soId = ((js.value \ "functionalConsequenceId").as[String]).replace("_", ":")
         soTermsFetcher.defer(soId)
       }),
-      Field("aminoacidDescription", OptionType(StringType), description = None, resolve = js => (js.value \ "variantAminoacidDescription").asOpt[String]),
       Field("numberMutatedSamples", OptionType(LongType), description = None, resolve = js => (js.value \ "numberMutatedSamples").asOpt[Long]),
       Field("numberSamplesTested", OptionType(LongType), description = None, resolve = js => (js.value \ "numberSamplesTested").asOpt[Long]),
       Field("numberSamplesWithMutationType", OptionType(LongType), description = None, resolve = js => (js.value \ "numberSamplesWithMutationType").asOpt[Long])
@@ -72,7 +71,8 @@ object Evidence {
       Field("targetModulation", OptionType(StringType), description = None, resolve = js => (js.value \ "targetModulation").asOpt[String]),
       Field("confidenceIntervalLower", OptionType(FloatType), description = Some("Confidence interval lower-bound  "), resolve = js => (js.value \ "confidenceIntervalLower").asOpt[Double]),
       Field("studySampleSize", OptionType(LongType), description = Some("Sample size"), resolve = js => (js.value \ "studySampleSize").asOpt[Long]),
-      Field("variants", OptionType(ListType(evidenceVariationImp)), description = None, resolve = js => (js.value \ "variants").asOpt[Seq[JsValue]]),
+      Field("aminoacidDescriptions", OptionType(ListType(StringType)), description = None, resolve = js => (js.value \ "aminoacidDescriptions").asOpt[Seq[String]]),
+      Field("mutatedSamples", OptionType(ListType(evidenceVariationImp)), description = None, resolve = js => (js.value \ "mutatedSamples").asOpt[Seq[JsValue]]),
       Field("drug", OptionType(drugImp), description = None, resolve = js => {
         val drugId = (js.value \ "drugId").asOpt[String]
         drugsFetcher.deferOpt(drugId)
