@@ -484,10 +484,11 @@ object Objects extends Logging {
       resolve = r => targetsFetcher.deferSeqOpt(r.value.rows)))
   )
 
-  implicit lazy val drugReferenceImp = deriveObjectType[Backend, Reference]()
-  implicit lazy val mechanismOfActionRowImp = deriveObjectType[Backend, MechanismOfActionRow](
+  implicit lazy val drugReferenceImp: ObjectType[Backend, Reference] = deriveObjectType[Backend, Reference]()
+  implicit lazy val mechanismOfActionRowImp: ObjectType[Backend, MechanismOfActionRow] = deriveObjectType[Backend, MechanismOfActionRow](
     ReplaceField("targets", Field("targets", ListType(targetImp), Some("Target List"),
-      resolve = r => targetsFetcher.deferSeqOpt(r.value.targets)))
+      resolve = r => targetsFetcher.deferSeqOpt(r.value.targets.getOrElse(Seq.empty))
+      ))
   )
 
   implicit lazy val indicationRowImp = deriveObjectType[Backend, IndicationRow](
@@ -516,10 +517,12 @@ object Objects extends Logging {
     DocumentField("drugType", "Drug modality"),
     DocumentField("maximumClinicalTrialPhase", "Maximum phase observed in clinical trial records and" +
       " post-marketing package inserts"),
+    DocumentField("isApproved", "Alias for maximumClinicalTrialPhase == 4"),
     DocumentField("hasBeenWithdrawn", "Has drug been withdrawn from the market"),
     DocumentField("withdrawnNotice", "Withdrawal reason"),
     DocumentField("mechanismsOfAction", "Mechanisms of action to produce intended " +
       "pharmacological effects. Curated from scientific literature and post-marketing package inserts"),
+    DocumentField("approvedIndications", "Indications for which there is a phase IV clinical trial"),
     DocumentField("indications", "Investigational and approved indications curated from clinical trial " +
       "records and post-marketing package inserts"),
     DocumentField("blackBoxWarning", "Alert on life-threteaning drug side effects provided by FDA"),

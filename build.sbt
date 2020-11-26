@@ -27,7 +27,7 @@ resolvers += Resolver.sonatypeRepo("releases")
 libraryDependencies += guice
 libraryDependencies += "com.github.pathikrit" %% "better-files" % "3.8.0"
 libraryDependencies += "com.typesafe.slick" %% "slick" % "3.3.2"
-libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "4.0.3" % Test
+libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test
 
 val playVersion = "2.8.2"
 libraryDependencies += "com.typesafe.play" %% "play" % playVersion
