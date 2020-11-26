@@ -9,7 +9,7 @@ import sangria.macros.derive._
 import sangria.schema._
 import sangria.marshalling.playJson._
 import sangria.schema.AstSchemaBuilder._
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue, Json}
 import play.api.Logging
 import sangria.schema._
 import sangria.macros._
@@ -25,35 +25,16 @@ import sangria.execution.deferred._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
-
 import Arguments._
 import Fetchers._
+import play.api.libs.json.JsValue.jsValueToJsLookup
+import models.entities.Evidence._
+import models.entities.Evidences._
 
 object Objects extends Logging {
   implicit val metaDataVersionImp = deriveObjectType[Backend, DataVersion]()
   implicit val metaAPIVersionImp = deriveObjectType[Backend, APIVersion]()
   implicit val metaImp = deriveObjectType[Backend, Meta]()
-
-  implicit val interactionEvidencePDM = deriveObjectType[Backend, InteractionEvidencePDM]()
-  implicit val interactionSpeciesImp = deriveObjectType[Backend, InteractionSpecies]()
-  implicit val interactionResourcesImp = deriveObjectType[Backend, InteractionResources]()
-  implicit val interactionEvidenceImp = deriveObjectType[Backend, InteractionEvidence]()
-
-  implicit val interactionImp = deriveObjectType[Backend, Interaction](
-    ReplaceField("targetA", Field("targetA",
-      OptionType(targetImp), Some("Target entity"),
-      resolve = r => targetsFetcher.deferOpt(r.value.targetA))),
-    ReplaceField("targetB", Field("targetB",
-      OptionType(targetImp), Some("Target entity"),
-      resolve = r => targetsFetcher.deferOpt(r.value.targetB))),
-    AddFields(
-      Field("evidences", ListType(interactionEvidenceImp),
-        description = Some("List of evidences for this interaction"),
-        resolve = r => r.ctx.getTargetInteractionEvidences(r.value)
-      ))
-  )
-
-  implicit val interactionsImp = deriveObjectType[Backend, Interactions]()
 
   implicit lazy val targetImp: ObjectType[Backend, Target] = deriveObjectType(
     ObjectTypeDescription("Target entity"),
@@ -79,10 +60,25 @@ object Objects extends Logging {
       ListType(reactomeImp), None,
       resolve = r => reactomeFetcher.deferSeq(r.value.reactome))),
     AddFields(
-      Field("interactions", OptionType(interactionsImp),
+      Field("evidences", evidencesImp,
+        description = Some("The complete list of all possible datasources"),
+        arguments = efoIds :: datasourceIdsArg :: pageSize :: cursor :: Nil,
+        resolve = ctx => {
+          ctx.ctx.getEvidences(ctx arg datasourceIdsArg,
+            Seq(ctx.value.id),
+            ctx arg efoIds,
+            Some(("targetId.keyword", "desc")),
+            ctx arg pageSize,
+            ctx arg cursor)
+        }),
+      Field("interactions", OptionType(interactions),
         description = Some("Biological pathway membership from Reactome"),
         arguments = databaseName :: pageArg :: Nil,
-        resolve = r => r.ctx.getTargetInteractions(r.value.id, r arg databaseName, r arg pageArg)
+        resolve = r => {
+          import r.ctx._
+
+          Interactions.find(r.value.id, r arg databaseName, r arg pageArg)
+        }
       ),
       Field("mousePhenotypes", ListType(mouseGeneImp),
         description = Some("Biological pathway membership from Reactome"),
@@ -127,11 +123,11 @@ object Objects extends Logging {
 
       Field("associatedDiseases", associatedOTFDiseasesImp,
         description = Some("associations on the fly"),
-        arguments = BIds :: indrectEvidences :: datasourceSettingsListArg :: aggregationFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
+        arguments = BIds :: indirectEvidences :: datasourceSettingsListArg :: aggregationFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
         resolve = ctx => ctx.ctx.getAssociationsTargetFixed(
           ctx.value,
           ctx arg datasourceSettingsListArg,
-          ctx arg indrectEvidences getOrElse (false),
+          ctx arg indirectEvidences getOrElse (false),
           ctx arg aggregationFiltersListArg getOrElse (Seq.empty),
           ctx arg BIds map (_.toSet) getOrElse (Set.empty),
           ctx arg BFilterString,
@@ -168,6 +164,19 @@ object Objects extends Logging {
       resolve = r => diseasesFetcher.deferSeq(r.value.children))),
     // this query uses id and ancestors fields to search for indirect diseases
     AddFields(
+      Field("evidences", evidencesImp,
+        description = Some("The complete list of all possible datasources"),
+        arguments = ensemblIds :: indirectEvidences  :: datasourceIdsArg :: pageSize :: cursor :: Nil,
+        resolve = ctx => {
+          val indirects = ctx.arg(indirectEvidences).getOrElse(true)
+          val efos = if (indirects) ctx.value.id +: ctx.value.descendants else ctx.value.id +: Nil
+          ctx.ctx.getEvidences(ctx arg datasourceIdsArg,
+            ctx arg ensemblIds,
+            efos,
+            Some(("targetId.keyword", "desc")),
+            ctx arg pageSize,
+            ctx arg cursor)
+        }),
       Field("otarProjects", ListType(otarProjectImp),
         description = Some("RNA and Protein baseline expression"),
         resolve = r => DeferredValue(otarProjectsFetcher.deferOpt(r.value.id)).map {
@@ -201,11 +210,11 @@ object Objects extends Logging {
 
       Field("associatedTargets", associatedOTFTargetsImp,
         description = Some("associations on the fly"),
-        arguments = BIds :: indrectEvidences :: datasourceSettingsListArg :: aggregationFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
+        arguments = BIds :: indirectEvidences :: datasourceSettingsListArg :: aggregationFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
         resolve = ctx => ctx.ctx.getAssociationsDiseaseFixed(
           ctx.value,
           ctx arg datasourceSettingsListArg,
-          ctx arg indrectEvidences getOrElse (true),
+          ctx arg indirectEvidences getOrElse (true),
           ctx arg aggregationFiltersListArg getOrElse (Seq.empty),
           ctx arg BIds map (_.toSet) getOrElse (Set.empty),
           ctx arg BFilterString,
@@ -475,10 +484,11 @@ object Objects extends Logging {
       resolve = r => targetsFetcher.deferSeqOpt(r.value.rows)))
   )
 
-  implicit lazy val drugReferenceImp = deriveObjectType[Backend, Reference]()
-  implicit lazy val mechanismOfActionRowImp = deriveObjectType[Backend, MechanismOfActionRow](
+  implicit lazy val drugReferenceImp: ObjectType[Backend, Reference] = deriveObjectType[Backend, Reference]()
+  implicit lazy val mechanismOfActionRowImp: ObjectType[Backend, MechanismOfActionRow] = deriveObjectType[Backend, MechanismOfActionRow](
     ReplaceField("targets", Field("targets", ListType(targetImp), Some("Target List"),
-      resolve = r => targetsFetcher.deferSeqOpt(r.value.targets)))
+      resolve = r => targetsFetcher.deferSeqOpt(r.value.targets.getOrElse(Seq.empty))
+      ))
   )
 
   implicit lazy val indicationRowImp = deriveObjectType[Backend, IndicationRow](
@@ -507,12 +517,12 @@ object Objects extends Logging {
     DocumentField("drugType", "Drug modality"),
     DocumentField("maximumClinicalTrialPhase", "Maximum phase observed in clinical trial records and" +
       " post-marketing package inserts"),
+    DocumentField("isApproved", "Alias for maximumClinicalTrialPhase == 4"),
     DocumentField("hasBeenWithdrawn", "Has drug been withdrawn from the market"),
     DocumentField("withdrawnNotice", "Withdrawal reason"),
-    DocumentField("internalCompound", "Is this an private molecule not displayed " +
-      "in the Open Targets public version"),
     DocumentField("mechanismsOfAction", "Mechanisms of action to produce intended " +
       "pharmacological effects. Curated from scientific literature and post-marketing package inserts"),
+    DocumentField("approvedIndications", "Indications for which there is a phase IV clinical trial"),
     DocumentField("indications", "Investigational and approved indications curated from clinical trial " +
       "records and post-marketing package inserts"),
     DocumentField("blackBoxWarning", "Alert on life-threteaning drug side effects provided by FDA"),
@@ -541,11 +551,11 @@ object Objects extends Logging {
             ctx.value.id,
             ctx.arg(pageArg)))
     ),
-    ReplaceField("linkedDiseases", Field("linkedDiseases", linkedDiseasesImp,
+    ReplaceField("linkedDiseases", Field("linkedDiseases", OptionType(linkedDiseasesImp),
       Some("Therapeutic indications for drug based on clinical trial data or " +
         "post-marketed drugs, when mechanism of action is known\""),
       resolve = r => r.value.linkedDiseases)),
-    ReplaceField("linkedTargets", Field("linkedTargets", linkedTargetsImp,
+    ReplaceField("linkedTargets", Field("linkedTargets", OptionType(linkedTargetsImp),
       Some("Molecule targets based on drug mechanism of action"),
       resolve = r => r.value.linkedTargets))
   )

@@ -24,11 +24,15 @@ object Arguments {
   val entityNames = Argument("entityNames", OptionInputType(ListInputType(StringType)),
     description = "List of entity names to search for (target, disease, drug,...)")
 
+  val datasourceIdsArg = Argument("datasourceIds", OptionInputType(ListInputType(StringType)),
+    description = "List of datasource ids")
+
   val pageArg = Argument("page", OptionInputType(paginationGQLImp))
   val pageSize = Argument("size", OptionInputType(IntType))
   val cursor = Argument("cursor", OptionInputType(ListInputType(StringType)))
   val databaseName = Argument("sourceDatabase", OptionInputType(StringType), description = "Database name")
   val queryString = Argument("queryString", StringType, description = "Query string")
+  val optQueryString = Argument("queryString", OptionInputType(StringType), description = "Query string")
   val freeTextQuery = Argument("freeTextQuery", OptionInputType(StringType), description = "Query string")
   val efoId = Argument("efoId", StringType, description = "EFO ID")
   val efoIds = Argument("efoIds", ListInputType(StringType), description = "EFO ID")
@@ -36,7 +40,7 @@ object Arguments {
   val ensemblIds = Argument("ensemblIds", ListInputType(StringType), description = "List of Ensembl IDs")
   val chemblId = Argument("chemblId", StringType, description = "Chembl ID")
   val chemblIds = Argument("chemblIds", ListInputType(StringType), description = "List of Chembl IDs")
-  val indrectEvidences = Argument("enableIndirect", OptionInputType(BooleanType),
+  val indirectEvidences = Argument("enableIndirect", OptionInputType(BooleanType),
     "Use disease ontology to capture evidences from all descendants to build associations")
 
   val BFilterString = Argument("BFilter", OptionInputType(StringType))

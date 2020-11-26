@@ -1,6 +1,5 @@
 package models.entities
 
-import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
@@ -15,8 +14,8 @@ case class Reference(ids: Option[Seq[String]],
                      urls: Option[Seq[String]])
 
 case class MechanismOfActionRow(mechanismOfAction: String,
-                                targetName: String,
-                                targets: Seq[String],
+                                targetName: Option[String],
+                                targets: Option[Seq[String]],
                                 references: Option[Seq[Reference]])
 
 case class IndicationRow(maxPhaseForIndication: Long,
@@ -32,19 +31,20 @@ case class MechanismsOfAction(rows: Seq[MechanismOfActionRow],
                               uniqueTargetTypes: Seq[String])
 
 case class Drug(id: String,
-                name: String,
+                name: Option[String],
                 synonyms: Seq[String],
                 tradeNames: Seq[String],
                 yearOfFirstApproval: Option[Int],
                 drugType: String,
+                isApproved: Option[Boolean],
                 maximumClinicalTrialPhase: Option[Int],
                 hasBeenWithdrawn: Boolean,
                 withdrawnNotice: Option[WithdrawnNotice],
-                internalCompound: Boolean,
                 mechanismsOfAction: Option[MechanismsOfAction],
+                approvedIndications: Option[Seq[String]],
                 indications: Option[Indications],
-                linkedDiseases: LinkedIds,
-                linkedTargets: LinkedIds,
+                linkedDiseases: Option[LinkedIds],
+                linkedTargets: Option[LinkedIds],
                 blackBoxWarning: Boolean,
                 description: Option[String])
 

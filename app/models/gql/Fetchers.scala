@@ -1,10 +1,27 @@
 package models.gql
 
+import models.Helpers.fromJsValue
 import models.{Backend, entities}
 import models.entities.{Disease, Drug, ECO, Expressions, MousePhenotypes, OtarProjects, Reactome, Target}
+import play.api.libs.json.JsValue
 import sangria.execution.deferred.{Fetcher, FetcherCache, FetcherConfig, HasId}
 
 object Fetchers {
+  def buildFetcher(index: String) = {
+    implicit val soTermHasId = HasId[JsValue, String](el => (el \ "id").as[String])
+    Fetcher(
+      config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(soTermsFetcherCache),
+      fetch = (ctx: Backend, ids: Seq[String]) => {
+        val soIndexName = ctx.defaultESSettings.entities
+          .find(_.name == index).map(_.index).getOrElse(index)
+
+        ctx.esRetriever.getByIds(soIndexName, ids, fromJsValue[JsValue])
+      })
+  }
+
+  val soTermsFetcherCache = FetcherCache.simple
+  val soTermsFetcher = buildFetcher("so")
+
   // target
   implicit val targetHasId = HasId[Target, String](_.id)
 

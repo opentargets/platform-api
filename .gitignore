@@ -11,3 +11,4 @@ lib/
 .metals/
 .bloop/
 project/metals.sbt
+.vscode/settings.json

@@ -1,57 +1,92 @@
 package models.entities
 
+import com.sksamuel.elastic4s.ElasticApi.valueCountAgg
+import com.sksamuel.elastic4s.ElasticDsl.boolQuery
+import com.sksamuel.elastic4s.requests.searches._
+import com.sksamuel.elastic4s.requests.searches.aggs.TermsAggregation
+import com.sksamuel.elastic4s.requests.searches.sort._
+import models.Helpers.fromJsValue
+import models.{Backend, ElasticRetriever}
+import models.entities.Configuration.ElasticsearchSettings
+import models.entities.Interaction.interaction
+import play.api.Logging
 import play.api.libs.json._
+import sangria.schema.{Field, ListType, LongType, ObjectType, fields}
 
+import scala.concurrent.{ExecutionContext, Future}
 
-// Class to represent participantDetectionMethod
-case class InteractionEvidencePDM( miIdentifier: Option[String], shortName:Option[String])
+case class Interactions(count: Long, rows: IndexedSeq[JsValue])
 
-case class InteractionSpecies(mnemonic: Option[String], scientificName: Option[String],
-                              taxonId: Option[Long])
+object Interactions extends Logging {
+  val interactions = ObjectType("Interactions",
+    fields[Backend, Interactions](
+      Field("count", LongType, description = None, resolve = o => o.value.count),
+      Field("rows", ListType(interaction), description = None, resolve = o => o.value.rows)
+    ))
 
-case class InteractionResources(databaseVersion: String,
-                                sourceDatabase: String)
+  def find(id: String, dbName: Option[String], pagination: Option[Pagination])
+                           (implicit ec: ExecutionContext, esSettings: ElasticsearchSettings, esRetriever: ElasticRetriever):
+  Future[Option[Interactions]] = {
 
-case class InteractionEvidence(causalInteraction: Boolean,
-                               evidenceScore: Option[Double],
-                               expansionMethodMiIdentifier: Option[String],
-                               expansionMethodShortName: Option[String],
-                               hostOrganismScientificName: Option[String],
-                               hostOrganismTaxId: Option[Long],
-                               intASource: String,
-                               intBSource: String,
-                               interactionDetectionMethodMiIdentifier: String,
-                               interactionDetectionMethodShortName: String,
-                               interactionIdentifier: Option[String],
-                               interactionResources: InteractionResources,
-                               interactionScore: Option[Double],
-                               interactionTypeMiIdentifier: Option[String],
-                               interactionTypeShortName: Option[String],
-                               participantDetectionMethodA: Option[IndexedSeq[InteractionEvidencePDM]],
-                               participantDetectionMethodB: Option[IndexedSeq[InteractionEvidencePDM]],
-                               speciesA: Option[InteractionSpecies],
-                               speciesB: Option[InteractionSpecies],
-                               pubmedId: Option[String]
-                              )
+    val pag = pagination.getOrElse(Pagination.mkDefault)
 
-case class Interaction(intA: String, targetA: String,
-                       intB: String, targetB: String,
-                       intABiologicalRole: String,
-                       intBBiologicalRole: String,
-                       scoring: Option[Double],
-                       count: Long,
-                       sourceDatabase: String)
+    val cbIndex = esSettings.entities
+      .find(_.name == "interaction").map(_.index).getOrElse("interaction")
 
-case class Interactions(count: Long, rows: IndexedSeq[Interaction])
+    val kv = List(
+      Some("targetA.keyword" -> id),
+      dbName.map("sourceDatabase.keyword" -> _)
+    ).flatten.toMap
 
+    val aggs = Seq(
+      valueCountAgg("rowsCount", "targetA.keyword")
+    )
 
-object Interactions {
-  implicit val interactionEvidencePDMJSONImp = Json.format[InteractionEvidencePDM]
-  implicit val interactionSpeciesJSONImp = Json.format[InteractionSpecies]
-  implicit val interactionResourcesJSONImp = Json.format[InteractionResources]
-  implicit val interactionEvidenceJSONImp = Json.format[InteractionEvidence]
-  implicit val interactionJSONImp = Json.format[Interaction]
-  implicit val interactionsJSONImp = Json.format[Interactions]
+    esRetriever.getByIndexedQuery(cbIndex, kv, pag, fromJsValue[JsValue], aggs,
+      Some(sort.FieldSort("scoring", order = SortOrder.DESC))).map {
+      case (Seq(), _) => None
+      case (seq, agg) =>
+        logger.debug(Json.prettyPrint(agg))
+
+        val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
+        Some(Interactions(rowsCount, seq))
+    }
+  }
+
+  def listResources(implicit ec: ExecutionContext,
+                    esSettings: ElasticsearchSettings,
+                    esRetriever: ElasticRetriever): Future[Seq[JsValue]] = {
+
+    val cbIndex = esSettings.entities
+      .find(_.name == "interaction_evidence").map(_.index).getOrElse("interaction_evidence")
+
+    val queryAggs = Seq(
+      TermsAggregation("aggs", Some("interactionResources.sourceDatabase.keyword"),
+        size = Some(100),
+        subaggs = Seq(
+          TermsAggregation("aggs", Some("interactionResources.databaseVersion.keyword"),
+            size = Some(100)
+          )
+        )
+      )
+    )
+
+    val esQ = esRetriever.getAggregationsByQuery(cbIndex, boolQuery(), queryAggs) map {
+      case obj: JsObject =>
+        logger.debug(Json.prettyPrint(obj))
+
+        val keys = ((obj \ "aggs" \ "buckets").as[Seq[JsValue]]).map(el => {
+          val k = (el \ "key").as[String]
+          val v = (el \ "aggs" \ "buckets" \\ "key").take(1).head.as[String]
+          JsObject(List("sourceDatabase" -> JsString(k), "databaseVersion" -> JsString(v)))
+        })
+
+        keys
+      case _ => Seq.empty
+    }
+
+    esQ
+  }
 }
 
 

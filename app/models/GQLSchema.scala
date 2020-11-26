@@ -23,6 +23,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
 import com.sksamuel.elastic4s.requests.searches._
 import com.sksamuel.elastic4s.requests.searches.sort._
+import models.entities.Interaction._
 import models.gql.Objects._
 import models.gql.Arguments._
 import models.gql.Fetchers._
@@ -39,7 +40,8 @@ object GQLSchema {
     reactomeFetcher,
     expressionFetcher,
     mousePhenotypeFetcher,
-    otarProjectsFetcher)
+    otarProjectsFetcher,
+    soTermsFetcher)
 
 
   lazy val msearchResultType = UnionType("EntityUnionType", types = List(targetImp, drugImp, diseaseImp))
@@ -113,10 +115,15 @@ object GQLSchema {
           val entities = ctx.arg(entityNames).getOrElse(Seq.empty)
           ctx.ctx.search(ctx.arg(queryString), ctx.arg(pageArg), entities)
         }),
-
       Field("associationDatasources", ListType(evidenceSourceImp),
         description = Some("The complete list of all possible datasources"),
-        resolve = ctx => ctx.ctx.getAssociationDatasources)
+        resolve = ctx => ctx.ctx.getAssociationDatasources),
+      Field("interactionResources", ListType(interactionResources),
+        description = Some("The complete list of all possible datasources"),
+        resolve = ctx => {
+          import ctx.ctx._
+          Interactions.listResources
+        })
     ))
 
   val schema = Schema(query)

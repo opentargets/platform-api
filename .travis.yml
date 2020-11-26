@@ -12,7 +12,7 @@ env:
   - QUAY_REPO="quay.io/opentargets/platform-api-beta"
 script:
   - sbt ++$TRAVIS_SCALA_VERSION clean compile
-  - sbt ++$TRAVIS_SCALA_VERSION coverage test coverageReport
+  - sbt ++$TRAVIS_SCALA_VERSION coverage "testOnly * -- -l test_configuration.IntegrationTestTag" coverageReport
   - sbt ++$TRAVIS_SCALA_VERSION dist
 deploy:
   provider: releases
