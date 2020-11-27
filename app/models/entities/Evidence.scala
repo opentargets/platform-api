@@ -71,7 +71,7 @@ object Evidence {
       Field("targetModulation", OptionType(StringType), description = None, resolve = js => (js.value \ "targetModulation").asOpt[String]),
       Field("confidenceIntervalLower", OptionType(FloatType), description = Some("Confidence interval lower-bound  "), resolve = js => (js.value \ "confidenceIntervalLower").asOpt[Double]),
       Field("studySampleSize", OptionType(LongType), description = Some("Sample size"), resolve = js => (js.value \ "studySampleSize").asOpt[Long]),
-      Field("aminoacidDescriptions", OptionType(ListType(StringType)), description = None, resolve = js => (js.value \ "aminoacidDescriptions").asOpt[Seq[String]]),
+      Field("variantAminoacidDescriptions", OptionType(ListType(StringType)), description = None, resolve = js => (js.value \ "variantAminoacidDescriptions").asOpt[Seq[String]]),
       Field("mutatedSamples", OptionType(ListType(evidenceVariationImp)), description = None, resolve = js => (js.value \ "mutatedSamples").asOpt[Seq[JsValue]]),
       Field("drug", OptionType(drugImp), description = None, resolve = js => {
         val drugId = (js.value \ "drugId").asOpt[String]
