@@ -117,7 +117,6 @@ object Evidence {
       Field("clinicalSignificances", OptionType(ListType(StringType)), description = None, resolve = js => (js.value \ "clinicalSignificances").asOpt[Seq[String]]),
       Field("cohortId", OptionType(StringType), description = None, resolve = js => (js.value \ "cohortId").asOpt[String]),
       Field("resourceScoreMantissa", OptionType(LongType), description = None, resolve = js => (js.value \ "resourceScoreMantissa").asOpt[Long]),
-      Field("locus2GeneScore", OptionType(FloatType), description = None, resolve = js => (js.value \ "locus2GeneScore").asOpt[Double]),
       Field("pathwayId", OptionType(StringType), description = None, resolve = js => (js.value \ "pathwayId").asOpt[String]),
       Field("publicationFirstAuthor", OptionType(StringType), description = None, resolve = js => (js.value \ "publicationFirstAuthor").asOpt[String]),
       Field("contrast", OptionType(StringType), description = None, resolve = js => (js.value \ "contrast").asOpt[String])
