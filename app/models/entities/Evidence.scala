@@ -81,7 +81,7 @@ object Evidence {
       Field("diseaseModelAssociatedModelPhenotypes", OptionType(ListType(labelledElementImp)), description = None, resolve = js => (js.value \ "diseaseModelAssociatedModelPhenotypes").asOpt[Seq[JsValue]]),
       Field("diseaseModelAssociatedHumanPhenotypes", OptionType(ListType(labelledElementImp)), description = None, resolve = js => (js.value \ "diseaseModelAssociatedHumanPhenotypes").asOpt[Seq[JsValue]]),
       Field("significantDriverMethods", OptionType(ListType(StringType)), description = None, resolve = js => (js.value \ "significantDriverMethods").asOpt[Seq[String]]),
-      Field("resourceScoreExponent", OptionType(LongType), description = None, resolve = js => (js.value \ "resourceScoreExponent").asOpt[Long]),
+      Field("pValueExponent", OptionType(LongType), description = None, resolve = js => (js.value \ "pValueExponent").asOpt[Long]),
       Field("log2FoldChangePercentileRank", OptionType(LongType), description = None, resolve = js => (js.value \ "log2FoldChangePercentileRank").asOpt[Long]),
       Field("biologicalModelAllelicComposition", OptionType(StringType), description = None, resolve = js => (js.value \ "biologicalModelAllelicComposition").asOpt[String]),
       Field("confidence", OptionType(StringType), description = None, resolve = js => (js.value \ "confidence").asOpt[String]),
@@ -116,7 +116,7 @@ object Evidence {
       Field("studyId", OptionType(StringType), description = None, resolve = js => (js.value \ "studyId").asOpt[String]),
       Field("clinicalSignificances", OptionType(ListType(StringType)), description = None, resolve = js => (js.value \ "clinicalSignificances").asOpt[Seq[String]]),
       Field("cohortId", OptionType(StringType), description = None, resolve = js => (js.value \ "cohortId").asOpt[String]),
-      Field("resourceScoreMantissa", OptionType(LongType), description = None, resolve = js => (js.value \ "resourceScoreMantissa").asOpt[Long]),
+      Field("pValueMantissa", OptionType(LongType), description = None, resolve = js => (js.value \ "pValueMantissa").asOpt[Long]),
       Field("pathwayId", OptionType(StringType), description = None, resolve = js => (js.value \ "pathwayId").asOpt[String]),
       Field("publicationFirstAuthor", OptionType(StringType), description = None, resolve = js => (js.value \ "publicationFirstAuthor").asOpt[String]),
       Field("contrast", OptionType(StringType), description = None, resolve = js => (js.value \ "contrast").asOpt[String])
