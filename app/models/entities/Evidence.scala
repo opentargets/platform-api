@@ -112,7 +112,6 @@ object Evidence {
       Field("targetModulation", OptionType(StringType), description = None, resolve = js => (js.value \ "targetModulation").asOpt[String]),
 
       Field("textMiningSentences", OptionType(ListType(evidenceTextMiningSentenceImp)), description = None, resolve = js => (js.value \ "textMiningSentences").asOpt[Seq[JsValue]]),
-      Field("recordId", OptionType(StringType), description = None, resolve = js => (js.value \ "recordId").asOpt[String]),
       Field("studyId", OptionType(StringType), description = None, resolve = js => (js.value \ "studyId").asOpt[String]),
       Field("clinicalSignificances", OptionType(ListType(StringType)), description = None, resolve = js => (js.value \ "clinicalSignificances").asOpt[Seq[String]]),
       Field("cohortId", OptionType(StringType), description = None, resolve = js => (js.value \ "cohortId").asOpt[String]),
