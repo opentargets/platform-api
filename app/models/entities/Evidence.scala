@@ -68,7 +68,6 @@ object Evidence {
       Field("reactionId", OptionType(StringType), description = None, resolve = js => (js.value \ "reactionId").asOpt[String]),
       Field("variantId", OptionType(StringType), description = Some("Variant evidence"), resolve = js => (js.value \ "variantId").asOpt[String]),
       Field("variantRsId", OptionType(StringType), description = Some("Variant dbSNP identifier"), resolve = js => (js.value \ "variantRsId").asOpt[String]),
-      Field("targetModulation", OptionType(StringType), description = None, resolve = js => (js.value \ "targetModulation").asOpt[String]),
       Field("confidenceIntervalLower", OptionType(FloatType), description = Some("Confidence interval lower-bound  "), resolve = js => (js.value \ "confidenceIntervalLower").asOpt[Double]),
       Field("studySampleSize", OptionType(LongType), description = Some("Sample size"), resolve = js => (js.value \ "studySampleSize").asOpt[Long]),
       Field("variantAminoacidDescriptions", OptionType(ListType(StringType)), description = None, resolve = js => (js.value \ "variantAminoacidDescriptions").asOpt[Seq[String]]),
@@ -108,7 +107,8 @@ object Evidence {
       Field("cohortDescription", OptionType(StringType), description = None, resolve = js => (js.value \ "cohortDescription").asOpt[String]),
       Field("publicationYear", OptionType(LongType), description = None, resolve = js => (js.value \ "publicationYear").asOpt[Long]),
       Field("diseaseFromSource", OptionType(StringType), description = None, resolve = js => (js.value \ "diseaseFromSource").asOpt[String]),
-      Field("targetFromSource", OptionType(StringType), description = None, resolve = js => (js.value \ "targetFromSource").asOpt[String]),
+      Field("diseaseFromSourceId", OptionType(StringType), description = None, resolve = js => (js.value \ "diseaseFromSourceId").asOpt[String]),
+      Field("targetFromSourceId", OptionType(StringType), description = None, resolve = js => (js.value \ "targetFromSourceId").asOpt[String]),
       Field("targetModulation", OptionType(StringType), description = None, resolve = js => (js.value \ "targetModulation").asOpt[String]),
 
       Field("textMiningSentences", OptionType(ListType(evidenceTextMiningSentenceImp)), description = None, resolve = js => (js.value \ "textMiningSentences").asOpt[Seq[JsValue]]),
