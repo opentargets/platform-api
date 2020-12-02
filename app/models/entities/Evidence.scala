@@ -28,9 +28,9 @@ object Evidence {
   val evidenceVariationImp = ObjectType("EvidenceVariation",
     "Sequence Ontology Term",
     fields[Backend, JsValue](
-      Field("functionalConsequence", sequenceOntologyTermImp, description = None, resolve = js => {
-        val soId = ((js.value \ "functionalConsequenceId").as[String]).replace("_", ":")
-        soTermsFetcher.defer(soId)
+      Field("functionalConsequence", OptionType(sequenceOntologyTermImp), description = None, resolve = js => {
+        val soId = ((js.value \ "functionalConsequenceId").asOpt[String]).map(_.replace("_", ":"))
+        soTermsFetcher.deferOpt(soId)
       }),
       Field("numberMutatedSamples", OptionType(LongType), description = None, resolve = js => (js.value \ "numberMutatedSamples").asOpt[Long]),
       Field("numberSamplesTested", OptionType(LongType), description = None, resolve = js => (js.value \ "numberSamplesTested").asOpt[Long]),
