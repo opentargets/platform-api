@@ -111,7 +111,7 @@ case class Safety(adverseEffects: Seq[AdverseEffects], safetyRiskInfo: Seq[Safet
 
 case class Tep(uri: String, name: String)
 
-case class ProteinClassPathNode(id: String, label: String)
+case class ProteinClassPathNode(id: Int, label: String)
 
 case class ProteinClassPath(l1: Option[ProteinClassPathNode], l2: Option[ProteinClassPathNode],
                             l3: Option[ProteinClassPathNode], l4: Option[ProteinClassPathNode],

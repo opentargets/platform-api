@@ -418,7 +418,8 @@ object Objects extends Logging {
     DocumentField("pathways", "Pathway membership"),
     DocumentField("similarities", "Protein similarities (families, etc.)"),
     DocumentField("subcellularLocations", "Subcellular locations"),
-    DocumentField("subunits", "Protein subunits")
+    DocumentField("subunits", "Protein subunits"),
+    DocumentField("classes", "Chembl target classification")
   )
 
   implicit val genomicLocationImp = deriveObjectType[Backend, GenomicLocation]()
