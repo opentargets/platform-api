@@ -94,7 +94,7 @@ object Evidence {
       Field("biologicalModelGeneticBackground", OptionType(StringType), description = None, resolve = js => (js.value \ "biologicalModelGeneticBackground").asOpt[String]),
       Field("clinicalUrls", OptionType(ListType(labelledUriImp)), description = None, resolve = js => (js.value \ "clinicalUrls").asOpt[Seq[JsValue]]),
       Field("literature", OptionType(ListType(StringType)), description = None, resolve = js => (js.value \ "literature").asOpt[Seq[String]]),
-      Field("studyCases", OptionType(StringType), description = None, resolve = js => (js.value \ "studyCases").asOpt[String]),
+      Field("studyCases", OptionType(LongType), description = None, resolve = js => (js.value \ "studyCases").asOpt[Long]),
       Field("studyOverview", OptionType(StringType), description = None, resolve = js => (js.value \ "studyOverview").asOpt[String]),
       Field("allelicRequirements", OptionType(ListType(StringType)), description = None, resolve = js => (js.value \ "allelicRequirements").asOpt[Seq[String]]),
       Field("pathwayName", OptionType(StringType), description = None, resolve = js => (js.value \ "pathwayName").asOpt[String]),
