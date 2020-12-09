@@ -43,8 +43,8 @@ object KnownDrug extends Logging {
       (__ \ "phase").read[String] and
       (__ \ "mechanismOfAction").read[String] and
       (__ \ "status").readNullable[String] and
-      (__ \ "targetClass").readWithDefault[Seq[String]](Seq.empty[String]) and
-      (__ \ "references").readWithDefault[Seq[Map[String, String]]](Seq.empty[Map[String, String]]).map(
+      (__ \ "targetClass").readWithDefault[Seq[String]](Seq.empty) and
+      (__ \ "references").readWithDefault[Seq[Map[String, String]]](Seq.empty).map(
         s => s.flatMap(m => ctPattern findAllIn m("url"))
       ) and
       (__ \ "urls").read[Seq[URL]]
