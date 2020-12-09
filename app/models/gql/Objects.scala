@@ -98,7 +98,7 @@ object Objects extends Logging {
         arguments = freeTextQuery :: pageSize :: cursor :: Nil,
         resolve = ctx => {
           ctx.ctx.getKnownDrugs(ctx.arg(freeTextQuery).getOrElse(""),
-            Map("target.raw" -> ctx.value.id),
+            Map("targetId.raw" -> ctx.value.id),
             ctx.arg(pageSize),
             ctx.arg(cursor).getOrElse(Nil)
           )
@@ -191,7 +191,7 @@ object Objects extends Logging {
           ctx.ctx.getKnownDrugs(
             ctx.arg(freeTextQuery).getOrElse(""),
             Map(
-              "disease.raw" -> ctx.value.id,
+              "diseaseId.raw" -> ctx.value.id,
               "ancestors.raw" -> ctx.value.id
             ),
             ctx.arg(pageSize),
@@ -537,7 +537,7 @@ object Objects extends Logging {
         resolve = ctx => {
           ctx.ctx.getKnownDrugs(
             ctx.arg(freeTextQuery).getOrElse(""),
-            Map("drug.raw" -> ctx.value.id),
+            Map("drugId.raw" -> ctx.value.id),
             ctx.arg(pageSize),
             ctx.arg(cursor).getOrElse(Nil)
           )
@@ -607,7 +607,6 @@ object Objects extends Logging {
     DocumentField("phase", "Clinical Trial phase"),
     DocumentField("mechanismOfAction", "Mechanism of Action description"),
     DocumentField("status", "Trial status"),
-    DocumentField("activity", "On-target drug pharmacological activity"),
     DocumentField("targetClass", "Drug target class based on curated mechanism of action"),
     DocumentField("ctIds", "Clinicaltrials.gov identifiers on entry trials"),
     DocumentField("urls", "Source urls from clinical trials, FDA or package inserts"),
