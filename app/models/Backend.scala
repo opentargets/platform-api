@@ -171,16 +171,15 @@ class Backend @Inject()(implicit ec: ExecutionContext, @NamedDatabase("default")
   Future[Option[KnownDrugs]] = {
 
     val pag = Pagination(0, sizeLimit.getOrElse(Pagination.sizeDefault))
-    val sortByField = sort.FieldSort(field = "clinical_trial_phase.raw").desc()
+    val sortByField = sort.FieldSort(field = "phase.raw").desc()
     val cbIndex = defaultESSettings.entities
-      .find(_.name == "evidence_drug_direct").map(_.index).getOrElse("evidence_drug_direct")
+      .find(_.name == "known_drugs").map(_.index).getOrElse("known_drugs")
 
     val aggs = Seq(
-      cardinalityAgg("uniqueTargets", "target.raw"),
-      cardinalityAgg("uniqueDiseases", "disease.raw"),
-      cardinalityAgg("uniqueDrugs", "drug.raw"),
-      //      cardinalityAgg("uniqueClinicalTrials", "list_urls.url.keyword"),
-      valueCountAgg("rowsCount", "drug.raw")
+      cardinalityAgg("uniqueTargets", "targetId.raw"),
+      cardinalityAgg("uniqueDiseases", "diseaseId.raw"),
+      cardinalityAgg("uniqueDrugs", "drugId.raw"),
+      valueCountAgg("rowsCount", "drugId.raw")
     )
 
     esRetriever.getByFreeQuery(cbIndex, queryString, kv, pag, fromJsValue[KnownDrug],
