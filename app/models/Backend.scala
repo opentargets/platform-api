@@ -128,8 +128,11 @@ class Backend @Inject()(implicit ec: ExecutionContext, @NamedDatabase("default")
     )
 
     esRetriever.getByIndexedQuery(indexName, kv, pag, fromJsValue[AdverseEvent], aggs,
-      ElasticRetriever.sortByDesc("logLR")).map {
-      case (Seq(), _) => None
+      ElasticRetriever.sortByDesc("llr")).map {
+      case (Seq(), _) => {
+        logger.debug(s"No adverse event found for ${kv.toString}")
+        None
+      }
       case (seq, agg) =>
         logger.debug(Json.prettyPrint(agg))
         val counts = (agg \ "eventCount" \ "value").as[Long]

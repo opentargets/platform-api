@@ -9,5 +9,16 @@ case class AdverseEvent(name: String, count: Long, logLR: Double, criticalValue:
 case class AdverseEvents(count: Long, criticalValue: Double, rows: Seq[AdverseEvent])
 
 object AdverseEvent {
-  implicit val adverseEventImpJSON = Json.format[AdverseEvent]
+  implicit val AdverseEventImpReader: Reads[AdverseEvent] = (
+    (JsPath \ "chembl_id").read[String] and
+      (JsPath \ "count").read[Long] and
+      (JsPath \ "llr").read[Double] and
+      (JsPath \ "critval").read[Double]
+    ) (AdverseEvent.apply _)
+
+  implicit val AdverseEventsImpReader: Reads[AdverseEvents] = (
+    (JsPath \ "count").read[Long] and
+      (JsPath \ "critval").read[Double] and
+      (JsPath \ "rows").read[Seq[AdverseEvent]]
+    )( AdverseEvents.apply _)
 }

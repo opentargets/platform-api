@@ -90,7 +90,11 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
     }
 
     elems.map {
-      case _: RequestFailure => (IndexedSeq.empty, JsNull)
+      case rf: RequestFailure => {
+        logger.debug(s"Request failure for query: $q")
+        logger.error(s"Elasticsearch error: ${rf.error}")
+        (IndexedSeq.empty, JsNull)
+      }
       case results: RequestSuccess[SearchResponse] =>
         // parse the full body response into JsValue
         // thus, we can apply Json Transformations from JSON Play
