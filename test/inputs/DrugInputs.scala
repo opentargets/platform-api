@@ -1190,19 +1190,4 @@ trait DrugInputs {
       + """} }" }"""
   )
 }
-//      |    indications {
-//      |      count
-//      |      rows {
-//      |        maxPhaseForIndication
-//      |        references {
-//      |          ids
-//      |          source
-//      |          urls
-//      |        }
-//      |        disease {
-//      |          id
-//      |          name
-//      |          description
-//      |        }
-//      |      }
-//      |    }
+

@@ -2,7 +2,6 @@ package models.entities
 
 import models.Backend
 import models.gql.Fetchers.{diseasesFetcher, drugsFetcher, soTermsFetcher, targetsFetcher}
-import models.gql.Fetchers.{diseasesFetcher, drugsFetcher, soTermsFetcher, targetsFetcher}
 import models.gql.Objects.{diseaseImp, drugImp, targetImp}
 import play.api.libs.json._
 import sangria.schema.{Field, FloatType, ListType, LongType, ObjectType, OptionType, StringType, fields}
@@ -110,6 +109,7 @@ object Evidence {
       Field("diseaseFromSourceId", OptionType(StringType), description = None, resolve = js => (js.value \ "diseaseFromSourceId").asOpt[String]),
       Field("targetFromSourceId", OptionType(StringType), description = None, resolve = js => (js.value \ "targetFromSourceId").asOpt[String]),
       Field("targetModulation", OptionType(StringType), description = None, resolve = js => (js.value \ "targetModulation").asOpt[String]),
+
 
       Field("textMiningSentences", OptionType(ListType(evidenceTextMiningSentenceImp)), description = None, resolve = js => (js.value \ "textMiningSentences").asOpt[Seq[JsValue]]),
       Field("studyId", OptionType(StringType), description = None, resolve = js => (js.value \ "studyId").asOpt[String]),
