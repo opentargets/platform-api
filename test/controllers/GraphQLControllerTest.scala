@@ -4,18 +4,19 @@ import java.util.concurrent.TimeUnit
 
 import akka.util.Timeout
 import controllers.api.v4.graphql.GraphQLController
-import inputs.DrugInputs
+import inputs.{AdverseEventInputs, DrugInputs}
 import org.scalatest.Inspectors.forAll
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerTest
 import play.api.Logging
+import play.api.libs.json.Json
 import play.api.test.Helpers.{POST, contentAsString}
 import play.api.test.{FakeRequest, Injecting}
 import test_configuration.IntegrationTestTag
 
-class GraphQLControllerTest extends PlaySpec with GuiceOneAppPerTest with Injecting with DrugInputs with Logging {
+class GraphQLControllerTest extends PlaySpec with GuiceOneAppPerTest with Injecting with DrugInputs with AdverseEventInputs with Logging {
 
-  implicit lazy val timeout: Timeout = Timeout(20, TimeUnit.SECONDS)
+  implicit lazy val timeout: Timeout = Timeout(1120, TimeUnit.SECONDS)
   lazy val controller: GraphQLController = inject[GraphQLController]
 
   "Drug queries" must {
@@ -54,6 +55,29 @@ class GraphQLControllerTest extends PlaySpec with GuiceOneAppPerTest with Inject
       }
     }
 
+  }
+
+  "Adverse event queries" must {
+    "return valid objects when an adverse event is associated with the id" taggedAs IntegrationTestTag in {
+      val responses: Seq[String] = aeChemblIds.map(simpleAeQuery).map{ q => {
+        val request = FakeRequest(POST, "/graphql")
+          .withHeaders(("Content-Type", "application/json"))
+          .withBody(q)
+        contentAsString(controller.gqlBody.apply(request))
+      }}
+      val results = responses.zip(chemblIds).filter(s => s._1.contains("errors"))
+      logger.info(s"${responses.size - results.size} entries had no errors.")
+      logger.info(s"${results.size} entries contained errors.")
+      results.foreach(e => logger.info(s"ID: ${e._2} \t Error: ${e._1}"))
+
+      forAll (responses){ r =>
+        r must include("data")
+        r mustNot include("errors")
+        val jsonResponse = Json.parse(responses.head)
+        assert((jsonResponse \ "data" \ "drug" \"adverseEvents").isDefined)
+      }
+
+    }
   }
 
 }

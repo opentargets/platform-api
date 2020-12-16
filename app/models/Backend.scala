@@ -124,12 +124,15 @@ class Backend @Inject()(implicit ec: ExecutionContext, @NamedDatabase("default")
     val kv = Map("chembl_id.keyword" -> id)
 
     val aggs = Seq(
-      valueCountAgg("eventCount", "name.keyword")
+      valueCountAgg("eventCount", "chembl_id.keyword")
     )
 
     esRetriever.getByIndexedQuery(indexName, kv, pag, fromJsValue[AdverseEvent], aggs,
-      ElasticRetriever.sortByDesc("logLR")).map {
-      case (Seq(), _) => None
+      ElasticRetriever.sortByDesc("llr")).map {
+      case (Seq(), _) => {
+        logger.debug(s"No adverse event found for ${kv.toString}")
+        None
+      }
       case (seq, agg) =>
         logger.debug(Json.prettyPrint(agg))
         val counts = (agg \ "eventCount" \ "value").as[Long]
