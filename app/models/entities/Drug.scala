@@ -31,7 +31,7 @@ case class MechanismsOfAction(rows: Seq[MechanismOfActionRow],
                               uniqueTargetTypes: Seq[String])
 
 case class Drug(id: String,
-                name: Option[String],
+                name: String,
                 synonyms: Seq[String],
                 tradeNames: Seq[String],
                 yearOfFirstApproval: Option[Int],
