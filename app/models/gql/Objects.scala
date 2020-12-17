@@ -333,6 +333,7 @@ object Objects extends Logging {
   implicit val adverseEventImp = deriveObjectType[Backend, AdverseEvent](
     ObjectTypeDescription("Significant adverse event entries"),
     DocumentField("name", "Meddra term on adverse event"),
+    DocumentField("meddraCode", "8 digit unique meddra identification number"),
     DocumentField("count", "Number of reports mentioning drug and adverse event"),
     DocumentField("logLR", "Log-likelihood ratio"),
     ExcludeFields("criticalValue")
