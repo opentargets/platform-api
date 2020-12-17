@@ -174,7 +174,7 @@ class Backend @Inject()(implicit ec: ExecutionContext, @NamedDatabase("default")
   Future[Option[KnownDrugs]] = {
 
     val pag = Pagination(0, sizeLimit.getOrElse(Pagination.sizeDefault))
-    val sortByField = sort.FieldSort(field = "phase.raw").desc()
+    val sortByField = sort.FieldSort(field = "phase").desc()
     val cbIndex = defaultESSettings.entities
       .find(_.name == "known_drugs").map(_.index).getOrElse("known_drugs")
 
