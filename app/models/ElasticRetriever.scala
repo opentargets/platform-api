@@ -239,7 +239,13 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
 
         val seAf =
           if
-          (hasNext) (hits.last \ "sort").get.as[Seq[String]]
+            // TODO this is broken as phase is a number now so
+            // I guess making this more opaque could work like
+            // (hits.last \ "sort").toOption // this return Option[JsValue]
+            // so if we map to string and optionally encode to base64
+            // then when is used as passed parameter then get the string and read as string into json which
+            // will become into a seq of jsvalue and then pass to the function searchAfter below
+          (hasNext) Nil // (hits.last \ "sort").get.as[Seq[String]]
           else
             Nil
 

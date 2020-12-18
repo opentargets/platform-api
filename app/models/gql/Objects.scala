@@ -588,12 +588,15 @@ object Objects extends Logging {
       resolve = r => r.value.rows))
   )
 
+  implicit val knownDrugReferenceImp = deriveObjectType[Backend, KnownDrugReference]()
+
   implicit val URLImp: ObjectType[Backend, URL] = deriveObjectType[Backend, URL](
     ObjectTypeDescription("Source URL for clinical trials, FDA and package inserts"),
 
     DocumentField("url", "resource url"),
     DocumentField("name", "resource name")
   )
+
   implicit val knownDrugImp: ObjectType[Backend, KnownDrug] = deriveObjectType[Backend, KnownDrug](
     ObjectTypeDescription("Clinical precedence entry for drugs with investigational or " +
       "approved indications targeting gene products according to their curated mechanism of " +
@@ -609,8 +612,9 @@ object Objects extends Logging {
     DocumentField("mechanismOfAction", "Mechanism of Action description"),
     DocumentField("status", "Trial status"),
     DocumentField("targetClass", "Drug target class based on curated mechanism of action"),
+    DocumentField("references", "Source urls for FDA or package inserts"),
     DocumentField("ctIds", "Clinicaltrials.gov identifiers on entry trials"),
-    DocumentField("urls", "Source urls from clinical trials, FDA or package inserts"),
+    DocumentField("urls", "Source urls from clinical trials"),
 
     AddFields(
       Field("disease", OptionType(diseaseImp),
