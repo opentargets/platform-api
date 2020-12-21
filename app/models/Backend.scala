@@ -1,8 +1,6 @@
 package models
 
 import clickhouse.ClickHouseProfile
-import com.google.common.base.Charsets
-import com.google.common.io.BaseEncoding
 import javax.inject.Inject
 import models.Helpers._
 import play.api.{Configuration, Environment, Logging}
@@ -10,12 +8,12 @@ import com.sksamuel.elastic4s._
 import com.sksamuel.elastic4s.requests.searches._
 import com.sksamuel.elastic4s.http.JavaClient
 import com.sksamuel.elastic4s.requests.searches.aggs._
-import com.sksamuel.elastic4s.requests.searches.sort.{SortMode, SortOrder}
+import com.sksamuel.elastic4s.requests.searches.sort.SortOrder
 
-// import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
 import models.db.QAOTF
 import models.entities._
+import models.entities.Drug._
 import models.entities.Evidence._
 import models.entities.Evidences._
 import models.entities.Interactions._
@@ -276,6 +274,20 @@ class Backend @Inject()(implicit ec: ExecutionContext, @NamedDatabase("default")
     val drugIndexName = defaultESSettings.entities
       .find(_.name == "drug").map(_.index).getOrElse("drugs")
     esRetriever.getByIds(drugIndexName, ids, fromJsValue[Drug])
+  }
+
+  def getMechanismsOfAction(ids: Seq[String]): Future[IndexedSeq[MechanismsOfAction]] = {
+    val moaIndex = defaultESSettings.entities.find(_.name == "drugMoA").map(_.index)
+
+    moaIndex match {
+      case Some(idx) => {
+        esRetriever.getByIds(idx, ids, fromJsValue[MechanismsOfAction])
+      }
+      case None => {
+        logger.error("Unable to resolve mechanism of action elasticsearch index!")
+        Future { IndexedSeq.empty }
+      }
+    }
   }
 
   def getDiseases(ids: Seq[String]): Future[IndexedSeq[Disease]] = {

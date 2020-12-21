@@ -500,7 +500,9 @@ object Objects extends Logging {
 
   implicit lazy val indicationsImp = deriveObjectType[Backend, Indications]()
 
-  implicit lazy val mechanismOfActionImp = deriveObjectType[Backend, MechanismsOfAction]()
+  implicit lazy val mechanismOfActionImp = deriveObjectType[Backend, MechanismsOfAction](
+    ExcludeFields("id")
+  )
   implicit lazy val withdrawnNoticeImp = deriveObjectType[Backend, WithdrawnNotice](
     ObjectTypeDescription("Withdrawal reason"),
 
@@ -522,15 +524,31 @@ object Objects extends Logging {
     DocumentField("isApproved", "Alias for maximumClinicalTrialPhase == 4"),
     DocumentField("hasBeenWithdrawn", "Has drug been withdrawn from the market"),
     DocumentField("withdrawnNotice", "Withdrawal reason"),
-    DocumentField("mechanismsOfAction", "Mechanisms of action to produce intended " +
-      "pharmacological effects. Curated from scientific literature and post-marketing package inserts"),
     DocumentField("approvedIndications", "Indications for which there is a phase IV clinical trial"),
-    DocumentField("indications", "Investigational and approved indications curated from clinical trial " +
-      "records and post-marketing package inserts"),
+//    DocumentField("indications", "Investigational and approved indications curated from clinical trial " +
+//      "records and post-marketing package inserts"),
     DocumentField("blackBoxWarning", "Alert on life-threteaning drug side effects provided by FDA"),
     DocumentField("description", "Drug description"),
 
     AddFields(
+      Field("mechanismsOfAction", OptionType(mechanismOfActionImp),
+        description = Some("Mechanisms of action to produce intended pharmacological effects. Curated from scientific " +
+          "literature and post-marketing package inserts"),
+        resolve = ctx => {
+          val ids: Seq[String] = Seq(ctx.value.id) ++ ctx.value.childChemblIds.getOrElse(Seq.empty)
+          val moas = ctx.ctx.getMechanismsOfAction(ids)
+          moas.map { m =>
+            m.size match {
+              case ms if ms > 0 =>
+                Some(MechanismsOfAction(m.head.id,
+                  m.flatMap(_.rows),
+                  m.flatMap(_.uniqueActionTypes).distinct,
+                  m.flatMap(_.uniqueTargetTypes).distinct))
+              case _ => m.headOption
+            }
+          }
+        }
+      ),
       Field("knownDrugs", OptionType(knownDrugsImp),
         description = Some("Curated Clinical trial records and and post-marketing package inserts " +
           "with a known mechanism of action"),
@@ -544,7 +562,6 @@ object Objects extends Logging {
           )
         }
       ),
-
       Field("adverseEvents", OptionType(adverseEventsImp),
         description = Some("Significant adverse events inferred from FAERS reports"),
         arguments = pageArg :: Nil,
