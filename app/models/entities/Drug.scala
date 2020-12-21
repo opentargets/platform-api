@@ -24,7 +24,7 @@ case class IndicationRow(maxPhaseForIndication: Long,
 
 case class LinkedIds(count: Int, rows: Seq[String])
 
-case class Indications(rows: Seq[IndicationRow], count: Long)
+case class Indications(id: String, indications: Seq[IndicationRow], count: Long)
 
 case class MechanismsOfAction(id: String,
                               rows: Seq[MechanismOfActionRow],

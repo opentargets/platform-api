@@ -280,13 +280,23 @@ class Backend @Inject()(implicit ec: ExecutionContext, @NamedDatabase("default")
     val moaIndex = defaultESSettings.entities.find(_.name == "drugMoA").map(_.index)
 
     moaIndex match {
-      case Some(idx) => {
+      case Some(idx) =>
         esRetriever.getByIds(idx, ids, fromJsValue[MechanismsOfAction])
-      }
-      case None => {
+      case None =>
         logger.error("Unable to resolve mechanism of action elasticsearch index!")
         Future { IndexedSeq.empty }
-      }
+    }
+  }
+
+  def getIndications(ids: Seq[String]): Future[IndexedSeq[Indications]] = {
+    val index = defaultESSettings.entities.find(_.name == "drugIndications").map(_.index)
+
+    index match {
+      case Some(idx) =>
+        esRetriever.getByIds(idx, ids, fromJsValue[Indications])
+      case None =>
+        logger.error("Unable to resolve drug indications elasticsearch index!")
+        Future { IndexedSeq.empty }
     }
   }
 

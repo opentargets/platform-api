@@ -2,7 +2,7 @@ package models.gql
 
 import models.Helpers.fromJsValue
 import models.{Backend, entities}
-import models.entities.{Disease, Drug, ECO, Expressions, MechanismsOfAction, MousePhenotypes, OtarProjects, Reactome, Target}
+import models.entities.{Disease, Drug, ECO, Expressions, Indications, MechanismsOfAction, MousePhenotypes, OtarProjects, Reactome, Target}
 import play.api.libs.json.JsValue
 import sangria.execution.deferred.{Fetcher, FetcherCache, FetcherConfig, HasId}
 
@@ -107,4 +107,10 @@ object Fetchers {
       ctx.getMechanismsOfAction(ids)
     })
 
+  implicit val indicationHasId = HasId[Indications, String](_.id)
+  val indicationFetcher = Fetcher(
+    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize),
+    fetch = (ctx: Backend, ids: Seq[String]) => {
+      ctx.getIndications(ids)
+    })
 }

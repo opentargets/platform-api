@@ -12,7 +12,7 @@ import sangria.schema.AstSchemaBuilder._
 import play.api.libs.json.{JsValue, Json}
 import play.api.Logging
 import sangria.schema._
-import sangria.macros._
+import sangria.macros.{derive, _}
 import sangria.macros.derive._
 import sangria.ast
 import sangria.execution._
@@ -166,7 +166,7 @@ object Objects extends Logging {
     AddFields(
       Field("evidences", evidencesImp,
         description = Some("The complete list of all possible datasources"),
-        arguments = ensemblIds :: indirectEvidences  :: datasourceIdsArg :: pageSize :: cursor :: Nil,
+        arguments = ensemblIds :: indirectEvidences :: datasourceIdsArg :: pageSize :: cursor :: Nil,
         resolve = ctx => {
           val indirects = ctx.arg(indirectEvidences).getOrElse(true)
           val efos = if (indirects) ctx.value.id +: ctx.value.descendants else ctx.value.id +: Nil
@@ -490,7 +490,7 @@ object Objects extends Logging {
   implicit lazy val mechanismOfActionRowImp: ObjectType[Backend, MechanismOfActionRow] = deriveObjectType[Backend, MechanismOfActionRow](
     ReplaceField("targets", Field("targets", ListType(targetImp), Some("Target List"),
       resolve = r => targetsFetcher.deferSeqOpt(r.value.targets.getOrElse(Seq.empty))
-      ))
+    ))
   )
 
   implicit lazy val indicationRowImp = deriveObjectType[Backend, IndicationRow](
@@ -498,7 +498,10 @@ object Objects extends Logging {
       resolve = r => diseasesFetcher.defer(r.value.disease)))
   )
 
-  implicit lazy val indicationsImp = deriveObjectType[Backend, Indications]()
+  implicit lazy val indicationsImp = deriveObjectType[Backend, Indications](
+    ExcludeFields("id"),
+    RenameField("indications", "rows")
+  )
 
   implicit lazy val mechanismOfActionImp = deriveObjectType[Backend, MechanismsOfAction](
     ExcludeFields("id")
@@ -525,8 +528,6 @@ object Objects extends Logging {
     DocumentField("hasBeenWithdrawn", "Has drug been withdrawn from the market"),
     DocumentField("withdrawnNotice", "Withdrawal reason"),
     DocumentField("approvedIndications", "Indications for which there is a phase IV clinical trial"),
-//    DocumentField("indications", "Investigational and approved indications curated from clinical trial " +
-//      "records and post-marketing package inserts"),
     DocumentField("blackBoxWarning", "Alert on life-threteaning drug side effects provided by FDA"),
     DocumentField("description", "Drug description"),
 
@@ -545,6 +546,27 @@ object Objects extends Logging {
                   m.flatMap(_.uniqueActionTypes).distinct,
                   m.flatMap(_.uniqueTargetTypes).distinct))
               case _ => m.headOption
+            }
+          }
+        }
+      ),
+      Field("indications", OptionType(indicationsImp),
+        description = Some("Investigational and approved indications curated from clinical trial records and " +
+          "post-marketing package inserts"),
+        resolve = ctx => {
+          val ids: Seq[String] = Seq(ctx.value.id) ++ ctx.value.childChemblIds.getOrElse(Seq.empty)
+          ctx.ctx.getIndications(ids) map { inds =>
+            inds.size match {
+              case i if i > 0 =>
+                logger.error(s"Received ${i} indications from ES")
+                val indications = inds.flatMap(_.indications).map(r => r.disease -> r).toMap.values.toSeq
+//                  .foldLeft(Map.empty[String, IndicationRow])((m, ir) => if (m.keySet.contains(ir.disease)) m else m + (ir.disease -> ir))
+//                  .values.toSeq
+                Some(Indications(inds.head.id,
+                  indications,
+                  indications.size
+                ))
+              case _ => inds.headOption
             }
           }
         }
