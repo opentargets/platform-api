@@ -1,6 +1,6 @@
 package inputs
 
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{JsValue, Json, Reads}
 
 trait DrugInputs {
   lazy val chemblIds: Seq[String] = Seq(
@@ -1189,5 +1189,21 @@ trait DrugInputs {
       + """linkedDiseases {count rows { id name description } }"""
       + """} }" }"""
   )
+
+  val parentChildMoAQuery: JsValue = Json.parse(
+    """{"query": "query { drugs(chemblIds: [\"CHEMBL221959\", \"CHEMBL2103743\"]) { name mechanismsOfAction { uniqueActionTypes uniqueTargetTypes rows { targetName targets {id} } } indications { count rows { disease { id } } } } }" }"""
+  )
+  case class IDS(id: String)
+  case class MOAR(targetName: String, targets: Array[IDS])
+  case class MOA(uniqueActionTypes: Array[String], uniqueTargetTypes: Array[String], rows: Array[MOAR])
+  case class IndRow(disease: IDS)
+  case class IndicationT(count: Int, rows: Array[IndRow])
+  case class ParentChildMoAReturn(name: String, mechanismsOfAction: Option[MOA], indications: Option[IndicationT])
+  implicit val idsReads: Reads[IDS] = Json.reads[IDS]
+  implicit val moarReads: Reads[MOAR] = Json.reads[MOAR]
+  implicit val moaReads: Reads[MOA] = Json.reads[MOA]
+  implicit val indRowReads: Reads[IndRow] = Json.reads[IndRow]
+  implicit val indReads: Reads[IndicationT] = Json.reads[IndicationT]
+  implicit val trReads: Reads[ParentChildMoAReturn] = Json.reads[ParentChildMoAReturn]
 }
 

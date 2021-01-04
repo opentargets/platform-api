@@ -520,6 +520,7 @@ object Objects extends Logging {
     DocumentField("name", "Molecule preferred name"),
     DocumentField("synonyms", "Molecule synonyms"),
     DocumentField("tradeNames", "Drug trade names"),
+    DocumentField("parentId", "ChEMBL ID of parent molecule"),
     DocumentField("yearOfFirstApproval", "Year drug was approved for the first time"),
     DocumentField("drugType", "Drug modality"),
     DocumentField("maximumClinicalTrialPhase", "Maximum phase observed in clinical trial records and" +
@@ -554,20 +555,33 @@ object Objects extends Logging {
         description = Some("Investigational and approved indications curated from clinical trial records and " +
           "post-marketing package inserts"),
         resolve = ctx => {
-          val ids: Seq[String] = Seq(ctx.value.id) ++ ctx.value.childChemblIds.getOrElse(Seq.empty)
-          ctx.ctx.getIndications(ids) map { inds =>
-            inds.size match {
-              case i if i > 0 =>
-                logger.error(s"Received ${i} indications from ES")
-                val indications = inds.flatMap(_.indications).map(r => r.disease -> r).toMap.values.toSeq
-//                  .foldLeft(Map.empty[String, IndicationRow])((m, ir) => if (m.keySet.contains(ir.disease)) m else m + (ir.disease -> ir))
-//                  .values.toSeq
-                Some(Indications(inds.head.id,
-                  indications,
-                  indications.size
-                ))
-              case _ => inds.headOption
-            }
+          val siblingIds: Future[Seq[String]] = ctx.value.parentId match {
+            case Some(parent) =>
+              ctx.ctx.getDrugs(Seq(parent)).map(
+              parentDrug => {
+                // only need to look at head as a molecule can have only one parent.
+                parentDrug.headOption match {
+                  case Some(p) => p.childChemblIds.getOrElse(Seq.empty) ++ Seq(p.id)
+                  case None => Seq.empty
+                }
+              }
+            )
+            case None => Future { Seq.empty }
+          }
+          val ids: Future[Seq[String]] = siblingIds.map( si =>
+            (Seq(ctx.value.id) ++ ctx.value.childChemblIds.getOrElse(Seq.empty) ++ si).distinct
+          )
+          ids flatMap ctx.ctx.getIndications map {
+            inds =>
+              inds.length match {
+                case i if i > 0 =>
+                  val indications = inds.flatMap(_.indications).map(r => r.disease -> r).toMap.values.toSeq
+                  Some(Indications(inds.head.id,
+                    indications,
+                    indications.size
+                  ))
+                case _ => inds.headOption
+              }
           }
         }
       ),
