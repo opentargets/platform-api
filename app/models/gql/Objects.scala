@@ -564,7 +564,7 @@ object Objects extends Logging {
           ctx.ctx.getIndications(ids) map { inds =>
             inds.size match {
               case i if i > 0 =>
-                logger.error(s"Received ${i} indications from ES")
+                logger.debug(s"Received ${i} indications from ES")
                 val indications = inds.flatMap(_.indications).map(r => r.disease -> r).toMap.values.toSeq
                 Some(Indications(inds.head.id,
                   indications,

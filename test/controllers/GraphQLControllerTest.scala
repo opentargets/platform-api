@@ -40,10 +40,14 @@ class GraphQLControllerTest extends PlaySpec with GuiceOneAppPerTest with Inject
       }
     }
     "return full objects" taggedAs IntegrationTestTag in {
+      val tests = chemblIds.length
+      var i = 1
       val responses: Seq[String] = chemblIds.map(fullQuery).map { q => {
         val request = FakeRequest(POST, "/graphql")
           .withHeaders(("Content-Type", "application/json"))
           .withBody(q)
+        logger.info(s"Test $i of $tests")
+        i = i + 1
         contentAsString(controller.gqlBody.apply(request))
       }
       }
