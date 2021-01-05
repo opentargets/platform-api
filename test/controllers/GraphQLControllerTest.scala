@@ -75,8 +75,7 @@ class GraphQLControllerTest extends PlaySpec with GuiceOneAppPerTest with Inject
     "pass their children's indications to their parents" taggedAs IntegrationTestTag in {
       val childDiseases = child.indications.get.rows.map(_.disease.id)
       val parentDiseases = parent.indications.get.rows.map(_.disease.id)
-      parentDiseases should contain.allElementsOf(childDiseases)
-      childDiseases should contain.allElementsOf(parentDiseases)
+      parentDiseases should contain allElementsOf childDiseases
     }
     "consolidate linked targets from parent to child" taggedAs IntegrationTestTag in {
       val r = request.withBody(parentChildLinkedTargetQuery)

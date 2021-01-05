@@ -531,7 +531,6 @@ object Objects extends Logging {
     DocumentField("approvedIndications", "Indications for which there is a phase IV clinical trial"),
     DocumentField("blackBoxWarning", "Alert on life-threteaning drug side effects provided by FDA"),
     DocumentField("description", "Drug description"),
-
     AddFields(
       Field("mechanismsOfAction", OptionType(mechanismOfActionImp),
         description = Some("Mechanisms of action to produce intended pharmacological effects. Curated from scientific " +
@@ -543,15 +542,15 @@ object Objects extends Logging {
           }
           siblings flatMap { siblingIds =>
             val ids: Seq[String] =  (Seq(ctx.value.id) ++ ctx.value.childChemblIds.getOrElse(Seq.empty) ++ siblingIds).distinct
-            val moas = ctx.ctx.getMechanismsOfAction(ids)
-            moas.map { m =>
-              m.size match {
-                case ms if ms > 0 =>
-                  Some(MechanismsOfAction(m.head.id,
-                    m.flatMap(_.rows),
-                    m.flatMap(_.uniqueActionTypes).distinct,
-                    m.flatMap(_.uniqueTargetTypes).distinct))
-                case _ => m.headOption
+          val moas = ctx.ctx.getMechanismsOfAction(ids)
+          moas.map { m =>
+            m.size match {
+              case ms if ms > 0 =>
+                Some(MechanismsOfAction(m.head.id,
+                  m.flatMap(_.rows),
+                  m.flatMap(_.uniqueActionTypes).distinct,
+                  m.flatMap(_.uniqueTargetTypes).distinct))
+              case _ => m.headOption
               }
             }
           }
@@ -561,33 +560,18 @@ object Objects extends Logging {
         description = Some("Investigational and approved indications curated from clinical trial records and " +
           "post-marketing package inserts"),
         resolve = ctx => {
-          val siblingIds: Future[Seq[String]] = ctx.value.parentId match {
-            case Some(parent) =>
-              ctx.ctx.getDrugs(Seq(parent)).map(
-              parentDrug => {
-                // only need to look at head as a molecule can have only one parent.
-                parentDrug.headOption match {
-                  case Some(p) => p.childChemblIds.getOrElse(Seq.empty) ++ Seq(p.id)
-                  case None => Seq.empty
-                }
-              }
-            )
-            case None => Future { Seq.empty }
-          }
-          val ids: Future[Seq[String]] = siblingIds.map( si =>
-            (Seq(ctx.value.id) ++ ctx.value.childChemblIds.getOrElse(Seq.empty) ++ si).distinct
-          )
-          ids flatMap ctx.ctx.getIndications map {
-            inds =>
-              inds.length match {
-                case i if i > 0 =>
-                  val indications = inds.flatMap(_.indications).map(r => r.disease -> r).toMap.values.toSeq
-                  Some(Indications(inds.head.id,
-                    indications,
-                    indications.size
-                  ))
-                case _ => inds.headOption
-              }
+          val ids: Seq[String] = Seq(ctx.value.id) ++ ctx.value.childChemblIds.getOrElse(Seq.empty)
+          ctx.ctx.getIndications(ids) map { inds =>
+            inds.size match {
+              case i if i > 0 =>
+                logger.error(s"Received ${i} indications from ES")
+                val indications = inds.flatMap(_.indications).map(r => r.disease -> r).toMap.values.toSeq
+                Some(Indications(inds.head.id,
+                  indications,
+                  indications.size
+                ))
+              case _ => inds.headOption
+            }
           }
         }
       ),
