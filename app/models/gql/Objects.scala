@@ -1,35 +1,18 @@
 package models.gql
 
 import models._
-import models.entities._
-import models.entities.Interactions._
 import models.entities.Configuration._
+import models.entities.Evidences._
+import models.entities.Interactions._
+import models.entities._
+import models.gql.Arguments._
+import models.gql.Fetchers._
 import play.api.Logging
 import sangria.macros.derive._
 import sangria.schema._
-import sangria.marshalling.playJson._
-import sangria.schema.AstSchemaBuilder._
-import play.api.libs.json.{JsValue, Json}
-import play.api.Logging
-import sangria.schema._
-import sangria.macros.{derive, _}
-import sangria.macros.derive._
-import sangria.ast
-import sangria.execution._
-import sangria.marshalling.playJson._
-import sangria.schema.AstSchemaBuilder._
-import sangria.util._
-import play.api.Configuration
-import play.api.mvc.CookieBaker
-import sangria.execution.deferred._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
-import Arguments._
-import Fetchers._
-import play.api.libs.json.JsValue.jsValueToJsLookup
-import models.entities.Evidence._
-import models.entities.Evidences._
 
 object Objects extends Logging {
   implicit val metaDataVersionImp = deriveObjectType[Backend, DataVersion]()
