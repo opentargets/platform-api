@@ -612,7 +612,7 @@ object Objects extends Logging {
       resolve = r => r.value.linkedDiseases)),
     ReplaceField("linkedTargets", Field("linkedTargets", OptionType(linkedTargetsImp),
       Some("Molecule targets based on drug mechanism of action"),
-      resolve = r => r.value.linkedTargets))
+      resolve = ctx => ctx.ctx.getLinkedTargets(ctx.value)))
   )
 
   implicit val datasourceSettingsImp = deriveObjectType[Backend, DatasourceSettings]()

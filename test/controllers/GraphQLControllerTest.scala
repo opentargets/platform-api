@@ -78,6 +78,16 @@ class GraphQLControllerTest extends PlaySpec with GuiceOneAppPerTest with Inject
       parentDiseases should contain.allElementsOf(childDiseases)
       childDiseases should contain.allElementsOf(parentDiseases)
     }
+    "consolidate linked targets from parent to child" taggedAs IntegrationTestTag in {
+      val r = request.withBody(parentChildLinkedTargetQuery)
+      val jsObject = Json.parse(contentAsString(controller.gqlBody.apply(r)))
+      val drugs = (jsObject \ "data" \ "drugs").as[JsArray].value.map(_.as[ParentChildLinkedTargets])
+      val (d1,d2) = (drugs.head, drugs.tail.head)
+      forAll(drugs)(d =>
+        assert(d.linkedTargets.isDefined)
+      )
+      d1.linkedTargets.get.count should equal(d2.linkedTargets.get.count)
+    }
   }
 
   "Adverse event queries" must {

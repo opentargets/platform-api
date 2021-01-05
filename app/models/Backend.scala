@@ -270,6 +270,42 @@ class Backend @Inject()(implicit ec: ExecutionContext, @NamedDatabase("default")
       excludedFields = excludedFields)
   }
 
+  /**
+   * The linkedTargets field are mechanisms of action associated with a molecule. These should have the same behaviour
+   * on either a parent or child molecule; this method performs that consolidation.
+   * @param drug to query
+   * @return consolidated LinkedIds
+   */
+  def getLinkedTargets(drug: Drug): Future[Option[LinkedIds]] = {
+    def combinedLinkedTargets(drugs: IndexedSeq[Drug]): Option[LinkedIds] = {
+      val linkedIds = drugs.flatMap(_.linkedTargets).flatMap(_.rows).distinct
+      Some(LinkedIds(linkedIds.length, linkedIds))
+    }
+    drug.parentId match {
+      // drug is a child so need to collect siblings
+      case Some(parentId) =>
+        logger.debug(s"Drug linked targets: Getting parent $parentId for ${drug.id}")
+        getDrugs(Seq(parentId)) flatMap { d =>
+          d.headOption match {
+            case Some(parent) =>
+              val family = parent.childChemblIds.getOrElse(Seq.empty)
+              getDrugs(family) map { f => combinedLinkedTargets(f ++ Seq(parent)) }
+            case None =>
+              logger.warn(s"Drug linked targets: Parent $parentId for drug ${drug.id} was not resolved.")
+              Future { drug.linkedTargets}
+          }
+        }
+      case None => drug.childChemblIds match {
+        // drug is a parent, get children
+        case Some(childrenIds) =>
+          logger.trace(s"Drug linked targets: Getting children $childrenIds for ${drug.id}")
+          getDrugs(childrenIds) map { c => combinedLinkedTargets(c ++ Seq(drug)) }
+        // drug is an orphan
+        case None => Future { drug.linkedTargets }
+      }
+    }
+  }
+
   def getDrugs(ids: Seq[String]): Future[IndexedSeq[Drug]] = {
     val drugIndexName = defaultESSettings.entities
       .find(_.name == "drug").map(_.index).getOrElse("drugs")
