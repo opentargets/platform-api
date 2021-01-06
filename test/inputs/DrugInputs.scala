@@ -1190,11 +1190,11 @@ trait DrugInputs {
       + """} }" }"""
   )
 
-  val parentChildMoAQuery: JsValue = Json.parse(
-    """{"query": "query { drugs(chemblIds: [\"CHEMBL221959\", \"CHEMBL2103743\"]) { name mechanismsOfAction { uniqueActionTypes uniqueTargetTypes rows { targetName targets {id} } } indications { count rows { disease { id } } } } }" }"""
+  def parentChildMoAQuery(parent: String, child: String): JsValue = Json.parse(
+    s"""{"query": "query { drugs(chemblIds: [\\"$parent\\", \\"$child\\"]) { name mechanismsOfAction { uniqueActionTypes uniqueTargetTypes rows { targetName targets {id} } } indications { count rows { disease { id } } } } }" }"""
   )
-  val parentChildLinkedTargetQuery: JsValue = Json.parse(
-     """{"query": "query { drugs(chemblIds: [\"CHEMBL221959\", \"CHEMBL2103743\"]) { name linkedTargets { count rows { approvedSymbol } } } }" }"""
+  def parentChildLinkedTargetQuery(parent: String, child: String): JsValue = Json.parse(
+     s"""{"query": "query { drugs(chemblIds: [\\"$parent\\", \\"$child\\"]) { name linkedTargets { count rows { approvedSymbol } } } }" }"""
   )
   case class IDS(id: String)
   case class MOAR(targetName: String, targets: Array[IDS])

@@ -542,21 +542,7 @@ object Objects extends Logging {
       Field("indications", OptionType(indicationsImp),
         description = Some("Investigational and approved indications curated from clinical trial records and " +
           "post-marketing package inserts"),
-        resolve = ctx => {
-          val ids: Seq[String] = Seq(ctx.value.id) ++ ctx.value.childChemblIds.getOrElse(Seq.empty)
-          ctx.ctx.getIndications(ids) map { inds =>
-            inds.size match {
-              case i if i > 0 =>
-                logger.debug(s"Received ${i} indications from ES")
-                val indications = inds.flatMap(_.indications).map(r => r.disease -> r).toMap.values.toSeq
-                Some(Indications(inds.head.id,
-                  indications,
-                  indications.size
-                ))
-              case _ => inds.headOption
-            }
-          }
-        }
+        resolve = ctx => DeferredValue(indicationFetcher.defer(ctx.value.id))
       ),
       Field("knownDrugs", OptionType(knownDrugsImp),
         description = Some("Curated Clinical trial records and and post-marketing package inserts " +

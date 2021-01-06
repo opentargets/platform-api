@@ -325,6 +325,7 @@ class Backend @Inject()(implicit ec: ExecutionContext, @NamedDatabase("default")
   }
 
   def getIndications(ids: Seq[String]): Future[IndexedSeq[Indications]] = {
+    logger.debug(s"querying ES: getting indications for $ids")
     val index = defaultESSettings.entities.find(_.name == "drugIndications").map(_.index)
 
     index match {

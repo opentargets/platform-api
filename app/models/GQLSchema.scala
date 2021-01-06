@@ -41,7 +41,9 @@ object GQLSchema {
     expressionFetcher,
     mousePhenotypeFetcher,
     otarProjectsFetcher,
-    soTermsFetcher)
+    soTermsFetcher,
+    indicationFetcher
+  )
 
 
   lazy val msearchResultType = UnionType("EntityUnionType", types = List(targetImp, drugImp, diseaseImp))
