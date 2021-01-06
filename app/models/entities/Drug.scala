@@ -1,7 +1,6 @@
 package models.entities
 
 import play.api.libs.json._
-import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 
 case class WithdrawnNotice(classes: Option[Seq[String]],
@@ -24,9 +23,10 @@ case class IndicationRow(maxPhaseForIndication: Long,
 
 case class LinkedIds(count: Int, rows: Seq[String])
 
-case class Indications(rows: Seq[IndicationRow], count: Long)
+case class Indications(id: String, indications: Seq[IndicationRow], count: Long)
 
-case class MechanismsOfAction(rows: Seq[MechanismOfActionRow],
+case class MechanismsOfAction(id: String,
+                              rows: Seq[MechanismOfActionRow],
                               uniqueActionTypes: Seq[String],
                               uniqueTargetTypes: Seq[String])
 
@@ -34,15 +34,15 @@ case class Drug(id: String,
                 name: String,
                 synonyms: Seq[String],
                 tradeNames: Seq[String],
+                childChemblIds: Option[Seq[String]],
                 yearOfFirstApproval: Option[Int],
                 drugType: String,
                 isApproved: Option[Boolean],
+                parentId: Option[String],
                 maximumClinicalTrialPhase: Option[Int],
                 hasBeenWithdrawn: Boolean,
                 withdrawnNotice: Option[WithdrawnNotice],
-                mechanismsOfAction: Option[MechanismsOfAction],
                 approvedIndications: Option[Seq[String]],
-                indications: Option[Indications],
                 linkedDiseases: Option[LinkedIds],
                 linkedTargets: Option[LinkedIds],
                 blackBoxWarning: Boolean,
