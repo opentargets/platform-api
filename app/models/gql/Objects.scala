@@ -497,13 +497,12 @@ object Objects extends Logging {
     DocumentField("reasons", "Reason for withdrawal"),
     DocumentField("year", "Year of withdrawal")
   )
-  implicit lazy val drugImp = deriveObjectType[Backend, Drug](
+  implicit lazy val drugImp: ObjectType[Backend, Drug] = deriveObjectType[Backend, Drug](
     ObjectTypeDescription("Drug/Molecule entity"),
     DocumentField("id", "Open Targets molecule id"),
     DocumentField("name", "Molecule preferred name"),
     DocumentField("synonyms", "Molecule synonyms"),
     DocumentField("tradeNames", "Drug trade names"),
-    DocumentField("parentId", "ChEMBL ID of parent molecule"),
     DocumentField("yearOfFirstApproval", "Year drug was approved for the first time"),
     DocumentField("drugType", "Drug modality"),
     DocumentField("maximumClinicalTrialPhase", "Maximum phase observed in clinical trial records and" +
@@ -514,6 +513,14 @@ object Objects extends Logging {
     DocumentField("approvedIndications", "Indications for which there is a phase IV clinical trial"),
     DocumentField("blackBoxWarning", "Alert on life-threteaning drug side effects provided by FDA"),
     DocumentField("description", "Drug description"),
+    ReplaceField("parentId", Field("parentMolecule", OptionType(drugImp),
+      description = Some("ChEMBL ID of parent molecule"),
+      resolve = r => drugsFetcher.deferOpt(r.value.parentId)
+    )),
+    ReplaceField("childChemblIds", Field("childMolecules", ListType(drugImp),
+      description = Some("Chembl IDs of molecules that descend from current molecule."),
+      resolve = r => drugsFetcher.deferSeqOpt(r.value.childChemblIds.getOrElse(Seq.empty))
+    )),
     AddFields(
       Field("mechanismsOfAction", OptionType(mechanismOfActionImp),
         description = Some("Mechanisms of action to produce intended pharmacological effects. Curated from scientific " +
