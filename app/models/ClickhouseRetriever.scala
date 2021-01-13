@@ -15,7 +15,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
-class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: OTSettings) extends Logging {
+class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: OTSettings)
+    extends Logging {
   import dbConfig.profile.api._
 
   implicit private def toSQL(q: Q): SQLActionBuilder = sql"""#${q.rep}"""
@@ -24,11 +25,13 @@ class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: O
   val db = dbConfig.db
   val chSettings = config.clickhouse
 
-  def getUniqList[A](of: Seq[String], from: String)(implicit rconv: GetResult[A]): Future[Vector[A]] = {
+  def getUniqList[A](of: Seq[String], from: String)(
+      implicit rconv: GetResult[A]): Future[Vector[A]] = {
     getUniqList[A](of, Column(from))(rconv)
   }
 
-  def getUniqList[A](of: Seq[String], from: Column)(implicit rconv: GetResult[A]): Future[Vector[A]] = {
+  def getUniqList[A](of: Seq[String], from: Column)(
+      implicit rconv: GetResult[A]): Future[Vector[A]] = {
     val s = Select(of.map(column))
     val f = From(from)
     val g = GroupBy(of.map(column))
@@ -58,31 +61,35 @@ class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: O
     }
   }
 
-  def getAssociationsOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[String],
+  def getAssociationsOTF(tableName: String,
+                         AId: String,
+                         AIDs: Set[String],
+                         BIDs: Set[String],
                          BFilter: Option[String],
                          datasourceSettings: Seq[DatasourceSettings],
                          pagination: Pagination) = {
     val weights = datasourceSettings.map(s => (s.id, s.weight))
     val dontPropagate = datasourceSettings.withFilter(!_.propagate).map(_.id).toSet
-    val aotfQ = QAOTF(
-      tableName,
-      AId,
-      AIDs,
-      BIDs,
-      BFilter,
-      None,
-      weights,
-      dontPropagate,
-      pagination.offset, pagination.size).query.as[Association]
+    val aotfQ = QAOTF(tableName,
+                      AId,
+                      AIDs,
+                      BIDs,
+                      BFilter,
+                      None,
+                      weights,
+                      dontPropagate,
+                      pagination.offset,
+                      pagination.size).query.as[Association]
 
     logger.debug(aotfQ.statements.mkString("\n"))
 
     db.run(aotfQ.asTry).map {
       case Success(v) => v
-      case Failure(ex)  =>
+      case Failure(ex) =>
         logger.error(ex.toString)
-        logger.error("harmonic associations query failed " +
-          s"with query: ${aotfQ.statements.mkString(" ")}")
+        logger.error(
+          "harmonic associations query failed " +
+            s"with query: ${aotfQ.statements.mkString(" ")}")
         Vector.empty
     }
   }

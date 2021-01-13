@@ -2,15 +2,12 @@ package models
 
 import play.api.Logging
 import play.api.libs.json.Reads._
-import play.api.libs.functional.syntax._
-import com.sksamuel.elastic4s._
-import com.sksamuel.elastic4s.playjson._
 import com.sksamuel.elastic4s.requests.common.Operator
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import com.sksamuel.elastic4s.requests.searches._
 import com.sksamuel.elastic4s.requests.searches.queries.funcscorer._
-import com.sksamuel.elastic4s.requests.searches.queries.matches.{MultiMatchQuery, MultiMatchQueryBuilderType}
+import com.sksamuel.elastic4s.requests.searches.queries.matches.MultiMatchQueryBuilderType
 import com.sksamuel.elastic4s._
 import com.sksamuel.elastic4s.requests.searches.aggs.AbstractAggregation
 import com.sksamuel.elastic4s.requests.searches.queries.{BoolQuery, NestedQuery}
@@ -22,19 +19,23 @@ import play.api.libs.json._
 
 import scala.concurrent.Future
 
-class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
-                       searchEntities: Seq[String]) extends Logging {
+class ElasticRetriever(client: ElasticClient, hlFields: Seq[String], searchEntities: Seq[String])
+    extends Logging {
   val hlFieldSeq = hlFields.map(HighlightField(_))
 
   import com.sksamuel.elastic4s.ElasticDsl._
 
   /** This fn represents a query where each kv from the map is used in
-   * a bool must. Based on the query asked by `getByIndexedQuery` and aggregation is applied */
-  def getAggregationsByQuery[A](esIndex: String, boolQuery: BoolQuery,
-                                aggs: Iterable[AbstractAggregation] = Iterable.empty): Future[JsValue] = {
-    val q = search(esIndex).bool {
-      boolQuery
-    }.start(0)
+    * a bool must. Based on the query asked by `getByIndexedQuery` and aggregation is applied */
+  def getAggregationsByQuery[A](
+      esIndex: String,
+      boolQuery: BoolQuery,
+      aggs: Iterable[AbstractAggregation] = Iterable.empty): Future[JsValue] = {
+    val q = search(esIndex)
+      .bool {
+        boolQuery
+      }
+      .start(0)
       .limit(0)
       .aggs(aggs)
       .trackTotalHits(true)
@@ -46,7 +47,7 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
     }
 
     elems.map {
-      case _: RequestFailure => JsNull
+      case _: RequestFailure                       => JsNull
       case results: RequestSuccess[SearchResponse] =>
         // parse the full body response into JsValue
         // thus, we can apply Json Transformations from JSON Play
@@ -60,19 +61,23 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
   }
 
   /** This fn represents a query where each kv from the map is used in
-   * a bool must. Based on the query asked by `getByIndexedQuery` and aggregation is applied */
-  def getByIndexedQuery[A](esIndex: String, kv: Map[String, String],
-                           pagination: Pagination,
-                           buildF: JsValue => Option[A],
-                           aggs: Iterable[AbstractAggregation] = Iterable.empty,
-                           sortByField: Option[sort.FieldSort] = None,
-                           excludedFields: Seq[String] = Seq.empty): Future[(IndexedSeq[A], JsValue)] = {
+    * a bool must. Based on the query asked by `getByIndexedQuery` and aggregation is applied */
+  def getByIndexedQuery[A](
+      esIndex: String,
+      kv: Map[String, String],
+      pagination: Pagination,
+      buildF: JsValue => Option[A],
+      aggs: Iterable[AbstractAggregation] = Iterable.empty,
+      sortByField: Option[sort.FieldSort] = None,
+      excludedFields: Seq[String] = Seq.empty): Future[(IndexedSeq[A], JsValue)] = {
     val limitClause = pagination.toES
-    val q = search(esIndex).bool {
-      must(
-        kv.toSeq.map(p => matchQuery(p._1, p._2))
-      )
-    }.start(limitClause._1)
+    val q = search(esIndex)
+      .bool {
+        must(
+          kv.toSeq.map(p => matchQuery(p._1, p._2))
+        )
+      }
+      .start(limitClause._1)
       .limit(limitClause._2)
       .aggs(aggs)
       .trackTotalHits(true)
@@ -82,7 +87,7 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
     val elems: Future[Response[SearchResponse]] = client.execute {
       val qq = sortByField match {
         case Some(s) => q.sortBy(s)
-        case None => q
+        case None    => q
       }
 
       logger.debug(client.show(qq))
@@ -107,26 +112,32 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
         val mappedHits = hits
           .map(jObj => {
             buildF(jObj)
-          }).withFilter(_.isDefined).map(_.get)
+          })
+          .withFilter(_.isDefined)
+          .map(_.get)
 
         (mappedHits, aggs)
     }
   }
 
-  def getByMustWithSearch[A](esIndex: String, queryString: Option[String],
+  def getByMustWithSearch[A](esIndex: String,
+                             queryString: Option[String],
                              kv: Map[String, Seq[String]],
                              pageSize: Int,
                              buildF: JsValue => Option[A],
                              aggs: Iterable[AbstractAggregation] = Iterable.empty,
                              sortByField: Option[sort.FieldSort] = None,
                              excludedFields: Seq[String] = Seq.empty,
-                             searchAfter: Option[Seq[String]] = None): Future[(IndexedSeq[A], Long, Option[Seq[String]])] = {
+                             searchAfter: Option[Seq[String]] = None)
+    : Future[(IndexedSeq[A], Long, Option[Seq[String]])] = {
 
     val mustTerms = kv.toSeq.map(p => termsQuery(p._1, p._2))
 
-    val q = search(esIndex).bool {
-      must(mustTerms)
-    }.size(pageSize)
+    val q = search(esIndex)
+      .bool {
+        must(mustTerms)
+      }
+      .size(pageSize)
       .aggs(aggs)
       .trackTotalHits(true)
       .sourceExclude(excludedFields)
@@ -146,7 +157,7 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
     }
 
     elems.map {
-      case _: RequestFailure => (IndexedSeq.empty, 0, None)
+      case _: RequestFailure                       => (IndexedSeq.empty, 0, None)
       case results: RequestSuccess[SearchResponse] =>
         // parse the full body response into JsValue
         // thus, we can apply Json Transformations from JSON Play
@@ -159,13 +170,14 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
         val mappedHits = hits
           .map(jObj => {
             buildF(jObj)
-          }).withFilter(_.isDefined).map(_.get)
+          })
+          .withFilter(_.isDefined)
+          .map(_.get)
 
         val hasNext = !(hits.size < pageSize) && pageSize > 0
 
         val seAf =
-          if
-          (hasNext) (hits.last \ "sort").get.asOpt[Seq[String]]
+          if (hasNext) (hits.last \ "sort").get.asOpt[Seq[String]]
           else
             None
 
@@ -173,14 +185,16 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
     }
   }
 
-  def getByFreeQuery[A](esIndex: String, queryString: String,
-                        kv: Map[String, String],
-                        pagination: Pagination,
-                        buildF: JsValue => Option[A],
-                        aggs: Iterable[AbstractAggregation] = Iterable.empty,
-                        sortByField: Option[sort.FieldSort] = None,
-                        excludedFields: Seq[String] = Seq.empty,
-                        searchAfter: Seq[String] = Nil): Future[(IndexedSeq[A], JsValue, Seq[String])] = {
+  def getByFreeQuery[A](
+      esIndex: String,
+      queryString: String,
+      kv: Map[String, String],
+      pagination: Pagination,
+      buildF: JsValue => Option[A],
+      aggs: Iterable[AbstractAggregation] = Iterable.empty,
+      sortByField: Option[sort.FieldSort] = None,
+      excludedFields: Seq[String] = Seq.empty,
+      searchAfter: Seq[String] = Nil): Future[(IndexedSeq[A], JsValue, Seq[String])] = {
     val limitClause = pagination.toES
 
     val boolQ = boolQuery().should(
@@ -194,12 +208,14 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
         .fields("*")
     )
 
-    val q = search(esIndex).bool {
-      must(boolQ)
-        .filter(
-          boolQuery().should(kv.toSeq.map(p => termQuery(p._1, p._2)))
-        )
-    }.start(limitClause._1)
+    val q = search(esIndex)
+      .bool {
+        must(boolQ)
+          .filter(
+            boolQuery().should(kv.toSeq.map(p => termQuery(p._1, p._2)))
+          )
+      }
+      .start(limitClause._1)
       .limit(limitClause._2)
       .aggs(aggs)
       .trackTotalHits(true)
@@ -220,7 +236,7 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
     }
 
     elems.map {
-      case _: RequestFailure => (IndexedSeq.empty, JsNull, Nil)
+      case _: RequestFailure                       => (IndexedSeq.empty, JsNull, Nil)
       case results: RequestSuccess[SearchResponse] =>
         // parse the full body response into JsValue
         // thus, we can apply Json Transformations from JSON Play
@@ -233,18 +249,19 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
         val mappedHits = hits
           .map(jObj => {
             buildF(jObj)
-          }).withFilter(_.isDefined).map(_.get)
+          })
+          .withFilter(_.isDefined)
+          .map(_.get)
 
         val hasNext = !(hits.size < limitClause._2)
 
         val seAf =
-          if
-            // TODO this is broken as phase is a number now so
-            // I guess making this more opaque could work like
-            // (hits.last \ "sort").toOption // this return Option[JsValue]
-            // so if we map to string and optionally encode to base64
-            // then when is used as passed parameter then get the string and read as string into json which
-            // will become into a seq of jsvalue and then pass to the function searchAfter below
+          if // TODO this is broken as phase is a number now so
+          // I guess making this more opaque could work like
+          // (hits.last \ "sort").toOption // this return Option[JsValue]
+          // so if we map to string and optionally encode to base64
+          // then when is used as passed parameter then get the string and read as string into json which
+          // will become into a seq of jsvalue and then pass to the function searchAfter below
           (hasNext) Nil // (hits.last \ "sort").get.as[Seq[String]]
           else
             Nil
@@ -253,7 +270,9 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
     }
   }
 
-  def getByIds[A](esIndex: String, ids: Seq[String], buildF: JsValue => Option[A],
+  def getByIds[A](esIndex: String,
+                  ids: Seq[String],
+                  buildF: JsValue => Option[A],
                   excludedFields: Seq[String] = Seq.empty): Future[IndexedSeq[A]] = {
     ids match {
       case Nil => Future.successful(IndexedSeq.empty)
@@ -268,7 +287,7 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
         }
 
         elems.map {
-          case _: RequestFailure => IndexedSeq.empty
+          case _: RequestFailure                       => IndexedSeq.empty
           case results: RequestSuccess[SearchResponse] =>
             // parse the full body response into JsValue
             // thus, we can apply Json Transformations from JSON Play
@@ -281,7 +300,9 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
             val mappedHits = hits
               .map(jObj => {
                 buildF(jObj)
-              }).withFilter(_.isDefined).map(_.get)
+              })
+              .withFilter(_.isDefined)
+              .map(_.get)
 
             mappedHits
         }
@@ -301,17 +322,18 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
       .field("name.raw", 1000D)
       .operator(Operator.AND)
 
-    val stringQueryFn = functionScoreQuery(simpleStringQuery(qString)
-      .analyzer("token")
-      .minimumShouldMatch("0")
-      .defaultOperator("AND")
-      .field("name", 50D)
-      .field("description", 25D)
-      .field("prefixes", 20D)
-      .field("terms5", 15D)
-      .field("terms25", 10D)
-      .field("terms", 5D)
-      .field("ngrams"))
+    val stringQueryFn = functionScoreQuery(
+      simpleStringQuery(qString)
+        .analyzer("token")
+        .minimumShouldMatch("0")
+        .defaultOperator("AND")
+        .field("name", 50D)
+        .field("description", 25D)
+        .field("prefixes", 20D)
+        .field("terms5", 15D)
+        .field("terms25", 10D)
+        .field("terms", 5D)
+        .field("ngrams"))
       .functions(fieldFactorScore("multiplier")
         .factor(1.0)
         .modifier(FieldValueFactorFunctionModifier.NONE))
@@ -328,48 +350,51 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
     val mainQuery = boolQuery.must(fnQueries ::: filterQueries)
 
     if (qString.length > 0) {
-      client.execute {
-        val aggregations =
-          search(searchEntities) query (fnQueries.head) aggs (aggFns) size (0)
-        logger.debug(client.show(aggregations))
-        aggregations trackTotalHits (true)
-      }.zip {
-        client.execute {
-          val mhits = search(esIndices)
-            .query(mainQuery)
-            .start(limitClause._1)
-            .limit(limitClause._2)
-            .highlighting(HighlightOptions(highlighterType = Some("fvh")), hlFieldSeq)
-            .trackTotalHits(true)
-            .sourceExclude("terms", "terms5", "terms25")
-          logger.debug(client.show(mhits))
-          mhits
+      client
+        .execute {
+          val aggregations =
+            search(searchEntities) query (fnQueries.head) aggs (aggFns) size (0)
+          logger.debug(client.show(aggregations))
+          aggregations trackTotalHits (true)
         }
-      }.map {
-        case (aggregations, hits) =>
-          val aggsJ = Json.parse(aggregations.result.aggregationsAsString)
-          val aggs = aggsJ.validateOpt[SearchResultAggs] match {
-            case JsSuccess(value, _) => value
-            case JsError(errors) =>
-              logger.error(errors.mkString("", "\n", ""))
-              None
+        .zip {
+          client.execute {
+            val mhits = search(esIndices)
+              .query(mainQuery)
+              .start(limitClause._1)
+              .limit(limitClause._2)
+              .highlighting(HighlightOptions(highlighterType = Some("fvh")), hlFieldSeq)
+              .trackTotalHits(true)
+              .sourceExclude("terms", "terms5", "terms25")
+            logger.debug(client.show(mhits))
+            mhits
           }
+        }
+        .map {
+          case (aggregations, hits) =>
+            val aggsJ = Json.parse(aggregations.result.aggregationsAsString)
+            val aggs = aggsJ.validateOpt[SearchResultAggs] match {
+              case JsSuccess(value, _) => value
+              case JsError(errors) =>
+                logger.error(errors.mkString("", "\n", ""))
+                None
+            }
 
-          if (logger.isDebugEnabled) {
-            val jsHits = Json.parse(hits.body.get)
-            logger.debug(Json.prettyPrint(jsHits))
-          }
+            if (logger.isDebugEnabled) {
+              val jsHits = Json.parse(hits.body.get)
+              logger.debug(Json.prettyPrint(jsHits))
+            }
 
-          val sresults = (Json.parse(hits.body.get) \ "hits" \ "hits").validate[Seq[SearchResult]] match {
-            case JsSuccess(value, _) => value
-            case JsError(errors) =>
-              logger.error(errors.mkString("", "\n", ""))
-              Seq.empty
-          }
+            val sresults =
+              (Json.parse(hits.body.get) \ "hits" \ "hits").validate[Seq[SearchResult]] match {
+                case JsSuccess(value, _) => value
+                case JsError(errors) =>
+                  logger.error(errors.mkString("", "\n", ""))
+                  Seq.empty
+              }
 
-          SearchResults(sresults,
-            aggs, hits.result.totalHits)
-      }
+            SearchResults(sresults, aggs, hits.result.totalHits)
+        }
     } else {
       Future.successful(SearchResults.empty)
     }
@@ -379,29 +404,33 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String],
 object ElasticRetriever extends Logging {
 
   /** aggregationFilterProducer returns a tuple where the first element is the overall list
-   * of filters and the second is a map with the cartesian product of each aggregation with
-   * the complementary list of filters
-   */
-  def aggregationFilterProducer(filters: Seq[AggregationFilter], mappings: Map[String, AggregationMapping]) = {
-    val filtersByName = filters.groupBy(_.name).filterKeys(mappings.contains).map {
-      case (facet, filters) =>
-        val mappedFacet = mappings(facet)
-        val ff = filters.foldLeft(BoolQuery()) {
-          (b, filter) =>
+    * of filters and the second is a map with the cartesian product of each aggregation with
+    * the complementary list of filters
+    */
+  def aggregationFilterProducer(filters: Seq[AggregationFilter],
+                                mappings: Map[String, AggregationMapping]) = {
+    val filtersByName = filters
+      .groupBy(_.name)
+      .filterKeys(mappings.contains)
+      .map {
+        case (facet, filters) =>
+          val mappedFacet = mappings(facet)
+          val ff = filters.foldLeft(BoolQuery()) { (b, filter) =>
             val termKey = filter.path.zipWithIndex.last
             val termLevel = mappedFacet.pathKeys.lift
             val termPrefix = if (mappedFacet.nested) s"${mappedFacet.key}." else ""
             val keyName = termPrefix + s"${termLevel(termKey._2).getOrElse(mappedFacet.key)}.keyword"
             b.withShould(TermQuery(keyName, termKey._1))
-        }
+          }
 
-        if (mappedFacet.nested) {
-          facet -> NestedQuery(mappedFacet.key, ff)
-        } else {
-          facet -> ff
-        }
+          if (mappedFacet.nested) {
+            facet -> NestedQuery(mappedFacet.key, ff)
+          } else {
+            facet -> ff
+          }
 
-    }.withDefaultValue(BoolQuery())
+      }
+      .withDefaultValue(BoolQuery())
 
     val overallFilters = filtersByName.foldLeft(BoolQuery()) {
       case (b, f) => b.withMust(f._2)
@@ -409,18 +438,17 @@ object ElasticRetriever extends Logging {
 
     val namesR = mappings.keys.toList.reverse
     if (namesR.size > 1) {
-      val mappedMappgings = mappings.map(p => p._1 -> filtersByName(p._1))
-        .toList.combinations(namesR.size - 1).toList
+      val mappedMappgings =
+        mappings.map(p => p._1 -> filtersByName(p._1)).toList.combinations(namesR.size - 1).toList
 
       val cartesianProd = (namesR zip mappedMappgings).toMap
-        .mapValues(_.foldLeft(BoolQuery()) {
-          (b, q) => b.withMust(q._2)
+        .mapValues(_.foldLeft(BoolQuery()) { (b, q) =>
+          b.withMust(q._2)
         })
 
       logger.debug(s"overall filters $overallFilters")
-      cartesianProd foreach {
-        el =>
-          logger.debug(s"cartesian product ${el._1} -> ${el._2.toString}")
+      cartesianProd foreach { el =>
+        logger.debug(s"cartesian product ${el._1} -> ${el._2.toString}")
       }
 
       (overallFilters, cartesianProd)
@@ -430,12 +458,13 @@ object ElasticRetriever extends Logging {
   }
 
   /** *
-   * SortBy case class use the `fieldName` to sort by and asc if `desc` is false
-   * otherwise desc
-   */
+    * SortBy case class use the `fieldName` to sort by and asc if `desc` is false
+    * otherwise desc
+    */
   def sortByAsc(fieldName: String) = Some(sort.FieldSort(fieldName).asc())
 
   def sortByDesc(fieldName: String) = Some(sort.FieldSort(fieldName).desc())
 
-  def sortBy(fieldName: String, order: sort.SortOrder) = Some(sort.FieldSort(field = fieldName, order = order))
+  def sortBy(fieldName: String, order: sort.SortOrder) =
+    Some(sort.FieldSort(field = fieldName, order = order))
 }
