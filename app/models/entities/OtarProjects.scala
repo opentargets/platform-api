@@ -22,7 +22,5 @@ object OtarProjects {
     (
       (__ \ "efo_id").read[String] and
         (__ \ "projects").readWithDefault[Seq[OtarProject]](Seq.empty)
-      ) (OtarProjects.apply _)
+    )(OtarProjects.apply _)
 }
-
-

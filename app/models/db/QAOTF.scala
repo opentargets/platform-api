@@ -13,25 +13,32 @@ abstract class Queryable {
 }
 
 /**
- * QAOTF stands for Query for Associations on the fly computations
- *
- * @param tableName table name to use for the associations on the fly query build
- * @param AId the left ID will be fixed and it is required. It is required as no
- *            propagation is still around
- * @param AIDs a set of optional left IDs to use as unioni with the single ID
- * @param BIDs an optional list of right IDs to fix to build the associations before the computations
- * @param BFilter before compute the numbers we restrict the right ids by text prefixing
- * @param orderScoreBy Ordering, ist is a pair with name and mode of sorting ("score", "desc")
- * @param datasourceWeights List of weights to use
- * @param nonPropagatedDatasources List of datasources to not propagate
- * @param offset where to start the chunk of rows to return
- * @param size how many rows to return in a chunk
- */
-case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[String],
-                 BFilter: Option[String], orderScoreBy: Option[(String, String)],
+  * QAOTF stands for Query for Associations on the fly computations
+  *
+  * @param tableName table name to use for the associations on the fly query build
+  * @param AId the left ID will be fixed and it is required. It is required as no
+  *            propagation is still around
+  * @param AIDs a set of optional left IDs to use as unioni with the single ID
+  * @param BIDs an optional list of right IDs to fix to build the associations before the computations
+  * @param BFilter before compute the numbers we restrict the right ids by text prefixing
+  * @param orderScoreBy Ordering, ist is a pair with name and mode of sorting ("score", "desc")
+  * @param datasourceWeights List of weights to use
+  * @param nonPropagatedDatasources List of datasources to not propagate
+  * @param offset where to start the chunk of rows to return
+  * @param size how many rows to return in a chunk
+  */
+case class QAOTF(tableName: String,
+                 AId: String,
+                 AIDs: Set[String],
+                 BIDs: Set[String],
+                 BFilter: Option[String],
+                 orderScoreBy: Option[(String, String)],
                  datasourceWeights: Seq[(String, Double)],
                  nonPropagatedDatasources: Set[String],
-                 offset: Int, size: Int) extends Queryable with Logging {
+                 offset: Int,
+                 size: Int)
+    extends Queryable
+    with Logging {
   val A = column("A")
   val B = column("B")
   val DS = column("datasource_id")
@@ -44,36 +51,40 @@ case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[St
   val maxHS = literal(Harmonic.maxValue(100000, pExponentDefault, 1.0))
     .as(Some("max_hs_score"))
 
-  val BFilterQ = BFilter flatMap  {
+  val BFilterQ = BFilter flatMap {
     case matchStr =>
-      val tokens = matchStr.split(" ").map(s => {
-        F.like(BData.name, F.lower(literal(s"%${s.toLowerCase.trim}%")))
-      }).toList
+      val tokens = matchStr
+        .split(" ")
+        .map(s => {
+          F.like(BData.name, F.lower(literal(s"%${s.toLowerCase.trim}%")))
+        })
+        .toList
 
       tokens match {
-        case h :: Nil => Some(h)
-        case h1 :: h2 :: rest => Some(F.and(h1, h2, rest:_*))
-        case _ => None
+        case h :: Nil         => Some(h)
+        case h1 :: h2 :: rest => Some(F.and(h1, h2, rest: _*))
+        case _                => None
       }
   }
 
-  val DSScore = F.arraySum(
-    None,
-    F.arrayMap(
-      "(x, y) -> x / pow(y, 2)",
-      F.arrayReverseSort(None,
-        F.groupArray(RowScore)
-      ),
-      F.arrayEnumerate(F.groupArray(RowScore))
+  val DSScore = F
+    .arraySum(
+      None,
+      F.arrayMap(
+        "(x, y) -> x / pow(y, 2)",
+        F.arrayReverseSort(None, F.groupArray(RowScore)),
+        F.arrayEnumerate(F.groupArray(RowScore))
+      )
     )
-  ).as(Some("score_datasource"))
+    .as(Some("score_datasource"))
 
   val DSW = F.ifNull(F.any(column("weight")), literal(1.0)).as(Some("datasource_weight"))
 
   val queryGroupByDS = {
-    val WC = F.arrayJoin(F.array(datasourceWeights.map(s => F.tuple(literal(s._1), literal(s._2)))))
+    val WC = F
+      .arrayJoin(F.array(datasourceWeights.map(s => F.tuple(literal(s._1), literal(s._2)))))
       .as(Some("weightPair"))
-    val DSFieldWC = F.tupleElement(WC.name,literal(1)).as(Some("datasource_id"))
+    val DSFieldWC = F.tupleElement(WC.name, literal(1)).as(Some("datasource_id"))
     val WFieldWC = F.toNullable(F.tupleElement(WC.name, literal(2))).as(Some("weight"))
 
     // transform weights vector into a table to extract each value of each tuple
@@ -101,23 +112,21 @@ case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[St
     val expressionLeftRight = if (BIDs.nonEmpty) {
       val rightIdsC = F.set(BIDs.map(literal).toSeq)
 
-      F.and(
-        expressionLeft,
-        F.in(B, rightIdsC))
+      F.and(expressionLeft, F.in(B, rightIdsC))
     } else {
       expressionLeft
     }
 
-    val expressionLeftRightWithBFilter = BFilterQ.map(f =>
-      F.and(f, expressionLeftRight)
-    ).getOrElse(expressionLeftRight)
+    val expressionLeftRightWithBFilter =
+      BFilterQ.map(f => F.and(f, expressionLeftRight)).getOrElse(expressionLeftRight)
 
     val DTAny = F.any(DT).as(Some(DT.rep))
 
     val withDT = With(DSScore :: DTAny :: DSW :: Nil)
     val selectDSScores = Select(B :: DSW.name :: DTAny.name :: DS :: DSScore.name :: Nil)
     val fromT = From(T, Some("l"))
-    val joinWeights = Join(q.toColumn(None), Some("LEFT"), Some("OUTER"), false, Some("r"), DS :: Nil)
+    val joinWeights =
+      Join(q.toColumn(None), Some("LEFT"), Some("OUTER"), false, Some("r"), DS :: Nil)
     val preWhereQ = PreWhere(expressionLeftRightWithBFilter)
     val groupByQ = GroupBy(B :: DS :: Nil)
 
@@ -157,9 +166,8 @@ case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[St
       expressionLeft
     }
 
-    val expressionLeftRightWithBFilter = BFilterQ.map(f =>
-      F.and(f, expressionLeftRight)
-    ).getOrElse(expressionLeftRight)
+    val expressionLeftRightWithBFilter =
+      BFilterQ.map(f => F.and(f, expressionLeftRight)).getOrElse(expressionLeftRight)
 
     val DTAny = F.any(DT).as(Some(DT.rep))
 
@@ -190,66 +198,83 @@ case class QAOTF(tableName: String, AId: String, AIDs: Set[String], BIDs: Set[St
   }
 
   override val query = {
-    val collectedDS = F.arrayReverseSort(Some("x -> x.2"), F.groupArray(
-      F.tuple(
-        F.divide(DSScore.name, maxHS.name),
-        F.divide(F.multiply(DSScore.name, DSW.name), maxHS.name),
-        DS,
-        DT
-      ))).as(Some("scores_vector"))
+    val collectedDS = F
+      .arrayReverseSort(Some("x -> x.2"),
+                        F.groupArray(
+                          F.tuple(
+                            F.divide(DSScore.name, maxHS.name),
+                            F.divide(F.multiply(DSScore.name, DSW.name), maxHS.name),
+                            DS,
+                            DT
+                          )))
+      .as(Some("scores_vector"))
 
+    val collectedDScored = F
+      .arrayMap(s"(i, j) -> (i.1, (i.2) / pow(j, 2), i.3, i.4)",
+                collectedDS.name,
+                F.arrayEnumerate(collectedDS.name))
+      .as(Some("datasource_scores"))
 
-    val collectedDScored = F.arrayMap(s"(i, j) -> (i.1, (i.2) / pow(j, 2), i.3, i.4)",
-      collectedDS.name,
-      F.arrayEnumerate(collectedDS.name)
-    ).as(Some("datasource_scores"))
+    val scoreOverall = F
+      .divide(F.arraySum(None, F.tupleElement(collectedDScored.name, literal(2))), maxHS.name)
+      .as(Some("score"))
 
-    val scoreOverall = F.divide(F.arraySum(None,F.tupleElement(collectedDScored.name, literal(2))),
-      maxHS.name).as(Some("score"))
-
-    val scoreDSs = F.arrayMap("x -> (x.3, x.1)",collectedDScored.name).as(Some("score_datasources"))
-    val scoreDTs = F.arrayMap("x -> (x.4, x.1)",collectedDScored.name).as(Some("score_dt"))
+    val scoreDSs =
+      F.arrayMap("x -> (x.3, x.1)", collectedDScored.name).as(Some("score_datasources"))
+    val scoreDTs = F.arrayMap("x -> (x.4, x.1)", collectedDScored.name).as(Some("score_dt"))
     val uniqDTs = F.groupUniqArray(DT).as(Some("datatypes_v"))
 
-    val mappedDTs = F.arrayMap(s"x -> (x, arrayReverseSort(arrayMap(b -> b.2, arrayFilter(a -> a.1 = x,${scoreDTs.name.rep}))))",
-      uniqDTs.name).as(Some("mapped_dts"))
-    val scoredDTs = F.arrayMap(s"x -> (x.1, arraySum((i, j) -> i / pow(j,2), x.2, arrayEnumerate(x.2)) / ${maxHS.name.rep})",
-      mappedDTs.name).as(Some("score_datatypes"))
+    val mappedDTs = F
+      .arrayMap(
+        s"x -> (x, arrayReverseSort(arrayMap(b -> b.2, arrayFilter(a -> a.1 = x,${scoreDTs.name.rep}))))",
+        uniqDTs.name)
+      .as(Some("mapped_dts"))
+    val scoredDTs = F
+      .arrayMap(
+        s"x -> (x.1, arraySum((i, j) -> i / pow(j,2), x.2, arrayEnumerate(x.2)) / ${maxHS.name.rep})",
+        mappedDTs.name)
+      .as(Some("score_datatypes"))
 
     val orderColumn = orderScoreBy.getOrElse((scoreOverall.name.rep, "desc"))
     val jointColumns = F.concat(scoredDTs.name, scoreDSs.name)
-    val orderByC = F.ifThenElse(
-      F.notEquals(F.indexOf(F.tupleElement(jointColumns.name, literal(1)),literal(orderColumn._1)), literal(0)),
-      F.tupleElement(F.arrayElement(jointColumns.name, F.indexOf(F.tupleElement(jointColumns.name, literal(1)),literal(orderColumn._1))), literal(2)),
-      literal(0.0)).as(Some("score_indexed"))
+    val orderByC = F
+      .ifThenElse(
+        F.notEquals(
+          F.indexOf(F.tupleElement(jointColumns.name, literal(1)), literal(orderColumn._1)),
+          literal(0)),
+        F.tupleElement(F.arrayElement(jointColumns.name,
+                                      F.indexOf(F.tupleElement(jointColumns.name, literal(1)),
+                                                literal(orderColumn._1))),
+                       literal(2)),
+        literal(0.0)
+      )
+      .as(Some("score_indexed"))
 
     val withScores = With(
       Seq(maxHS,
-        collectedDS,
-        collectedDScored,
-        scoreDSs,
-        scoreDTs,
-        uniqDTs,
-        mappedDTs,
-        scoredDTs,
-        scoreOverall,
-        jointColumns,
-        orderByC)
+          collectedDS,
+          collectedDScored,
+          scoreDSs,
+          scoreDTs,
+          uniqDTs,
+          mappedDTs,
+          scoredDTs,
+          scoreOverall,
+          jointColumns,
+          orderByC)
     )
     val selectScores = Select(B :: scoreOverall.name :: scoredDTs.name :: scoreDSs.name :: Nil) // :: scoreDTs.name :: collectedDScored :: Nil)
     val fromAgg = From(queryGroupByDS.toColumn(None))
     val groupByB = GroupBy(B :: Nil)
     val orderBySome = orderColumn match {
       case ("score", order) =>
-        OrderBy((
-          if (order == "desc") scoreOverall.name.desc
-          else scoreOverall.name.asc) :: Nil
-        )
-      case (_ , order) =>
-        OrderBy((
-          if (order == "desc") orderByC.name.desc
-          else orderByC.name.asc) :: Nil
-        )
+        OrderBy(
+          (if (order == "desc") scoreOverall.name.desc
+           else scoreOverall.name.asc) :: Nil)
+      case (_, order) =>
+        OrderBy(
+          (if (order == "desc") orderByC.name.desc
+           else orderByC.name.asc) :: Nil)
     }
 
     val limitC = Limit(offset, size)

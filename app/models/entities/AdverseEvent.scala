@@ -4,7 +4,11 @@ import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 
-case class AdverseEvent(name: String, meddraCode: Option[String], count: Long, logLR: Double, criticalValue: Double)
+case class AdverseEvent(name: String,
+                        meddraCode: Option[String],
+                        count: Long,
+                        logLR: Double,
+                        criticalValue: Double)
 
 case class AdverseEvents(count: Long, criticalValue: Double, rows: Seq[AdverseEvent])
 
@@ -15,11 +19,11 @@ object AdverseEvent {
       (JsPath \ "count").read[Long] and
       (JsPath \ "llr").read[Double] and
       (JsPath \ "critval").read[Double]
-    ) (AdverseEvent.apply _)
+  )(AdverseEvent.apply _)
 
   implicit val AdverseEventsImpReader: Reads[AdverseEvents] = (
     (JsPath \ "count").read[Long] and
       (JsPath \ "critval").read[Double] and
       (JsPath \ "rows").read[Seq[AdverseEvent]]
-    )( AdverseEvents.apply _)
+  )(AdverseEvents.apply _)
 }

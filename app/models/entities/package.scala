@@ -1,5 +1,3 @@
 package models
 
-package object entities {
-
-}
+package object entities {}

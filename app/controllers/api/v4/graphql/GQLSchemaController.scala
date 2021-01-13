@@ -9,7 +9,7 @@ import scala.concurrent.ExecutionContext
 
 @Singleton
 class GQLSchemaController @Inject()(implicit ec: ExecutionContext, cc: ControllerComponents)
-  extends AbstractController(cc) {
+    extends AbstractController(cc) {
 
   def renderSchema = Action {
     Ok(SchemaRenderer.renderSchema(GQLSchema.schema))

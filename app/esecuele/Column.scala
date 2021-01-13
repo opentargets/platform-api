@@ -4,7 +4,7 @@ case class Column(raw: Expression, alias: Option[String]) extends Rep {
   lazy val rep: String = {
     val ex = raw match {
       case _: EmptyExpression.type => None
-      case _ => Some(raw.toString)
+      case _                       => Some(raw.toString)
     }
     List(ex, alias).withFilter(_.isDefined).map(_.get).mkString("", " AS ", "")
   }
@@ -29,7 +29,7 @@ object Column {
 
     tokens match {
       case x :: _ => Column(RawExpression(x), None)
-      case Nil => Column(EmptyExpression)
+      case Nil    => Column(EmptyExpression)
     }
   }
 
@@ -44,7 +44,7 @@ object Column {
   def literal[T](v: T): Column = {
     v match {
       case e: String => Column(RawExpression(s"'$e'"))
-      case _ => Column(RawExpression(v.toString))
+      case _         => Column(RawExpression(v.toString))
     }
   }
 }
