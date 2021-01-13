@@ -8,12 +8,21 @@ import play.api.libs.functional.syntax._
 case class URL(url: String, name: String)
 case class KnownDrugReference(source: String, ids: Seq[String], urls: Seq[String])
 
-case class KnownDrug(approvedSymbol: String, approvedName: String, label: String, prefName: String,
-                     drugType: String, targetId: String, diseaseId: String,
-                     drugId: String, phase: Int, mechanismOfAction: String,
-                     status: Option[String], targetClass: Seq[String],
+case class KnownDrug(approvedSymbol: String,
+                     approvedName: String,
+                     label: String,
+                     prefName: String,
+                     drugType: String,
+                     targetId: String,
+                     diseaseId: String,
+                     drugId: String,
+                     phase: Int,
+                     mechanismOfAction: String,
+                     status: Option[String],
+                     targetClass: Seq[String],
                      references: Seq[KnownDrugReference],
-                     ctIds: Seq[String], urls: Seq[URL])
+                     ctIds: Seq[String],
+                     urls: Seq[URL])
 
 case class KnownDrugs(uniqueDrugs: Long,
                       uniqueDiseases: Long,
@@ -30,7 +39,7 @@ object KnownDrug extends Logging {
   implicit val URLImpR: Reads[URL] = (
     (__ \ "url").read[String] and
       (__ \ "niceName").read[String]
-    ) (URL.apply _)
+  )(URL.apply _)
 
   // approvedSymbol: String, label: String, prefName: String,
   implicit val knownDrugImpW = Json.writes[KnownDrug]
@@ -48,11 +57,13 @@ object KnownDrug extends Logging {
       (__ \ "status").readNullable[String] and
       (__ \ "targetClass").readWithDefault[Seq[String]](Seq.empty) and
       (__ \ "references").readWithDefault[Seq[KnownDrugReference]](Seq.empty) and
-      (__ \ "urls").readWithDefault[Seq[Map[String, String]]](Seq.empty).map(
-        s => s.flatMap(m => ctPattern findAllIn m("url"))
-      ) and
+      (__ \ "urls")
+        .readWithDefault[Seq[Map[String, String]]](Seq.empty)
+        .map(
+          s => s.flatMap(m => ctPattern findAllIn m("url"))
+        ) and
       (__ \ "urls").read[Seq[URL]]
-    ) (KnownDrug.apply _)
+  )(KnownDrug.apply _)
 
   implicit val knownDrugsImpF = Json.format[KnownDrugs]
 }

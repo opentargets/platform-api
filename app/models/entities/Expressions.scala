@@ -17,7 +17,6 @@ case class Expression(tissue: Tissue, rna: RNAExpression, protein: ProteinExpres
 
 case class Expressions(id: String, rows: Seq[Expression])
 
-
 object Expressions {
   implicit val tissueW = Json.writes[Tissue]
   implicit val rnaExpressionW = Json.writes[RNAExpression]
@@ -33,7 +32,7 @@ object Expressions {
       (__ \ "label").read[String] and
       (__ \ "anatomical_systems").read[Seq[String]] and
       (__ \ "organs").read[Seq[String]]
-    ) (Tissue)
+  )(Tissue)
 
   implicit val rnaExpressionR = Json.reads[RNAExpression]
   implicit val cellTypeR = Json.reads[CellType]
@@ -43,13 +42,11 @@ object Expressions {
     __.read[Tissue] and
       (__ \ "rna").read[RNAExpression] and
       (__ \ "protein").read[ProteinExpression]
-    ) (Expression.apply _)
+  )(Expression.apply _)
 
   implicit val expressionsR: Reads[Expressions] =
     (
       (__ \ "id").read[String] and
         (__ \ "tissues").readWithDefault[Seq[Expression]](Seq.empty)
-      ) (Expressions.apply _)
+    )(Expressions.apply _)
 }
-
-

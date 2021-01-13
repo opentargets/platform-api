@@ -8,9 +8,7 @@ case class WithdrawnNotice(classes: Option[Seq[String]],
                            reasons: Option[Seq[String]],
                            year: Option[Int])
 
-case class Reference(ids: Option[Seq[String]],
-                     source: String,
-                     urls: Option[Seq[String]])
+case class Reference(ids: Option[Seq[String]], source: String, urls: Option[Seq[String]])
 
 case class MechanismOfActionRow(mechanismOfAction: String,
                                 targetName: Option[String],
