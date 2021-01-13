@@ -5,21 +5,21 @@
 
 
 # An example controller showing a sample home page
-GET     /                               controllers.HomeController.index
+GET            /                               controllers.HomeController.index
 
 # graphql uris
-OPTIONS /api/v4/graphql                        controllers.api.v4.graphql.GraphQLController.options
-GET     /api/v4/graphql                        controllers.api.v4.graphql.GraphQLController.gql(query: String, variables: Option[String] ?= None, operation: Option[String] ?= None)
-POST    /api/v4/graphql                        controllers.api.v4.graphql.GraphQLController.gqlBody()
+OPTIONS        /api/v4/graphql                 controllers.api.v4.graphql.GraphQLController.options
+GET            /api/v4/graphql                 controllers.api.v4.graphql.GraphQLController.gql(query: String, variables: Option[String] ?= None, operation: Option[String] ?= None)
+POST           /api/v4/graphql                 controllers.api.v4.graphql.GraphQLController.gqlBody()
 
-GET     /api/v4/graphql/schema                 controllers.api.v4.graphql.GQLSchemaController.renderSchema
-GET     /api/v4/graphql/browser                controllers.api.v4.graphql.GQLSchemaController.renderClient
+GET            /api/v4/graphql/schema          controllers.api.v4.graphql.GQLSchemaController.renderSchema
+GET            /api/v4/graphql/browser         controllers.api.v4.graphql.GQLSchemaController.renderClient
 
-GET     /api/v4/rest/meta/info               controllers.api.v4.rest.MetaController.meta
-GET     /api/v4/rest/meta/health             controllers.api.v4.rest.MetaController.healthcheck
+GET            /api/v4/rest/meta/info          controllers.api.v4.rest.MetaController.meta
+GET            /api/v4/rest/meta/health        controllers.api.v4.rest.MetaController.healthcheck
 
 # health uri
-GET     /_ah/health                     controllers.api.v4.rest.MetaController.healthcheck
+GET            /_ah/health                     controllers.api.v4.rest.MetaController.healthcheck
 
 #  Map static resources from the /public folder to the /assets URL path
-GET     /assets/*file                   controllers.Assets.versioned(path="/public", file: Asset)
+GET            /assets/*file                   controllers.Assets.versioned(path="/public", file: Asset)

@@ -16,8 +16,11 @@ import sangria.marshalling.InputUnmarshaller
 import scala.concurrent.ExecutionContext
 
 @Singleton
-class MetaController @Inject()(implicit ec: ExecutionContext, backend: Backend, cc: ControllerComponents)
-  extends AbstractController(cc) with Logging {
+class MetaController @Inject()(implicit ec: ExecutionContext,
+                               backend: Backend,
+                               cc: ControllerComponents)
+    extends AbstractController(cc)
+    with Logging {
 
   val metaGQLQ =
     gql"""
@@ -41,17 +44,22 @@ class MetaController @Inject()(implicit ec: ExecutionContext, backend: Backend, 
   private def queryMeta = {
     logger.debug(s"parsed document: ${metaGQLQ.renderPretty}")
 
-    Executor.execute(GQLSchema.schema, metaGQLQ, backend,
-      variables = InputUnmarshaller.mapVars(Map.empty[String, Any]),
-      deferredResolver = GQLSchema.resolvers,
-      exceptionHandler = exceptionHandler,
-      queryReducers = List(
-        QueryReducer.rejectMaxDepth[Backend](15),
-        QueryReducer.rejectComplexQueries[Backend](4000, (_, _) => TooComplexQueryError)))
+    Executor
+      .execute(
+        GQLSchema.schema,
+        metaGQLQ,
+        backend,
+        variables = InputUnmarshaller.mapVars(Map.empty[String, Any]),
+        deferredResolver = GQLSchema.resolvers,
+        exceptionHandler = exceptionHandler,
+        queryReducers =
+          List(QueryReducer.rejectMaxDepth[Backend](15),
+               QueryReducer.rejectComplexQueries[Backend](4000, (_, _) => TooComplexQueryError))
+      )
       .map(Ok(_))
       .recover {
         case error: QueryAnalysisError => BadRequest(error.resolveError)
-        case error: ErrorWithResolver => InternalServerError(error.resolveError)
+        case error: ErrorWithResolver  => InternalServerError(error.resolveError)
       }
   }
 
