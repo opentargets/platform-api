@@ -537,7 +537,7 @@ object Objects extends Logging {
             m.size match {
               case ms if ms > 0 =>
                 Some(MechanismsOfAction(m.head.id,
-                  m.flatMap(_.rows),
+                  m.flatMap(_.rows).distinct,
                   m.flatMap(_.uniqueActionTypes).distinct,
                   m.flatMap(_.uniqueTargetTypes).distinct))
               case _ => m.headOption

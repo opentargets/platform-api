@@ -8,14 +8,19 @@ case class WithdrawnNotice(classes: Option[Seq[String]],
                            reasons: Option[Seq[String]],
                            year: Option[Int])
 
-case class Reference(ids: Option[Seq[String]],
-                     source: String,
-                     urls: Option[Seq[String]])
+case class Reference(ids: Option[Seq[String]], source: String, urls: Option[Seq[String]])
 
 case class MechanismOfActionRow(mechanismOfAction: String,
                                 targetName: Option[String],
                                 targets: Option[Seq[String]],
-                                references: Option[Seq[Reference]])
+                                references: Option[Seq[Reference]]) {
+  override def equals(other: Any): Boolean = other match {
+    case that: MechanismOfActionRow => this.mechanismOfAction == that.mechanismOfAction
+    case _                          => false
+  }
+
+  override def hashCode(): Int = this.mechanismOfAction ##
+}
 
 case class IndicationRow(maxPhaseForIndication: Long,
                          disease: String,
