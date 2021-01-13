@@ -18,20 +18,25 @@ import scala.concurrent.{ExecutionContext, Future}
 case class Interactions(count: Long, rows: IndexedSeq[JsValue])
 
 object Interactions extends Logging {
-  val interactions = ObjectType("Interactions",
+  val interactions = ObjectType(
+    "Interactions",
     fields[Backend, Interactions](
       Field("count", LongType, description = None, resolve = o => o.value.count),
       Field("rows", ListType(interaction), description = None, resolve = o => o.value.rows)
-    ))
+    )
+  )
 
-  def find(id: String, dbName: Option[String], pagination: Option[Pagination])
-                           (implicit ec: ExecutionContext, esSettings: ElasticsearchSettings, esRetriever: ElasticRetriever):
-  Future[Option[Interactions]] = {
+  def find(id: String, dbName: Option[String], pagination: Option[Pagination])(
+      implicit ec: ExecutionContext,
+      esSettings: ElasticsearchSettings,
+      esRetriever: ElasticRetriever): Future[Option[Interactions]] = {
 
     val pag = pagination.getOrElse(Pagination.mkDefault)
 
     val cbIndex = esSettings.entities
-      .find(_.name == "interaction").map(_.index).getOrElse("interaction")
+      .find(_.name == "interaction")
+      .map(_.index)
+      .getOrElse("interaction")
 
     val kv = List(
       Some("targetA.keyword" -> id),
@@ -42,15 +47,21 @@ object Interactions extends Logging {
       valueCountAgg("rowsCount", "targetA.keyword")
     )
 
-    esRetriever.getByIndexedQuery(cbIndex, kv, pag, fromJsValue[JsValue], aggs,
-      Some(sort.FieldSort("scoring", order = SortOrder.DESC))).map {
-      case (Seq(), _) => None
-      case (seq, agg) =>
-        logger.debug(Json.prettyPrint(agg))
+    esRetriever
+      .getByIndexedQuery(cbIndex,
+                         kv,
+                         pag,
+                         fromJsValue[JsValue],
+                         aggs,
+                         Some(sort.FieldSort("scoring", order = SortOrder.DESC)))
+      .map {
+        case (Seq(), _) => None
+        case (seq, agg) =>
+          logger.debug(Json.prettyPrint(agg))
 
-        val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
-        Some(Interactions(rowsCount, seq))
-    }
+          val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
+          Some(Interactions(rowsCount, seq))
+      }
   }
 
   def listResources(implicit ec: ExecutionContext,
@@ -58,15 +69,19 @@ object Interactions extends Logging {
                     esRetriever: ElasticRetriever): Future[Seq[JsValue]] = {
 
     val cbIndex = esSettings.entities
-      .find(_.name == "interaction_evidence").map(_.index).getOrElse("interaction_evidence")
+      .find(_.name == "interaction_evidence")
+      .map(_.index)
+      .getOrElse("interaction_evidence")
 
     val queryAggs = Seq(
-      TermsAggregation("aggs", Some("interactionResources.sourceDatabase.keyword"),
+      TermsAggregation(
+        "aggs",
+        Some("interactionResources.sourceDatabase.keyword"),
         size = Some(100),
         subaggs = Seq(
-          TermsAggregation("aggs", Some("interactionResources.databaseVersion.keyword"),
-            size = Some(100)
-          )
+          TermsAggregation("aggs",
+                           Some("interactionResources.databaseVersion.keyword"),
+                           size = Some(100))
         )
       )
     )
@@ -75,11 +90,13 @@ object Interactions extends Logging {
       case obj: JsObject =>
         logger.debug(Json.prettyPrint(obj))
 
-        val keys = ((obj \ "aggs" \ "buckets").as[Seq[JsValue]]).map(el => {
-          val k = (el \ "key").as[String]
-          val v = (el \ "aggs" \ "buckets" \\ "key").take(1).head.as[String]
-          JsObject(List("sourceDatabase" -> JsString(k), "databaseVersion" -> JsString(v)))
-        })
+        val keys = ((obj \ "aggs" \ "buckets")
+          .as[Seq[JsValue]])
+          .map(el => {
+            val k = (el \ "key").as[String]
+            val v = (el \ "aggs" \ "buckets" \\ "key").take(1).head.as[String]
+            JsObject(List("sourceDatabase" -> JsString(k), "databaseVersion" -> JsString(v)))
+          })
 
         keys
       case _ => Seq.empty
@@ -88,5 +105,3 @@ object Interactions extends Logging {
     esQ
   }
 }
-
-

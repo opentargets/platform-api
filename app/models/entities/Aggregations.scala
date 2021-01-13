@@ -22,8 +22,8 @@ object Aggregations extends Logging {
   implicit val aggregationImpReads: Reads[Aggregation] =
     ((__ \ "key").read[String] and
       (__ \ "uniques" \\ "value").readWithDefault[Long](0) and
-      (__ \ "aggs" \\ "buckets").lazyReadNullable(Reads.seq[Aggregation](aggregationImpReads))
-      ) (Aggregation.apply _)
+      (__ \ "aggs" \\ "buckets")
+        .lazyReadNullable(Reads.seq[Aggregation](aggregationImpReads)))(Aggregation.apply _)
 
   implicit val namedAggregationImpFormat = Json.format[NamedAggregation]
   implicit val aggregationsImpFormat = Json.writes[Aggregations]

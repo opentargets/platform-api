@@ -7,8 +7,10 @@ import play.api.mvc._
 import scala.concurrent.ExecutionContext
 
 @Singleton
-class HomeController @Inject()(implicit ec: ExecutionContext, backend: Backend, cc: ControllerComponents)
-  extends AbstractController(cc) {
+class HomeController @Inject()(implicit ec: ExecutionContext,
+                               backend: Backend,
+                               cc: ControllerComponents)
+    extends AbstractController(cc) {
 
   // example from here https://github.com/nemoo/play-slick3-example/blob/master/app/controllers/Application.scala
   def index = Action { _ =>

@@ -3,7 +3,8 @@ package esecuele
 import esecuele.Column.{column, literal}
 
 object Functions {
-  private def f(name: String, cols: Seq[Column]): Column = column(cols.map(_.name).mkString(s"$name(", ",", ")"))
+  private def f(name: String, cols: Seq[Column]): Column =
+    column(cols.map(_.name).mkString(s"$name(", ",", ")"))
 
   private def f(name: String, col: Column, cols: Column*): Column = f(name, col +: cols)
 
@@ -61,7 +62,7 @@ object Functions {
   def arrayReverseSort(lambda: Option[String] = None, col: Column): Column = {
     val params = lambda match {
       case Some(lambdaF) => Column(lambdaF) +: col +: Nil
-      case None => col +: Nil
+      case None          => col +: Nil
     }
     f("arrayReverseSort", params)
   }
@@ -82,7 +83,7 @@ object Functions {
   def arraySum(lambda: Option[String], col: Column, cols: Column*): Column = {
     val params = lambda match {
       case Some(lambdaF) => Column(lambdaF) +: col +: cols
-      case None => col +: cols
+      case None          => col +: cols
     }
     f("arraySum", params)
   }
@@ -131,7 +132,9 @@ object Functions {
 
   def lessOrEquals(col1: Column, col2: Column): Column = f("lessOrEquals", col1, col2)
 
-  def ifThenElse(expr: Column, ifThen: Column, ifElse: Column): Column = f("if", expr, ifThen, ifElse)
+  def ifThenElse(expr: Column, ifThen: Column, ifElse: Column): Column =
+    f("if", expr, ifThen, ifElse)
 
-  def ngramSearchCaseInsensitive(col1: Column, col2: Column) = f("ngramSearchCaseInsensitive", col1, col2)
+  def ngramSearchCaseInsensitive(col1: Column, col2: Column) =
+    f("ngramSearchCaseInsensitive", col1, col2)
 }

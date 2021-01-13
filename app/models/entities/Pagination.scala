@@ -3,8 +3,8 @@ package models.entities
 import play.api.libs.json.Json
 
 /** Pagination case class takes an index from 0..page-1 and size indicate
- * the batch of each page.
- * */
+  * the batch of each page.
+  * */
 case class Pagination(index: Int, size: Int) {
   lazy val offset: Int = toES._1
 
@@ -15,15 +15,15 @@ case class Pagination(index: Int, size: Int) {
     case (0, s) => s"LIMIT $s"
     case (i, 0) => s"LIMIT ${i * Pagination.sizeDefault}, ${Pagination.sizeDefault}"
     case (i, s) => s"LIMIT ${i * s} , $s"
-    case _ => s"LIMIT ${Pagination.indexDefault}, ${Pagination.sizeDefault}"
+    case _      => s"LIMIT ${Pagination.indexDefault}, ${Pagination.sizeDefault}"
   }
 
   val toES: (Int, Int) = (index, size) match {
     case (0, 0) => (0, Pagination.sizeDefault)
     case (0, s) => (0, s)
-    case (i, 0)  => (i*Pagination.sizeDefault, Pagination.sizeDefault)
-    case (i, s) => (i*s, s)
-    case _ => (0, Pagination.sizeDefault)
+    case (i, 0) => (i * Pagination.sizeDefault, Pagination.sizeDefault)
+    case (i, s) => (i * s, s)
+    case _      => (0, Pagination.sizeDefault)
   }
 }
 

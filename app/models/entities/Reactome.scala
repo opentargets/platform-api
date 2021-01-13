@@ -6,7 +6,8 @@ import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 import play.api.libs.json.JsonNaming.SnakeCase
 
-case class Reactome(id: String, label: String,
+case class Reactome(id: String,
+                    label: String,
                     children: Seq[String],
                     parents: Seq[String],
                     ancestors: Seq[String]) {

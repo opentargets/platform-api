@@ -7,10 +7,14 @@ import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 import play.api.libs.json.JsonNaming.SnakeCase
 
-case class GenotypePhenotype(subjectBackground: String, identifier: String,
-                             label: String, pubmedId: String, subjectAllelicComposition: String)
+case class GenotypePhenotype(subjectBackground: String,
+                             identifier: String,
+                             label: String,
+                             pubmedId: String,
+                             subjectAllelicComposition: String)
 
-case class MousePhenotype(categoryIdentifier: String, categoryLabel: String,
+case class MousePhenotype(categoryIdentifier: String,
+                          categoryLabel: String,
                           genotypePhenotype: Seq[GenotypePhenotype])
 
 case class MouseGene(id: String, symbol: String, phenotypes: Seq[MousePhenotype])
@@ -30,25 +34,23 @@ object MousePhenotypes extends Logging {
       (__ \ "mp_label").read[String] and
       (__ \ "pmid").read[String] and
       (__ \ "subject_allelic_composition").read[String]
-    ) (GenotypePhenotype.apply _)
+  )(GenotypePhenotype.apply _)
 
   implicit val mousePhenotypeR: Reads[MousePhenotype] = (
     (__ \ "category_mp_identifier").read[String] and
       (__ \ "category_mp_label").read[String] and
       (__ \ "genotype_phenotype").readWithDefault[Seq[GenotypePhenotype]](Seq.empty)
-    ) (MousePhenotype.apply _)
+  )(MousePhenotype.apply _)
 
   implicit val mouseGeneR: Reads[MouseGene] = (
     (__ \ "mouse_gene_id").read[String] and
       (__ \ "mouse_gene_symbol").read[String] and
       (__ \ "phenotypes").readWithDefault[Seq[MousePhenotype]](Seq.empty)
-    ) (MouseGene.apply _)
+  )(MouseGene.apply _)
 
   implicit val mousePhenotypesR: Reads[MousePhenotypes] =
     (
       (__ \ "id").read[String] and
         (__ \ "phenotypes").readWithDefault[Seq[MouseGene]](Seq.empty)
-      ) (MousePhenotypes.apply _)
+    )(MousePhenotypes.apply _)
 }
-
-

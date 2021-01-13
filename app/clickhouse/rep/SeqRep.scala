@@ -17,7 +17,8 @@ sealed abstract class SeqRep[T, C[_]](val from: String) {
 object SeqRep {
   def parseFastString(str: String) = str.slice(1, str.length - 1)
 
-  sealed abstract class NumSeqRep[T](override val from: String, val f: String => T) extends SeqRep[T, Vector](from) {
+  sealed abstract class NumSeqRep[T](override val from: String, val f: String => T)
+      extends SeqRep[T, Vector](from) {
     override protected def parse(from: String): SeqT = {
       if (from.nonEmpty) {
         from.length match {
@@ -47,7 +48,8 @@ object SeqRep {
     }
   }
 
-  case class TupleSeqRep[T](override val from: String, val f: String => T) extends SeqRep[T, Vector](from) {
+  case class TupleSeqRep[T](override val from: String, val f: String => T)
+      extends SeqRep[T, Vector](from) {
     override protected def parse(from: String): SeqT = {
       if (from.nonEmpty) {
         from.length match {

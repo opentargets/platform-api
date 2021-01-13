@@ -1177,7 +1177,7 @@ trait DrugInputs {
   )
 
   def idQuery(id: String): JsValue = Json.parse(
-       s"""{ "query": "query { drug(chemblId: \\"$id\\") { id } }"}"""
+    s"""{ "query": "query { drug(chemblId: \\"$id\\") { id } }"}"""
   )
   def fullQuery(id: String): JsValue = Json.parse(
     s"""{"query": "query { drug(chemblId: \\"$id\\") { """
@@ -1194,16 +1194,20 @@ trait DrugInputs {
     s"""{"query": "query { drugs(chemblIds: [\\"$parent\\", \\"$child\\"]) { name mechanismsOfAction { uniqueActionTypes uniqueTargetTypes rows { targetName targets {id} } } indications { count rows { disease { id } } } } }" }"""
   )
   def parentChildLinkedTargetQuery(parent: String, child: String): JsValue = Json.parse(
-     s"""{"query": "query { drugs(chemblIds: [\\"$parent\\", \\"$child\\"]) { name linkedTargets { count rows { approvedSymbol } } } }" }"""
+    s"""{"query": "query { drugs(chemblIds: [\\"$parent\\", \\"$child\\"]) { name linkedTargets { count rows { approvedSymbol } } } }" }"""
   )
   case class IDS(id: String)
   case class MOAR(targetName: String, targets: Array[IDS])
-  case class MOA(uniqueActionTypes: Array[String], uniqueTargetTypes: Array[String], rows: Array[MOAR])
+  case class MOA(uniqueActionTypes: Array[String],
+                 uniqueTargetTypes: Array[String],
+                 rows: Array[MOAR])
   case class IndRow(disease: IDS)
   case class IndicationT(count: Int, rows: Array[IndRow])
   case class LtRow(approvedSymbol: String)
   case class LinkedTargets(count: Int, rows: Array[LtRow])
-  case class ParentChildMoAReturn(name: String, mechanismsOfAction: Option[MOA], indications: Option[IndicationT])
+  case class ParentChildMoAReturn(name: String,
+                                  mechanismsOfAction: Option[MOA],
+                                  indications: Option[IndicationT])
   case class ParentChildLinkedTargets(name: String, linkedTargets: Option[LinkedTargets])
   implicit val idsReads: Reads[IDS] = Json.reads[IDS]
   implicit val moarReads: Reads[MOAR] = Json.reads[MOAR]
@@ -1212,7 +1216,7 @@ trait DrugInputs {
   implicit val indReads: Reads[IndicationT] = Json.reads[IndicationT]
   implicit val ltRowReads: Reads[LtRow] = Json.reads[LtRow]
   implicit val linkedTargetReads: Reads[LinkedTargets] = Json.reads[LinkedTargets]
-  implicit val pcLinkedTargets: Reads[ParentChildLinkedTargets] = Json.reads[ParentChildLinkedTargets]
+  implicit val pcLinkedTargets: Reads[ParentChildLinkedTargets] =
+    Json.reads[ParentChildLinkedTargets]
   implicit val trReads: Reads[ParentChildMoAReturn] = Json.reads[ParentChildMoAReturn]
 }
-
