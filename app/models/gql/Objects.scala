@@ -643,7 +643,7 @@ object Objects extends Logging {
         description = Some(
           "Investigational and approved indications curated from clinical trial records and " +
             "post-marketing package inserts"),
-        resolve = ctx => DeferredValue(indicationFetcher.defer(ctx.value.id))
+        resolve = ctx => DeferredValue(indicationFetcher.deferOpt(ctx.value.id))
       ),
       Field(
         "knownDrugs",
