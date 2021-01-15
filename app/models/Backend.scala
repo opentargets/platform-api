@@ -76,7 +76,7 @@ class Backend @Inject()(
 
     val excludedFields = List("relatedInfo*")
     esRetriever
-      .getByIndexedQuery(indexName,
+      .getByIndexedQueryMust(indexName,
                          kv,
                          pag,
                          fromJsValue[DDRelation],
@@ -111,7 +111,7 @@ class Backend @Inject()(
 
     val excludedFields = List("relatedInfo*")
     esRetriever
-      .getByIndexedQuery(indexName,
+      .getByIndexedQueryMust(indexName,
                          kv,
                          pag,
                          fromJsValue[DDRelation],
@@ -145,7 +145,7 @@ class Backend @Inject()(
     )
 
     esRetriever
-      .getByIndexedQuery(indexName,
+      .getByIndexedQueryMust(indexName,
                          kv,
                          pag,
                          fromJsValue[AdverseEvent],
@@ -182,7 +182,7 @@ class Backend @Inject()(
       valueCountAgg("rowsCount", "id.keyword")
     )
 
-    esRetriever.getByIndexedQuery(cbIndex, kv, pag, fromJsValue[CancerBiomarker], aggs).map {
+    esRetriever.getByIndexedQueryMust(cbIndex, kv, pag, fromJsValue[CancerBiomarker], aggs).map {
       case (Seq(), _) => None
       case (seq, agg) =>
         logger.debug(Json.prettyPrint(agg))

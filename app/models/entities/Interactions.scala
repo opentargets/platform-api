@@ -48,7 +48,7 @@ object Interactions extends Logging {
     )
 
     esRetriever
-      .getByIndexedQuery(cbIndex,
+      .getByIndexedQueryMust(cbIndex,
                          kv,
                          pag,
                          fromJsValue[JsValue],

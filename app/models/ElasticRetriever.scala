@@ -1,26 +1,27 @@
 package models
 
-import play.api.Logging
-import play.api.libs.json.Reads._
+import com.sksamuel.elastic4s._
 import com.sksamuel.elastic4s.requests.common.Operator
-
-import scala.concurrent.ExecutionContext.Implicits.global
 import com.sksamuel.elastic4s.requests.searches._
+import com.sksamuel.elastic4s.requests.searches.aggs.AbstractAggregation
 import com.sksamuel.elastic4s.requests.searches.queries.funcscorer._
 import com.sksamuel.elastic4s.requests.searches.queries.matches.MultiMatchQueryBuilderType
-import com.sksamuel.elastic4s._
-import com.sksamuel.elastic4s.requests.searches.aggs.AbstractAggregation
-import com.sksamuel.elastic4s.requests.searches.queries.{BoolQuery, NestedQuery}
 import com.sksamuel.elastic4s.requests.searches.queries.term.TermQuery
+import com.sksamuel.elastic4s.requests.searches.queries.{BoolQuery, NestedQuery}
 import models.entities.Configuration.ElasticsearchEntity
-import models.entities._
 import models.entities.SearchResults._
+import models.entities._
+import play.api.Logging
+import play.api.libs.json.Reads._
 import play.api.libs.json._
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class ElasticRetriever(client: ElasticClient, hlFields: Seq[String], searchEntities: Seq[String])
-    extends Logging {
+    extends Logging
+    with QueryApi
+    with ElasticRetrieverQueryBuilders {
   val hlFieldSeq = hlFields.map(HighlightField(_))
 
   import com.sksamuel.elastic4s.ElasticDsl._
@@ -62,7 +63,7 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String], searchEntit
 
   /** This fn represents a query where each kv from the map is used in
     * a bool must. Based on the query asked by `getByIndexedQuery` and aggregation is applied */
-  def getByIndexedQuery[A](
+  def getByIndexedQueryMust[A](
       esIndex: String,
       kv: Map[String, String],
       pagination: Pagination,
@@ -70,39 +71,61 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String], searchEntit
       aggs: Iterable[AbstractAggregation] = Iterable.empty,
       sortByField: Option[sort.FieldSort] = None,
       excludedFields: Seq[String] = Seq.empty): Future[(IndexedSeq[A], JsValue)] = {
-    val limitClause = pagination.toES
-    val q = search(esIndex)
-      .bool {
-        must(
-          kv.toSeq.map(p => matchQuery(p._1, p._2))
-        )
-      }
-      .start(limitClause._1)
-      .limit(limitClause._2)
-      .aggs(aggs)
-      .trackTotalHits(true)
-      .sourceExclude(excludedFields)
-
     // just log and execute the query
-    val elems: Future[Response[SearchResponse]] = client.execute {
-      val qq = sortByField match {
-        case Some(s) => q.sortBy(s)
-        case None    => q
+    val searchRequest: SearchRequest = IndexQueryMust(esIndex, kv, pagination, aggs, excludedFields)
+    getByIndexedQuery(searchRequest, sortByField, buildF)
+  }
+
+  /** This fn represents a query where each kv from the map is used in
+    * a bool 'should'. Based on the query asked by `getByIndexedQuery` and aggregation is applied */
+  def getByIndexedQueryShould[A](
+      esIndex: String,
+      kv: Map[String, String],
+      pagination: Pagination,
+      buildF: JsValue => Option[A],
+      aggs: Iterable[AbstractAggregation] = Iterable.empty,
+      sortByField: Option[sort.FieldSort] = None,
+      excludedFields: Seq[String] = Seq.empty): Future[(IndexedSeq[A], JsValue)] = {
+    val searchRequest: SearchRequest =
+      IndexQueryShould(esIndex, kv, pagination, aggs, excludedFields)
+    // log and execute the query
+    getByIndexedQuery(searchRequest, sortByField, buildF)
+  }
+
+  private def getByIndexedQuery[A](
+      searchRequest: SearchRequest,
+      sortByField: Option[sort.FieldSort] = None,
+      buildF: JsValue => Option[A]): Future[(IndexedSeq[A], JsValue)] = {
+    // log and execute the query
+    val searchResponse: Future[Response[SearchResponse]] = executeQuery(searchRequest, sortByField)
+    // convert results into A
+    searchResponse.map { handleSearchResponse(_, searchRequest, buildF) }
+  }
+
+  private def executeQuery(
+      searchRequest: SearchRequest,
+      sortByField: Option[sort.FieldSort]): Future[Response[SearchResponse]] = {
+    client.execute {
+      val sortedSearchRequest = sortByField match {
+        case Some(s) => searchRequest.sortBy(s)
+        case None    => searchRequest
       }
 
-      logger.debug(client.show(qq))
-      qq
+      logger.debug(s"Elasticsearch query: ${client.show(sortedSearchRequest)}")
+      sortedSearchRequest
     }
+  }
 
-    elems.map {
-      case rf: RequestFailure => {
-        logger.debug(s"Request failure for query: $q")
+  private def handleSearchResponse[A](searchResponse: Response[SearchResponse],
+                                      searchQuery: SearchRequest,
+                                      buildF: JsValue => Option[A]): (IndexedSeq[A], JsValue) =
+    searchResponse match {
+      case rf: RequestFailure =>
+        logger.debug(s"Request failure for query: $searchQuery")
         logger.error(s"Elasticsearch error: ${rf.error}")
         (IndexedSeq.empty, JsNull)
-      }
       case results: RequestSuccess[SearchResponse] =>
         // parse the full body response into JsValue
-        // thus, we can apply Json Transformations from JSON Play
         val result = Json.parse(results.body.get)
 
         logger.debug(Json.prettyPrint(result))
@@ -115,10 +138,8 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String], searchEntit
           })
           .withFilter(_.isDefined)
           .map(_.get)
-
         (mappedHits, aggs)
     }
-  }
 
   def getByMustWithSearch[A](esIndex: String,
                              queryString: Option[String],
@@ -467,4 +488,5 @@ object ElasticRetriever extends Logging {
 
   def sortBy(fieldName: String, order: sort.SortOrder) =
     Some(sort.FieldSort(field = fieldName, order = order))
+
 }
