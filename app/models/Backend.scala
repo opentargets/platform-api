@@ -288,11 +288,6 @@ class Backend @Inject()(
 
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[Reactome])
   }
-  private def getIndexOrDefault(index: String, default: Option[String] = None): String =
-    defaultESSettings.entities
-      .find(_.name == index)
-      .map(_.index)
-      .getOrElse(default.getOrElse(index))
 
   def getTargets(ids: Seq[String]): Future[IndexedSeq[Target]] = {
     val targetIndexName = getIndexOrDefault("target", Some("targets"))
@@ -301,55 +296,16 @@ class Backend @Inject()(
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[Target], excludedFields = excludedFields)
   }
 
-  /**
-    * The linkedTargets field are mechanisms of action associated with a molecule. These should have the same behaviour
-    * on either a parent or child molecule; this method performs that consolidation.
-    * @param drug to query
-    * @return consolidated LinkedIds
-    */
-  def getLinkedTargets(drug: Drug): Future[Option[LinkedIds]] = {
-    def combinedLinkedTargets(drugs: IndexedSeq[Drug]): Option[LinkedIds] = {
-      val linkedIds = drugs.flatMap(_.linkedTargets).flatMap(_.rows).distinct
-      Some(LinkedIds(linkedIds.length, linkedIds))
-    }
-    drug.parentId match {
-      // drug is a child so need to collect siblings
-      case Some(parentId) =>
-        logger.debug(s"Drug linked targets: Getting parent $parentId for ${drug.id}")
-        getDrugs(Seq(parentId)) flatMap { d =>
-          d.headOption match {
-            case Some(parent) =>
-              val family = parent.childChemblIds.getOrElse(Seq.empty)
-              getDrugs(family) map { f =>
-                combinedLinkedTargets(f ++ Seq(parent))
-              }
-            case None =>
-              logger.warn(
-                s"Drug linked targets: Parent $parentId for drug ${drug.id} was not resolved.")
-              Future { drug.linkedTargets }
-          }
-        }
-      case None =>
-        drug.childChemblIds match {
-          // drug is a parent, get children
-          case Some(childrenIds) =>
-            logger.trace(s"Drug linked targets: Getting children $childrenIds for ${drug.id}")
-            getDrugs(childrenIds) map { c =>
-              combinedLinkedTargets(c ++ Seq(drug))
-            }
-          // drug is an orphan
-          case None => Future { drug.linkedTargets }
-        }
-    }
-  }
-
   def getDrugs(ids: Seq[String]): Future[IndexedSeq[Drug]] = {
-    val drugIndexName = defaultESSettings.entities
-      .find(_.name == "drug")
-      .map(_.index)
-      .getOrElse("drugs")
+    val drugIndexName = getIndexOrDefault("drug")
     esRetriever.getByIds(drugIndexName, ids, fromJsValue[Drug])
   }
+
+  private def getIndexOrDefault(index: String, default: Option[String] = None): String =
+    defaultESSettings.entities
+      .find(_.name == index)
+      .map(_.index)
+      .getOrElse(default.getOrElse(index))
 
   def getMechanismsOfAction(ids: Seq[String]): Future[IndexedSeq[MechanismsOfAction]] = {
     val moaIndex = defaultESSettings.entities.find(_.name == "drugMoA").map(_.index)
@@ -365,15 +321,10 @@ class Backend @Inject()(
 
   def getIndications(ids: Seq[String]): Future[IndexedSeq[Indications]] = {
     logger.debug(s"querying ES: getting indications for $ids")
-    val index = defaultESSettings.entities.find(_.name == "drugIndications").map(_.index)
+    val index = getIndexOrDefault("drugIndications")
 
-    index match {
-      case Some(idx) =>
-        esRetriever.getByIds(idx, ids, fromJsValue[Indications])
-      case None =>
-        logger.error("Unable to resolve drug indications elasticsearch index!")
-        Future { IndexedSeq.empty }
-    }
+    esRetriever.getByIds(index, ids, fromJsValue[Indications])
+
   }
 
   def getDiseases(ids: Seq[String]): Future[IndexedSeq[Disease]] = {
