@@ -15,6 +15,10 @@ Eg. localhost:9200  (tunnelling or locally installed)
 
 ## How to deploy to Google AppEngine 
 
+Promote the deployed version to receive all traffic or deploy an AppEngine specific version.
+
+#### Deploy and set as default traffic
+
 The first step is tag to the new release. 
 
 ```bash
@@ -28,10 +32,26 @@ To create the distribution
 
 ```sbt dist```
 
-
 The final step is running deploy script 
 ```
-bash deploy_gcloud.bash 0.46.3
+   bash deploy_gcloud.bash
+```
+
+#### Deployed AppEng version
+
+The file Dockerfile contains the instruction to build and copy the jar.
+To create a local distribution run the following command:
+
+```sbt dist```
+
+Create locally the app adding a specific version name 
+otherwise if you do not specify a version, one will be generated for you.
+Eg. hpo-1-0
+
+```
+gcloud --project=open-targets-eu-dev app deploy \
+    --no-promote \
+    -v hpo-1-0
 ```
 
 

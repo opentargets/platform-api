@@ -179,7 +179,7 @@ object Objects extends Logging {
       Field(
         "phenotypes",
         OptionType(diseaseHPOsImp),
-        description = Some("List of phenotypes related with disease"),
+        description = Some("Phenotype from HPO index"),
         arguments = pageArg :: Nil,
         resolve = ctx => ctx.ctx.getDiseaseHPOs(ctx.value.id, ctx.arg(pageArg))
       ),
@@ -521,6 +521,7 @@ object Objects extends Logging {
     DocumentField("id", "Open Targets hpo id"),
     DocumentField("name", "Phenotype name"),
     DocumentField("description", "Phenotype description"),
+    DocumentField("namespace", "namespace"),
   )
 
   // DiseaseHPO
@@ -531,7 +532,7 @@ object Objects extends Logging {
     DocumentField("bioCuration", "This refers to the center or user making the annotation and the date on which the annotation was made"),
     DocumentField("diseaseFromSourceId", "This field refers to the database and database identifier. EG. OMIM"),
     DocumentField("diseaseFromSource", "Related name from the field diseaseFromSourceId"),
-    DocumentField("diseaseName", "Disease Name"),
+    ExcludeFields("diseaseName"),
     DocumentField("evidence", "This field indicates the level of evidence supporting the annotation."),
     DocumentField("frequency", "A term-id from the HPO-sub-ontology"),
     DocumentField("modifier", "A term from the Clinical modifier subontology"),
@@ -549,8 +550,7 @@ object Objects extends Logging {
         OptionType(hpoImp),
         Some("Phenotype entity"),
         resolve = r => hposFetcher.deferOpt(r.value.phenotype))),
-
-      DocumentField("disease", "Disease Identifier"),
+      ExcludeFields("disease"),
       DocumentField("evidences", "List of phenotype annotations.")
   )
 
