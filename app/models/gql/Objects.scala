@@ -546,10 +546,20 @@ object Objects extends Logging {
   implicit val diseaseHPOImp = deriveObjectType[Backend, DiseaseHPO](
     ObjectTypeDescription("Disease and phenotypes annotations"),
     ReplaceField("phenotype",
-      Field("phenotype",
+      Field("phenotypeHPO",
         OptionType(hpoImp),
         Some("Phenotype entity"),
         resolve = r => hposFetcher.deferOpt(r.value.phenotype))),
+    AddFields(
+      Field(
+        "phenotypeEFO",
+        OptionType(diseaseImp),
+        Some("Disease Entity"),
+        resolve = r => {
+          diseasesFetcher.deferOpt(r.value.phenotype)
+        }
+      )
+    ),
       ExcludeFields("disease"),
       DocumentField("evidences", "List of phenotype annotations.")
   )
