@@ -1,7 +1,6 @@
 package models.entities
 
 import play.api.libs.json._
-import play.api.libs.functional.syntax._
 
 case class WithdrawnNotice(classes: Option[Seq[String]],
                            countries: Option[Seq[String]],
@@ -23,10 +22,17 @@ case class LinkedIds(count: Int, rows: Seq[String])
 
 case class Indications(id: String, indications: Seq[IndicationRow], count: Long)
 
-case class MechanismsOfAction(id: String,
-                              rows: Seq[MechanismOfActionRow],
+case class MechanismsOfAction(rows: Seq[MechanismOfActionRow],
                               uniqueActionTypes: Seq[String],
                               uniqueTargetTypes: Seq[String])
+
+case class MechanismOfActionRaw(chemblIds: Seq[String],
+                                targets: Option[Seq[String]],
+                                mechanismOfAction: String,
+                                actionType: Option[String],
+                                targetType: Option[String],
+                                targetName: Option[String],
+                                references: Option[Seq[Reference]])
 
 case class Drug(id: String,
                 name: String,
@@ -55,4 +61,14 @@ object Drug {
   implicit val indicationRowImpW = Json.format[models.entities.IndicationRow]
   implicit val indicationsImpW = Json.format[models.entities.Indications]
   implicit val drugImpW = Json.format[models.entities.Drug]
+  implicit val mechanismOfActionRaw = Json.format[models.entities.MechanismOfActionRaw]
+
+  def mechanismOfActionRaw2MechanismOfAction(raw: Seq[MechanismOfActionRaw]): MechanismsOfAction = {
+    val rows =
+      raw.map(r => MechanismOfActionRow(r.mechanismOfAction, r.targetName, r.targets, r.references))
+    val uat = raw.flatMap(_.targetType.toSet)
+    val utt = raw.flatMap(_.actionType.toSet)
+    MechanismsOfAction(rows, uat, utt)
+  }
+
 }

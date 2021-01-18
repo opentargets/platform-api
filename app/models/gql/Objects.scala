@@ -549,9 +549,9 @@ object Objects extends Logging {
   implicit lazy val indicationRowImp = deriveObjectType[Backend, IndicationRow](
     ReplaceField("disease",
                  Field("disease",
-                       diseaseImp,
-                       Some("Disease"),
-                       resolve = r => diseasesFetcher.defer(r.value.disease)))
+                   diseaseImp,
+                   Some("Disease"),
+                   resolve = r => diseasesFetcher.defer(r.value.disease)))
   )
 
   implicit lazy val indicationsImp = deriveObjectType[Backend, Indications](
@@ -559,9 +559,8 @@ object Objects extends Logging {
     RenameField("indications", "rows")
   )
 
-  implicit lazy val mechanismOfActionImp = deriveObjectType[Backend, MechanismsOfAction](
-    ExcludeFields("id")
-  )
+  implicit lazy val mechanismOfActionImp = deriveObjectType[Backend, MechanismsOfAction]()
+
   implicit lazy val withdrawnNoticeImp = deriveObjectType[Backend, WithdrawnNotice](
     ObjectTypeDescription("Withdrawal reason"),
     DocumentField("classes", "Withdrawal classes"),
@@ -610,32 +609,7 @@ object Objects extends Logging {
         description = Some(
           "Mechanisms of action to produce intended pharmacological effects. Curated from scientific " +
             "literature and post-marketing package inserts"),
-        resolve = ctx => {
-          val siblings: Future[Seq[String]] = ctx.value.parentId match {
-            case Some(parent) =>
-              ctx.ctx.getDrugs(Seq(parent)) map { cs =>
-                cs.flatMap(_.childChemblIds).flatten
-              }
-            case None => Future { Seq.empty }
-          }
-          siblings flatMap {
-            siblingIds =>
-              val ids: Seq[String] = (Seq(ctx.value.id) ++ ctx.value.childChemblIds.getOrElse(
-                Seq.empty) ++ siblingIds).distinct
-              val moas = ctx.ctx.getMechanismsOfAction(ids)
-              moas.map { m =>
-                m.size match {
-                  case ms if ms > 0 =>
-                    Some(
-                      MechanismsOfAction(m.head.id,
-                                         m.flatMap(_.rows),
-                                         m.flatMap(_.uniqueActionTypes).distinct,
-                                         m.flatMap(_.uniqueTargetTypes).distinct))
-                  case _ => m.headOption
-                }
-              }
-          }
-        }
+        resolve = ctx => ctx.ctx.getMechanismsOfAction(ctx.value.id)
       ),
       Field(
         "indications",
@@ -686,7 +660,12 @@ object Objects extends Logging {
         "linkedTargets",
         OptionType(linkedTargetsImp),
         Some("Molecule targets based on drug mechanism of action"),
-        resolve = ctx => ctx.ctx.getLinkedTargets(ctx.value)
+        resolve = ctx => {
+          val moa: Future[MechanismsOfAction] = ctx.ctx.getMechanismsOfAction(ctx.value.id)
+          val targets: Future[Seq[String]] =
+            moa.map(m => m.rows.flatMap(r => r.targets.getOrElse(Seq.empty)))
+          targets.map(t => LinkedIds(t.size, t))
+        }
       )
     )
   )

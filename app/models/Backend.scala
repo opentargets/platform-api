@@ -301,22 +301,16 @@ class Backend @Inject()(
     esRetriever.getByIds(drugIndexName, ids, fromJsValue[Drug])
   }
 
-  private def getIndexOrDefault(index: String, default: Option[String] = None): String =
-    defaultESSettings.entities
-      .find(_.name == index)
-      .map(_.index)
-      .getOrElse(default.getOrElse(index))
+  def getMechanismsOfAction(id: String): Future[MechanismsOfAction] = {
 
-  def getMechanismsOfAction(ids: Seq[String]): Future[IndexedSeq[MechanismsOfAction]] = {
-    val moaIndex = defaultESSettings.entities.find(_.name == "drugMoA").map(_.index)
-
-    moaIndex match {
-      case Some(idx) =>
-        esRetriever.getByIds(idx, ids, fromJsValue[MechanismsOfAction])
-      case None =>
-        logger.error("Unable to resolve mechanism of action elasticsearch index!")
-        Future { IndexedSeq.empty }
-    }
+    val index = getIndexOrDefault("drugMoA")
+    val queryTerms = Map("chemblIds.keyword" -> id)
+    val mechanismsOfActionRaw: Future[(IndexedSeq[MechanismOfActionRaw], JsValue)] =
+      esRetriever.getByIndexedQueryShould(index,
+        queryTerms,
+        Pagination.mkDefault,
+        fromJsValue[MechanismOfActionRaw])
+    mechanismsOfActionRaw.map(i => Drug.mechanismOfActionRaw2MechanismOfAction(i._1))
   }
 
   def getIndications(ids: Seq[String]): Future[IndexedSeq[Indications]] = {
@@ -711,4 +705,11 @@ class Backend @Inject()(
         }
     }
   }
+
+  private def getIndexOrDefault(index: String, default: Option[String] = None): String =
+    defaultESSettings.entities
+      .find(_.name == index)
+      .map(_.index)
+      .getOrElse(default.getOrElse(index))
+
 }
