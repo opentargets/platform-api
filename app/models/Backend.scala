@@ -265,6 +265,15 @@ class Backend @Inject()(
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[ECO])
   }
 
+  def getHPOs(ids: Seq[String]): Future[IndexedSeq[HPO]] = {
+    val targetIndexName = defaultESSettings.entities
+      .find(_.name == "hpo")
+      .map(_.index)
+      .getOrElse("hpo")
+
+    esRetriever.getByIds(targetIndexName, ids, fromJsValue[HPO])
+  }
+
   def getMousePhenotypes(ids: Seq[String]): Future[IndexedSeq[MousePhenotypes]] = {
     val targetIndexName = getIndexOrDefault("mp")
 

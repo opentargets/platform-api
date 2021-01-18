@@ -515,6 +515,14 @@ object Objects extends Logging {
   )
 
 
+  // hpo
+  implicit lazy val hpoImp: ObjectType[Backend, HPO] = deriveObjectType(
+    ObjectTypeDescription("Phenotype entity"),
+    DocumentField("id", "Open Targets hpo id"),
+    DocumentField("name", "Phenotype name"),
+    DocumentField("description", "Phenotype description"),
+  )
+
   // DiseaseHPO
   // More details here: https://hpo.jax.org/app/help/annotations
   implicit val diseaseHPOEvidencesImp = deriveObjectType[Backend, DiseaseHPOEvidences](
@@ -536,7 +544,12 @@ object Objects extends Logging {
 
   implicit val diseaseHPOImp = deriveObjectType[Backend, DiseaseHPO](
     ObjectTypeDescription("Disease and phenotypes annotations"),
-      DocumentField("phenotype", "Phenotype Identifier"),
+    ReplaceField("phenotype",
+      Field("phenotype",
+        OptionType(hpoImp),
+        Some("Phenotype entity"),
+        resolve = r => hposFetcher.deferOpt(r.value.phenotype))),
+
       DocumentField("disease", "Disease Identifier"),
       DocumentField("evidences", "List of phenotype annotations.")
   )

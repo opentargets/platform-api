@@ -36,6 +36,7 @@ object GQLSchema {
     drugsFetcher,
     diseasesFetcher,
     ecosFetcher,
+    hposFetcher,
     reactomeFetcher,
     expressionFetcher,
     mousePhenotypeFetcher,
