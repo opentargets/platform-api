@@ -142,7 +142,6 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String], searchEntit
     }
 
   def getByMustWithSearch[A](esIndex: String,
-                             queryString: Option[String],
                              kv: Map[String, Seq[String]],
                              pageSize: Int,
                              buildF: JsValue => Option[A],

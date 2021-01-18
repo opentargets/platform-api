@@ -1,27 +1,27 @@
 package models
 
 import clickhouse.ClickHouseProfile
-import javax.inject.Inject
-import models.Helpers._
-import play.api.{Configuration, Environment, Logging}
 import com.sksamuel.elastic4s._
-import com.sksamuel.elastic4s.requests.searches._
 import com.sksamuel.elastic4s.http.JavaClient
+import com.sksamuel.elastic4s.requests.searches._
 import com.sksamuel.elastic4s.requests.searches.aggs._
 import com.sksamuel.elastic4s.requests.searches.sort.SortOrder
-
-import scala.concurrent._
+import esecuele._
+import javax.inject.Inject
+import models.Helpers._
 import models.db.QAOTF
-import models.entities._
-import models.entities.Drug._
-import models.entities.Configuration._
-import models.entities.CancerBiomarkers._
 import models.entities.Aggregations._
 import models.entities.Associations._
+import models.entities.CancerBiomarkers._
+import models.entities.Configuration._
+import models.entities.Drug._
+import models.entities._
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
+import play.api.{Configuration, Environment, Logging}
 import play.db.NamedDatabase
-import esecuele._
+
+import scala.concurrent._
 
 class Backend @Inject()(
     implicit ec: ExecutionContext,
@@ -35,20 +35,18 @@ class Backend @Inject()(
 
   /** return meta information loaded from ot.meta settings */
   lazy val getMeta: Meta = defaultOTSettings.meta
-
-  def getStatus(isOk: Boolean): HealthCheck =
-    if (isOk) HealthCheck(true, "All good!")
-    else HealthCheck(false, "Hmm, something wrong is going on here!")
-
   lazy val getESClient = ElasticClient(
     JavaClient(ElasticProperties(s"http://${defaultESSettings.host}:${defaultESSettings.port}")))
+  val allSearchableIndices = defaultESSettings.entities
+    .withFilter(_.searchIndex.isDefined)
+    .map(_.searchIndex.get)
 
   implicit lazy val dbRetriever =
     new ClickhouseRetriever(dbConfigProvider.get[ClickHouseProfile], defaultOTSettings)
 
-  val allSearchableIndices = defaultESSettings.entities
-    .withFilter(_.searchIndex.isDefined)
-    .map(_.searchIndex.get)
+  def getStatus(isOk: Boolean): HealthCheck =
+    if (isOk) HealthCheck(true, "All good!")
+    else HealthCheck(false, "Hmm, something wrong is going on here!")
 
   implicit lazy val esRetriever =
     new ElasticRetriever(getESClient, defaultESSettings.highlightFields, allSearchableIndices)
@@ -64,10 +62,7 @@ class Backend @Inject()(
 
     val kv = Map("A.keyword" -> id)
 
-    val indexName = defaultESSettings.entities
-      .find(_.name == "disease_relation")
-      .map(_.index)
-      .getOrElse("disease_relation")
+    val indexName = getIndexOrDefault("disease_relation")
 
     val aggs = Seq(
       valueCountAgg("relationCount", "B.keyword"),
@@ -77,12 +72,12 @@ class Backend @Inject()(
     val excludedFields = List("relatedInfo*")
     esRetriever
       .getByIndexedQueryMust(indexName,
-                         kv,
-                         pag,
-                         fromJsValue[DDRelation],
-                         aggs,
-                         ElasticRetriever.sortByDesc("score"),
-                         excludedFields)
+                             kv,
+                             pag,
+                             fromJsValue[DDRelation],
+                             aggs,
+                             ElasticRetriever.sortByDesc("score"),
+                             excludedFields)
       .map {
         case (Seq(), _) => None
         case (seq, agg) =>
@@ -97,10 +92,7 @@ class Backend @Inject()(
 
     val pag = pagination.getOrElse(Pagination.mkDefault)
 
-    val indexName = defaultESSettings.entities
-      .find(_.name == "target_relation")
-      .map(_.index)
-      .getOrElse("target_relation")
+    val indexName = getIndexOrDefault("target_relation")
 
     val kv = Map("A.keyword" -> id)
 
@@ -112,12 +104,12 @@ class Backend @Inject()(
     val excludedFields = List("relatedInfo*")
     esRetriever
       .getByIndexedQueryMust(indexName,
-                         kv,
-                         pag,
-                         fromJsValue[DDRelation],
-                         aggs,
-                         ElasticRetriever.sortByDesc("score"),
-                         excludedFields)
+                             kv,
+                             pag,
+                             fromJsValue[DDRelation],
+                             aggs,
+                             ElasticRetriever.sortByDesc("score"),
+                             excludedFields)
       .map {
         case (Seq(), _) => None
         case (seq, agg) =>
@@ -133,10 +125,7 @@ class Backend @Inject()(
 
     val pag = pagination.getOrElse(Pagination.mkDefault)
 
-    val indexName = defaultESSettings.entities
-      .find(_.name == "faers")
-      .map(_.index)
-      .getOrElse("faers")
+    val indexName = getIndexOrDefault("faers")
 
     val kv = Map("chembl_id.keyword" -> id)
 
@@ -146,11 +135,11 @@ class Backend @Inject()(
 
     esRetriever
       .getByIndexedQueryMust(indexName,
-                         kv,
-                         pag,
-                         fromJsValue[AdverseEvent],
-                         aggs,
-                         ElasticRetriever.sortByDesc("llr"))
+                             kv,
+                             pag,
+                             fromJsValue[AdverseEvent],
+                             aggs,
+                             ElasticRetriever.sortByDesc("llr"))
       .map {
         case (Seq(), _) => {
           logger.debug(s"No adverse event found for ${kv.toString}")
@@ -168,10 +157,7 @@ class Backend @Inject()(
 
     val pag = pagination.getOrElse(Pagination.mkDefault)
 
-    val cbIndex = defaultESSettings.entities
-      .find(_.name == "cancerBiomarker")
-      .map(_.index)
-      .getOrElse("cancerbiomarkers")
+    val cbIndex = getIndexOrDefault("cancerBiomarker")
 
     val kv = Map("target.keyword" -> id)
 
@@ -201,10 +187,7 @@ class Backend @Inject()(
 
     val pag = Pagination(0, sizeLimit.getOrElse(Pagination.sizeDefault))
     val sortByField = sort.FieldSort(field = "phase").desc()
-    val cbIndex = defaultESSettings.entities
-      .find(_.name == "known_drugs")
-      .map(_.index)
-      .getOrElse("known_drugs")
+    val cbIndex = getIndexOrDefault("known_drugs")
 
     val aggs = Seq(
       cardinalityAgg("uniqueTargets", "targetId.raw"),
@@ -249,10 +232,7 @@ class Backend @Inject()(
       ElasticRetriever.sortBy(p._1, if (p._2 == "desc") SortOrder.Desc else SortOrder.Asc)
     }
 
-    val cbIndexPrefix = defaultESSettings.entities
-      .find(_.name == "evidences")
-      .map(_.index)
-      .getOrElse("evidence_datasource_")
+    val cbIndexPrefix = getIndexOrDefault("evidences", Some("evidence_datasource_"))
 
     val cbIndex = datasourceIds
       .map(_.map(cbIndexPrefix.concat).mkString(","))
@@ -265,7 +245,6 @@ class Backend @Inject()(
 
     esRetriever
       .getByMustWithSearch(cbIndex,
-                           None,
                            kv,
                            pag,
                            fromJsValue[JsValue],
@@ -281,55 +260,42 @@ class Backend @Inject()(
   }
 
   def getECOs(ids: Seq[String]): Future[IndexedSeq[ECO]] = {
-    val targetIndexName = defaultESSettings.entities
-      .find(_.name == "eco")
-      .map(_.index)
-      .getOrElse("ecos")
+    val targetIndexName = getIndexOrDefault("eco")
 
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[ECO])
   }
 
   def getMousePhenotypes(ids: Seq[String]): Future[IndexedSeq[MousePhenotypes]] = {
-    val targetIndexName = defaultESSettings.entities
-      .find(_.name == "mp")
-      .map(_.index)
-      .getOrElse("mp")
+    val targetIndexName = getIndexOrDefault("mp")
 
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[MousePhenotypes])
   }
 
   def getOtarProjects(ids: Seq[String]): Future[IndexedSeq[OtarProjects]] = {
-    val otarsIndexName = defaultESSettings.entities
-      .find(_.name == "otar_projects")
-      .map(_.index)
-      .getOrElse("otar_projects")
+    val otarsIndexName = getIndexOrDefault("otar_projects")
 
     esRetriever.getByIds(otarsIndexName, ids, fromJsValue[OtarProjects])
   }
 
   def getExpressions(ids: Seq[String]): Future[IndexedSeq[Expressions]] = {
-    val targetIndexName = defaultESSettings.entities
-      .find(_.name == "expression")
-      .map(_.index)
-      .getOrElse("expression")
+    val targetIndexName = getIndexOrDefault("expression")
 
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[Expressions])
   }
 
   def getReactomeNodes(ids: Seq[String]): Future[IndexedSeq[Reactome]] = {
-    val targetIndexName = defaultESSettings.entities
-      .find(_.name == "reactome")
-      .map(_.index)
-      .getOrElse("reactome")
+    val targetIndexName = getIndexOrDefault("reactome")
 
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[Reactome])
   }
+  private def getIndexOrDefault(index: String, default: Option[String] = None): String =
+    defaultESSettings.entities
+      .find(_.name == index)
+      .map(_.index)
+      .getOrElse(default.getOrElse(index))
 
   def getTargets(ids: Seq[String]): Future[IndexedSeq[Target]] = {
-    val targetIndexName = defaultESSettings.entities
-      .find(_.name == "target")
-      .map(_.index)
-      .getOrElse("targets")
+    val targetIndexName = getIndexOrDefault("target", Some("targets"))
 
     val excludedFields = List("mousePhenotypes*")
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[Target], excludedFields = excludedFields)
