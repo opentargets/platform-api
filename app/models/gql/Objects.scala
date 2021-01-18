@@ -8,7 +8,7 @@ import models.entities._
 import models.gql.Arguments._
 import models.gql.Fetchers._
 import play.api.Logging
-import sangria.macros.derive._
+import sangria.macros.derive.{DocumentField, _}
 import sangria.schema._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -151,7 +151,6 @@ object Objects extends Logging {
     DocumentField("name", "Disease name"),
     DocumentField("description", "Disease description"),
     DocumentField("synonyms", "Disease synonyms"),
-    DocumentField("phenotypes", "Clinical signs and symptoms observed in disease"),
     DocumentField("isTherapeuticArea", "Is disease a therapeutic area itself"),
     ReplaceField(
       "therapeuticAreas",
@@ -177,6 +176,13 @@ object Objects extends Logging {
                        resolve = r => diseasesFetcher.deferSeq(r.value.children))),
     // this query uses id and ancestors fields to search for indirect diseases
     AddFields(
+      Field(
+        "phenotypes",
+        OptionType(diseaseHPOsImp),
+        description = Some("List of phenotypes related with disease"),
+        arguments = pageArg :: Nil,
+        resolve = ctx => ctx.ctx.getDiseaseHPOs(ctx.value.id, ctx.arg(pageArg))
+      ),
       Field(
         "evidences",
         evidencesImp,
@@ -463,12 +469,6 @@ object Objects extends Logging {
 
   implicit val genomicLocationImp = deriveObjectType[Backend, GenomicLocation]()
 
-  implicit val phenotypeImp = deriveObjectType[Backend, Phenotype](
-    ObjectTypeDescription("Clinical signs and symptoms observed in disease"),
-    DocumentField("url", "Disease or phenotype uri"),
-    DocumentField("name", "Disease or phenotype name"),
-    DocumentField("disease", "Disease or phenotype id")
-  )
 
   // cancerbiomarkers
   implicit val cancerBiomarkerSourceImp = deriveObjectType[Backend, CancerBiomarkerSource](
@@ -501,6 +501,7 @@ object Objects extends Logging {
                        resolve = r => diseasesFetcher.deferOpt(r.value.disease)))
   )
 
+
   implicit val cancerBiomarkersImp = deriveObjectType[Backend, CancerBiomarkers](
     ObjectTypeDescription(
       "Set of clinical relevance and drug responses of tumor " +
@@ -512,6 +513,41 @@ object Objects extends Logging {
     DocumentField("count", "Number of entries"),
     DocumentField("rows", "Cancer Biomarker entries")
   )
+
+
+  // DiseaseHPO
+  // More details here: https://hpo.jax.org/app/help/annotations
+  implicit val diseaseHPOEvidencesImp = deriveObjectType[Backend, DiseaseHPOEvidences](
+    ObjectTypeDescription("the HPO project provides a large set of phenotype annotations. Source: Phenotype.hpoa"),
+    DocumentField("aspect", "One of P (Phenotypic abnormality), I (inheritance), C (onset and clinical course). Might be null (MONDO)"),
+    DocumentField("bioCuration", "This refers to the center or user making the annotation and the date on which the annotation was made"),
+    DocumentField("diseaseFromSourceId", "This field refers to the database and database identifier. EG. OMIM"),
+    DocumentField("diseaseFromSource", "Related name from the field diseaseFromSourceId"),
+    DocumentField("diseaseName", "Disease Name"),
+    DocumentField("evidence", "This field indicates the level of evidence supporting the annotation."),
+    DocumentField("frequency", "A term-id from the HPO-sub-ontology"),
+    DocumentField("modifier", "A term from the Clinical modifier subontology"),
+    DocumentField("onset", "A term-id from the HPO-sub-ontology below the term Age of onset."),
+    DocumentField("qualifierNot", "This optional field can be used to qualify the annotation. Values: [True or False]"),
+    DocumentField("referenceId", "This field indicates the source of the information used for the annotation (phenotype.hpoa)"),
+    DocumentField("sex", "This field contains the strings MALE or FEMALE if the annotation in question is limited to males or females."),
+    DocumentField("resource", "Possible source mapping: HPO or MONDO")
+  )
+
+  implicit val diseaseHPOImp = deriveObjectType[Backend, DiseaseHPO](
+    ObjectTypeDescription("Disease and phenotypes annotations"),
+      DocumentField("phenotype", "Phenotype Identifier"),
+      DocumentField("disease", "Disease Identifier"),
+      DocumentField("evidences", "List of phenotype annotations.")
+  )
+
+  implicit val diseaseHPOsImp = deriveObjectType[Backend, DiseaseHPOs](
+    ObjectTypeDescription(
+      "List of Phenotypes associated with the disease"),
+    DocumentField("count", "Number of entries"),
+    DocumentField("rows", "List of Disease and phenotypes annotations")
+  )
+
 
   // howto doc https://sangria-graphql.org/learn/#macro-based-graphql-type-derivation
   implicit lazy val linkedDiseasesImp = deriveObjectType[Backend, LinkedIds](
