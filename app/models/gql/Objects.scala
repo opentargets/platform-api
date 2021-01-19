@@ -562,6 +562,9 @@ object Objects extends Logging {
   implicit lazy val mechanismOfActionImp = deriveObjectType[Backend, MechanismsOfAction](
     ExcludeFields("id")
   )
+
+  implicit lazy val drugCrossReferenceImp = deriveObjectType[Backend, DrugReferences]()
+
   implicit lazy val withdrawnNoticeImp = deriveObjectType[Backend, WithdrawnNotice](
     ObjectTypeDescription("Withdrawal reason"),
     DocumentField("classes", "Withdrawal classes"),
