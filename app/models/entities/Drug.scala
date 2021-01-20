@@ -33,6 +33,7 @@ case class MechanismOfActionRaw(chemblIds: Seq[String],
                                 targetType: Option[String],
                                 targetName: Option[String],
                                 references: Option[Seq[Reference]])
+case class DrugReferences(source: String, reference: Seq[String])
 
 case class Drug(id: String,
                 name: String,
@@ -42,6 +43,7 @@ case class Drug(id: String,
                 yearOfFirstApproval: Option[Int],
                 drugType: String,
                 isApproved: Option[Boolean],
+                crossReferences: Option[Seq[DrugReferences]],
                 parentId: Option[String],
                 maximumClinicalTrialPhase: Option[Int],
                 hasBeenWithdrawn: Boolean,
@@ -60,7 +62,6 @@ object Drug {
   implicit val mechanismOfActionImpW = Json.format[models.entities.MechanismsOfAction]
   implicit val indicationRowImpW = Json.format[models.entities.IndicationRow]
   implicit val indicationsImpW = Json.format[models.entities.Indications]
-  implicit val drugImpW = Json.format[models.entities.Drug]
   implicit val mechanismOfActionRaw = Json.format[models.entities.MechanismOfActionRaw]
 
   def mechanismOfActionRaw2MechanismOfAction(raw: Seq[MechanismOfActionRaw]): MechanismsOfAction = {
@@ -71,4 +72,27 @@ object Drug {
     MechanismsOfAction(rows, uat, utt)
   }
 
+  implicit val DrugXRefImpF = Json.format[models.entities.DrugReferences]
+
+  private val drugTransformerXRef: Reads[JsObject] = __.json.update(
+    /*
+    The incoming Json has an cross reference object with an array for each source. We don't know in advance which drug
+    has which references, so we need to flatten the object into an array of objects for conversion into case classes.
+    See: https://www.playframework.com/documentation/2.6.x/ScalaJsonTransformers
+     */
+    __.read[JsObject]
+      .map { o => {
+        if (o.fields.map(_._1).contains("crossReferences")) {
+          val cr: Seq[(String, JsValue)] = o.value("crossReferences").as[JsObject].fields
+          val newJsonObjects: Seq[JsObject] =
+            cr.map(xref => JsObject(Seq("source" -> JsString(xref._1), "reference" -> xref._2)))
+          (o - "crossReferences") ++ Json.obj("crossReferences" -> newJsonObjects)
+        } else {
+          o
+        }
+      }
+      }
+  )
+  implicit val drugImplicitR: Reads[Drug] = drugTransformerXRef.andThen(Json.reads[Drug])
+  implicit val drugImplicitW: OWrites[Drug] = Json.writes[Drug]
 }

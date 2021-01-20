@@ -1187,6 +1187,7 @@ trait DrugInputs {
       + """indications { count rows { maxPhaseForIndication references { ids source urls } disease { id name description } } }"""
       + """linkedTargets {count rows { id approvedSymbol approvedName } }"""
       + """linkedDiseases {count rows { id name description } }"""
+      + """crossReferences { source reference }"""
       + """} }" }"""
   )
 
