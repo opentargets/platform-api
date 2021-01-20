@@ -91,12 +91,9 @@ class GraphQLControllerTest
         val drugs: Seq[ParentChildMoAReturn] =
           (jsObject \ "data" \ "drugs").as[JsArray].value.map(_.as[ParentChildMoAReturn])
         val (parent, child) = (drugs.head, drugs.tail.head)
-        assert(
-          parent.mechanismsOfAction.get.uniqueTargetTypes sameElements child.mechanismsOfAction.get.uniqueTargetTypes)
-        assert(
-          parent.mechanismsOfAction.get.uniqueActionTypes sameElements child.mechanismsOfAction.get.uniqueActionTypes)
-        assert(
-          parent.mechanismsOfAction.get.rows.length == child.mechanismsOfAction.get.rows.length)
+        assertResult(true, "Parent and child have the same unique targets")(parent.mechanismsOfAction.get.uniqueTargetTypes.sorted sameElements child.mechanismsOfAction.get.uniqueTargetTypes.sorted)
+        assertResult(true, "Parent and child have the same unique action types")(parent.mechanismsOfAction.get.uniqueActionTypes.sorted sameElements child.mechanismsOfAction.get.uniqueActionTypes.sorted)
+        assertResult(true, "Parent and child have the same moa length")(parent.mechanismsOfAction.get.rows.length == child.mechanismsOfAction.get.rows.length)
       }
 
     }
