@@ -22,11 +22,17 @@ case class LinkedIds(count: Int, rows: Seq[String])
 
 case class Indications(id: String, indications: Seq[IndicationRow], count: Long)
 
-case class MechanismsOfAction(id: String,
-                              rows: Seq[MechanismOfActionRow],
+case class MechanismsOfAction(rows: Seq[MechanismOfActionRow],
                               uniqueActionTypes: Seq[String],
                               uniqueTargetTypes: Seq[String])
 
+case class MechanismOfActionRaw(chemblIds: Seq[String],
+                                targets: Option[Seq[String]],
+                                mechanismOfAction: String,
+                                actionType: Option[String],
+                                targetType: Option[String],
+                                targetName: Option[String],
+                                references: Option[Seq[Reference]])
 case class DrugReferences(source: String, reference: Seq[String])
 
 case class Drug(id: String,
@@ -56,6 +62,16 @@ object Drug {
   implicit val mechanismOfActionImpW = Json.format[models.entities.MechanismsOfAction]
   implicit val indicationRowImpW = Json.format[models.entities.IndicationRow]
   implicit val indicationsImpW = Json.format[models.entities.Indications]
+  implicit val mechanismOfActionRaw = Json.format[models.entities.MechanismOfActionRaw]
+
+  def mechanismOfActionRaw2MechanismOfAction(raw: Seq[MechanismOfActionRaw]): MechanismsOfAction = {
+    val rows =
+      raw.map(r => MechanismOfActionRow(r.mechanismOfAction, r.targetName, r.targets, r.references))
+    val uat = raw.flatMap(_.targetType.toSet)
+    val utt = raw.flatMap(_.actionType.toSet)
+    MechanismsOfAction(rows, uat, utt)
+  }
+
   implicit val DrugXRefImpF = Json.format[models.entities.DrugReferences]
 
   private val drugTransformerXRef: Reads[JsObject] = __.json.update(

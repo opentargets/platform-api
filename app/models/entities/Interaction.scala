@@ -224,7 +224,7 @@ object Interaction extends Logging {
       "intBBiologicalRole.keyword" -> interaction.intBBiologicalRole
     ).toMap
 
-    esRetriever.getByIndexedQuery(cbIndex, kv, pag, fromJsValue[JsValue]).map {
+    esRetriever.getByIndexedQueryMust(cbIndex, kv, pag, fromJsValue[JsValue]).map {
       case (Seq(), _) => IndexedSeq.empty
       case (seq, _)   => seq
     }
