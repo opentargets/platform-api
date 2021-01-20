@@ -75,7 +75,8 @@ case class Join(col: Column,
                 modifier: Option[String] = None,
                 global: Boolean = false,
                 alias: Option[String] = None,
-                using: Seq[Column] = Seq.empty) extends QuerySection {
+                using: Seq[Column] = Seq.empty)
+    extends QuerySection {
   override val content: Seq[Column] = Seq(col)
   override val name: String = "JOIN"
   override lazy val rep: String =
@@ -90,13 +91,12 @@ case class Join(col: Column,
     ).filter(_.isDefined).map(_.get).mkString(" ").trim
 }
 
-
 // TODO REFACTOR INTO PROPER TYPE
 case class FromSelect(select: QuerySection, alias: Option[String] = None) extends QuerySection {
   override val content: Seq[Column] = select.content
   override val name: String = "FROM"
-  override lazy val rep: String = s"$name (${select.name} ${content.mkString})${alias.map(" " + _).getOrElse("")}"
+  override lazy val rep: String =
+    s"$name (${select.name} ${content.mkString})${alias.map(" " + _).getOrElse("")}"
 }
 
-object QuerySection {
-}
+object QuerySection {}
