@@ -91,7 +91,7 @@ object Evidence {
         soTermsFetcher.deferOpt(soId)
       }),
       Field("biologicalModelGeneticBackground", OptionType(StringType), description = None, resolve = js => (js.value \ "biologicalModelGeneticBackground").asOpt[String]),
-      Field("clinicalUrls", OptionType(ListType(labelledUriImp)), description = None, resolve = js => (js.value \ "clinicalUrls").asOpt[Seq[JsValue]]),
+      Field("urls", OptionType(ListType(labelledUriImp)), description = None, resolve = js => (js.value \ "urls").asOpt[Seq[JsValue]]),
       Field("literature", OptionType(ListType(StringType)), description = None, resolve = js => (js.value \ "literature").asOpt[Seq[String]]),
       Field("studyCases", OptionType(LongType), description = None, resolve = js => (js.value \ "studyCases").asOpt[Long]),
       Field("studyOverview", OptionType(StringType), description = None, resolve = js => (js.value \ "studyOverview").asOpt[String]),
