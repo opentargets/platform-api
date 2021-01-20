@@ -11,17 +11,17 @@ case class DiseaseHPOEvidences(
     diseaseFromSourceId: String,
     diseaseFromSource: String,
     diseaseName: String,
-    evidence: Option[String],
+    evidenceType: Option[String],
     frequency: Option[String],
-    modifier: Option[String],
-    onset: Option[String],
+    modifiers: Seq[String],
+    onset: Seq[String],
     qualifierNot: Boolean,
-    referenceId: Option[String],
+    references:  Seq[String],
     sex: Option[String],
     resource: String
 )
 
-case class DiseaseHPO(phenotype: String, disease: String, evidences: Seq[DiseaseHPOEvidences])
+case class DiseaseHPO(phenotype: String, disease: String, evidence: Seq[DiseaseHPOEvidences])
 
 case class DiseaseHPOs(count: Long, rows: Seq[DiseaseHPO])
 
@@ -34,12 +34,12 @@ object DiseaseHPOs {
       (JsPath \ "diseaseFromSourceId").read[String] and
       (JsPath \ "diseaseFromSource").read[String] and
       (JsPath \ "diseaseName").read[String] and
-      (JsPath \ "evidence").readNullable[String] and
+      (JsPath \ "evidenceType").readNullable[String] and
       (JsPath \ "frequency").readNullable[String] and
-      (JsPath \ "modifier").readNullable[String] and
-      (JsPath \ "onset").readNullable[String] and
+      (JsPath \ "modifiers").readWithDefault[Seq[String]](Seq.empty) and
+      (JsPath \ "onset").readWithDefault[Seq[String]](Seq.empty) and
       (JsPath \ "qualifierNot").read[Boolean] and
-      (JsPath \ "referenceId").readNullable[String] and
+      (JsPath \ "references").readWithDefault[Seq[String]](Seq.empty) and
       (JsPath \ "sex").readNullable[String] and
       (JsPath \ "resource").read[String]
     )(DiseaseHPOEvidences.apply _)
@@ -48,7 +48,7 @@ object DiseaseHPOs {
   implicit val diseaseHPOImpR: Reads[models.entities.DiseaseHPO] =
     ((JsPath \ "phenotype").read[String] and
       (JsPath \ "disease").read[String] and
-      (JsPath \ "evidences").readWithDefault[Seq[DiseaseHPOEvidences]](Seq.empty))(
+      (JsPath \ "evidence").readWithDefault[Seq[DiseaseHPOEvidences]](Seq.empty))(
       DiseaseHPO.apply _
     )
 

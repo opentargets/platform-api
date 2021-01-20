@@ -24,11 +24,11 @@ object Disease extends Logging {
       (__ \ "name").read[String] and
       (__ \ "therapeuticAreas").read[Seq[String]] and
       (__ \ "description").readNullable[String] and
-      (__ \ "synonyms").read[Seq[String]] and
-      (__ \ "parents").read[Seq[String]] and
-      (__ \ "children").read[Seq[String]] and
-      (__ \ "ancestors").read[Seq[String]] and
-      (__ \ "descendants").read[Seq[String]] and
+      (__ \ "synonyms").readWithDefault[Seq[String]](Seq.empty) and
+      (__ \ "parents").readWithDefault[Seq[String]](Seq.empty) and
+      (__ \ "children").readWithDefault[Seq[String]](Seq.empty) and
+      (__ \ "ancestors").readWithDefault[Seq[String]](Seq.empty) and
+      (__ \ "descendants").readWithDefault[Seq[String]](Seq.empty) and
       (__ \ "ontology" \ "isTherapeuticArea").read[Boolean]
   )(Disease.apply _)
 }

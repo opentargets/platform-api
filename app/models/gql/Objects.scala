@@ -308,6 +308,7 @@ object Objects extends Logging {
       Field("B", diseaseImp, Some("Disease"), resolve = r => diseasesFetcher.defer(r.value.B)))
   )
 
+
   implicit val relatedTargetsImp = deriveObjectType[Backend, DDRelations](
     ObjectTypeName("RelatedTargets"),
     ObjectTypeDescription("Related Targets Entity"),
@@ -533,14 +534,36 @@ object Objects extends Logging {
     DocumentField("diseaseFromSourceId", "This field refers to the database and database identifier. EG. OMIM"),
     DocumentField("diseaseFromSource", "Related name from the field diseaseFromSourceId"),
     ExcludeFields("diseaseName"),
-    DocumentField("evidence", "This field indicates the level of evidence supporting the annotation."),
+    DocumentField("evidenceType", "This field indicates the level of evidence supporting the annotation."),
     DocumentField("frequency", "A term-id from the HPO-sub-ontology"),
-    DocumentField("modifier", "A term from the Clinical modifier subontology"),
-    DocumentField("onset", "A term-id from the HPO-sub-ontology below the term Age of onset."),
+    ReplaceField(
+      "modifiers",
+      Field("modifiers",
+        ListType(hpoImp),
+        Some("HP terms from the Clinical modifier subontology"),
+        resolve = r => hposFetcher.deferSeqOpt(r.value.modifiers))
+    ),
+    ReplaceField(
+      "onset",
+      Field("onset",
+        ListType(hpoImp),
+        Some("A term-id from the HPO-sub-ontology below the term Age of onset."),
+        resolve = r => hposFetcher.deferSeqOpt(r.value.onset))
+    ),
     DocumentField("qualifierNot", "This optional field can be used to qualify the annotation. Values: [True or False]"),
-    DocumentField("referenceId", "This field indicates the source of the information used for the annotation (phenotype.hpoa)"),
+    DocumentField("references", "This field indicates the source of the information used for the annotation (phenotype.hpoa)"),
     DocumentField("sex", "This field contains the strings MALE or FEMALE if the annotation in question is limited to males or females."),
-    DocumentField("resource", "Possible source mapping: HPO or MONDO")
+    DocumentField("resource", "Possible source mapping: HPO or MONDO"),
+    AddFields(
+      Field(
+        "frequencyHPO",
+        OptionType(hpoImp),
+        Some("HPO Entity"),
+        resolve = r => {
+          hposFetcher.deferOpt(r.value.frequency)
+        }
+      )
+    )
   )
 
   implicit val diseaseHPOImp = deriveObjectType[Backend, DiseaseHPO](
@@ -561,7 +584,7 @@ object Objects extends Logging {
       )
     ),
       ExcludeFields("disease"),
-      DocumentField("evidences", "List of phenotype annotations.")
+      DocumentField("evidence", "List of phenotype annotations.")
   )
 
   implicit val diseaseHPOsImp = deriveObjectType[Backend, DiseaseHPOs](

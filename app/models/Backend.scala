@@ -334,7 +334,7 @@ class Backend @Inject()(
     val diseaseIndexName = defaultESSettings.entities
       .find(_.name == "disease")
       .map(_.index)
-      .getOrElse("diseases")
+      .getOrElse("disease")
 
     esRetriever.getByIds(diseaseIndexName, ids, fromJsValue[Disease])
   }
