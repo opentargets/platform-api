@@ -145,13 +145,15 @@ object Objects extends Logging {
   )
 
   // disease
+  implicit lazy val diseaseSynonymsImp = deriveObjectType[Backend, DiseaseSynonyms]()
+
   implicit lazy val diseaseImp: ObjectType[Backend, Disease] = deriveObjectType(
     ObjectTypeDescription("Disease or phenotype entity"),
     DocumentField("id", "Open Targets disease id"),
     DocumentField("name", "Disease name"),
     DocumentField("description", "Disease description"),
     DocumentField("synonyms", "Disease synonyms"),
-    DocumentField("isTherapeuticArea", "Is disease a therapeutic area itself"),
+    ExcludeFields("ontology"),
     ReplaceField(
       "therapeuticAreas",
       Field(
@@ -161,9 +163,6 @@ object Objects extends Logging {
         resolve = r => diseasesFetcher.deferSeq(r.value.therapeuticAreas)
       )
     ),
-    //    ReplaceField("phenotypes", Field("phenotypes",
-    //      ListType(diseaseImp), Some("Phenotype List"),
-    //      resolve = r => diseasesFetcher.deferSeq(r.value.phenotypes))),
     ReplaceField("parents",
                  Field("parents",
                        ListType(diseaseImp),
@@ -174,8 +173,13 @@ object Objects extends Logging {
                        ListType(diseaseImp),
                        Some("Disease children entities in ontology"),
                        resolve = r => diseasesFetcher.deferSeq(r.value.children))),
-    // this query uses id and ancestors fields to search for indirect diseases
     AddFields(
+      Field(
+          "isTherapeuticArea",
+          BooleanType,
+          description = Some("Is disease a therapeutic area itself"),
+          resolve = ctx => ctx.value.ontology.isTherapeuticArea
+        ),
       Field(
         "phenotypes",
         OptionType(diseaseHPOsImp),
