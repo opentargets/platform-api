@@ -8,6 +8,7 @@ import models.entities.{
   ECO,
   Expressions,
   Indications,
+  HPO,
   MousePhenotypes,
   OtarProjects,
   Reactome,
@@ -95,6 +96,18 @@ object Fetchers extends Logging {
     }
   )
   val drugsFetcherCache = FetcherCache.simple
+
+  //hpo fetcher
+  implicit val hpoHasId = HasId[HPO, String](_.id)
+
+  val hpoFetcherCache = FetcherCache.simple
+  val hposFetcher = Fetcher(
+    config =
+      FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(hpoFetcherCache),
+    fetch = (ctx: Backend, ids: Seq[String]) => {
+      ctx.getHPOs(ids)
+    }
+  )
 
   // drug
   implicit val drugHasId = HasId[Drug, String](_.id)

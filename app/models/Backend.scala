@@ -14,6 +14,7 @@ import models.entities.Aggregations._
 import models.entities.Associations._
 import models.entities.CancerBiomarkers._
 import models.entities.Configuration._
+import models.entities.DiseaseHPOs._
 import models.entities.Drug._
 import models.entities._
 import play.api.db.slick.DatabaseConfigProvider
@@ -180,6 +181,28 @@ class Backend @Inject()(
     }
   }
 
+  def getDiseaseHPOs(id: String,
+                     pagination: Option[Pagination]): Future[Option[DiseaseHPOs]] = {
+
+    val pag = pagination.getOrElse(Pagination.mkDefault)
+
+    val cbIndex = getIndexOrDefault("disease_hpo")
+
+    val kv = Map("disease.keyword" -> id)
+
+    val aggs = Seq(
+      valueCountAgg("rowsCount", "disease.keyword")
+    )
+
+    esRetriever.getByIndexedQueryMust(cbIndex, kv, pag, fromJsValue[DiseaseHPO], aggs).map {
+      case (Seq(), _) => None
+      case (seq, agg) =>
+        logger.debug(Json.prettyPrint(agg))
+        val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
+        Some(DiseaseHPOs(rowsCount, seq))
+    }
+  }
+
   def getKnownDrugs(queryString: String,
                     kv: Map[String, String],
                     sizeLimit: Option[Int],
@@ -265,6 +288,12 @@ class Backend @Inject()(
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[ECO])
   }
 
+  def getHPOs(ids: Seq[String]): Future[IndexedSeq[HPO]] = {
+    val targetIndexName = getIndexOrDefault("hpo")
+
+    esRetriever.getByIds(targetIndexName, ids, fromJsValue[HPO])
+  }
+
   def getMousePhenotypes(ids: Seq[String]): Future[IndexedSeq[MousePhenotypes]] = {
     val targetIndexName = getIndexOrDefault("mp")
 
@@ -322,11 +351,7 @@ class Backend @Inject()(
   }
 
   def getDiseases(ids: Seq[String]): Future[IndexedSeq[Disease]] = {
-    val diseaseIndexName = defaultESSettings.entities
-      .find(_.name == "disease")
-      .map(_.index)
-      .getOrElse("diseases")
-
+    val diseaseIndexName = getIndexOrDefault("disease")
     esRetriever.getByIds(diseaseIndexName, ids, fromJsValue[Disease])
   }
 
