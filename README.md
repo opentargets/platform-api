@@ -31,9 +31,21 @@ To create the distribution
 
 The final step is running deploy script 
 ```
-bash deploy_gcloud.bash 0.46.3
+bash deploy_gcloud.bash 
 ```
 
+## Sangria caches
+
+This application uses Sangria as a GraphQL wrapper and uses deferred resolver
+caches to improve query times. In cases where the data is updated in Elasticsearch
+it will not be available on the front-end if it has previously been cached.
+
+To reset the cache following a data update use the following request:
+
+```
+curl --location --request GET 'http://localhost:9000/api/v4/rest/cache/clear' \
+--header 'apikey: <very secret code>'
+```
 
 # Copyright
 
