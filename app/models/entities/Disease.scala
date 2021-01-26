@@ -5,41 +5,45 @@ import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 
-/** this is a temporal HACK while we get all phenetypes into the slim efo ontology for OT.
-  * It should later resolve as a normal disease entity */
-case class Phenotype(url: String, name: String, disease: String)
+case class DiseaseSynonyms(relation: String, terms: Seq[String])
+
+case class DiseaseOntology(isTherapeuticArea: Boolean)
 
 case class Disease(id: String,
                    name: String,
                    therapeuticAreas: Seq[String],
                    description: Option[String],
-                   synonyms: Seq[String],
+                   synonyms: Option[Seq[DiseaseSynonyms]],
                    parents: Seq[String],
                    children: Seq[String],
                    ancestors: Seq[String],
                    descendants: Seq[String],
-                   phenotypes: Seq[Phenotype],
-                   isTherapeuticArea: Boolean)
+                   ontology: DiseaseOntology)
 
 object Disease extends Logging {
-  implicit val phenotypeImpW = Json.writes[Phenotype]
-  implicit val phenotypeImpR: Reads[Phenotype] =
-    ((__ \ "url").read[String] and
-      (__ \ "name").read[String] and
-      (__ \ "disease").read[String])(Phenotype.apply _)
 
-  implicit val diseaseImpW = Json.writes[Disease]
-  implicit val diseaseImpR: Reads[Disease] = (
-    (__ \ "id").read[String] and
-      (__ \ "name").read[String] and
-      (__ \ "therapeuticAreas").read[Seq[String]] and
-      (__ \ "description").readNullable[String] and
-      (__ \ "synonyms").read[Seq[String]] and
-      (__ \ "parents").read[Seq[String]] and
-      (__ \ "children").read[Seq[String]] and
-      (__ \ "ancestors").read[Seq[String]] and
-      (__ \ "descendants").read[Seq[String]] and
-      (__ \ "phenotypes" \ "rows").readWithDefault[Seq[Phenotype]](Seq.empty) and
-      (__ \ "ontology" \ "isTherapeuticArea").read[Boolean]
-  )(Disease.apply _)
+  implicit val DiseaseOntologyImpF = Json.format[models.entities.DiseaseOntology]
+  implicit val DiseaseSynonymsImpF = Json.format[models.entities.DiseaseSynonyms]
+
+  private val diseaseTransformerSynonyms: Reads[JsObject] = __.json.update(
+    /*
+    The incoming Json has an synonyms object with an array for each relation. We don't know in advance which disease
+    has which terms, so we need to flatten the object into an array of objects for conversion into case classes.
+    See: https://www.playframework.com/documentation/2.6.x/ScalaJsonTransformers
+     */
+    __.read[JsObject]
+      .map { o => {
+        if (o.fields.map(_._1).contains("synonyms")) {
+          val cr: Seq[(String, JsValue)] = o.value("synonyms").as[JsObject].fields
+          val newJsonObjects: Seq[JsObject] =
+            cr.map(xref => JsObject(Seq("relation" -> JsString(xref._1), "terms" -> xref._2)))
+          (o - "synonyms") ++ Json.obj("synonyms" -> newJsonObjects)
+        } else {
+          o
+        }
+       }
+      }
+  )
+  implicit val diseaseImpR: Reads[Disease] = diseaseTransformerSynonyms.andThen(Json.reads[Disease])
+  implicit val diseaseImpW : OWrites[Disease] = Json.writes[Disease]
 }
