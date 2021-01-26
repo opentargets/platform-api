@@ -32,7 +32,8 @@ To create the distribution
 
 ```sbt dist```
 
-The final step is running deploy script 
+The final step is running deploy script
+
 ```
    bash deploy_gcloud.bash
 ```
@@ -52,8 +53,21 @@ Eg. hpo-1-0
 gcloud --project=open-targets-eu-dev app deploy \
     --no-promote \
     -v hpo-1-0
+
 ```
 
+## Sangria caches
+
+This application uses Sangria as a GraphQL wrapper and uses deferred resolver
+caches to improve query times. In cases where the data is updated in Elasticsearch
+it will not be available on the front-end if it has previously been cached.
+
+To reset the cache following a data update use the following request:
+
+```
+curl --location --request GET 'http://localhost:9000/api/v4/rest/cache/clear' \
+--header 'apikey: <very secret code>'
+```
 
 # Copyright
 
