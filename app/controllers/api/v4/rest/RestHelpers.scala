@@ -7,9 +7,9 @@ import play.api.mvc.{AbstractController, Action, ControllerComponents}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class CredentialCheck @Inject()(implicit ec: ExecutionContext,
-                                cc: ControllerComponents,
-                                config: Config)
+class RestHelpers @Inject()(implicit ec: ExecutionContext,
+                            cc: ControllerComponents,
+                            config: Config)
   extends AbstractController(cc)
     with Logging {
 
