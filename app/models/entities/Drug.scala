@@ -9,6 +9,8 @@ case class WithdrawnNotice(classes: Option[Seq[String]],
 
 case class Reference(ids: Option[Seq[String]], source: String, urls: Option[Seq[String]])
 
+case class IndicationReference(ids: Option[Seq[String]], source: String)
+
 case class MechanismOfActionRow(mechanismOfAction: String,
                                 targetName: Option[String],
                                 targets: Option[Seq[String]],
@@ -16,7 +18,7 @@ case class MechanismOfActionRow(mechanismOfAction: String,
 
 case class IndicationRow(maxPhaseForIndication: Long,
                          disease: String,
-                         references: Option[Seq[Reference]])
+                         references: Option[Seq[IndicationReference]])
 
 case class LinkedIds(count: Int, rows: Seq[String])
 
@@ -60,6 +62,7 @@ object Drug {
   implicit val referenceImpW = Json.format[models.entities.Reference]
   implicit val mechanismOfActionRowImpW = Json.format[models.entities.MechanismOfActionRow]
   implicit val mechanismOfActionImpW = Json.format[models.entities.MechanismsOfAction]
+  implicit val indicationReferenceImpW = Json.format[models.entities.IndicationReference]
   implicit val indicationRowImpW = Json.format[models.entities.IndicationRow]
   implicit val indicationsImpW = Json.format[models.entities.Indications]
   implicit val mechanismOfActionRaw = Json.format[models.entities.MechanismOfActionRaw]
@@ -74,6 +77,7 @@ object Drug {
 
   implicit val DrugXRefImpF = Json.format[models.entities.DrugReferences]
 
+
   private val drugTransformerXRef: Reads[JsObject] = __.json.update(
     /*
     The incoming Json has an cross reference object with an array for each source. We don't know in advance which drug
@@ -82,7 +86,7 @@ object Drug {
      */
     __.read[JsObject]
       .map { o => {
-        if (o.fields.map(_._1).contains("crossReferences")) {
+        if (o.keys.contains("crossReferences")) {
           val cr: Seq[(String, JsValue)] = o.value("crossReferences").as[JsObject].fields
           val newJsonObjects: Seq[JsObject] =
             cr.map(xref => JsObject(Seq("source" -> JsString(xref._1), "reference" -> xref._2)))

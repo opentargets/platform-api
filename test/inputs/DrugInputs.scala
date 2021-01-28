@@ -1184,7 +1184,7 @@ trait DrugInputs {
       + """id name synonyms tradeNames yearOfFirstApproval drugType maximumClinicalTrialPhase hasBeenWithdrawn """
       + """withdrawnNotice { classes countries reasons year } blackBoxWarning description isApproved approvedIndications """
       + """mechanismsOfAction { rows { mechanismOfAction targetName references { ids source urls } targets { id } } uniqueActionTypes uniqueTargetTypes }"""
-      + """indications { count rows { maxPhaseForIndication references { ids source urls } disease { id name description } } }"""
+      + """indications { count rows { maxPhaseForIndication references { ids source } disease { id name description } } }"""
       + """linkedTargets {count rows { id approvedSymbol approvedName } }"""
       + """linkedDiseases {count rows { id name description } }"""
       + """crossReferences { source reference }"""
