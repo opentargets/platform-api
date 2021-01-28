@@ -175,11 +175,11 @@ object Objects extends Logging {
                        resolve = r => diseasesFetcher.deferSeq(r.value.children))),
     AddFields(
       Field(
-          "isTherapeuticArea",
-          BooleanType,
-          description = Some("Is disease a therapeutic area itself"),
-          resolve = ctx => ctx.value.ontology.isTherapeuticArea
-        ),
+        "isTherapeuticArea",
+        BooleanType,
+        description = Some("Is disease a therapeutic area itself"),
+        resolve = ctx => ctx.value.ontology.isTherapeuticArea
+      ),
       Field(
         "phenotypes",
         OptionType(diseaseHPOsImp),
@@ -311,7 +311,6 @@ object Objects extends Logging {
       "B",
       Field("B", diseaseImp, Some("Disease"), resolve = r => diseasesFetcher.defer(r.value.B)))
   )
-
 
   implicit val relatedTargetsImp = deriveObjectType[Backend, DDRelations](
     ObjectTypeName("RelatedTargets"),
@@ -474,7 +473,6 @@ object Objects extends Logging {
 
   implicit val genomicLocationImp = deriveObjectType[Backend, GenomicLocation]()
 
-
   // cancerbiomarkers
   implicit val cancerBiomarkerSourceImp = deriveObjectType[Backend, CancerBiomarkerSource](
     ObjectTypeDescription("Detail on Cancer Biomarker sources"),
@@ -506,7 +504,6 @@ object Objects extends Logging {
                        resolve = r => diseasesFetcher.deferOpt(r.value.disease)))
   )
 
-
   implicit val cancerBiomarkersImp = deriveObjectType[Backend, CancerBiomarkers](
     ObjectTypeDescription(
       "Set of clinical relevance and drug responses of tumor " +
@@ -518,7 +515,6 @@ object Objects extends Logging {
     DocumentField("count", "Number of entries"),
     DocumentField("rows", "Cancer Biomarker entries")
   )
-
 
   // hpo
   implicit lazy val hpoImp: ObjectType[Backend, HPO] = deriveObjectType(
@@ -532,13 +528,20 @@ object Objects extends Logging {
   // DiseaseHPO
   // More details here: https://hpo.jax.org/app/help/annotations
   implicit val diseaseHPOEvidencesImp = deriveObjectType[Backend, DiseaseHPOEvidences](
-    ObjectTypeDescription("the HPO project provides a large set of phenotype annotations. Source: Phenotype.hpoa"),
-    DocumentField("aspect", "One of P (Phenotypic abnormality), I (inheritance), C (onset and clinical course). Might be null (MONDO)"),
-    DocumentField("bioCuration", "This refers to the center or user making the annotation and the date on which the annotation was made"),
-    DocumentField("diseaseFromSourceId", "This field refers to the database and database identifier. EG. OMIM"),
+    ObjectTypeDescription(
+      "the HPO project provides a large set of phenotype annotations. Source: Phenotype.hpoa"),
+    DocumentField(
+      "aspect",
+      "One of P (Phenotypic abnormality), I (inheritance), C (onset and clinical course). Might be null (MONDO)"),
+    DocumentField(
+      "bioCuration",
+      "This refers to the center or user making the annotation and the date on which the annotation was made"),
+    DocumentField("diseaseFromSourceId",
+      "This field refers to the database and database identifier. EG. OMIM"),
     DocumentField("diseaseFromSource", "Related name from the field diseaseFromSourceId"),
     ExcludeFields("diseaseName"),
-    DocumentField("evidenceType", "This field indicates the level of evidence supporting the annotation."),
+    DocumentField("evidenceType",
+      "This field indicates the level of evidence supporting the annotation."),
     DocumentField("frequency", "A term-id from the HPO-sub-ontology"),
     ReplaceField(
       "modifiers",
@@ -554,9 +557,15 @@ object Objects extends Logging {
         Some("A term-id from the HPO-sub-ontology below the term Age of onset."),
         resolve = r => hposFetcher.deferSeqOpt(r.value.onset))
     ),
-    DocumentField("qualifierNot", "This optional field can be used to qualify the annotation. Values: [True or False]"),
-    DocumentField("references", "This field indicates the source of the information used for the annotation (phenotype.hpoa)"),
-    DocumentField("sex", "This field contains the strings MALE or FEMALE if the annotation in question is limited to males or females."),
+    DocumentField(
+      "qualifierNot",
+      "This optional field can be used to qualify the annotation. Values: [True or False]"),
+    DocumentField(
+      "references",
+      "This field indicates the source of the information used for the annotation (phenotype.hpoa)"),
+    DocumentField(
+      "sex",
+      "This field contains the strings MALE or FEMALE if the annotation in question is limited to males or females."),
     DocumentField("resource", "Possible source mapping: HPO or MONDO"),
     AddFields(
       Field(
@@ -587,17 +596,15 @@ object Objects extends Logging {
         }
       )
     ),
-      ExcludeFields("disease"),
-      DocumentField("evidence", "List of phenotype annotations.")
+    ExcludeFields("disease"),
+    DocumentField("evidence", "List of phenotype annotations.")
   )
 
   implicit val diseaseHPOsImp = deriveObjectType[Backend, DiseaseHPOs](
-    ObjectTypeDescription(
-      "List of Phenotypes associated with the disease"),
+    ObjectTypeDescription("List of Phenotypes associated with the disease"),
     DocumentField("count", "Number of entries"),
     DocumentField("rows", "List of Disease and phenotypes annotations")
   )
-
 
   // howto doc https://sangria-graphql.org/learn/#macro-based-graphql-type-derivation
   implicit lazy val linkedDiseasesImp = deriveObjectType[Backend, LinkedIds](
@@ -614,30 +621,34 @@ object Objects extends Logging {
     ObjectTypeName("LinkedTargets"),
     ObjectTypeDescription("Linked Target Entities"),
     ReplaceField("rows",
-                 Field("rows",
-                       ListType(targetImp),
-                       Some("Target List"),
-                       resolve = r => targetsFetcher.deferSeqOpt(r.value.rows)))
+      Field("rows",
+        ListType(targetImp),
+        Some("Target List"),
+        resolve = r => targetsFetcher.deferSeqOpt(r.value.rows)))
   )
 
   implicit lazy val drugReferenceImp: ObjectType[Backend, Reference] =
     deriveObjectType[Backend, Reference]()
+
+  implicit lazy val indicationReferenceImp: ObjectType[Backend, IndicationReference] =
+    deriveObjectType[Backend, IndicationReference]()
+
   implicit lazy val mechanismOfActionRowImp: ObjectType[Backend, MechanismOfActionRow] =
     deriveObjectType[Backend, MechanismOfActionRow](
       ReplaceField("targets",
-                   Field("targets",
-                         ListType(targetImp),
-                         Some("Target List"),
-                         resolve =
-                           r => targetsFetcher.deferSeqOpt(r.value.targets.getOrElse(Seq.empty))))
+        Field("targets",
+          ListType(targetImp),
+          Some("Target List"),
+          resolve =
+            r => targetsFetcher.deferSeqOpt(r.value.targets.getOrElse(Seq.empty))))
     )
 
   implicit lazy val indicationRowImp = deriveObjectType[Backend, IndicationRow](
     ReplaceField("disease",
-                 Field("disease",
-                   diseaseImp,
-                   Some("Disease"),
-                   resolve = r => diseasesFetcher.defer(r.value.disease)))
+      Field("disease",
+        diseaseImp,
+        Some("Disease"),
+        resolve = r => diseasesFetcher.defer(r.value.disease)))
   )
 
   implicit lazy val indicationsImp = deriveObjectType[Backend, Indications](
