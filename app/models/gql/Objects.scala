@@ -153,6 +153,7 @@ object Objects extends Logging {
     DocumentField("name", "Disease name"),
     DocumentField("description", "Disease description"),
     DocumentField("synonyms", "Disease synonyms"),
+    DocumentField("dbXRefs", "dbXRefs"),
     ExcludeFields("ontology"),
     ReplaceField(
       "therapeuticAreas",
