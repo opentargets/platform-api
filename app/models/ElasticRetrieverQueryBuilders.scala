@@ -1,5 +1,7 @@
 package models
 
+import java.util
+
 import com.sksamuel.elastic4s.ElasticDsl.search
 import com.sksamuel.elastic4s.requests.searches.aggs.AbstractAggregation
 import com.sksamuel.elastic4s.requests.searches.queries.{BoolQuery, Query}
@@ -9,37 +11,46 @@ import play.api.Logging
 
 trait ElasticRetrieverQueryBuilders extends QueryApi with Logging {
 
-  def IndexQueryMust(
-      esIndex: String,
-      kv: Map[String, String],
-      pagination: Pagination,
-      aggs: Iterable[AbstractAggregation] = Iterable.empty,
-      excludedFields: Seq[String] = Seq.empty,
-  ): SearchRequest = {
+  def IndexQueryMust[A](
+                         esIndex: String,
+                         kv: Map[String, A],
+                         pagination: Pagination,
+                         aggs: Iterable[AbstractAggregation] = Iterable.empty,
+                         excludedFields: Seq[String] = Seq.empty,
+                       ): SearchRequest = {
     getByIndexQueryBuilder(esIndex, kv, pagination, aggs, excludedFields, must)
   }
 
-  def IndexQueryShould(
-      esIndex: String,
-      kv: Map[String, String],
-      pagination: Pagination,
-      aggs: Iterable[AbstractAggregation] = Iterable.empty,
-      excludedFields: Seq[String] = Seq.empty,
-  ): SearchRequest = {
+  def IndexQueryShould[A](
+                        esIndex: String,
+                        kv: Map[String, A],
+                        pagination: Pagination,
+                        aggs: Iterable[AbstractAggregation] = Iterable.empty,
+                        excludedFields: Seq[String] = Seq.empty,
+                      ): SearchRequest = {
     getByIndexQueryBuilder(esIndex, kv, pagination, aggs, excludedFields, should)
   }
 
-  def getByIndexQueryBuilder[A](esIndex: String,
-                                kv: Map[String, String],
-                                pagination: Pagination,
-                                aggs: Iterable[AbstractAggregation] = Iterable.empty,
-                                excludedFields: Seq[String] = Seq.empty,
-                                f: Iterable[Query] => BoolQuery): SearchRequest = {
+  def getByIndexQueryBuilder[A, V](esIndex: String,
+                                   kv: Map[String, V],
+                                   pagination: Pagination,
+                                   aggs: Iterable[AbstractAggregation] = Iterable.empty,
+                                   excludedFields: Seq[String] = Seq.empty,
+                                   f: Iterable[Query] => BoolQuery): SearchRequest = {
     val limitClause = pagination.toES
+    val query: Iterable[Query] = {
+      val querySeq = kv.toSeq
+      querySeq.flatMap { it =>
+        it._2 match {
+          case a: Iterable[Any] => a.map( iterVal => matchQuery(it._1, iterVal))
+          case _ => Iterable(matchQuery(it._1, it._2))
+        }
+      }
+    }
     search(esIndex)
       .bool {
         f(
-          kv.toSeq.map(p => matchQuery(p._1, p._2))
+         query
         )
       }
       .start(limitClause._1)

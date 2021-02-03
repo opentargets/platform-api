@@ -326,8 +326,10 @@ class Backend @Inject()(
   }
 
   def getDrugs(ids: Seq[String]): Future[IndexedSeq[Drug]] = {
+    logger.info(s"Querying drugs: $ids")
     val drugIndexName = getIndexOrDefault("drug")
-    esRetriever.getByIds(drugIndexName, ids, fromJsValue[Drug])
+    val queryTerm = Map("id.keyword" -> ids)
+    esRetriever.getByIndexedQueryShould(drugIndexName, queryTerm, Pagination.mkDefault, fromJsValue[Drug]).map(_._1)
   }
 
   def getMechanismsOfAction(id: String): Future[MechanismsOfAction] = {
@@ -345,9 +347,9 @@ class Backend @Inject()(
   def getIndications(ids: Seq[String]): Future[IndexedSeq[Indications]] = {
     logger.debug(s"querying ES: getting indications for $ids")
     val index = getIndexOrDefault("drugIndications")
+    val queryTerm = Map("id.keyword" -> ids)
 
-    esRetriever.getByIds(index, ids, fromJsValue[Indications])
-
+    esRetriever.getByIndexedQueryShould(index, queryTerm, Pagination.mkDefault, fromJsValue[Indications]).map(_._1)
   }
 
   def getDiseases(ids: Seq[String]): Future[IndexedSeq[Disease]] = {

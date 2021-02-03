@@ -47,4 +47,6 @@ libraryDependencies ++= Seq(
   "com.sksamuel.elastic4s" %% "elastic4s-http-streams" % s4sVersion,
   "com.sksamuel.elastic4s" %% "elastic4s-json-play" % s4sVersion
 )
+// Google app engine logging
+libraryDependencies += "com.google.cloud" % "google-cloud-logging-logback" % "0.119.7-alpha"
 
