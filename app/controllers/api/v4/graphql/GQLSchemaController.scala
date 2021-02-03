@@ -15,7 +15,7 @@ class GQLSchemaController @Inject()(implicit ec: ExecutionContext, cc: Controlle
     Ok(SchemaRenderer.renderSchema(GQLSchema.schema))
   }
 
-  def renderClient = Action {
-    Ok(views.html.graphiql(None))
+  def renderPlayground = Action {
+    Ok(views.html.playground(None))
   }
 }
