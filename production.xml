@@ -10,16 +10,16 @@
 
 
     <appender name="ASYNCSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
-        <appender-ref ref="STDOUT" />
+        <appender-ref ref="STDOUT"/>
     </appender>
 
+    <!-- https://cloud.google.com/logging/docs/setup/java#logback_appender_for -->
+    <appender name="CLOUD" class="com.google.cloud.logging.logback.LoggingAppender">
+        <log>application.log</log> <!-- Optional : default java.log -->
+    </appender>
 
-    <logger name="play" level="WARN"/>
-    <logger name="application" level="WARN"/>
     <logger name="org.apache" level="WARN"/>
     <logger name="httpclient" level="WARN"/>
-    <logger name="models" level="WARN"/>
-    <logger name="controllers" level="WARN"/>
 
     <!-- Off these ones as they are annoying, and anyway we manage configuration ourselves -->
     <logger name="com.avaje.ebean.config.PropertyMapLoader" level="OFF"/>
@@ -30,12 +30,13 @@
     <logger name="com.zaxxer.hikari.pool.HikariPool" level="OFF"/>
     <logger name="com.sksamuel.elastic4s.http.ResponseHandler" level="OFF"/>
     <!-- Set logging for all Akka library classes to INFO -->
-    <logger name="akka" level="ERROR" />
+    <logger name="akka" level="ERROR"/>
     <!-- Set a specific actor to DEBUG -->
     <!--logger name="actors.MyActor" level="DEBUG" /-->
 
-    <root level="WARN">
-        <appender-ref ref="ASYNCSTDOUT" />
+    <root level="INFO">
+        <appender-ref ref="CLOUD"/>
+        <appender-ref ref="ASYNCSTDOUT"/>
     </root>
 
     <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook"/>
