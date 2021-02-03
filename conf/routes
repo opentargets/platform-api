@@ -13,7 +13,7 @@ GET            /api/v4/graphql                 controllers.api.v4.graphql.GraphQ
 POST           /api/v4/graphql                 controllers.api.v4.graphql.GraphQLController.gqlBody()
 
 GET            /api/v4/graphql/schema          controllers.api.v4.graphql.GQLSchemaController.renderSchema
-GET            /api/v4/graphql/browser         controllers.api.v4.graphql.GQLSchemaController.renderClient
+GET            /api/v4/graphql/browser         controllers.api.v4.graphql.GQLSchemaController.renderPlayground
 
 GET            /api/v4/rest/meta/info          controllers.api.v4.rest.MetaController.meta
 GET            /api/v4/rest/meta/health        controllers.api.v4.rest.MetaController.healthcheck
