@@ -62,15 +62,15 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String], searchEntit
   }
 
   /** This fn represents a query where each kv from the map is used in
-    * a bool must. Based on the query asked by `getByIndexedQuery` and aggregation is applied */
-  def getByIndexedQueryMust[A](
-      esIndex: String,
-      kv: Map[String, String],
-      pagination: Pagination,
-      buildF: JsValue => Option[A],
-      aggs: Iterable[AbstractAggregation] = Iterable.empty,
-      sortByField: Option[sort.FieldSort] = None,
-      excludedFields: Seq[String] = Seq.empty): Future[(IndexedSeq[A], JsValue)] = {
+   * a bool must. Based on the query asked by `getByIndexedQuery` and aggregation is applied */
+  def getByIndexedQueryMust[A, V](
+                                   esIndex: String,
+                                   kv: Map[String, V],
+                                   pagination: Pagination,
+                                   buildF: JsValue => Option[A],
+                                   aggs: Iterable[AbstractAggregation] = Iterable.empty,
+                                   sortByField: Option[sort.FieldSort] = None,
+                                   excludedFields: Seq[String] = Seq.empty): Future[(IndexedSeq[A], JsValue)] = {
     // just log and execute the query
     val searchRequest: SearchRequest = IndexQueryMust(esIndex, kv, pagination, aggs, excludedFields)
     getByIndexedQuery(searchRequest, sortByField, buildF)
@@ -78,9 +78,9 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String], searchEntit
 
   /** This fn represents a query where each kv from the map is used in
     * a bool 'should'. Based on the query asked by `getByIndexedQuery` and aggregation is applied */
-  def getByIndexedQueryShould[A](
+  def getByIndexedQueryShould[A, V](
       esIndex: String,
-      kv: Map[String, String],
+      kv: Map[String, V],
       pagination: Pagination,
       buildF: JsValue => Option[A],
       aggs: Iterable[AbstractAggregation] = Iterable.empty,
