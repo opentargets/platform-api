@@ -69,6 +69,13 @@ curl --location --request GET 'http://localhost:9000/api/v4/rest/cache/clear' \
 --header 'apikey: <very secret code>'
 ```
 
+## Logging
+
+Logging to local use / development can be configured by updating the `logback.xml` file in the _conf_ directory. 
+
+Production deployments use the `production.xml` file to configure loggging. These should be set conservatively because
+GCP charges based on the quantity of logs, so we only want to produce what we need for monitoring, basic trouble-shooting.
+
 # Copyright
 
 Copyright 2014-2018 Biogen, Celgene Corporation, EMBL - European Bioinformatics Institute, GlaxoSmithKline, Takeda Pharmaceutical Company and Wellcome Sanger Institute
