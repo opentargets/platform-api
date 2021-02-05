@@ -70,8 +70,8 @@ object Drug {
   def mechanismOfActionRaw2MechanismOfAction(raw: Seq[MechanismOfActionRaw]): MechanismsOfAction = {
     val rows =
       raw.map(r => MechanismOfActionRow(r.mechanismOfAction, r.targetName, r.targets, r.references))
-    val uat = raw.flatMap(_.targetType.toSet)
-    val utt = raw.flatMap(_.actionType.toSet)
+    val utt = raw.flatMap(_.targetType).distinct
+    val uat = raw.flatMap(_.actionType).distinct
     MechanismsOfAction(rows, uat, utt)
   }
 
