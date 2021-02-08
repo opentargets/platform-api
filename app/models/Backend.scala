@@ -170,7 +170,7 @@ class Backend @Inject()(
     )
 
     esRetriever.getByIndexedQueryMust(cbIndex, kv, pag, fromJsValue[CancerBiomarker], aggs).map {
-      case (Seq(), _) => None
+      case (Seq(), _) => Some(CancerBiomarkers(0,0,0,0, Seq()))
       case (seq, agg) =>
         logger.debug(Json.prettyPrint(agg))
         val drugs = (agg \ "uniqueDrugs" \ "value").as[Long]
@@ -195,7 +195,7 @@ class Backend @Inject()(
     )
 
     esRetriever.getByIndexedQueryMust(cbIndex, kv, pag, fromJsValue[DiseaseHPO], aggs).map {
-      case (Seq(), _) => None
+      case (Seq(), _) => Some(DiseaseHPOs(0, Seq()))
       case (seq, agg) =>
         logger.debug(Json.prettyPrint(agg))
         val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
