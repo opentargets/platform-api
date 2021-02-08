@@ -12,6 +12,7 @@ case class Reference(ids: Option[Seq[String]], source: String, urls: Option[Seq[
 case class IndicationReference(ids: Option[Seq[String]], source: String)
 
 case class MechanismOfActionRow(mechanismOfAction: String,
+                                actionType: Option[String],
                                 targetName: Option[String],
                                 targets: Option[Seq[String]],
                                 references: Option[Seq[Reference]])
@@ -69,7 +70,7 @@ object Drug {
 
   def mechanismOfActionRaw2MechanismOfAction(raw: Seq[MechanismOfActionRaw]): MechanismsOfAction = {
     val rows =
-      raw.map(r => MechanismOfActionRow(r.mechanismOfAction, r.targetName, r.targets, r.references))
+      raw.map(r => MechanismOfActionRow(r.mechanismOfAction, r.actionType, r.targetName, r.targets, r.references))
     val utt = raw.flatMap(_.targetType).distinct
     val uat = raw.flatMap(_.actionType).distinct
     MechanismsOfAction(rows, uat, utt)
