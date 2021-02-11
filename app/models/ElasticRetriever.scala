@@ -13,16 +13,19 @@ import models.entities.Configuration.ElasticsearchEntity
 import models.entities.SearchResults._
 import models.entities._
 import play.api.Logging
+import play.api.cache.AsyncCacheApi
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
 
 class ElasticRetriever @Inject()(client: ElasticClient,
                                  hlFields: Seq[String],
                                  searchEntities: Seq[String],
-) extends Logging
+                                 cache: AsyncCacheApi)
+  extends Logging
     with QueryApi
     with ElasticRetrieverQueryBuilders {
 
@@ -31,7 +34,7 @@ class ElasticRetriever @Inject()(client: ElasticClient,
   import com.sksamuel.elastic4s.ElasticDsl._
 
   /** This fn represents a query where each kv from the map is used in
-    * a bool must. Based on the query asked by `getByIndexedQuery` and aggregation is applied */
+   * a bool must. Based on the query asked by `getByIndexedQuery` and aggregation is applied */
   def getAggregationsByQuery[A](
       esIndex: String,
       boolQuery: BoolQuery,
@@ -231,34 +234,43 @@ class ElasticRetriever @Inject()(client: ElasticClient,
         .boost(100D)
         .fields("*")
     )
-    val searchAfterEntries: Seq[Any] =
-      searchAfter.flatMap(s => SearchAfterCache.get(s)).flatMap(tup2 => List(tup2._1, tup2._2))
-    logger.debug(s"Retrieved $searchAfterEntries from cache.")
-    val q = search(esIndex)
-      .bool {
-        must(boolQ)
-          .filter(
-            boolQuery().should(kv.toSeq.map(p => termQuery(p._1, p._2)))
-          )
-      }
-      .start(limitClause._1)
-      .limit(limitClause._2)
-      .aggs(aggs)
-      .trackTotalHits(true)
-      .sourceExclude(excludedFields)
-      .searchAfter(searchAfterEntries)
+    val searchAfterEntries: Future[Seq[(Long, String)]] =
+      Future.sequence(searchAfter
+        .map(s => cache.get[(Long, String)](s))).map(s => s.flatten)
+
+    val q: Future[SearchRequest] = searchAfterEntries.map { s =>
+      logger.debug(s"Retrieved $s from cache.")
+      search(esIndex)
+        .bool {
+          must(boolQ)
+            .filter(
+              boolQuery().should(kv.toSeq.map(p => termQuery(p._1, p._2)))
+            )
+        }
+        .start(limitClause._1)
+        .limit(limitClause._2)
+        .aggs(aggs)
+        .trackTotalHits(true)
+        .sourceExclude(excludedFields)
+        .searchAfter(s match {
+          case a if a.nonEmpty => Seq(a.head._1, a.head._2)
+          case _ => Seq.empty
+        })
+    }
 
     // just log and execute the query
-    val elems: Future[Response[SearchResponse]] = client.execute {
-      val qq = sortByField match {
-        case Some(s) =>
-          val tie = sort.FieldSort("_id").asc()
-          q.sortBy(s, tie)
-        case None => q
-      }
+    val elems: Future[Response[SearchResponse]] = q.flatMap { query =>
+      client.execute {
+        val qq = sortByField match {
+          case Some(s) =>
+            val tie = sort.FieldSort("_id").asc()
+            query.sortBy(s, tie)
+          case None => query
+        }
 
-      logger.debug(client.show(qq))
-      qq
+        logger.debug(client.show(qq))
+        qq
+      }
     }
 
     elems.map {
@@ -289,7 +301,7 @@ class ElasticRetriever @Inject()(client: ElasticClient,
                 (a, b) match {
                   case (c: JsNumber, searchNextString: JsString) =>
                     val cacheEntry = (c.value.toLong, searchNextString.value)
-                    SearchAfterCache.add(cacheEntry)
+                    cache.set(cacheEntry._2, cacheEntry, 1.hour)
                     Some(cacheEntry._2)
                   case missed =>
                     logger.warn(
