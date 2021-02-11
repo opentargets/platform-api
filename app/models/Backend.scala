@@ -17,6 +17,7 @@ import models.entities.Configuration._
 import models.entities.DiseaseHPOs._
 import models.entities.Drug._
 import models.entities._
+import play.api.cache.AsyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
 import play.api.{Configuration, Environment, Logging}
@@ -25,10 +26,11 @@ import play.db.NamedDatabase
 import scala.concurrent._
 
 class Backend @Inject()(
-    implicit ec: ExecutionContext,
-    @NamedDatabase("default") protected val dbConfigProvider: DatabaseConfigProvider,
-    config: Configuration,
-    env: Environment)
+                         implicit ec: ExecutionContext,
+                         @NamedDatabase("default") protected val dbConfigProvider: DatabaseConfigProvider,
+                         config: Configuration,
+                         env: Environment,
+                         cache: AsyncCacheApi)
     extends Logging {
 
   implicit val defaultOTSettings = loadConfigurationObject[OTSettings]("ot", config)
@@ -50,7 +52,7 @@ class Backend @Inject()(
     else HealthCheck(false, "Hmm, something wrong is going on here!")
 
   implicit lazy val esRetriever =
-    new ElasticRetriever(getESClient, defaultESSettings.highlightFields, allSearchableIndices)
+    new ElasticRetriever(getESClient, defaultESSettings.highlightFields, allSearchableIndices, cache)
 
   // we must import the dsl
 

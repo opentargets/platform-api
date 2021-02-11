@@ -1,5 +1,6 @@
 package models
 
+import com.google.inject.Inject
 import com.sksamuel.elastic4s._
 import com.sksamuel.elastic4s.requests.common.Operator
 import com.sksamuel.elastic4s.requests.searches._
@@ -12,22 +13,28 @@ import models.entities.Configuration.ElasticsearchEntity
 import models.entities.SearchResults._
 import models.entities._
 import play.api.Logging
+import play.api.cache.AsyncCacheApi
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.duration.DurationInt
 
-class ElasticRetriever(client: ElasticClient, hlFields: Seq[String], searchEntities: Seq[String])
-    extends Logging
+class ElasticRetriever @Inject()(client: ElasticClient,
+                                 hlFields: Seq[String],
+                                 searchEntities: Seq[String],
+                                 cache: AsyncCacheApi)
+  extends Logging
     with QueryApi
     with ElasticRetrieverQueryBuilders {
+
   val hlFieldSeq = hlFields.map(HighlightField(_))
 
   import com.sksamuel.elastic4s.ElasticDsl._
 
   /** This fn represents a query where each kv from the map is used in
-    * a bool must. Based on the query asked by `getByIndexedQuery` and aggregation is applied */
+   * a bool must. Based on the query asked by `getByIndexedQuery` and aggregation is applied */
   def getAggregationsByQuery[A](
       esIndex: String,
       boolQuery: BoolQuery,
@@ -62,15 +69,15 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String], searchEntit
   }
 
   /** This fn represents a query where each kv from the map is used in
-   * a bool must. Based on the query asked by `getByIndexedQuery` and aggregation is applied */
+    * a bool must. Based on the query asked by `getByIndexedQuery` and aggregation is applied */
   def getByIndexedQueryMust[A, V](
-                                   esIndex: String,
-                                   kv: Map[String, V],
-                                   pagination: Pagination,
-                                   buildF: JsValue => Option[A],
-                                   aggs: Iterable[AbstractAggregation] = Iterable.empty,
-                                   sortByField: Option[sort.FieldSort] = None,
-                                   excludedFields: Seq[String] = Seq.empty): Future[(IndexedSeq[A], JsValue)] = {
+      esIndex: String,
+      kv: Map[String, V],
+      pagination: Pagination,
+      buildF: JsValue => Option[A],
+      aggs: Iterable[AbstractAggregation] = Iterable.empty,
+      sortByField: Option[sort.FieldSort] = None,
+      excludedFields: Seq[String] = Seq.empty): Future[(IndexedSeq[A], JsValue)] = {
     // just log and execute the query
     val searchRequest: SearchRequest = IndexQueryMust(esIndex, kv, pagination, aggs, excludedFields)
     getByIndexedQuery(searchRequest, sortByField, buildF)
@@ -227,32 +234,43 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String], searchEntit
         .boost(100D)
         .fields("*")
     )
+    val searchAfterEntries: Future[Seq[(Long, String)]] =
+      Future.sequence(searchAfter
+        .map(s => cache.get[(Long, String)](s))).map(s => s.flatten)
 
-    val q = search(esIndex)
-      .bool {
-        must(boolQ)
-          .filter(
-            boolQuery().should(kv.toSeq.map(p => termQuery(p._1, p._2)))
-          )
-      }
-      .start(limitClause._1)
-      .limit(limitClause._2)
-      .aggs(aggs)
-      .trackTotalHits(true)
-      .sourceExclude(excludedFields)
-      .searchAfter(searchAfter)
+    val q: Future[SearchRequest] = searchAfterEntries.map { s =>
+      logger.debug(s"Retrieved $s from cache.")
+      search(esIndex)
+        .bool {
+          must(boolQ)
+            .filter(
+              boolQuery().should(kv.toSeq.map(p => termQuery(p._1, p._2)))
+            )
+        }
+        .start(limitClause._1)
+        .limit(limitClause._2)
+        .aggs(aggs)
+        .trackTotalHits(true)
+        .sourceExclude(excludedFields)
+        .searchAfter(s match {
+          case a if a.nonEmpty => Seq(a.head._1, a.head._2)
+          case _ => Seq.empty
+        })
+    }
 
     // just log and execute the query
-    val elems: Future[Response[SearchResponse]] = client.execute {
-      val qq = sortByField match {
-        case Some(s) =>
-          val tie = sort.FieldSort("_id").asc()
-          q.sortBy(s, tie)
-        case None => q
-      }
+    val elems: Future[Response[SearchResponse]] = q.flatMap { query =>
+      client.execute {
+        val qq = sortByField match {
+          case Some(s) =>
+            val tie = sort.FieldSort("_id").asc()
+            query.sortBy(s, tie)
+          case None => query
+        }
 
-      logger.debug(client.show(qq))
-      qq
+        logger.debug(client.show(qq))
+        qq
+      }
     }
 
     elems.map {
@@ -275,18 +293,32 @@ class ElasticRetriever(client: ElasticClient, hlFields: Seq[String], searchEntit
 
         val hasNext = !(hits.size < limitClause._2)
 
-        val seAf =
-          if // TODO this is broken as phase is a number now so
-          // I guess making this more opaque could work like
-          // (hits.last \ "sort").toOption // this return Option[JsValue]
-          // so if we map to string and optionally encode to base64
-          // then when is used as passed parameter then get the string and read as string into json which
-          // will become into a seq of jsvalue and then pass to the function searchAfter below
-          (hasNext) Nil // (hits.last \ "sort").get.as[Seq[String]]
-          else
-            Nil
+        val seAf: Option[String] =
+          if (hasNext) {
+            val arr: List[JsValue] = (hits.last \ "sort").get.asInstanceOf[JsArray].value.toList
+            arr match {
+              case a :: b :: Nil =>
+                (a, b) match {
+                  case (c: JsNumber, searchNextString: JsString) =>
+                    val cacheEntry = (c.value.toLong, searchNextString.value)
+                    cache.set(cacheEntry._2, cacheEntry, 1.hour)
+                    Some(cacheEntry._2)
+                  case missed =>
+                    logger.warn(
+                      "Search next requested but unable to parse last entry's sort parameter." +
+                        s"Expected (JsNumber, JsString) but found ($missed")
+                    None
+                }
+              case missed =>
+                logger.warn(
+                  s"Search next requested but unable to parse last entry's sort parameter. Received $missed")
+                None
 
-        (mappedHits, aggs, seAf)
+            }
+          } else
+            None
+
+        (mappedHits, aggs, seAf.map(Seq(_)).getOrElse(Nil))
     }
   }
 

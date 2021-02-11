@@ -24,7 +24,7 @@ mappings in Universal ++= directory(baseDirectory.value / "resources")
 
 resolvers += Resolver.sonatypeRepo("releases")
 
-libraryDependencies += guice
+libraryDependencies ++= Seq(guice, caffeine)
 libraryDependencies += "com.github.pathikrit" %% "better-files" % "3.8.0"
 libraryDependencies += "com.typesafe.slick" %% "slick" % "3.3.2"
 libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test
