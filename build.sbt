@@ -36,7 +36,7 @@ libraryDependencies += "com.typesafe.play" %% "play-logback" % playVersion
 libraryDependencies += "com.typesafe.play" %% "play-json" % "2.8.1"
 libraryDependencies += "com.typesafe.play" %% "play-streams" % playVersion
 libraryDependencies += "com.typesafe.play" %% "play-slick" % "5.0.0"
-libraryDependencies += "ru.yandex.clickhouse" % "clickhouse-jdbc" % "0.2.4"
+libraryDependencies += "ru.yandex.clickhouse" % "clickhouse-jdbc" % "0.2.5"
 libraryDependencies += "org.sangria-graphql" %% "sangria" % "2.0.1"
 libraryDependencies += "org.sangria-graphql" %% "sangria-play-json" % "2.0.1"
 

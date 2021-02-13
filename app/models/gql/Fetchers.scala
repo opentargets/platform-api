@@ -95,7 +95,6 @@ object Fetchers extends Logging {
       ctx.getECOs(ids)
     }
   )
-  val drugsFetcherCache = FetcherCache.simple
 
   //hpo fetcher
   implicit val hpoHasId = HasId[HPO, String](_.id)
@@ -111,6 +110,8 @@ object Fetchers extends Logging {
 
   // drug
   implicit val drugHasId = HasId[Drug, String](_.id)
+
+  val drugsFetcherCache = FetcherCache.simple
   val drugsFetcher = Fetcher(
     config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(drugsFetcherCache),
     fetch = (ctx: Backend, ids: Seq[String]) => {

@@ -13,6 +13,13 @@
         <appender-ref ref="STDOUT" />
     </appender>
 
+    <appender name="FILEOUT" class="ch.qos.logback.core.FileAppender">
+        <file>${user.home}/opentargets-api-beta.log</file>
+        <append>false</append>
+        <encoder>
+            <pattern>%-5relative %-5level %logger{35} - %msg%n</pattern>
+        </encoder>
+    </appender>
 
     <logger name="play" level="DEBUG"/>
     <logger name="application" level="DEBUG"/>
@@ -28,7 +35,7 @@
     <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF"/>
     <logger name="ru.yandex.clickhouse.ClickHouseDriver" level="OFF"/>
     <logger name="com.zaxxer.hikari.pool.HikariPool" level="OFF"/>
-    <logger name="com.sksamuel.elastic4s.http.ResponseHandler" level="OFF"/>
+    <logger name="com.sksamuel.elastic4s.http.ResponseHandler" level="INFO"/>
     <!-- Set logging for all Akka library classes to INFO -->
     <logger name="akka" level="ERROR" />
     <!-- Set a specific actor to DEBUG -->
@@ -36,6 +43,7 @@
 
     <root level="WARN">
         <appender-ref ref="ASYNCSTDOUT" />
+        <!-- appender-ref ref="FILEOUT" /-->
     </root>
 
     <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook"/>
