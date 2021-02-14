@@ -43,7 +43,7 @@
 
     <root level="WARN">
         <appender-ref ref="ASYNCSTDOUT" />
-        <!-- appender-ref ref="FILEOUT" /-->
+        <appender-ref ref="FILEOUT" />
     </root>
 
     <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook"/>

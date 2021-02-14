@@ -25,22 +25,24 @@ mappings in Universal ++= directory(baseDirectory.value / "resources")
 resolvers += Resolver.sonatypeRepo("releases")
 
 libraryDependencies ++= Seq(guice, caffeine)
-libraryDependencies += "com.github.pathikrit" %% "better-files" % "3.8.0"
-libraryDependencies += "com.typesafe.slick" %% "slick" % "3.3.2"
+libraryDependencies += "com.github.pathikrit" %% "better-files" % "3.9.1"
+libraryDependencies += "com.typesafe.slick" %% "slick" % "3.3.3"
 libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test
 
-val playVersion = "2.8.2"
+val playVersion = "2.8.6"
 libraryDependencies += "com.typesafe.play" %% "play" % playVersion
 libraryDependencies += "com.typesafe.play" %% "filters-helpers" % playVersion
 libraryDependencies += "com.typesafe.play" %% "play-logback" % playVersion
-libraryDependencies += "com.typesafe.play" %% "play-json" % "2.8.1"
+libraryDependencies += "com.typesafe.play" %% "play-json" % "2.9.2"
 libraryDependencies += "com.typesafe.play" %% "play-streams" % playVersion
 libraryDependencies += "com.typesafe.play" %% "play-slick" % "5.0.0"
+
+val sangriaVersion = "2.1.0"
 libraryDependencies += "ru.yandex.clickhouse" % "clickhouse-jdbc" % "0.2.5"
-libraryDependencies += "org.sangria-graphql" %% "sangria" % "2.0.1"
+libraryDependencies += "org.sangria-graphql" %% "sangria" % sangriaVersion
 libraryDependencies += "org.sangria-graphql" %% "sangria-play-json" % "2.0.1"
 
-val s4sVersion = "7.7.0"
+val s4sVersion = "7.9.2"
 libraryDependencies ++= Seq(
   "com.sksamuel.elastic4s" %% "elastic4s-core" % s4sVersion,
   "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % s4sVersion,
@@ -48,5 +50,5 @@ libraryDependencies ++= Seq(
   "com.sksamuel.elastic4s" %% "elastic4s-json-play" % s4sVersion
 )
 // Google app engine logging
-libraryDependencies += "com.google.cloud" % "google-cloud-logging-logback" % "0.119.7-alpha"
+libraryDependencies += "com.google.cloud" % "google-cloud-logging-logback" % "0.120.0-alpha"
 

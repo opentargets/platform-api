@@ -208,7 +208,7 @@ class Backend @Inject()(
   def getKnownDrugs(queryString: String,
                     kv: Map[String, String],
                     sizeLimit: Option[Int],
-                    cursor: Seq[String]): Future[Option[KnownDrugs]] = {
+                    cursor: Option[String]): Future[Option[KnownDrugs]] = {
 
     val pag = Pagination(0, sizeLimit.getOrElse(Pagination.sizeDefault))
     val sortByField = sort.FieldSort(field = "phase").desc()
@@ -250,7 +250,7 @@ class Backend @Inject()(
                    diseaseIds: Seq[String],
                    orderBy: Option[(String, String)],
                    sizeLimit: Option[Int],
-                   cursor: Option[Seq[String]]): Future[Evidences] = {
+                   cursor: Option[String]): Future[Evidences] = {
 
     val pag = sizeLimit.getOrElse(Pagination.sizeDefault)
     val sortByField = orderBy.flatMap { p =>
@@ -331,7 +331,7 @@ class Backend @Inject()(
     logger.info(s"Querying drugs: $ids")
     val drugIndexName = getIndexOrDefault("drug")
     val queryTerm = Map("id.keyword" -> ids)
-    esRetriever.getByIndexedQueryShould(drugIndexName, queryTerm, Pagination.mkDefault, fromJsValue[Drug]).map(_._1)
+    esRetriever.getByIndexedQueryShould(drugIndexName, queryTerm, Pagination(0, ids.size), fromJsValue[Drug]).map(_._1)
   }
 
   def getMechanismsOfAction(id: String): Future[MechanismsOfAction] = {
