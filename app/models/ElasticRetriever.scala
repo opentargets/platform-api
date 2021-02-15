@@ -20,6 +20,7 @@ import play.api.libs.json._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.util.Try
 
 class ElasticRetriever @Inject()(client: ElasticClient,
                                  hlFields: Seq[String],
@@ -36,27 +37,37 @@ class ElasticRetriever @Inject()(client: ElasticClient,
   private def decodeSearchAfter(searchAfter: Option[String]): Seq[Any] =
     searchAfter
       .map(sa => {
-        val vv = Json.parse(Base64Engine.decode(sa)).asOpt[JsArray]
+        val vv =
+          Try(Json.parse(Base64Engine.decode(sa)))
+            .map(_.asOpt[JsArray])
+            .fold(ex => {
+              logger.error(s"bae64 encoded  ${ex.toString}")
+              None
+            }, identity)
         val sValues = vv.map(_.value).getOrElse(Seq.empty)
 
         val flattenedValues = sValues
           .map {
             case JsNumber(n) => n.toDouble
             case JsString(s) => s
-            case _           => null
+            case otherJs =>
+              logger.warn(s"base64 included some unexpected js values ${otherJs.toString}")
+              null
           }
           .filter(_ != null)
 
         if (logger.isDebugEnabled) {
-          logger.debug(s"base64 $sa decoded and parsed into JsValue " +
-            s"as ${Json.stringify(vv.get)} and transformed into ${flattenedValues.mkString("Seq(", ", ", ")")}")
+          logger.debug(
+            s"base64 $sa decoded and parsed into JsValue " +
+              s"as ${Json.stringify(vv.getOrElse(JsNull))} and transformed into " +
+              s"${flattenedValues.mkString("Seq(", ", ", ")")}")
         }
 
         flattenedValues
       })
       .getOrElse(Seq.empty)
 
-  private def encondeSearchAfter(jsArray: Option[JsValue]): Option[String] =
+  private def encodeSearchAfter(jsArray: Option[JsValue]): Option[String] =
     jsArray.map(jsv => Base64Engine.encode(Json.stringify(jsv))).map(new String(_))
 
   /** This fn represents a query where each kv from the map is used in
@@ -233,7 +244,7 @@ class ElasticRetriever @Inject()(client: ElasticClient,
         val seAf =
           if (hasNext) {
             val jsa = (hits.last \ "sort").toOption
-            encondeSearchAfter(jsa)
+            encodeSearchAfter(jsa)
           } else
             None
 
@@ -317,7 +328,7 @@ class ElasticRetriever @Inject()(client: ElasticClient,
         val seAf =
           if (hasNext) {
             val jsa = (hits.last \ "sort").toOption
-            encondeSearchAfter(jsa)
+            encodeSearchAfter(jsa)
           } else
             None
 
