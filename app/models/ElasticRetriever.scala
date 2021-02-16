@@ -14,7 +14,6 @@ import models.entities.SearchResults._
 import models.entities._
 import models.Helpers.Base64Engine
 import play.api.Logging
-import play.api.cache.AsyncCacheApi
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 
@@ -24,8 +23,7 @@ import scala.util.Try
 
 class ElasticRetriever @Inject()(client: ElasticClient,
                                  hlFields: Seq[String],
-                                 searchEntities: Seq[String],
-                                 cache: AsyncCacheApi)
+                                 searchEntities: Seq[String])
     extends Logging
     with QueryApi
     with ElasticRetrieverQueryBuilders {
