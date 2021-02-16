@@ -52,7 +52,7 @@ class Backend @Inject()(
     else HealthCheck(false, "Hmm, something wrong is going on here!")
 
   implicit lazy val esRetriever =
-    new ElasticRetriever(getESClient, defaultESSettings.highlightFields, allSearchableIndices, cache)
+    new ElasticRetriever(getESClient, defaultESSettings.highlightFields, allSearchableIndices)
 
   // we must import the dsl
 
