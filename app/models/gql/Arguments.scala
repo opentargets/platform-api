@@ -30,7 +30,7 @@ object Arguments {
 
   val pageArg = Argument("page", OptionInputType(paginationGQLImp))
   val pageSize = Argument("size", OptionInputType(IntType))
-  val cursor = Argument("cursor", OptionInputType(ListInputType(StringType)))
+  val cursor = Argument("cursor", OptionInputType(StringType))
   val databaseName =
     Argument("sourceDatabase", OptionInputType(StringType), description = "Database name")
   val queryString = Argument("queryString", StringType, description = "Query string")

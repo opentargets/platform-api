@@ -101,7 +101,7 @@ object Objects extends Logging {
           ctx.ctx.getKnownDrugs(ctx.arg(freeTextQuery).getOrElse(""),
                                 Map("targetId.raw" -> ctx.value.id),
                                 ctx.arg(pageSize),
-                                ctx.arg(cursor).getOrElse(Nil))
+                                ctx.arg(cursor))
         }
       ),
       Field(
@@ -229,7 +229,7 @@ object Objects extends Logging {
               "ancestors.raw" -> ctx.value.id
             ),
             ctx.arg(pageSize),
-            ctx.arg(cursor).getOrElse(Nil)
+            ctx.arg(cursor)
           )
         }
       ),
@@ -731,7 +731,7 @@ object Objects extends Logging {
             ctx.arg(freeTextQuery).getOrElse(""),
             Map("drugId.raw" -> ctx.value.id),
             ctx.arg(pageSize),
-            ctx.arg(cursor).getOrElse(Nil)
+            ctx.arg(cursor)
           )
         }
       ),
