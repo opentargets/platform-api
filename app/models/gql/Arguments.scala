@@ -8,7 +8,6 @@ import sangria.schema._
 import sangria.marshalling.playJson._
 
 object Arguments {
-  import Objects._
   import Aggregations._
 
   val paginationGQLImp = deriveInputObjectType[Pagination]()
@@ -53,9 +52,13 @@ object Arguments {
 
   val BFilterString = Argument("BFilter", OptionInputType(StringType))
   val scoreSorting = Argument("orderByScore", OptionInputType(StringType))
+
   val AId = Argument("A", StringType)
   val AIds = Argument("As", ListInputType(StringType))
   val BIds = Argument("Bs", OptionInputType(ListInputType(StringType)))
+
+  val idsArg = Argument("ids", OptionInputType(ListInputType(StringType)), description = "List of IDs either EFO ENSEMBL CHEMBL")
+  val thresholdArg = Argument("threshold", OptionInputType(FloatType), description = "Threshold similarity between 0 and 1")
 
   val datasourceSettingsListArg =
     Argument("datasources", OptionInputType(ListInputType(datasourceSettingsInputImp)))

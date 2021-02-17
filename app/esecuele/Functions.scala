@@ -24,6 +24,8 @@ object Functions {
 
   def groupArray(col: Column): Column = f("groupArray", col)
 
+  def sumForEach(col: Column): Column = f("sumForEach", col)
+
   def groupUniqArray(col: Column): Column = f("groupUniqArray", col)
 
   def groupArrayIf(col1: Column, col2: Column): Column = f("groupArrayIf", col1, col2)
@@ -99,6 +101,8 @@ object Functions {
   def multiply(col1: Column, col2: Column): Column = f("multiply", col1, col2)
 
   def modulo(col1: Column, col2: Column): Column = f("modulo", col1, col2)
+
+  def sqrt(col: Column): Column = f("sqrt", col)
 
   def plus(col1: Column, col2: Column): Column = f("plus", col1, col2)
 

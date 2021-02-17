@@ -5,8 +5,8 @@ import esecuele.{Functions => F}
 import esecuele.Column._
 import esecuele.{Query => Q}
 import models.entities.Harmonic
-import models.entities.Harmonic.{maxVectorElementsDefault, pExponentDefault}
-import play.api.{Logger, Logging}
+import models.entities.Harmonic.pExponentDefault
+import play.api.Logging
 
 abstract class Queryable {
   def query: Query

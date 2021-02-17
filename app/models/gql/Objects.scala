@@ -45,6 +45,16 @@ object Objects extends Logging {
                        None,
                        resolve = r => reactomeFetcher.deferSeq(r.value.reactome))),
     AddFields(
+      Field("similarW2VEntities",
+        ListType(similarityGQLImp),
+        description = Some("Return similar labels using a model Word2CVec trained with PubMed"),
+        arguments = idsArg :: thresholdArg :: pageSize :: Nil,
+        resolve = c => {
+          val ids = c.value.id +: c.arg(idsArg).getOrElse(List.empty)
+          val thres = c.arg(thresholdArg).getOrElse(0.1)
+          val n = c.arg(pageSize).getOrElse(10)
+          c.ctx.getSimilarW2VEntities(ids.toSet, thres, n)
+        }),
       Field(
         "evidences",
         evidencesImp,
@@ -175,6 +185,16 @@ object Objects extends Logging {
                        Some("Disease children entities in ontology"),
                        resolve = r => diseasesFetcher.deferSeq(r.value.children))),
     AddFields(
+      Field("similarW2VEntities",
+        ListType(similarityGQLImp),
+        description = Some("Return similar labels using a model Word2CVec trained with PubMed"),
+        arguments = idsArg :: thresholdArg :: pageSize :: Nil,
+        resolve = c => {
+          val ids = c.value.id +: c.arg(idsArg).getOrElse(List.empty)
+          val thres = c.arg(thresholdArg).getOrElse(0.1)
+          val n = c.arg(pageSize).getOrElse(10)
+          c.ctx.getSimilarW2VEntities(ids.toSet, thres, n)
+        }),
       Field(
         "isTherapeuticArea",
         BooleanType,
@@ -703,6 +723,16 @@ object Objects extends Logging {
       )
     ),
     AddFields(
+      Field("similarW2VEntities",
+        ListType(similarityGQLImp),
+        description = Some("Return similar labels using a model Word2CVec trained with PubMed"),
+        arguments = idsArg :: thresholdArg :: pageSize :: Nil,
+        resolve = c => {
+          val ids = c.value.id +: c.arg(idsArg).getOrElse(List.empty)
+          val thres = c.arg(thresholdArg).getOrElse(0.1)
+          val n = c.arg(pageSize).getOrElse(10)
+          c.ctx.getSimilarW2VEntities(ids.toSet, thres, n)
+        }),
       Field(
         "mechanismsOfAction",
         OptionType(mechanismOfActionImp),
@@ -861,4 +891,64 @@ object Objects extends Logging {
       DocumentField("rows", "Clinical precedence entries with known mechanism of action")
     )
 
+  lazy val mUnionType =
+    UnionType("EntityUnionType", types = List(targetImp, drugImp, diseaseImp))
+
+  implicit val searchResultAggsCategoryImp =
+    deriveObjectType[Backend, models.entities.SearchResultAggCategory]()
+  implicit val searchResultAggsEntityImp =
+    deriveObjectType[Backend, models.entities.SearchResultAggEntity]()
+  implicit val searchResultAggsImp = deriveObjectType[Backend, models.entities.SearchResultAggs]()
+  implicit val searchResultImp = deriveObjectType[Backend, models.entities.SearchResult](
+    AddFields(
+      Field(
+        "object",
+        OptionType(mUnionType),
+        description = Some("Associations for a fixed target"),
+        resolve = ctx => {
+          ctx.value.entity match {
+            case "target"  => targetsFetcher.deferOpt(ctx.value.id)
+            case "disease" => diseasesFetcher.deferOpt(ctx.value.id)
+            case _         => drugsFetcher.deferOpt(ctx.value.id)
+          }
+        }
+      ))
+  )
+
+  implicit val similarityGQLImp = deriveObjectType[Backend, models.entities.Similarity](
+    AddFields(
+      Field(
+        "object",
+        OptionType(mUnionType),
+        description = Some("Similarity label optionally resolved into an entity"),
+        resolve = ctx => {
+          ctx.value.category match {
+            case "target"  => targetsFetcher.deferOpt(ctx.value.id)
+            case "disease" => diseasesFetcher.deferOpt(ctx.value.id)
+            case _         => drugsFetcher.deferOpt(ctx.value.id)
+          }
+        }
+      ))
+  )
+
+  implicit val searchResultsImp = deriveObjectType[Backend, models.entities.SearchResults]()
+
+  val searchResultsGQLImp = ObjectType(
+    "SearchResults",
+    "Search results",
+    fields[Backend, SearchResults](
+      Field("aggregations",
+        OptionType(searchResultAggsImp),
+        description = Some("Aggregations"),
+        resolve = _.value.aggregations),
+      Field("hits",
+        ListType(searchResultImp),
+        description = Some("Return combined"),
+        resolve = _.value.hits),
+      Field("total",
+        LongType,
+        description = Some("Total number or results given a entity filter"),
+        resolve = _.value.total)
+    )
+  )
 }

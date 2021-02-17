@@ -7,9 +7,10 @@ import com.sksamuel.elastic4s.requests.searches._
 import com.sksamuel.elastic4s.requests.searches.aggs._
 import com.sksamuel.elastic4s.requests.searches.sort.SortOrder
 import esecuele._
+
 import javax.inject.Inject
 import models.Helpers._
-import models.db.QAOTF
+import models.db.{QAOTF, QW2V}
 import models.entities.Aggregations._
 import models.entities.Associations._
 import models.entities.CancerBiomarkers._
@@ -735,10 +736,17 @@ class Backend @Inject()(
     }
   }
 
+  def getSimilarW2VEntities(labels: Set[String], threshold: Double, size: Int): Future[Vector[Similarity]] = {
+    val table = defaultOTSettings.clickhouse.similarities
+    logger.info(s"query similarities in table ${table.name}")
+
+    val simQ = QW2V(table.name, None, labels, threshold, size)
+    dbRetriever.executeQuery[Similarity, Query](simQ.query)
+  }
+
   private def getIndexOrDefault(index: String, default: Option[String] = None): String =
     defaultESSettings.entities
       .find(_.name == index)
       .map(_.index)
       .getOrElse(default.getOrElse(index))
-
 }
