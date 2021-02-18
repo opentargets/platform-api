@@ -736,12 +736,19 @@ class Backend @Inject()(
     }
   }
 
-  def getSimilarW2VEntities(labels: Set[String], threshold: Double, size: Int): Future[Vector[Similarity]] = {
+  def getSimilarW2VEntities(label: String, labels: Set[String], category: Option[String], threshold: Double, size: Int): Future[Vector[Similarity]] = {
     val table = defaultOTSettings.clickhouse.similarities
     logger.info(s"query similarities in table ${table.name}")
 
-    val simQ = QW2V(table.name, None, labels, threshold, size)
-    dbRetriever.executeQuery[Similarity, Query](simQ.query)
+    val jointLabels = labels + label
+    val simQ = QW2V(table.name, category, jointLabels, threshold, size)
+    dbRetriever.executeQuery[Long, Query](simQ.existsLabel(label)).flatMap {
+      case Vector(1) => dbRetriever.executeQuery[Similarity, Query](simQ.query)
+      case _ =>
+        logger.info(s"This case where the label asked ${label} to the model Word2Vec does not exist" +
+          s" is ok but nice to capture though")
+        Future.successful(Vector.empty)
+    }
   }
 
   private def getIndexOrDefault(index: String, default: Option[String] = None): String =

@@ -45,16 +45,19 @@ object Objects extends Logging {
                        None,
                        resolve = r => reactomeFetcher.deferSeq(r.value.reactome))),
     AddFields(
-      Field("similarW2VEntities",
+      Field(
+        "similarW2VEntities",
         ListType(similarityGQLImp),
         description = Some("Return similar labels using a model Word2CVec trained with PubMed"),
-        arguments = idsArg :: thresholdArg :: pageSize :: Nil,
+        arguments = idsArg :: optQueryString :: thresholdArg :: pageSize :: Nil,
         resolve = c => {
-          val ids = c.value.id +: c.arg(idsArg).getOrElse(List.empty)
+          val ids = c.arg(idsArg).getOrElse(List.empty)
           val thres = c.arg(thresholdArg).getOrElse(0.1)
+          val cat = c.arg(optQueryString)
           val n = c.arg(pageSize).getOrElse(10)
-          c.ctx.getSimilarW2VEntities(ids.toSet, thres, n)
-        }),
+          c.ctx.getSimilarW2VEntities(c.value.id, ids.toSet, cat, thres, n)
+        }
+      ),
       Field(
         "evidences",
         evidencesImp,
@@ -185,16 +188,19 @@ object Objects extends Logging {
                        Some("Disease children entities in ontology"),
                        resolve = r => diseasesFetcher.deferSeq(r.value.children))),
     AddFields(
-      Field("similarW2VEntities",
+      Field(
+        "similarW2VEntities",
         ListType(similarityGQLImp),
         description = Some("Return similar labels using a model Word2CVec trained with PubMed"),
-        arguments = idsArg :: thresholdArg :: pageSize :: Nil,
+        arguments = idsArg :: optQueryString :: thresholdArg :: pageSize :: Nil,
         resolve = c => {
-          val ids = c.value.id +: c.arg(idsArg).getOrElse(List.empty)
+          val ids = c.arg(idsArg).getOrElse(List.empty)
           val thres = c.arg(thresholdArg).getOrElse(0.1)
+          val cat = c.arg(optQueryString)
           val n = c.arg(pageSize).getOrElse(10)
-          c.ctx.getSimilarW2VEntities(ids.toSet, thres, n)
-        }),
+          c.ctx.getSimilarW2VEntities(c.value.id, ids.toSet, cat, thres, n)
+        }
+      ),
       Field(
         "isTherapeuticArea",
         BooleanType,
@@ -558,25 +564,25 @@ object Objects extends Logging {
       "bioCuration",
       "This refers to the center or user making the annotation and the date on which the annotation was made"),
     DocumentField("diseaseFromSourceId",
-      "This field refers to the database and database identifier. EG. OMIM"),
+                  "This field refers to the database and database identifier. EG. OMIM"),
     DocumentField("diseaseFromSource", "Related name from the field diseaseFromSourceId"),
     ExcludeFields("diseaseName"),
     DocumentField("evidenceType",
-      "This field indicates the level of evidence supporting the annotation."),
+                  "This field indicates the level of evidence supporting the annotation."),
     DocumentField("frequency", "A term-id from the HPO-sub-ontology"),
     ReplaceField(
       "modifiers",
       Field("modifiers",
-        ListType(hpoImp),
-        Some("HP terms from the Clinical modifier subontology"),
-        resolve = r => hposFetcher.deferSeqOpt(r.value.modifiers))
+            ListType(hpoImp),
+            Some("HP terms from the Clinical modifier subontology"),
+            resolve = r => hposFetcher.deferSeqOpt(r.value.modifiers))
     ),
     ReplaceField(
       "onset",
       Field("onset",
-        ListType(hpoImp),
-        Some("A term-id from the HPO-sub-ontology below the term Age of onset."),
-        resolve = r => hposFetcher.deferSeqOpt(r.value.onset))
+            ListType(hpoImp),
+            Some("A term-id from the HPO-sub-ontology below the term Age of onset."),
+            resolve = r => hposFetcher.deferSeqOpt(r.value.onset))
     ),
     DocumentField(
       "qualifierNot",
@@ -603,10 +609,10 @@ object Objects extends Logging {
   implicit val diseaseHPOImp = deriveObjectType[Backend, DiseaseHPO](
     ObjectTypeDescription("Disease and phenotypes annotations"),
     ReplaceField("phenotype",
-      Field("phenotypeHPO",
-        OptionType(hpoImp),
-        Some("Phenotype entity"),
-        resolve = r => hposFetcher.deferOpt(r.value.phenotype))),
+                 Field("phenotypeHPO",
+                       OptionType(hpoImp),
+                       Some("Phenotype entity"),
+                       resolve = r => hposFetcher.deferOpt(r.value.phenotype))),
     AddFields(
       Field(
         "phenotypeEFO",
@@ -642,10 +648,10 @@ object Objects extends Logging {
     ObjectTypeName("LinkedTargets"),
     ObjectTypeDescription("Linked Target Entities"),
     ReplaceField("rows",
-      Field("rows",
-        ListType(targetImp),
-        Some("Target List"),
-        resolve = r => targetsFetcher.deferSeqOpt(r.value.rows)))
+                 Field("rows",
+                       ListType(targetImp),
+                       Some("Target List"),
+                       resolve = r => targetsFetcher.deferSeqOpt(r.value.rows)))
   )
 
   implicit lazy val drugReferenceImp: ObjectType[Backend, Reference] =
@@ -657,19 +663,19 @@ object Objects extends Logging {
   implicit lazy val mechanismOfActionRowImp: ObjectType[Backend, MechanismOfActionRow] =
     deriveObjectType[Backend, MechanismOfActionRow](
       ReplaceField("targets",
-        Field("targets",
-          ListType(targetImp),
-          Some("Target List"),
-          resolve =
-            r => targetsFetcher.deferSeqOpt(r.value.targets.getOrElse(Seq.empty))))
+                   Field("targets",
+                         ListType(targetImp),
+                         Some("Target List"),
+                         resolve =
+                           r => targetsFetcher.deferSeqOpt(r.value.targets.getOrElse(Seq.empty))))
     )
 
   implicit lazy val indicationRowImp = deriveObjectType[Backend, IndicationRow](
     ReplaceField("disease",
-      Field("disease",
-        diseaseImp,
-        Some("Disease"),
-        resolve = r => diseasesFetcher.defer(r.value.disease)))
+                 Field("disease",
+                       diseaseImp,
+                       Some("Disease"),
+                       resolve = r => diseasesFetcher.defer(r.value.disease)))
   )
 
   implicit lazy val indicationsImp = deriveObjectType[Backend, Indications](
@@ -723,16 +729,19 @@ object Objects extends Logging {
       )
     ),
     AddFields(
-      Field("similarW2VEntities",
+      Field(
+        "similarW2VEntities",
         ListType(similarityGQLImp),
         description = Some("Return similar labels using a model Word2CVec trained with PubMed"),
-        arguments = idsArg :: thresholdArg :: pageSize :: Nil,
+        arguments = idsArg :: optQueryString :: thresholdArg :: pageSize :: Nil,
         resolve = c => {
-          val ids = c.value.id +: c.arg(idsArg).getOrElse(List.empty)
+          val ids = c.arg(idsArg).getOrElse(List.empty)
           val thres = c.arg(thresholdArg).getOrElse(0.1)
+          val cat = c.arg(optQueryString)
           val n = c.arg(pageSize).getOrElse(10)
-          c.ctx.getSimilarW2VEntities(ids.toSet, thres, n)
-        }),
+          c.ctx.getSimilarW2VEntities(c.value.id, ids.toSet, cat, thres, n)
+        }
+      ),
       Field(
         "mechanismsOfAction",
         OptionType(mechanismOfActionImp),
@@ -938,17 +947,17 @@ object Objects extends Logging {
     "Search results",
     fields[Backend, SearchResults](
       Field("aggregations",
-        OptionType(searchResultAggsImp),
-        description = Some("Aggregations"),
-        resolve = _.value.aggregations),
+            OptionType(searchResultAggsImp),
+            description = Some("Aggregations"),
+            resolve = _.value.aggregations),
       Field("hits",
-        ListType(searchResultImp),
-        description = Some("Return combined"),
-        resolve = _.value.hits),
+            ListType(searchResultImp),
+            description = Some("Return combined"),
+            resolve = _.value.hits),
       Field("total",
-        LongType,
-        description = Some("Total number or results given a entity filter"),
-        resolve = _.value.total)
+            LongType,
+            description = Some("Total number or results given a entity filter"),
+            resolve = _.value.total)
     )
   )
 }

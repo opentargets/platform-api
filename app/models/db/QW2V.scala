@@ -4,8 +4,6 @@ import esecuele._
 import esecuele.{Functions => F}
 import esecuele.Column._
 import esecuele.{Query => Q}
-import models.entities.Harmonic
-import models.entities.Harmonic.pExponentDefault
 import play.api.Logging
 
 // example query
@@ -66,10 +64,18 @@ case class QW2V(tableName: String,
   val wQ: Option[QuerySection] = Some(With(vv :: vvNorm :: vNorm :: sim :: Nil))
   val sQ: Option[QuerySection] = Some(Select(cat :: label :: sim.name :: Nil))
   val fromQ: Option[QuerySection] = Some(From(T, None))
-  val preWhereQ: Option[QuerySection] = filterByCategory.map(c => PreWhere(F.equals(column(c), literal(cat))))
+  val preWhereQ: Option[QuerySection] = filterByCategory.map(c => PreWhere(F.equals(cat, literal(c))))
   val whereQ: Option[QuerySection] = Some(Where(F.greaterOrEquals(sim.name, literal(threshold))))
   val orderByQ: Option[QuerySection] = Some(OrderBy(sim.name.desc :: Nil))
   val limitQ: Option[QuerySection] = Some(Limit(0, size))
+
+  def existsLabel(id: String): Query = {
+    val qElements =  Select(F.count(star) :: Nil) :: fromQ.get :: PreWhere(F.equals(label, literal(id))) :: Nil
+    val mainQ: Query = Q(qElements)
+    logger.debug(mainQ.toString)
+
+    mainQ
+  }
 
   override val query: Query = {
     val qElements = wQ :: sQ :: fromQ :: preWhereQ :: whereQ :: orderByQ :: limitQ :: Nil

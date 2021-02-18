@@ -8,6 +8,7 @@ import sangria.schema._
 import sangria.marshalling.playJson._
 
 object Arguments {
+
   import Aggregations._
 
   val paginationGQLImp = deriveInputObjectType[Pagination]()
@@ -19,13 +20,13 @@ object Arguments {
   val aggregationFilterImp = deriveInputObjectType[AggregationFilter]()
 
   val entityNames = Argument("entityNames",
-                             OptionInputType(ListInputType(StringType)),
-                             description =
-                               "List of entity names to search for (target, disease, drug,...)")
+    OptionInputType(ListInputType(StringType)),
+    description =
+      "List of entity names to search for (target, disease, drug,...)")
 
   val datasourceIdsArg = Argument("datasourceIds",
-                                  OptionInputType(ListInputType(StringType)),
-                                  description = "List of datasource ids")
+    OptionInputType(ListInputType(StringType)),
+    description = "List of datasource ids")
 
   val pageArg = Argument("page", OptionInputType(paginationGQLImp))
   val pageSize = Argument("size", OptionInputType(IntType))
@@ -57,7 +58,8 @@ object Arguments {
   val AIds = Argument("As", ListInputType(StringType))
   val BIds = Argument("Bs", OptionInputType(ListInputType(StringType)))
 
-  val idsArg = Argument("ids", OptionInputType(ListInputType(StringType)), description = "List of IDs either EFO ENSEMBL CHEMBL")
+  val idsArg = Argument("additionalIds", OptionInputType(ListInputType(StringType)),
+    description = "List of IDs either EFO ENSEMBL CHEMBL")
   val thresholdArg = Argument("threshold", OptionInputType(FloatType), description = "Threshold similarity between 0 and 1")
 
   val datasourceSettingsListArg =
