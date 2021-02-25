@@ -6,31 +6,8 @@ import esecuele.Column._
 import esecuele.{Query => Q}
 import play.api.Logging
 
-// example query
-//with (select sumForEach(vector)
-//      from ot.ml_w2v
-//      where word in ('ENSG00000170396', 'CHEMBL3187365')) as labels,
-//    labels as vv,
-//
-//    sqrt(arraySum(x -> x*x, vv)) as vvnorm,
-//    -- if(vvnorm <> .0, arrayMap(x -> x / vvnorm, vv), vv) as scaledvv,
-//    sqrt(arraySum(x -> x*x, vector)) as vnorm,
-//    if(vvnorm <> 0 and vnorm <> 0, arraySum(x -> x.1 * x.2, arrayZip(vv, vector)) / (vnorm * vvnorm), .0 ) as similarity
-//    -- if(vnorm <> .0, arrayMap(x -> x / vnorm, vector), vector) as scaledv
-//select
-//       category,
-//       word,
-//       similarity
-//from ot.ml_w2v ml
-//prewhere category = 'drug'
-//where (similarity >= 0.1)
-//-- where (similarity >= 0.4) and not(word like 'CHEMBL%' or word like 'ENSG%')
-//order by similarity desc
-//limit 50;
-
-
 case class QW2V(tableName: String,
-                filterByCategory: Option[String],
+                categories: List[String],
                 labels: Set[String],
                 threshold: Double,
                 size: Int)
@@ -64,7 +41,13 @@ case class QW2V(tableName: String,
   val wQ: Option[QuerySection] = Some(With(vv :: vvNorm :: vNorm :: sim :: Nil))
   val sQ: Option[QuerySection] = Some(Select(cat :: label :: sim.name :: Nil))
   val fromQ: Option[QuerySection] = Some(From(T, None))
-  val preWhereQ: Option[QuerySection] = filterByCategory.map(c => PreWhere(F.equals(cat, literal(c))))
+  val preWhereQ: Option[QuerySection] = categories match {
+    case Nil => None
+    case _ =>
+      val cats = F.set(categories.map(literal))
+      Some(PreWhere(F.in(cat, cats)))
+  }
+
   val whereQ: Option[QuerySection] = Some(Where(F.greaterOrEquals(sim.name, literal(threshold))))
   val orderByQ: Option[QuerySection] = Some(OrderBy(sim.name.desc :: Nil))
   val limitQ: Option[QuerySection] = Some(Limit(0, size))

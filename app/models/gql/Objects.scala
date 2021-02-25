@@ -49,13 +49,14 @@ object Objects extends Logging {
         "similarW2VEntities",
         ListType(similarityGQLImp),
         description = Some("Return similar labels using a model Word2CVec trained with PubMed"),
-        arguments = idsArg :: optQueryString :: thresholdArg :: pageSize :: Nil,
+        arguments = idsArg :: entityNames :: thresholdArg :: pageSize :: Nil,
         resolve = c => {
           val ids = c.arg(idsArg).getOrElse(List.empty)
           val thres = c.arg(thresholdArg).getOrElse(0.1)
-          val cat = c.arg(optQueryString)
+          val cats = c.arg(entityNames).getOrElse(Nil).toList
           val n = c.arg(pageSize).getOrElse(10)
-          c.ctx.getSimilarW2VEntities(c.value.id, ids.toSet, cat, thres, n)
+
+          c.ctx.getSimilarW2VEntities(c.value.id, ids.toSet, cats, thres, n)
         }
       ),
       Field(
@@ -192,13 +193,14 @@ object Objects extends Logging {
         "similarW2VEntities",
         ListType(similarityGQLImp),
         description = Some("Return similar labels using a model Word2CVec trained with PubMed"),
-        arguments = idsArg :: optQueryString :: thresholdArg :: pageSize :: Nil,
+        arguments = idsArg :: entityNames :: thresholdArg :: pageSize :: Nil,
         resolve = c => {
           val ids = c.arg(idsArg).getOrElse(List.empty)
           val thres = c.arg(thresholdArg).getOrElse(0.1)
-          val cat = c.arg(optQueryString)
+          val cats = c.arg(entityNames).getOrElse(Nil).toList
           val n = c.arg(pageSize).getOrElse(10)
-          c.ctx.getSimilarW2VEntities(c.value.id, ids.toSet, cat, thres, n)
+
+          c.ctx.getSimilarW2VEntities(c.value.id, ids.toSet, cats, thres, n)
         }
       ),
       Field(
@@ -733,13 +735,14 @@ object Objects extends Logging {
         "similarW2VEntities",
         ListType(similarityGQLImp),
         description = Some("Return similar labels using a model Word2CVec trained with PubMed"),
-        arguments = idsArg :: optQueryString :: thresholdArg :: pageSize :: Nil,
+        arguments = idsArg :: entityNames :: thresholdArg :: pageSize :: Nil,
         resolve = c => {
           val ids = c.arg(idsArg).getOrElse(List.empty)
           val thres = c.arg(thresholdArg).getOrElse(0.1)
-          val cat = c.arg(optQueryString)
+          val cats = c.arg(entityNames).getOrElse(Nil).toList
           val n = c.arg(pageSize).getOrElse(10)
-          c.ctx.getSimilarW2VEntities(c.value.id, ids.toSet, cat, thres, n)
+
+          c.ctx.getSimilarW2VEntities(c.value.id, ids.toSet, cats, thres, n)
         }
       ),
       Field(

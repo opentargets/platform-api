@@ -736,12 +736,12 @@ class Backend @Inject()(
     }
   }
 
-  def getSimilarW2VEntities(label: String, labels: Set[String], category: Option[String], threshold: Double, size: Int): Future[Vector[Similarity]] = {
+  def getSimilarW2VEntities(label: String, labels: Set[String], categories: List[String], threshold: Double, size: Int): Future[Vector[Similarity]] = {
     val table = defaultOTSettings.clickhouse.similarities
     logger.info(s"query similarities in table ${table.name}")
 
     val jointLabels = labels + label
-    val simQ = QW2V(table.name, category, jointLabels, threshold, size)
+    val simQ = QW2V(table.name, categories, jointLabels, threshold, size)
     dbRetriever.executeQuery[Long, Query](simQ.existsLabel(label)).flatMap {
       case Vector(1) => dbRetriever.executeQuery[Similarity, Query](simQ.query)
       case _ =>
