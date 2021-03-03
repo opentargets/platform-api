@@ -38,9 +38,25 @@ libraryDependencies += "com.typesafe.play" %% "play-streams" % playVersion
 libraryDependencies += "com.typesafe.play" %% "play-slick" % "5.0.0"
 
 val sangriaVersion = "2.1.0"
-libraryDependencies += "ru.yandex.clickhouse" % "clickhouse-jdbc" % "0.2.5"
+libraryDependencies += "ru.yandex.clickhouse" % "clickhouse-jdbc" % "0.2.6"
 libraryDependencies += "org.sangria-graphql" %% "sangria" % sangriaVersion
 libraryDependencies += "org.sangria-graphql" %% "sangria-play-json" % "2.0.1"
+
+lazy val catsVersion = "2.4.2"
+lazy val cats = Seq(
+  "org.typelevel" %% "cats-core" % catsVersion,
+  "org.typelevel" %% "cats-laws" % catsVersion,
+  "org.typelevel" %% "cats-kernel" % catsVersion,
+  "org.typelevel" %% "cats-kernel-laws" % catsVersion
+)
+libraryDependencies ++= cats
+
+lazy val monocleVersion = "2.1.0"
+lazy val monocle = Seq(
+  "com.github.julien-truffaut" %% "monocle-core" % monocleVersion,
+  "com.github.julien-truffaut" %% "monocle-macro" % monocleVersion
+)
+libraryDependencies++= monocle
 
 val s4sVersion = "7.9.2"
 libraryDependencies ++= Seq(
