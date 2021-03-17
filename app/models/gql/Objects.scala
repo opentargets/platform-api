@@ -4,6 +4,7 @@ import models._
 import models.entities.Configuration._
 import models.entities.Evidences._
 import models.entities.Interactions._
+import models.entities.Publications.publicationsImp
 import models.entities._
 import models.gql.Arguments._
 import models.gql.Fetchers._
@@ -46,7 +47,7 @@ object Objects extends Logging {
                        resolve = r => reactomeFetcher.deferSeq(r.value.reactome))),
     AddFields(
       Field(
-        "similarW2VEntities",
+        "similarEntities",
         ListType(similarityGQLImp),
         description = Some("Return similar labels using a model Word2CVec trained with PubMed"),
         arguments = idsArg :: entityNames :: thresholdArg :: pageSize :: Nil,
@@ -57,6 +58,19 @@ object Objects extends Logging {
           val n = c.arg(pageSize).getOrElse(10)
 
           c.ctx.getSimilarW2VEntities(c.value.id, ids.toSet, cats, thres, n)
+        }
+      ),
+      Field(
+        "literatureOcurrences",
+        publicationsImp,
+        description = Some("Return the list of publications that mention the main entity, " +
+          "alone or in combination with other entities"),
+        arguments = idsArg :: cursor :: Nil,
+        resolve = c => {
+          val ids = c.arg(idsArg).getOrElse(List.empty) ++ List(c.value.id)
+          val cur = c.arg(cursor)
+
+          c.ctx.getPublications(ids, cur)
         }
       ),
       Field(
@@ -190,7 +204,7 @@ object Objects extends Logging {
                        resolve = r => diseasesFetcher.deferSeq(r.value.children))),
     AddFields(
       Field(
-        "similarW2VEntities",
+        "similarEntities",
         ListType(similarityGQLImp),
         description = Some("Return similar labels using a model Word2CVec trained with PubMed"),
         arguments = idsArg :: entityNames :: thresholdArg :: pageSize :: Nil,
@@ -201,6 +215,19 @@ object Objects extends Logging {
           val n = c.arg(pageSize).getOrElse(10)
 
           c.ctx.getSimilarW2VEntities(c.value.id, ids.toSet, cats, thres, n)
+        }
+      ),
+      Field(
+        "literatureOcurrences",
+        publicationsImp,
+        description = Some("Return the list of publications that mention the main entity, " +
+          "alone or in combination with other entities"),
+        arguments = idsArg :: cursor :: Nil,
+        resolve = c => {
+          val ids = c.arg(idsArg).getOrElse(List.empty) ++ List(c.value.id)
+          val cur = c.arg(cursor)
+
+          c.ctx.getPublications(ids, cur)
         }
       ),
       Field(
@@ -732,7 +759,7 @@ object Objects extends Logging {
     ),
     AddFields(
       Field(
-        "similarW2VEntities",
+        "similarEntities",
         ListType(similarityGQLImp),
         description = Some("Return similar labels using a model Word2CVec trained with PubMed"),
         arguments = idsArg :: entityNames :: thresholdArg :: pageSize :: Nil,
@@ -743,6 +770,19 @@ object Objects extends Logging {
           val n = c.arg(pageSize).getOrElse(10)
 
           c.ctx.getSimilarW2VEntities(c.value.id, ids.toSet, cats, thres, n)
+        }
+      ),
+      Field(
+        "literatureOcurrences",
+        publicationsImp,
+        description = Some("Return the list of publications that mention the main entity, " +
+          "alone or in combination with other entities"),
+        arguments = idsArg :: cursor :: Nil,
+        resolve = c => {
+          val ids = c.arg(idsArg).getOrElse(List.empty) ++ List(c.value.id)
+          val cur = c.arg(cursor)
+
+          c.ctx.getPublications(ids, cur)
         }
       ),
       Field(

@@ -60,6 +60,7 @@ object Arguments {
 
   val idsArg = Argument("additionalIds", OptionInputType(ListInputType(StringType)),
     description = "List of IDs either EFO ENSEMBL CHEMBL")
+  val requiredIds = Argument("ids",ListInputType(StringType), description = "List of IDs either EFO ENSEMBL CHEMBL")
   val thresholdArg = Argument("threshold", OptionInputType(FloatType), description = "Threshold similarity between 0 and 1")
 
   val datasourceSettingsListArg =
