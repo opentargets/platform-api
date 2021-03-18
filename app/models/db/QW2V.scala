@@ -1,0 +1,70 @@
+package models.db
+
+import esecuele._
+import esecuele.{Functions => F}
+import esecuele.Column._
+import esecuele.{Query => Q}
+import play.api.Logging
+
+case class QW2V(tableName: String,
+                categories: List[String],
+                labels: Set[String],
+                threshold: Double,
+                size: Int)
+    extends Queryable
+    with Logging {
+
+  require(labels.nonEmpty)
+
+  val cat: Column = column("category")
+  val label: Column = column("word")
+  val v: Column = column("vector")
+  val T: Column = column(tableName)
+
+  val vv: Column = Q(
+    Select(F.sumForEach(v) :: Nil),
+    From(T),
+    PreWhere(F.in(label, F.set(labels.map(literal).toSeq)))
+  ).toColumn(None).as(Some("vv"))
+
+  val vvNorm: Column = F.sqrt(F.arraySum(Some("x -> x*x"), vv)).as(Some("vvnorm"))
+  val vNorm: Column = F.sqrt(F.arraySum(Some("x -> x*x"), v)).as(Some("vnorm"))
+
+  val sim: Column = F.ifThenElse(
+    F.and(F.notEquals(vvNorm.name, literal(0d)), F.notEquals(vNorm.name, literal(0d))),
+    F.divide(
+      F.arraySum(Some("x -> x.1 * x.2"), F.arrayZip(vv.name, v.name)),
+      F.multiply(vNorm.name, vvNorm.name)),
+    literal(0d)
+  ).as(Some("similarity"))
+
+  val wQ: Option[QuerySection] = Some(With(vv :: vvNorm :: vNorm :: sim :: Nil))
+  val sQ: Option[QuerySection] = Some(Select(cat :: label :: sim.name :: Nil))
+  val fromQ: Option[QuerySection] = Some(From(T, None))
+  val preWhereQ: Option[QuerySection] = categories match {
+    case Nil => None
+    case _ =>
+      val cats = F.set(categories.map(literal))
+      Some(PreWhere(F.in(cat, cats)))
+  }
+
+  val whereQ: Option[QuerySection] = Some(Where(F.greaterOrEquals(sim.name, literal(threshold))))
+  val orderByQ: Option[QuerySection] = Some(OrderBy(sim.name.desc :: Nil))
+  val limitQ: Option[QuerySection] = Some(Limit(0, size))
+
+  def existsLabel(id: String): Query = {
+    val qElements =  Select(F.count(star) :: Nil) :: fromQ.get :: PreWhere(F.equals(label, literal(id))) :: Nil
+    val mainQ: Query = Q(qElements)
+    logger.debug(mainQ.toString)
+
+    mainQ
+  }
+
+  override val query: Query = {
+    val qElements = wQ :: sQ :: fromQ :: preWhereQ :: whereQ :: orderByQ :: limitQ :: Nil
+    val mainQ = Q(qElements.filter(_.isDefined).map(_.get))
+    logger.debug(mainQ.toString)
+
+    mainQ
+  }
+}

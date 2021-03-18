@@ -33,6 +33,8 @@ object Column {
     }
   }
 
+  val star: Column = column("*")
+
   def apply(expression: Expression): Column = Column(expression, None)
 
   def apply(name: String): Column = parse(name)

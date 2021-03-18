@@ -42,6 +42,7 @@ object Configuration {
     * */
   case class ClickhouseSettings(target: TargetSettings,
                                 disease: DiseaseSettings,
+                                similarities: AssociationSettings,
                                 harmonic: HarmonicSettings)
 
   /** main Open Targets configuration object. It keeps track of meta, elasticsearch and clickhouse
