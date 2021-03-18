@@ -1,7 +1,7 @@
 sudo: required
 language: scala
 scala:
-  - 2.12.10
+  - 2.12.12
 dist: xenial
 jdk:
   - openjdk11
@@ -31,7 +31,7 @@ notifications:
     on_success: never
     on_failure: always
 after_success:
-  - bash <(curl -s https://codecov.io/bash)
+#  - bash <(curl -s https://codecov.io/bash)
   - docker pull "${QUAY_REPO}:${TRAVIS_BRANCH}" || true
   - docker build --pull --cache-from "${QUAY_REPO}:${TRAVIS_BRANCH}" --tag "${QUAY_REPO}" . || docker build .
   - docker login -u="${QUAY_USER}" -p="${QUAY_PASSWORD}" quay.io
