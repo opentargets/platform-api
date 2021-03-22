@@ -63,8 +63,9 @@ object Objects extends Logging {
       Field(
         "literatureOcurrences",
         publicationsImp,
-        description = Some("Return the list of publications that mention the main entity, " +
-          "alone or in combination with other entities"),
+        description = Some(
+          "Return the list of publications that mention the main entity, " +
+            "alone or in combination with other entities"),
         arguments = idsArg :: cursor :: Nil,
         resolve = c => {
           val ids = c.arg(idsArg).getOrElse(List.empty) ++ List(c.value.id)
@@ -183,6 +184,8 @@ object Objects extends Logging {
     DocumentField("synonyms", "Disease synonyms"),
     DocumentField("dbXRefs", "List of external cross reference IDs"),
     ExcludeFields("ontology"),
+    DocumentField("obsoleteTerms", "List of obsolete diseases"),
+    DocumentField("locationIds", "List of location Disease terms"),
     ReplaceField(
       "therapeuticAreas",
       Field(
@@ -204,6 +207,12 @@ object Objects extends Logging {
                        resolve = r => diseasesFetcher.deferSeq(r.value.children))),
     AddFields(
       Field(
+        "locations",
+        ListType(diseaseImp),
+        Some("Location disease terms"),
+        resolve = r => diseasesFetcher.deferSeqOpt(r.value.locationIds.getOrElse(Seq.empty))
+      ),
+      Field(
         "similarEntities",
         ListType(similarityGQLImp),
         description = Some("Return similar labels using a model Word2CVec trained with PubMed"),
@@ -220,8 +229,9 @@ object Objects extends Logging {
       Field(
         "literatureOcurrences",
         publicationsImp,
-        description = Some("Return the list of publications that mention the main entity, " +
-          "alone or in combination with other entities"),
+        description = Some(
+          "Return the list of publications that mention the main entity, " +
+            "alone or in combination with other entities"),
         arguments = idsArg :: cursor :: Nil,
         resolve = c => {
           val ids = c.arg(idsArg).getOrElse(List.empty) ++ List(c.value.id)
@@ -775,8 +785,9 @@ object Objects extends Logging {
       Field(
         "literatureOcurrences",
         publicationsImp,
-        description = Some("Return the list of publications that mention the main entity, " +
-          "alone or in combination with other entities"),
+        description = Some(
+          "Return the list of publications that mention the main entity, " +
+            "alone or in combination with other entities"),
         arguments = idsArg :: cursor :: Nil,
         resolve = c => {
           val ids = c.arg(idsArg).getOrElse(List.empty) ++ List(c.value.id)
