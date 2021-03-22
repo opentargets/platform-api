@@ -45,51 +45,6 @@ object GQLSchema {
     indicationFetcher
   )
 
-  lazy val msearchResultType =
-    UnionType("EntityUnionType", types = List(targetImp, drugImp, diseaseImp))
-
-  implicit val searchResultAggsCategoryImp =
-    deriveObjectType[Backend, models.entities.SearchResultAggCategory]()
-  implicit val searchResultAggsEntityImp =
-    deriveObjectType[Backend, models.entities.SearchResultAggEntity]()
-  implicit val searchResultAggsImp = deriveObjectType[Backend, models.entities.SearchResultAggs]()
-  implicit val searchResultImp = deriveObjectType[Backend, models.entities.SearchResult](
-    AddFields(
-      Field(
-        "object",
-        OptionType(msearchResultType),
-        description = Some("Associations for a fixed target"),
-        resolve = ctx => {
-          ctx.value.entity match {
-            case "target"  => targetsFetcher.deferOpt(ctx.value.id)
-            case "disease" => diseasesFetcher.deferOpt(ctx.value.id)
-            case _         => drugsFetcher.deferOpt(ctx.value.id)
-          }
-        }
-      ))
-  )
-
-  implicit val searchResultsImp = deriveObjectType[Backend, models.entities.SearchResults]()
-
-  val searchResultsGQLImp = ObjectType(
-    "SearchResults",
-    "Search results",
-    fields[Backend, SearchResults](
-      Field("aggregations",
-            OptionType(searchResultAggsImp),
-            description = Some("Aggregations"),
-            resolve = _.value.aggregations),
-      Field("hits",
-            ListType(searchResultImp),
-            description = Some("Return combined"),
-            resolve = _.value.hits),
-      Field("total",
-            LongType,
-            description = Some("Total number or results given a entity filter"),
-            resolve = _.value.total)
-    )
-  )
-
   val query = ObjectType(
     "Query",
     fields[Backend, Unit](

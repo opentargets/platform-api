@@ -5,11 +5,14 @@ import com.sksamuel.elastic4s._
 import com.sksamuel.elastic4s.http.JavaClient
 import com.sksamuel.elastic4s.requests.searches._
 import com.sksamuel.elastic4s.requests.searches.aggs._
-import com.sksamuel.elastic4s.requests.searches.sort.SortOrder
+import com.sksamuel.elastic4s.requests.searches.queries.BoolQuery
+import com.sksamuel.elastic4s.requests.searches.queries.matches.MatchQuery
+import com.sksamuel.elastic4s.requests.searches.sort.{FieldSort, SortOrder}
 import esecuele._
+
 import javax.inject.Inject
 import models.Helpers._
-import models.db.QAOTF
+import models.db.{QAOTF, QW2V}
 import models.entities.Aggregations._
 import models.entities.Associations._
 import models.entities.CancerBiomarkers._
@@ -281,6 +284,33 @@ class Backend @Inject()(
         case (Seq(), n, _) => Evidences.empty(withTotal = n)
         case (seq, n, nextCursor) =>
           Evidences(n, nextCursor, seq)
+      }
+  }
+
+  def getPublications(ids: Seq[String],
+                   cursor: Option[String]): Future[Publications] = {
+
+    val sortByField = FieldSort(field = "pubDate.keyword", order = SortOrder.Desc) ::
+      FieldSort(field = "pmid.keyword", order = SortOrder.Desc) :: Nil
+
+    val litIndex = getIndexOrDefault("literature", Some("literature"))
+
+    val bqMatches = ids.map(id => MatchQuery(field = "terms.keyword", value = id))
+    val bq = BoolQuery(must = bqMatches)
+
+    esRetriever
+      .getQ(litIndex,
+        bq,
+        Pagination.sizeDefault,
+        fromJsValue[JsValue],
+        Seq.empty,
+        sortByField,
+        Seq.empty,
+        cursor)
+      .map {
+        case (Seq(), n, _) => Publications.empty(withTotal = n)
+        case (seq, n, nextCursor) =>
+          Publications(n, nextCursor, seq)
       }
   }
 
@@ -735,10 +765,24 @@ class Backend @Inject()(
     }
   }
 
+  def getSimilarW2VEntities(label: String, labels: Set[String], categories: List[String], threshold: Double, size: Int): Future[Vector[Similarity]] = {
+    val table = defaultOTSettings.clickhouse.similarities
+    logger.info(s"query similarities in table ${table.name}")
+
+    val jointLabels = labels + label
+    val simQ = QW2V(table.name, categories, jointLabels, threshold, size)
+    dbRetriever.executeQuery[Long, Query](simQ.existsLabel(label)).flatMap {
+      case Vector(1) => dbRetriever.executeQuery[Similarity, Query](simQ.query)
+      case _ =>
+        logger.info(s"This case where the label asked ${label} to the model Word2Vec does not exist" +
+          s" is ok but nice to capture though")
+        Future.successful(Vector.empty)
+    }
+  }
+
   private def getIndexOrDefault(index: String, default: Option[String] = None): String =
     defaultESSettings.entities
       .find(_.name == index)
       .map(_.index)
       .getOrElse(default.getOrElse(index))
-
 }
