@@ -1,11 +1,16 @@
 package models.entities
 
+import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json._
 
-case class WithdrawnNotice(classes: Option[Seq[String]],
-                           countries: Option[Seq[String]],
-                           reasons: Option[Seq[String]],
-                           year: Option[Int])
+case class DrugWarningReference(id: String, source: String, url: String)
+case class DrugWarning(toxicityClass: Option[String],
+                       country: Option[String],
+                       description: Option[String],
+                       references: Option[Seq[DrugWarningReference]],
+                       warningType: String,
+                       year: Option[Int],
+                       meddraSocCode: Option[Int])
 
 case class Reference(ids: Option[Seq[String]], source: String, urls: Option[Seq[String]])
 
@@ -50,7 +55,7 @@ case class Drug(id: String,
                 parentId: Option[String],
                 maximumClinicalTrialPhase: Option[Int],
                 hasBeenWithdrawn: Boolean,
-                withdrawnNotice: Option[WithdrawnNotice],
+                drugWarning: Option[DrugWarning],
                 approvedIndications: Option[Seq[String]],
                 linkedDiseases: Option[LinkedIds],
                 linkedTargets: Option[LinkedIds],
@@ -59,7 +64,14 @@ case class Drug(id: String,
 
 object Drug {
   implicit val linkedIdsImpW = Json.format[models.entities.LinkedIds]
-  implicit val withdrawnNoticeImpW = Json.format[models.entities.WithdrawnNotice]
+//  implicit val drugWarningRefenceImpW = Json.format[models.entities.DrugWarningReference]
+  implicit val drugWarningsReferenceImpR: Reads[models.entities.DrugWarningReference] = (
+    (JsPath \ "ref_id").read[String] and
+      (JsPath \ "ref_type").read[String] and
+      (JsPath \ "ref_url").read[String]
+    )(DrugWarningReference.apply _)
+  implicit val drugWarningReferenceImpW: OWrites[DrugWarningReference] = Json.writes[DrugWarningReference]
+  implicit val drugWarningImpW = Json.format[models.entities.DrugWarning]
   implicit val referenceImpW = Json.format[models.entities.Reference]
   implicit val mechanismOfActionRowImpW = Json.format[models.entities.MechanismOfActionRow]
   implicit val mechanismOfActionImpW = Json.format[models.entities.MechanismsOfAction]
@@ -70,14 +82,19 @@ object Drug {
 
   def mechanismOfActionRaw2MechanismOfAction(raw: Seq[MechanismOfActionRaw]): MechanismsOfAction = {
     val rows =
-      raw.map(r => MechanismOfActionRow(r.mechanismOfAction, r.actionType, r.targetName, r.targets, r.references))
+      raw.map(
+        r =>
+          MechanismOfActionRow(r.mechanismOfAction,
+                               r.actionType,
+                               r.targetName,
+                               r.targets,
+                               r.references))
     val utt = raw.flatMap(_.targetType).distinct
     val uat = raw.flatMap(_.actionType).distinct
     MechanismsOfAction(rows, uat, utt)
   }
 
   implicit val DrugXRefImpF = Json.format[models.entities.DrugReferences]
-
 
   private val drugTransformerXRef: Reads[JsObject] = __.json.update(
     /*
@@ -86,16 +103,17 @@ object Drug {
     See: https://www.playframework.com/documentation/2.6.x/ScalaJsonTransformers
      */
     __.read[JsObject]
-      .map { o => {
-        if (o.keys.contains("crossReferences")) {
-          val cr: Seq[(String, JsValue)] = o.value("crossReferences").as[JsObject].fields
-          val newJsonObjects: Seq[JsObject] =
-            cr.map(xref => JsObject(Seq("source" -> JsString(xref._1), "reference" -> xref._2)))
-          (o - "crossReferences") ++ Json.obj("crossReferences" -> newJsonObjects)
-        } else {
-          o
+      .map { o =>
+        {
+          if (o.keys.contains("crossReferences")) {
+            val cr: Seq[(String, JsValue)] = o.value("crossReferences").as[JsObject].fields
+            val newJsonObjects: Seq[JsObject] =
+              cr.map(xref => JsObject(Seq("source" -> JsString(xref._1), "reference" -> xref._2)))
+            (o - "crossReferences") ++ Json.obj("crossReferences" -> newJsonObjects)
+          } else {
+            o
+          }
         }
-      }
       }
   )
   implicit val drugImplicitR: Reads[Drug] = drugTransformerXRef.andThen(Json.reads[Drug])

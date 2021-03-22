@@ -384,6 +384,13 @@ class Backend @Inject()(
     esRetriever.getByIndexedQueryShould(index, queryTerm, Pagination.mkDefault, fromJsValue[Indications]).map(_._1)
   }
 
+  def getDrugWarnings(id: String): Future[IndexedSeq[DrugWarning]] = {
+    val indexName = getIndexOrDefault("drugWarnings")
+    val queryTerm = Map("chemblIds.keyword" -> id)
+    logger.debug(s"Querying drug warnings for $id")
+    esRetriever.getByIndexedQueryShould(indexName, queryTerm, Pagination.mkDefault, fromJsValue[DrugWarning]).map(_._1)
+  }
+
   def getDiseases(ids: Seq[String]): Future[IndexedSeq[Disease]] = {
     val diseaseIndexName = getIndexOrDefault("disease")
     esRetriever.getByIds(diseaseIndexName, ids, fromJsValue[Disease])

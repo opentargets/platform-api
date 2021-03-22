@@ -725,14 +725,18 @@ object Objects extends Logging {
   implicit lazy val mechanismOfActionImp = deriveObjectType[Backend, MechanismsOfAction]()
 
   implicit lazy val drugCrossReferenceImp = deriveObjectType[Backend, DrugReferences]()
+  implicit lazy val drugWarningReferenceImp = deriveObjectType[Backend, DrugWarningReference]()
 
-  implicit lazy val withdrawnNoticeImp = deriveObjectType[Backend, WithdrawnNotice](
-    ObjectTypeDescription("Withdrawal reason"),
-    DocumentField("classes", "Withdrawal classes"),
-    DocumentField("countries", "Withdrawal countries"),
-    DocumentField("reasons", "Reason for withdrawal"),
+  implicit lazy val drugWarningsImp = deriveObjectType[Backend, DrugWarning](
+    ObjectTypeDescription("Drug warnings as calculated by ChEMBL"),
+    DocumentField("toxicityClass", "High level toxicity category by Meddra System Organ Class"),
+    DocumentField("country", "Country issuing warning"),
+    DocumentField("description", "Reason for withdrawal"),
+    DocumentField("references", "Source of withdrawal information"),
+    DocumentField("warningType", "Either 'black box warning' or 'withdrawn'"),
     DocumentField("year", "Year of withdrawal")
   )
+
   implicit lazy val drugImp: ObjectType[Backend, Drug] = deriveObjectType[Backend, Drug](
     ObjectTypeDescription("Drug/Molecule entity"),
     DocumentField("id", "Open Targets molecule id"),
@@ -746,7 +750,7 @@ object Objects extends Logging {
                     " post-marketing package inserts"),
     DocumentField("isApproved", "Alias for maximumClinicalTrialPhase == 4"),
     DocumentField("hasBeenWithdrawn", "Has drug been withdrawn from the market"),
-    DocumentField("withdrawnNotice", "Withdrawal reason"),
+    DocumentField("drugWarning", "Warnings present on drug as identified by ChEMBL."),
     DocumentField("approvedIndications",
                   "Indications for which there is a phase IV clinical trial"),
     DocumentField("blackBoxWarning", "Alert on life-threteaning drug side effects provided by FDA"),
@@ -768,6 +772,14 @@ object Objects extends Logging {
       )
     ),
     AddFields(
+      Field(
+        "drugWarnings",
+        ListType(drugWarningsImp),
+        description = Some("Drug warnings"),
+        resolve = c => {
+            c.ctx.getDrugWarnings(c.value.id)
+        }
+      ),
       Field(
         "similarEntities",
         ListType(similarityGQLImp),
