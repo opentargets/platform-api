@@ -1,10 +1,9 @@
 package controllers
 
 import java.util.concurrent.TimeUnit
-
 import akka.util.Timeout
 import controllers.api.v4.graphql.GraphQLController
-import inputs.{AdverseEventInputs, DrugInputs}
+import inputs.{AdverseEventInputs, DrugInputs, DrugWarningsInputs}
 import org.scalatest.Inspectors.{forAll => sForAll}
 import org.scalatest.matchers.should.Matchers.convertToAnyShouldWrapper
 import org.scalatest.prop.TableDrivenPropertyChecks
@@ -22,6 +21,7 @@ class GraphQLControllerTest
     with Injecting
     with DrugInputs
     with AdverseEventInputs
+    with DrugWarningsInputs
     with Logging
     with TableDrivenPropertyChecks {
 
@@ -140,4 +140,27 @@ class GraphQLControllerTest
     }
   }
 
+  "Drug warning queries" must {
+    "return drugWarnings objects when such objects are present" taggedAs IntegrationTestTag in {
+      val responses: Seq[String] = (chemblIdsWithDrugWarning ++ chemblIdsWithoutDrugWarning).map(dwQuery).map { q =>
+      {
+        val request = FakeRequest(POST, "/graphql")
+          .withHeaders(("Content-Type", "application/json"))
+          .withBody(q)
+        contentAsString(controller.gqlBody.apply(request))
+      }
+      }
+      val results = responses.zip(chemblIds).filter(s => s._1.contains("errors"))
+      logger.info(s"${responses.size - results.size} entries had no errors.")
+      logger.info(s"${results.size} entries contained errors.")
+      results.foreach(e => logger.info(s"ID: ${e._2} \t Error: ${e._1}"))
+
+      sForAll(responses) { r =>
+        r must include("data")
+        r mustNot include("errors")
+        val jsonResponse = Json.parse(responses.head)
+        assert((jsonResponse \ "data" \ "drug" \ "drugWarnings").isDefined)
+      }
+    }
+  }
 }

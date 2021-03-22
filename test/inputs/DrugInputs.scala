@@ -1182,7 +1182,8 @@ trait DrugInputs {
   def fullQuery(id: String): JsValue = Json.parse(
     s"""{"query": "query { drug(chemblId: \\"$id\\") { """
       + """id name synonyms tradeNames yearOfFirstApproval drugType maximumClinicalTrialPhase hasBeenWithdrawn """
-      + """withdrawnNotice { classes countries reasons year } blackBoxWarning description isApproved approvedIndications """
+      + """drugWarnings { toxicityClass country description id references { ref_id ref_url ref_type } warningType year meddraSocCode }"""
+      + """blackBoxWarning description isApproved approvedIndications """
       + """mechanismsOfAction { rows { mechanismOfAction actionType targetName references { ids source urls } targets { id } } uniqueActionTypes uniqueTargetTypes }"""
       + """indications { count rows { maxPhaseForIndication references { ids source } disease { id name description } } }"""
       + """linkedTargets {count rows { id approvedSymbol approvedName } }"""
