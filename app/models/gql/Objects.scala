@@ -63,8 +63,9 @@ object Objects extends Logging {
       Field(
         "literatureOcurrences",
         publicationsImp,
-        description = Some("Return the list of publications that mention the main entity, " +
-          "alone or in combination with other entities"),
+        description = Some(
+          "Return the list of publications that mention the main entity, " +
+            "alone or in combination with other entities"),
         arguments = idsArg :: cursor :: Nil,
         resolve = c => {
           val ids = c.arg(idsArg).getOrElse(List.empty) ++ List(c.value.id)
@@ -207,7 +208,7 @@ object Objects extends Logging {
     AddFields(
       Field(
         "locations",
-        OptionType(ListType(diseaseImp)),
+        ListType(diseaseImp),
         Some("Location disease terms"),
         resolve = r => diseasesFetcher.deferSeqOpt(r.value.locationIds.getOrElse(Seq.empty))
       ),
@@ -228,8 +229,9 @@ object Objects extends Logging {
       Field(
         "literatureOcurrences",
         publicationsImp,
-        description = Some("Return the list of publications that mention the main entity, " +
-          "alone or in combination with other entities"),
+        description = Some(
+          "Return the list of publications that mention the main entity, " +
+            "alone or in combination with other entities"),
         arguments = idsArg :: cursor :: Nil,
         resolve = c => {
           val ids = c.arg(idsArg).getOrElse(List.empty) ++ List(c.value.id)
@@ -783,8 +785,9 @@ object Objects extends Logging {
       Field(
         "literatureOcurrences",
         publicationsImp,
-        description = Some("Return the list of publications that mention the main entity, " +
-          "alone or in combination with other entities"),
+        description = Some(
+          "Return the list of publications that mention the main entity, " +
+            "alone or in combination with other entities"),
         arguments = idsArg :: cursor :: Nil,
         resolve = c => {
           val ids = c.arg(idsArg).getOrElse(List.empty) ++ List(c.value.id)
