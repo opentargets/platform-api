@@ -19,6 +19,7 @@ case class QW2V(tableName: String,
   val cat: Column = column("category")
   val label: Column = column("word")
   val v: Column = column("vector")
+  val norm: Column = column("norm")
   val T: Column = column(tableName)
 
   val vv: Column = Q(
@@ -28,17 +29,16 @@ case class QW2V(tableName: String,
   ).toColumn(None).as(Some("vv"))
 
   val vvNorm: Column = F.sqrt(F.arraySum(Some("x -> x*x"), vv)).as(Some("vvnorm"))
-  val vNorm: Column = F.sqrt(F.arraySum(Some("x -> x*x"), v)).as(Some("vnorm"))
 
   val sim: Column = F.ifThenElse(
-    F.and(F.notEquals(vvNorm.name, literal(0d)), F.notEquals(vNorm.name, literal(0d))),
+    F.and(F.notEquals(vvNorm.name, literal(0d)), F.notEquals(norm, literal(0d))),
     F.divide(
-      F.arraySum(Some("x -> x.1 * x.2"), F.arrayZip(vv.name, v.name)),
-      F.multiply(vNorm.name, vvNorm.name)),
+      F.arraySum(Some("x -> x.1 * x.2"), F.arrayZip(vv.name, v)),
+      F.multiply(norm, vvNorm.name)),
     literal(0d)
   ).as(Some("similarity"))
 
-  val wQ: Option[QuerySection] = Some(With(vv :: vvNorm :: vNorm :: sim :: Nil))
+  val wQ: Option[QuerySection] = Some(With(vv :: vvNorm :: sim :: Nil))
   val sQ: Option[QuerySection] = Some(Select(cat :: label :: sim.name :: Nil))
   val fromQ: Option[QuerySection] = Some(From(T, None))
   val preWhereQ: Option[QuerySection] = categories match {

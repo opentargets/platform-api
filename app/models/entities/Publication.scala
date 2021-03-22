@@ -94,9 +94,9 @@ object Publication {
         description = Some("List of match IDs in the publication"),
         resolve = js => (js.value \ "countsPerTerm").as[Seq[JsValue]]),
       Field("sentences",
-        ListType(sentenceImp),
+        OptionType(ListType(sentenceImp)),
         description = Some("Unique counts per matched keyword"),
-        resolve = js => (js.value \ "sentences").as[Seq[JsValue]])
+        resolve = js => (js.value \ "sentences").asOpt[Seq[JsValue]])
     )
   )
 }
