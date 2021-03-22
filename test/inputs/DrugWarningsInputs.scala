@@ -7,7 +7,7 @@ trait DrugWarningsInputs {
   lazy val chemblIdsWithoutDrugWarning: Seq[String] = Seq("CHEMBL350239")
 
   def dwQuery(id: String): JsValue = Json.parse(
-    s"""{ "query": "query { drug(chemblId: \\"$id\\") { id drugWarnings { toxicityClass country description id references { ref_id ref_url ref_type } warningType year meddraSocCode } } }"}"""
+    s"""{ "query": "query { drug(chemblId: \\"$id\\") { id drugWarnings { toxicityClass country description references { id source url } warningType year meddraSocCode } } }"}"""
   )
 }
 

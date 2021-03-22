@@ -724,7 +724,6 @@ object Objects extends Logging {
     DocumentField("toxicityClass", "High level toxicity category by Meddra System Organ Class"),
     DocumentField("country", "Country issuing warning"),
     DocumentField("description", "Reason for withdrawal"),
-    DocumentField("id", "Unique identifier of ChEMBL drug warning record"),
     DocumentField("references", "Source of withdrawal information"),
     DocumentField("warningType", "Either 'black box warning' or 'withdrawn'"),
     DocumentField("year", "Year of withdrawal")

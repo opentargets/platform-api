@@ -1,12 +1,12 @@
 package models.entities
 
+import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json._
 
-case class DrugWarningReference(ref_id: String, ref_type: String, ref_url: String)
+case class DrugWarningReference(id: String, source: String, url: String)
 case class DrugWarning(toxicityClass: Option[String],
                        country: Option[String],
                        description: Option[String],
-                       id: Int,
                        references: Option[Seq[DrugWarningReference]],
                        warningType: String,
                        year: Option[Int],
@@ -64,7 +64,13 @@ case class Drug(id: String,
 
 object Drug {
   implicit val linkedIdsImpW = Json.format[models.entities.LinkedIds]
-  implicit val drugWarningRefenceImpW = Json.format[models.entities.DrugWarningReference]
+//  implicit val drugWarningRefenceImpW = Json.format[models.entities.DrugWarningReference]
+  implicit val drugWarningsReferenceImpR: Reads[models.entities.DrugWarningReference] = (
+    (JsPath \ "ref_id").read[String] and
+      (JsPath \ "ref_type").read[String] and
+      (JsPath \ "ref_url").read[String]
+    )(DrugWarningReference.apply _)
+  implicit val drugWarningReferenceImpW: OWrites[DrugWarningReference] = Json.writes[DrugWarningReference]
   implicit val drugWarningImpW = Json.format[models.entities.DrugWarning]
   implicit val referenceImpW = Json.format[models.entities.Reference]
   implicit val mechanismOfActionRowImpW = Json.format[models.entities.MechanismOfActionRow]
