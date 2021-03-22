@@ -14,6 +14,8 @@ case class Disease(id: String,
                    therapeuticAreas: Seq[String],
                    description: Option[String],
                    dbXRefs: Option[Seq[String]],
+                   locationIds: Option[Seq[String]],
+                   obsoleteTerms: Option[Seq[String]],
                    synonyms: Option[Seq[DiseaseSynonyms]],
                    parents: Seq[String],
                    children: Seq[String],
@@ -33,18 +35,19 @@ object Disease extends Logging {
     See: https://www.playframework.com/documentation/2.6.x/ScalaJsonTransformers
      */
     __.read[JsObject]
-      .map { o => {
-        if (o.fields.map(_._1).contains("synonyms")) {
-          val cr: Seq[(String, JsValue)] = o.value("synonyms").as[JsObject].fields
-          val newJsonObjects: Seq[JsObject] =
-            cr.map(xref => JsObject(Seq("relation" -> JsString(xref._1), "terms" -> xref._2)))
-          (o - "synonyms") ++ Json.obj("synonyms" -> newJsonObjects)
-        } else {
-          o
+      .map { o =>
+        {
+          if (o.fields.map(_._1).contains("synonyms")) {
+            val cr: Seq[(String, JsValue)] = o.value("synonyms").as[JsObject].fields
+            val newJsonObjects: Seq[JsObject] =
+              cr.map(xref => JsObject(Seq("relation" -> JsString(xref._1), "terms" -> xref._2)))
+            (o - "synonyms") ++ Json.obj("synonyms" -> newJsonObjects)
+          } else {
+            o
+          }
         }
-       }
       }
   )
   implicit val diseaseImpR: Reads[Disease] = diseaseTransformerSynonyms.andThen(Json.reads[Disease])
-  implicit val diseaseImpW : OWrites[Disease] = Json.writes[Disease]
+  implicit val diseaseImpW: OWrites[Disease] = Json.writes[Disease]
 }

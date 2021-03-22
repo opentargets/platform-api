@@ -155,6 +155,8 @@ object Objects extends Logging {
     DocumentField("synonyms", "Disease synonyms"),
     DocumentField("dbXRefs", "List of external cross reference IDs"),
     ExcludeFields("ontology"),
+    DocumentField("obsoleteTerms", "List of obsolete diseases"),
+    DocumentField("locationIds", "List of location Disease terms"),
     ReplaceField(
       "therapeuticAreas",
       Field(
@@ -175,6 +177,12 @@ object Objects extends Logging {
                        Some("Disease children entities in ontology"),
                        resolve = r => diseasesFetcher.deferSeq(r.value.children))),
     AddFields(
+      Field(
+        "locations",
+        OptionType(ListType(diseaseImp)),
+        Some("Location disease terms"),
+        resolve = r => diseasesFetcher.deferSeqOpt(r.value.locationIds.getOrElse(Seq.empty))
+      ),
       Field(
         "isTherapeuticArea",
         BooleanType,
@@ -538,25 +546,25 @@ object Objects extends Logging {
       "bioCuration",
       "This refers to the center or user making the annotation and the date on which the annotation was made"),
     DocumentField("diseaseFromSourceId",
-      "This field refers to the database and database identifier. EG. OMIM"),
+                  "This field refers to the database and database identifier. EG. OMIM"),
     DocumentField("diseaseFromSource", "Related name from the field diseaseFromSourceId"),
     ExcludeFields("diseaseName"),
     DocumentField("evidenceType",
-      "This field indicates the level of evidence supporting the annotation."),
+                  "This field indicates the level of evidence supporting the annotation."),
     DocumentField("frequency", "A term-id from the HPO-sub-ontology"),
     ReplaceField(
       "modifiers",
       Field("modifiers",
-        ListType(hpoImp),
-        Some("HP terms from the Clinical modifier subontology"),
-        resolve = r => hposFetcher.deferSeqOpt(r.value.modifiers))
+            ListType(hpoImp),
+            Some("HP terms from the Clinical modifier subontology"),
+            resolve = r => hposFetcher.deferSeqOpt(r.value.modifiers))
     ),
     ReplaceField(
       "onset",
       Field("onset",
-        ListType(hpoImp),
-        Some("A term-id from the HPO-sub-ontology below the term Age of onset."),
-        resolve = r => hposFetcher.deferSeqOpt(r.value.onset))
+            ListType(hpoImp),
+            Some("A term-id from the HPO-sub-ontology below the term Age of onset."),
+            resolve = r => hposFetcher.deferSeqOpt(r.value.onset))
     ),
     DocumentField(
       "qualifierNot",
@@ -583,10 +591,10 @@ object Objects extends Logging {
   implicit val diseaseHPOImp = deriveObjectType[Backend, DiseaseHPO](
     ObjectTypeDescription("Disease and phenotypes annotations"),
     ReplaceField("phenotype",
-      Field("phenotypeHPO",
-        OptionType(hpoImp),
-        Some("Phenotype entity"),
-        resolve = r => hposFetcher.deferOpt(r.value.phenotype))),
+                 Field("phenotypeHPO",
+                       OptionType(hpoImp),
+                       Some("Phenotype entity"),
+                       resolve = r => hposFetcher.deferOpt(r.value.phenotype))),
     AddFields(
       Field(
         "phenotypeEFO",
@@ -622,10 +630,10 @@ object Objects extends Logging {
     ObjectTypeName("LinkedTargets"),
     ObjectTypeDescription("Linked Target Entities"),
     ReplaceField("rows",
-      Field("rows",
-        ListType(targetImp),
-        Some("Target List"),
-        resolve = r => targetsFetcher.deferSeqOpt(r.value.rows)))
+                 Field("rows",
+                       ListType(targetImp),
+                       Some("Target List"),
+                       resolve = r => targetsFetcher.deferSeqOpt(r.value.rows)))
   )
 
   implicit lazy val drugReferenceImp: ObjectType[Backend, Reference] =
@@ -637,19 +645,19 @@ object Objects extends Logging {
   implicit lazy val mechanismOfActionRowImp: ObjectType[Backend, MechanismOfActionRow] =
     deriveObjectType[Backend, MechanismOfActionRow](
       ReplaceField("targets",
-        Field("targets",
-          ListType(targetImp),
-          Some("Target List"),
-          resolve =
-            r => targetsFetcher.deferSeqOpt(r.value.targets.getOrElse(Seq.empty))))
+                   Field("targets",
+                         ListType(targetImp),
+                         Some("Target List"),
+                         resolve =
+                           r => targetsFetcher.deferSeqOpt(r.value.targets.getOrElse(Seq.empty))))
     )
 
   implicit lazy val indicationRowImp = deriveObjectType[Backend, IndicationRow](
     ReplaceField("disease",
-      Field("disease",
-        diseaseImp,
-        Some("Disease"),
-        resolve = r => diseasesFetcher.defer(r.value.disease)))
+                 Field("disease",
+                       diseaseImp,
+                       Some("Disease"),
+                       resolve = r => diseasesFetcher.defer(r.value.disease)))
   )
 
   implicit lazy val indicationsImp = deriveObjectType[Backend, Indications](
