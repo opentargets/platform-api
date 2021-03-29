@@ -83,7 +83,7 @@ object Objects extends Logging {
           ctx.ctx.getEvidences(ctx arg datasourceIdsArg,
                                Seq(ctx.value.id),
                                ctx arg efoIds,
-                               Some(("targetId.keyword", "desc")),
+                               Some(("score", "desc")),
                                ctx arg pageSize,
                                ctx arg cursor)
         }
@@ -264,7 +264,7 @@ object Objects extends Logging {
           ctx.ctx.getEvidences(ctx arg datasourceIdsArg,
                                ctx arg ensemblIds,
                                efos,
-                               Some(("targetId.keyword", "desc")),
+                               Some(("score", "desc")),
                                ctx arg pageSize,
                                ctx arg cursor)
         }
