@@ -74,10 +74,6 @@ object Interaction extends Logging {
   val interactionEvidence = ObjectType(
     "InteractionEvidence",
     fields[Backend, JsValue](
-      Field("causalInteraction",
-            BooleanType,
-            description = None,
-            resolve = js => (js.value \ "causalInteraction").as[Boolean]),
       Field("evidenceScore",
             OptionType(FloatType),
             description = None,

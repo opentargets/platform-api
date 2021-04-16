@@ -185,7 +185,8 @@ object Objects extends Logging {
     DocumentField("dbXRefs", "List of external cross reference IDs"),
     ExcludeFields("ontology"),
     DocumentField("obsoleteTerms", "List of obsolete diseases"),
-    DocumentField("locationIds", "List of location Disease terms"),
+    DocumentField("directLocationIds", "List of direct location Disease terms"),
+    DocumentField("indirectLocationIds", "List of indirect location Disease terms"),
     ReplaceField(
       "therapeuticAreas",
       Field(
@@ -207,10 +208,16 @@ object Objects extends Logging {
                        resolve = r => diseasesFetcher.deferSeq(r.value.children))),
     AddFields(
       Field(
-        "locations",
+        "directLocations",
         ListType(diseaseImp),
-        Some("Location disease terms"),
-        resolve = r => diseasesFetcher.deferSeqOpt(r.value.locationIds.getOrElse(Seq.empty))
+        Some("Direct Location disease terms"),
+        resolve = r => diseasesFetcher.deferSeqOpt(r.value.directLocationIds.getOrElse(Seq.empty))
+      ),
+      Field(
+        "indirectLocations",
+        ListType(diseaseImp),
+        Some("Indirect Location disease terms"),
+        resolve = r => diseasesFetcher.deferSeqOpt(r.value.indirectLocationIds.getOrElse(Seq.empty))
       ),
       Field(
         "similarEntities",
@@ -777,7 +784,7 @@ object Objects extends Logging {
         ListType(drugWarningsImp),
         description = Some("Drug warnings"),
         resolve = c => {
-            c.ctx.getDrugWarnings(c.value.id)
+          c.ctx.getDrugWarnings(c.value.id)
         }
       ),
       Field(
