@@ -449,7 +449,7 @@ class Backend @Inject()(
       "dataTypes" -> AggregationMapping("datatype_id",
                                         IndexedSeq("datatype_id", "datasource_id"),
                                         false),
-      "tractabilitySmallmolecule" -> AggregationMapping("facet_tractability_smallmolecule",
+      "tractabilitySmallMolecule" -> AggregationMapping("facet_tractability_smallmolecule",
                                                         IndexedSeq.empty,
                                                         false),
       "tractabilityAntibody" -> AggregationMapping("facet_tractability_antibody",
@@ -495,8 +495,8 @@ class Backend @Inject()(
         )
       ),
       FilterAggregation(
-        "tractabilitySmallmolecule",
-        filtersMap("tractabilitySmallmolecule"),
+        "tractabilitySmallMolecule",
+        filtersMap("tractabilitySmallMolecule"),
         subaggs = Seq(
           uniqueTargetsAgg,
           TermsAggregation("aggs",
