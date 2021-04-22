@@ -290,7 +290,7 @@ class Backend @Inject()(
   def getPublications(ids: Seq[String],
                    cursor: Option[String]): Future[Publications] = {
 
-    val sortByField = FieldSort(field = "pubDate.keyword", order = SortOrder.Desc) ::
+    val sortByField = FieldSort(field = "pubDate", order = SortOrder.Desc) ::
       FieldSort(field = "pmid.keyword", order = SortOrder.Desc) :: Nil
 
     val litIndex = getIndexOrDefault("literature", Some("literature"))
