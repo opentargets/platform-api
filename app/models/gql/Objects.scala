@@ -71,7 +71,7 @@ object Objects extends Logging {
           val ids = c.arg(idsArg).getOrElse(List.empty) ++ List(c.value.id)
           val cur = c.arg(cursor)
 
-          c.ctx.getPublications(ids, cur)
+          c.ctx.getLiteratureOcurrences(ids.toSet, cur)
         }
       ),
       Field(
@@ -244,7 +244,7 @@ object Objects extends Logging {
           val ids = c.arg(idsArg).getOrElse(List.empty) ++ List(c.value.id)
           val cur = c.arg(cursor)
 
-          c.ctx.getPublications(ids, cur)
+          c.ctx.getLiteratureOcurrences(ids.toSet, cur)
         }
       ),
       Field(
@@ -812,7 +812,7 @@ object Objects extends Logging {
           val ids = c.arg(idsArg).getOrElse(List.empty) ++ List(c.value.id)
           val cur = c.arg(cursor)
 
-          c.ctx.getPublications(ids, cur)
+          c.ctx.getLiteratureOcurrences(ids.toSet, cur)
         }
       ),
       Field(
@@ -888,6 +888,8 @@ object Objects extends Logging {
   implicit val targetSettingsImp = deriveObjectType[Backend, TargetSettings]()
   implicit val diseaseSettingsImp = deriveObjectType[Backend, DiseaseSettings]()
   implicit val harmonicSettingsImp = deriveObjectType[Backend, HarmonicSettings]()
+  implicit val literatureSettingsImp = deriveObjectType[Backend, LiteratureSettings]()
+  implicit val literatureIndexSettingsImp = deriveObjectType[Backend, LiteratureIndexSettings]()
   implicit val clickhouseSettingsImp = deriveObjectType[Backend, ClickhouseSettings]()
 
   implicit lazy val aggregationImp: ObjectType[Backend, Aggregation] =
