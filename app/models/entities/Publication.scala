@@ -5,22 +5,15 @@ import models.gql.Fetchers.{diseasesFetcher, drugsFetcher, soTermsFetcher, targe
 import models.gql.Objects.{diseaseImp, drugImp, targetImp}
 import play.api.libs.json._
 import sangria.schema.{Field, FloatType, ListType, LongType, ObjectType, OptionType, StringType, fields}
+import slick.jdbc.GetResult
+
+case class Publication(pmid: String, pmcid: Option[String], date: String, sentences: Option[JsValue])
 
 object Publication {
-  val countsPerTermImp = ObjectType(
-    "OcurrencesPerMatch",
-    "Unique ocurrences per match along the publication",
-    fields[Backend, JsValue](
-      Field("keywordId",
-        StringType,
-        description = Some("Entity ID"),
-        resolve = js => (js.value \ "keywordId").as[String]),
-      Field("count",
-        LongType,
-        description = Some("Unique counts"),
-        resolve = js => (js.value \ "countsPerKey").as[Long])
-    )
-  )
+  implicit val getSimilarityRowFromDB: GetResult[Publication] =
+    GetResult(r => Publication(r.<<[Long].toString, r.<<?, r.<<,  r.<<?[String].map(Json.parse)))
+
+  implicit val similarityImp: OFormat[Publication] = Json.format[Publication]
 
   val matchImp = ObjectType(
     "Match",
@@ -52,7 +45,7 @@ object Publication {
       Field("matchedType",
         StringType,
         description = Some("Type of the matched label"),
-        resolve = js => (js.value \ "type").as[String])
+        resolve = js => (js.value \ "keywordType").as[String])
     )
   )
 
@@ -84,19 +77,7 @@ object Publication {
       Field("publicationDate",
         OptionType(StringType),
         description = Some("Publication Date"),
-        resolve = js => (js.value \ "pubDate").asOpt[String]),
-      Field("organisms",
-        ListType(StringType),
-        description = Some("List of organisms in the publication"),
-        resolve = js => (js.value \ "organisms").as[Seq[String]]),
-      Field("ids",
-        ListType(StringType),
-        description = Some("List of unique matched keywords"),
-        resolve = js => (js.value \ "terms").as[Seq[String]]),
-      Field("ocurrencesPerId",
-        ListType(countsPerTermImp),
-        description = Some("List of match IDs in the publication"),
-        resolve = js => (js.value \ "countsPerTerm").as[Seq[JsValue]]),
+        resolve = js => (js.value \ "date").asOpt[String]),
       Field("sentences",
         OptionType(ListType(sentenceImp)),
         description = Some("Unique counts per matched keyword"),

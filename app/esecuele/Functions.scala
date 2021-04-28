@@ -40,6 +40,8 @@ object Functions {
 
   def upper(col: Column): Column = f("upper", col)
 
+  def sum(col: Column): Column = f("sum", col)
+
   def array(cols: Seq[Column]): Column = f("array", cols)
 
   def array(col: Column, cols: Column*): Column = f("array", col +: cols)

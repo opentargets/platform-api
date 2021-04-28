@@ -5,12 +5,39 @@ import com.typesafe.config.{ConfigObject, ConfigRenderOptions}
 import play.api.libs.json._
 import play.api._
 
+import scala.util.Try
+
 object Helpers extends Logging {
+  object Cursor extends Logging {
+    def to(searchAfter: Option[String]): Option[JsValue] =
+      searchAfter
+        .flatMap(sa => {
+          val vv =
+            Try(Json.parse(Base64Engine.decode(sa)))
+              .map(_.asOpt[JsValue])
+              .fold(ex => {
+                logger.error(s"bae64 encoded  ${ex.toString}")
+                None
+              }, identity)
+
+          if (logger.isDebugEnabled) {
+            logger.debug(
+              s"base64 $sa decoded and parsed into JsObject " +
+                s"as ${Json.stringify(vv.getOrElse(JsNull))}")
+          }
+
+          vv
+        })
+
+    def from(obj: Option[JsValue]): Option[String] =
+      obj.map(jsv => Base64Engine.encode(Json.stringify(jsv))).map(new String(_))
+  }
 
   object Base64Engine extends Logging {
     def encode(msg: String): String = java.util.Base64.getEncoder.encode(msg.getBytes).map(_.toChar).mkString
     def decode(msg: String): String = java.util.Base64.getDecoder.decode(msg.getBytes).map(_.toChar).mkString
   }
+
 
   /** Given a `filename`, the function fully loads the content into an option and
     * maps it with `Json.parse`

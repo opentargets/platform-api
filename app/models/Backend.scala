@@ -12,7 +12,8 @@ import esecuele._
 
 import javax.inject.Inject
 import models.Helpers._
-import models.db.{QAOTF, QW2V}
+import models.db.{QAOTF, QLITAGG, QW2V}
+import models.entities.Publication._
 import models.entities.Aggregations._
 import models.entities.Associations._
 import models.entities.CancerBiomarkers._
@@ -284,33 +285,6 @@ class Backend @Inject()(
         case (Seq(), n, _) => Evidences.empty(withTotal = n)
         case (seq, n, nextCursor) =>
           Evidences(n, nextCursor, seq)
-      }
-  }
-
-  def getPublications(ids: Seq[String],
-                   cursor: Option[String]): Future[Publications] = {
-
-    val sortByField = FieldSort(field = "pubDate", order = SortOrder.Desc) ::
-      FieldSort(field = "pmid.keyword", order = SortOrder.Desc) :: Nil
-
-    val litIndex = getIndexOrDefault("literature", Some("literature"))
-
-    val bqMatches = ids.map(id => MatchQuery(field = "terms.keyword", value = id))
-    val bq = BoolQuery(must = bqMatches)
-
-    esRetriever
-      .getQ(litIndex,
-        bq,
-        Pagination.sizeDefault,
-        fromJsValue[JsValue],
-        Seq.empty,
-        sortByField,
-        Seq.empty,
-        cursor)
-      .map {
-        case (Seq(), n, _) => Publications.empty(withTotal = n)
-        case (seq, n, nextCursor) =>
-          Publications(n, nextCursor, seq)
       }
   }
 
@@ -784,6 +758,35 @@ class Backend @Inject()(
         logger.info(s"This case where the label asked ${label} to the model Word2Vec does not exist" +
           s" is ok but nice to capture though")
         Future.successful(Vector.empty)
+    }
+  }
+
+  def getLiteratureOcurrences(ids: Set[String], cursor: Option[String]): Future[Publications] = {
+    import Pagination._
+
+    val table = defaultOTSettings.clickhouse.literature
+    val indexTable = defaultOTSettings.clickhouse.literatureIndex
+    logger.info(s"query literature ocurrences in table ${table.name}")
+
+    val pag = Helpers.Cursor.to(cursor).flatMap(_.asOpt[Pagination]).getOrElse(Pagination.mkDefault)
+
+    val simQ = QLITAGG(table.name, indexTable.name, ids, pag.size, pag.offset)
+    dbRetriever.executeQuery[Long, Query](simQ.total).flatMap {
+      case Vector(total) if total > 0 =>
+        logger.debug(s"total number of publication occurrences $total")
+        dbRetriever.executeQuery[Publication, Query](simQ.query).map {
+          v => val pubs = v.map(pub => Json.toJson(pub))
+            val nCursor = if (v.size < pag.size) {
+              None
+            } else {
+              val npag = Pagination(pag.offset + pag.size, pag.size)
+              Helpers.Cursor.from(Some(Json.toJson(npag)))
+            }
+            Publications(total, nCursor, pubs)
+        }
+      case _ =>
+        logger.info(s"there is no publications with this set of ids $ids")
+        Future.successful(Publications.empty())
     }
   }
 
