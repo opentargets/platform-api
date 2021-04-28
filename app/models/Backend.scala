@@ -288,33 +288,6 @@ class Backend @Inject()(
       }
   }
 
-//  def getPublications(ids: Seq[String],
-//                   cursor: Option[String]): Future[Publications] = {
-//
-//    val sortByField = FieldSort(field = "pubDate", order = SortOrder.Desc) ::
-//      FieldSort(field = "pmid.keyword", order = SortOrder.Desc) :: Nil
-//
-//    val litIndex = getIndexOrDefault("literature", Some("literature"))
-//
-//    val bqMatches = ids.map(id => MatchQuery(field = "terms.keyword", value = id))
-//    val bq = BoolQuery(must = bqMatches)
-//
-//    esRetriever
-//      .getQ(litIndex,
-//        bq,
-//        Pagination.sizeDefault,
-//        fromJsValue[JsValue],
-//        Seq.empty,
-//        sortByField,
-//        Seq.empty,
-//        cursor)
-//      .map {
-//        case (Seq(), n, _) => Publications.empty(withTotal = n)
-//        case (seq, n, nextCursor) =>
-//          Publications(n, nextCursor, seq)
-//      }
-//  }
-
   def getECOs(ids: Seq[String]): Future[IndexedSeq[ECO]] = {
     val targetIndexName = getIndexOrDefault("eco")
 

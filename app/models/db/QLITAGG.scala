@@ -61,23 +61,6 @@ case class QLITAGG(tableName: String,
     q
   }
 
-  // select pmid, pmcid, date, year, month, day, sentences
-  //from (select pmid, sum(relevance) as r
-  //    from ot.literature_index
-  //    prewhere keywordId in ('EFO_0000616')
-  //    group by pmid having count() > 0
-  //    order by sum(relevance) desc, any(date) desc
-  //    limit 10 offset 0
-  //)T
-  //left any join (select pmid, pmcid, date, year, month, day, sentences
-  //    from ot.literature
-  //    prewhere pmid in (select pmid
-  //        from ot.literature_index
-  //            prewhere keywordId in ('EFO_0000616')
-  //        group by pmid having count() > 0
-  //        order by sum(relevance) desc, any(date) desc
-  //        limit 10 offset 0)
-  //    ) L using pmid;
   override val query = {
     val q = Q(
       Select(pmid :: pmcid :: date :: sentences :: Nil),
