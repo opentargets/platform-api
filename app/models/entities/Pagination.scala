@@ -8,6 +8,8 @@ import play.api.libs.json.Json
 case class Pagination(index: Int, size: Int) {
   lazy val offset: Int = toES._1
 
+  lazy val next: Pagination = this.copy(index = this.index + 1)
+
   def hasValidRange(maxSize: Int = Pagination.sizeMax): Boolean = size <= maxSize
 
   val toSQL: String = (index, size) match {

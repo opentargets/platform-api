@@ -779,7 +779,7 @@ class Backend @Inject()(
             val nCursor = if (v.size < pag.size) {
               None
             } else {
-              val npag = Pagination(pag.offset + pag.size, pag.size)
+              val npag = pag.next
               Helpers.Cursor.from(Some(Json.toJson(npag)))
             }
             Publications(total, nCursor, pubs)
