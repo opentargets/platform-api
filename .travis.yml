@@ -16,14 +16,14 @@ script:
   - sbt ++$TRAVIS_SCALA_VERSION dist
 deploy:
   provider: releases
-  api_key:
-    secure: "${GITHUB_KEY}"
+  api_key: $GITHUB_TOKEN
+  skip_cleanup: true
   file_glob: true
-  file:
-    - "target/universal/ot-platform-api-beta-latest.zip"
+  file: "target/universal/ot-platform-api-beta-latest.zip"
   on:
     repo: opentargets/platform-api-beta
     tags: true
+    all_branches: false
 notifications:
   email:
     recipients:
