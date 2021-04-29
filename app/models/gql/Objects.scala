@@ -143,13 +143,6 @@ object Objects extends Logging {
         resolve = ctx => ctx.ctx.getCancerBiomarkers(ctx.value.id, ctx.arg(pageArg))
       ),
       Field(
-        "relatedTargets",
-        OptionType(relatedTargetsImp),
-        description = Some("Similar targets based on their disease association profiles"),
-        arguments = pageArg :: Nil,
-        resolve = ctx => ctx.ctx.getRelatedTargets(ctx.value.id, ctx.arg(pageArg))
-      ),
-      Field(
         "associatedDiseases",
         associatedOTFDiseasesImp,
         description = Some("associations on the fly"),
@@ -306,13 +299,6 @@ object Objects extends Logging {
         }
       ),
       Field(
-        "relatedDiseases",
-        OptionType(relatedDiseasesImp),
-        description = Some("Similar diseases based on their target association profiles"),
-        arguments = pageArg :: Nil,
-        resolve = ctx => ctx.ctx.getRelatedDiseases(ctx.value.id, ctx.arg(pageArg))
-      ),
-      Field(
         "associatedTargets",
         associatedOTFTargetsImp,
         description = Some("associations on the fly"),
@@ -365,44 +351,6 @@ object Objects extends Logging {
                        diseaseImp,
                        Some("Disease"),
                        resolve = r => diseasesFetcher.defer(r.value.id)))
-  )
-
-  implicit val relatedTargetImp = deriveObjectType[Backend, DDRelation](
-    ObjectTypeName("RelatedTarget"),
-    ObjectTypeDescription("Related Target Entity"),
-    ExcludeFields("A"),
-    ReplaceField(
-      "B",
-      Field("B", targetImp, Some("Target"), resolve = r => targetsFetcher.defer(r.value.B)))
-  )
-
-  implicit val relatedDiseaseImp = deriveObjectType[Backend, DDRelation](
-    ObjectTypeName("RelatedDisease"),
-    ObjectTypeDescription("Related Disease Entity"),
-    ExcludeFields("A"),
-    ReplaceField(
-      "B",
-      Field("B", diseaseImp, Some("Disease"), resolve = r => diseasesFetcher.defer(r.value.B)))
-  )
-
-  implicit val relatedTargetsImp = deriveObjectType[Backend, DDRelations](
-    ObjectTypeName("RelatedTargets"),
-    ObjectTypeDescription("Related Targets Entity"),
-    ReplaceField("rows",
-                 Field("rows",
-                       ListType(relatedTargetImp),
-                       Some("Related Targets"),
-                       resolve = r => r.value.rows))
-  )
-
-  implicit val relatedDiseasesImp = deriveObjectType[Backend, DDRelations](
-    ObjectTypeName("RelatedDiseases"),
-    ObjectTypeDescription("Related Diseases"),
-    ReplaceField("rows",
-                 Field("rows",
-                       ListType(relatedDiseaseImp),
-                       Some("Related Diseases"),
-                       resolve = r => r.value.rows))
   )
 
   implicit val ecoImp = deriveObjectType[Backend, ECO](
