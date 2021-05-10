@@ -139,6 +139,7 @@ case class ProteinClassPath(l1: Option[ProteinClassPathNode],
                             l6: Option[ProteinClassPathNode])
 
 case class Target(id: String,
+                  rmtl: String,
                   approvedSymbol: String,
                   approvedName: String,
                   bioType: String,
@@ -353,6 +354,7 @@ object Target extends Logging {
   implicit val targetImpW = Json.writes[models.entities.Target]
   implicit val targetImpR: Reads[models.entities.Target] = (
     (JsPath \ "id").read[String] and
+     (JsPath \ "rmtl").read[String] and
       (JsPath \ "approvedSymbol").read[String] and
       (JsPath \ "approvedName").read[String] and
       (JsPath \ "bioType").read[String] and
