@@ -68,3 +68,26 @@ libraryDependencies ++= Seq(
 // Google app engine logging
 libraryDependencies += "com.google.cloud" % "google-cloud-logging-logback" % "0.120.0-alpha"
 
+import scala.sys.process._
+import sbt._
+
+lazy val frontendRepository = settingKey[String]("Git repository with open targets front end.")
+lazy val getGqlFiles = taskKey[Unit]("Add *.gql files from frontendRepository to test resources")
+
+frontendRepository := "https://github.com/opentargets/platform-app.git"
+
+getGqlFiles := {
+  sbt.IO.withTemporaryDirectory(td => {
+    // copy files
+    Process(s"git clone ${frontendRepository.value} ${td.getAbsolutePath}") !
+    // filter files of interest
+    val gqlFiles: Seq[File] = (td ** "*.gql").get
+
+    // move files to test resources
+    val dest = (Test / resourceDirectory).value / "gqlQueries"
+    sbt.IO.copy(gqlFiles.map(f => (f, dest / s"${f.getParentFile.name}_${f.name}")))
+  })
+}
+
+
+
