@@ -4,11 +4,14 @@
 /project/project/
 /project/target/
 .idea/
+.bsp
 app/.metals/
 app/build.sbt
 app/project/
 lib/
 .metals/
 .bloop/
+/test/project
+/app/target
 project/metals.sbt
 .vscode/settings.json

@@ -1,0 +1,14 @@
+query ProteinInfoSectionQuery($ensgId: String!) {
+  target(ensemblId: $ensgId) {
+    id
+    proteinAnnotations {
+      id
+      accessions
+      functions
+      pathways
+      similarities
+      subcellularLocations
+      subunits
+    }
+  }
+}
