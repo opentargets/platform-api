@@ -14,6 +14,7 @@ import play.api.test.{FakeRequest, Injecting}
 import org.scalatest.concurrent.ScalaFutures
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Request, Result}
+import test_configuration.IntegrationTestTag
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.Future
@@ -201,31 +202,31 @@ class GqlTest
   }
 
   "Cancer gene census queries" must {
-    "return a valid response" in {
+    "return a valid response" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("CancerGeneCensus_sectionQuery"))
     }
   }
 
   "EuropePmc queries" must {
-    "return a valid response" in {
+    "return a valid response" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSizeCursor("EuropePmc_sectionQuery"))
     }
   }
 
   "Gene2Phenotype_sectionQuery" must {
-    "return a valid response" in {
+    "return a valid response" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDisease("Gene2Phenotype_sectionQuery"))
     }
   }
 
   "GenomicsEngland_sectionQuery" must {
-    "return a valid response" in {
+    "return a valid response" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDisease("GenomicsEngland_sectionQuery"))
     }
   }
 
   "IntOgen_sectionQuery" must {
-    "return a valid response" in {
+    "return a valid response" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("IntOgen_sectionQuery"))
     }
   }
@@ -244,25 +245,25 @@ class GqlTest
   //  }
 
   "OT genetics queries" must {
-    "return valid responses" in {
+    "return valid responses" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("OTGenetics_sectionQuery"))
     }
   }
 
   "Phenodigm_sectionQuery" must {
-    "return valid responses" in {
+    "return valid responses" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("Phenodigm_sectionQuery"))
     }
   }
 
   "Progeny_sectionQuery" must {
-    "return valid responses" in {
+    "return valid responses" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("Progeny_sectionQuery"))
     }
   }
 
   "ProteinInformation" must {
-    "return valid responses for section query" in {
+    "return valid responses for section query" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(Target("ProteinInformation_sectionQuery"))
     }
     // todo: figure out what to do with fragments.
@@ -272,7 +273,7 @@ class GqlTest
   }
 
   "ProteinInteractions" must {
-    "return valid responses for section query" in {
+    "return valid responses for section query" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(Target("ProteinInteractions_sectionQuery"))
     }
     // todo: figure out what to do with fragments.
@@ -282,7 +283,7 @@ class GqlTest
   }
 
   "Reactome_sectionQuery" must {
-    "return valid responses" in {
+    "return valid responses" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("Reactome_sectionQuery"))
     }
   }
@@ -290,25 +291,25 @@ class GqlTest
   // todo Safety_summaryQuery <- fragment.
 
   "Search_SearchQuery" must {
-    "return valid responses" in {
+    "return valid responses" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(Search("Search_SearchQuery"))
     }
   }
 
   "SearchPage_SearchPageQuery" must {
-    "return valid responses" in {
+    "return valid responses" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(SearchPage("SearchPage_SearchPageQuery"))
     }
   }
 
   "SlapEnrich_sectionQuery" must {
-    "return valid responses" in {
+    "return valid responses" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("SlapEnrich_sectionQuery"))
     }
   }
 
   "SysBio_sectionQuery" must {
-    "return valid responses" in {
+    "return valid responses" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("SysBio_sectionQuery"))
     }
   }
