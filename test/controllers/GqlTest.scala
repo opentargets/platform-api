@@ -1,109 +1,32 @@
 package controllers
 
 import akka.util.Timeout
+import controllers.GqlItTestInputs.{diseaseGenerator, geneGenerator, searchGenerator, sizeGenerator, targetDiseaseSizeGenerator}
 import controllers.GqlTest.{createRequest, generateQueryString, getQueryFromFile}
 import controllers.api.v4.graphql.GraphQLController
+import org.scalacheck.{Gen, Shrink}
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerTest
+import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.Logging
 import play.api.test.Helpers.{POST, contentAsString}
 import play.api.test.{FakeRequest, Injecting}
-import test_configuration.IntegrationTestTag
 import org.scalatest.concurrent.ScalaFutures
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Request, Result}
 
 import java.util.concurrent.TimeUnit
-import scala.concurrent.Await
-import scala.concurrent.duration.DurationInt
 import scala.concurrent.Future
 import scala.reflect.io.File
 
 object GqlItTestInputs {
-  val geneInputs = Seq(
-    ("ENSG00000155966", "AFF2"),
-    ("ENSG00000095110", "NXPE1"),
-    ("ENSG00000198947", "DMD"),
-    ("ENSG00000121281", "ADCY7"),
-    ("ENSG00000187796", "CARD9"),
-    ("ENSG00000129084", "PSMA1"),
-    ("ENSG00000198901", "PRC1"),
-    ("ENSG00000110435", "PDHX"),
-    ("ENSG00000139618", "BRCA2"),
-    ("ENSG00000102081", "FMR1"),
-    ("ENSG00000115267", "IFIH1"),
-    ("ENSG00000105855", "ITGB8"),
-    ("ENSG00000079263", "SP140"),
-    ("ENSG00000173531", "MST1"),
-    ("ENSG00000206172", "HBA1"),
-    ("ENSG00000204842", "ATXN2"),
-    ("ENSG00000134460", "IL2RA"),
-    ("ENSG00000162594", "IL23R"),
-    ("ENSG00000013725", "CD6"),
-    ("ENSG00000114013", "CD86"),
-    ("ENSG00000188536", "HBA2"),
-    ("ENSG00000244734", "HBB"),
-    ("ENSG00000167207", "NOD2"),
-    ("ENSG00000240972", "MIF"),
-    ("ENSG00000115232", "ITGA4"),
-    ("ENSG00000135679", "MDM2"),
-    ("ENSG00000142192", "APP"),
-    ("ENSG00000141510", "TP53"),
-    ("ENSG00000197386", "HTT"),
-    ("ENSG00000139687", "RB1"),
-    ("ENSG00000090339", "ICAM1"),
-    ("ENSG00000136634", "IL10"),
-    ("ENSG00000166949", "SMAD3"),
-    ("ENSG00000005844", "ITGAL"),
-    ("ENSG00000164308", "ERAP2"),
-    ("ENSG00000146648", "EGFR"),
-    ("ENSG00000135446", "CDK4"),
-    ("ENSG00000141736", "ERBB2"),
-    ("ENSG00000157764", "BRAF"),
-    ("ENSG00000104936", "DMPK"),
-    ("ENSG00000105397", "TYK2"),
-    ("ENSG00000171862", "PTEN"),
-    ("ENSG00000175354", "PTPN2"),
-    ("ENSG00000117450", "PRDX1"),
-    ("ENSG00000169738", "DCXR"),
-    ("ENSG00000141867", "BRD4"),
-    ("ENSG00000106462", "EZH2"),
-    ("ENSG00000176920", "FUT2"),
-    ("ENSG00000143799", "PARP1"),
-    ("ENSG00000166278", "C2"),
-    ("ENSG00000197943", "PLCG2"),
-    ("ENSG00000001626", "CFTR"),
-    ("ENSG00000080815", "PSEN1"),
-    ("ENSG00000143801", "PSEN2")
-  )
 
-  val diseaseInputs = Seq(
-    "Orphanet_908",
-    "Orphanet_166",
-    "Orphanet_98756",
-    "EFO_0000430",
-    "Orphanet_255182",
-    "Orphanet_93616",
-    "Orphanet_846",
-    "Orphanet_273",
-    "Orphanet_262",
-    "Orphanet_100973",
-    "Orphanet_848",
-    "Orphanet_564",
-    "Orphanet_2843",
-    "EFO_0003767",
-    "Orphanet_399",
-    "EFO_0001365",
-    "Orphanet_93256",
-    "EFO_0006906",
-    "EFO_0003885",
-    "Orphanet_586"
-  )
-
-  val drugInputs = Seq()
+  lazy val geneInputs = File(this.getClass.getResource(s"/gqlInputs/genes.txt").getPath).lines.toList
+  lazy val diseaseInputs = File(this.getClass.getResource(s"/gqlInputs/efos.txt").getPath).lines.toList
+  lazy val drugInputs = Seq()
 
   // Generators
-  val geneGenerator: Gen[String] = Gen.oneOf(geneInputs).map(_._1) // ensemblId
+  val geneGenerator: Gen[String] = Gen.oneOf(geneInputs)
   val diseaseGenerator: Gen[String] = Gen.oneOf(diseaseInputs)
   val sizeGenerator: Gen[Int] = Gen.chooseNum(1, 10)
   val targetDiseaseSizeGenerator: Gen[(String, String, Int)] = for {
@@ -111,41 +34,106 @@ object GqlItTestInputs {
     disease <- diseaseGenerator
     size <- sizeGenerator
   } yield (gene, disease, size)
+
+  val searchGenerator: Gen[String] = Gen.oneOf(geneGenerator, diseaseGenerator)
 }
 
-sealed trait GqlCase {
+sealed trait GqlCase[T] {
   val file: String
-  def generateVariables(): String
+  val inputGenerator: Gen[T]
+
+  def generateVariables(inputs: T): String
 }
 
-case class TargetDiseaseSize(file: String) extends GqlCase {
-  def generateVariables(): String = {
-    // todo update this to use a generator to create tuple.
-    val vars = ("EFO_0000712", "ENSG00000073756", 10)
-    val varJson =
-      """
-    "variables": {
-      "efoId": "EFO_0000712",
-      "ensemblId": "ENSG00000073756",
-      "size": 10
+case class Search(file: String) extends GqlCase[String] {
+  override val inputGenerator = searchGenerator
+
+  def generateVariables(searchTerm: String): String = {
+    s"""
+      "variables": {
+      "queryString": "$searchTerm"
     }
-  """
-   varJson
+    """
   }
 }
 
-case class TargetDiseaseSizeCursor(file: String) extends GqlCase {
-  def generateVariables(): String = {
-    val varJson =
-      """
+case class SearchPage(file: String) extends GqlCase[(String, String, Int)] {
+  val inputGenerator = for {
+    query <- searchGenerator
+    entities <- Gen.atLeastOne(Seq("target", "disease", "drug")).map(_.mkString("[\"", "\", \"", "\"]"))
+    page <- sizeGenerator
+  } yield (query, entities, page)
+
+  def generateVariables(inputs: (String, String, Int)): String =
+    s"""
+      "variables": {
+      "queryString": "${inputs._1}",
+      "index": ${inputs._3},
+      "entityNames": ${inputs._2}
+    }
+    """
+}
+
+case class Target(file: String) extends GqlCase[String] {
+
+  val inputGenerator = geneGenerator
+
+  def generateVariables(target: String): String = {
+    s"""
+      "variables": {
+      "ensgId": "$target"
+    }
+    """
+  }
+}
+
+case class TargetDisease(file: String) extends GqlCase[(String, String)] {
+  val inputGenerator = for {
+    gene <- geneGenerator
+    disease <- diseaseGenerator
+  } yield (gene, disease)
+
+  def generateVariables(inputs: (String, String)): String = {
+    val (target, disease) = inputs
+    s"""
+      "variables": {
+      "efoId": "$target",
+      "ensemblId": "$disease"
+    }
+    """
+  }
+}
+
+case class TargetDiseaseSize(file: String) extends GqlCase[(String, String, Int)] {
+  val inputGenerator = targetDiseaseSizeGenerator
+
+  def generateVariables(input: (String, String, Int)): String = generateVariables(input._1, input._2, input._3)
+
+  def generateVariables(target: String, disease: String, size: Int): String = {
+    s"""
+      "variables": {
+      "efoId": "$target",
+      "ensemblId": "$disease",
+      "size": $size
+    }
+    """
+  }
+}
+
+case class TargetDiseaseSizeCursor(file: String) extends GqlCase[(String, String, Int)] {
+  val inputGenerator = targetDiseaseSizeGenerator
+
+  def generateVariables(input: (String, String, Int)): String = generateVariables(input._1, input._2, input._3)
+
+  def generateVariables(target: String, disease: String, size: Int): String = {
+    s"""
     "variables": {
-      "efoId": "EFO_0000712",
-      "ensemblId": "ENSG00000073756",
-      "size": 10,
+      "efoId": "$target",
+      "ensemblId": "$disease",
+      "size": $size,
       "cursor": null
     }
   """
-    varJson
   }
 }
 
@@ -156,6 +144,7 @@ object GqlTest {
    */
   def getQueryFromFile(filename: String): String = {
     File(this.getClass.getResource(s"/gqlQueries/$filename.gql").getPath).lines
+      .withFilter(_.nonEmpty)
       .map(str =>
         str.flatMap {
           case '"' => "\\\""
@@ -174,39 +163,40 @@ object GqlTest {
   }
 }
 
-/*
-This should be named something more descriptive and moved to an IT test package.
- */
 class GqlTest
   extends PlaySpec
     with GuiceOneAppPerTest
     with Injecting
     with Logging
-    with ScalaFutures {
+    with ScalaFutures with ScalaCheckDrivenPropertyChecks {
 
   lazy val controller: GraphQLController = inject[GraphQLController]
   implicit lazy val timeout: Timeout = Timeout(1120, TimeUnit.SECONDS)
 
-  def testQueryAgainstGqlEndpoint(gqlCase: GqlCase): Unit = {
-    // get query from front end
-    val query = getQueryFromFile(gqlCase.file)
-    // create test variables
-    val variables = gqlCase.generateVariables()
-    // create and execute request
-    val request = createRequest(generateQueryString(query, variables))
-    val resultF: Future[Result] = controller.gqlBody().apply(request)
-    val result = Await.result(resultF, 10.seconds)
-    val resultS = contentAsString(resultF)
+  /*
+  Use no shrink for all inputs as the standard shrinker will start cutting our inputs strings giving non-sense queries.
+  In pure scalaCheck we could use `forAllNoShrink` but this isn't available with the Play wrapper. If we want to use
+  scalacheck more broadly we should move the implicit into a tighter scope.
+   */
+  implicit def noShrink[T]: Shrink[T] = Shrink.shrinkAny
 
-    // validate results
-    result.header.status mustBe 200
-    resultS must include("data")
-    resultS mustNot include("errors")
-  }
+  def testQueryAgainstGqlEndpoint[T](gqlCase: GqlCase[T]): Unit = {
+    forAll(gqlCase.inputGenerator) { i =>
+      // get query from front end
+      val query = getQueryFromFile(gqlCase.file)
+      // create test variables
+      val variables = gqlCase.generateVariables(i)
+      // create and execute request
+      val request = createRequest(generateQueryString(query, variables))
+      val resultF: Future[Result] = controller.gqlBody().apply(request)
+      val resultS = contentAsString(resultF)
 
-  "OT genetics queries" must {
-    "return valid responses" in {
-      testQueryAgainstGqlEndpoint(TargetDiseaseSize("OTGenetics_sectionQuery"))
+      // validate results
+      val resultHasNoErrors = !resultS.contains("errors")
+      if (!resultHasNoErrors) {
+        logger.error(s"Input: $i returned with error: $resultS")
+      }
+      resultHasNoErrors mustBe true
     }
   }
 
@@ -222,4 +212,104 @@ class GqlTest
     }
   }
 
+  "Gene2Phenotype_sectionQuery" must {
+    "return a valid response" in {
+      testQueryAgainstGqlEndpoint(TargetDisease("Gene2Phenotype_sectionQuery"))
+    }
+  }
+
+  "GenomicsEngland_sectionQuery" must {
+    "return a valid response" in {
+      testQueryAgainstGqlEndpoint(TargetDisease("GenomicsEngland_sectionQuery"))
+    }
+  }
+
+  "IntOgen_sectionQuery" must {
+    "return a valid response" in {
+      testQueryAgainstGqlEndpoint(TargetDiseaseSize("IntOgen_sectionQuery"))
+    }
+  }
+  /* todo: find out what source databank is: requires
+  query InteractionsSectionQuery(
+  $ensgId: String!
+  $sourceDatabase: String
+  $index: Int = 0
+  $size: Int = 10
+) {
+   */
+  //  "MolecularInteractions_InteractionsQuery" must {
+  //    "return a valid response" in {
+  //      testQueryAgainstGqlEndpoint(TargetDisease("MolecularInteractions_InteractionsQuery"))
+  //    }
+  //  }
+
+  "OT genetics queries" must {
+    "return valid responses" in {
+      testQueryAgainstGqlEndpoint(TargetDiseaseSize("OTGenetics_sectionQuery"))
+    }
+  }
+
+  "Phenodigm_sectionQuery" must {
+    "return valid responses" in {
+      testQueryAgainstGqlEndpoint(TargetDiseaseSize("Phenodigm_sectionQuery"))
+    }
+  }
+
+  "Progeny_sectionQuery" must {
+    "return valid responses" in {
+      testQueryAgainstGqlEndpoint(TargetDiseaseSize("Progeny_sectionQuery"))
+    }
+  }
+
+  "ProteinInformation" must {
+    "return valid responses for section query" in {
+      testQueryAgainstGqlEndpoint(Target("ProteinInformation_sectionQuery"))
+    }
+    // todo: figure out what to do with fragments.
+    //    "return valid responses for summary query" in {
+    //      testQueryAgainstGqlEndpoint(TargetDiseaseSize("ProteinInformation_summaryQuery"))
+    //    }
+  }
+
+  "ProteinInteractions" must {
+    "return valid responses for section query" in {
+      testQueryAgainstGqlEndpoint(Target("ProteinInteractions_sectionQuery"))
+    }
+    // todo: figure out what to do with fragments.
+    //    "return valid responses for summary query" in {
+    //      testQueryAgainstGqlEndpoint(TargetDiseaseSize("ProteinInteractions_summaryQuery"))
+    //    }
+  }
+
+  "Reactome_sectionQuery" must {
+    "return valid responses" in {
+      testQueryAgainstGqlEndpoint(TargetDiseaseSize("Reactome_sectionQuery"))
+    }
+  }
+
+  // todo Safety_summaryQuery <- fragment.
+
+  "Search_SearchQuery" must {
+    "return valid responses" in {
+      testQueryAgainstGqlEndpoint(Search("Search_SearchQuery"))
+    }
+  }
+
+  "SearchPage_SearchPageQuery" must {
+    "return valid responses" in {
+      testQueryAgainstGqlEndpoint(SearchPage("SearchPage_SearchPageQuery"))
+    }
+  }
+
+  "SlapEnrich_sectionQuery" must {
+    "return valid responses" in {
+      testQueryAgainstGqlEndpoint(TargetDiseaseSize("SlapEnrich_sectionQuery"))
+    }
+  }
+
+  "SysBio_sectionQuery" must {
+    "return valid responses" in {
+      testQueryAgainstGqlEndpoint(TargetDiseaseSize("SysBio_sectionQuery"))
+    }
+  }
 }
