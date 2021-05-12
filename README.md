@@ -93,18 +93,18 @@ Note, make sure you have access to ElasticSearch on a configured port!
 gcloud beta compute ssh --zone "europe-west1-d" [some es instance] --tunnel-through-iap -- -L 9200:localhost:9200
 ```
 
-1. Get the files: run `sbt getGqlFiles` to retrieve all '*.gql' files from the front-end repository and copy them to the
-   `test/resources/gqlQueries` directory.
+1. Get the files: run `sbt updateGqlFiles` to retrieve all '*.gql' files from the front-end repository and copy them to
+   the
+   `test/resources/gqlQueries` directory and prints output regarding which files are new / changed.
 2. Run tests `sbt testOnly testOnly controllers.GqlTest`
 
 #### Maintaining up to date
 
-Since the FE and BE are developed independently, it's worth checking what has changed since we last tested. After
-running the sbt task to update the gql files run: `git status -u test/resources/gqlQueries`. This will output any new
-files for which we need to create tests.
+Since the FE and BE are developed independently, it's worth checking what has changed since we last tested. Before
+testing run `sbt updateGqlFiles`. This will print which files are new or updated.
 
-It is also worth running `git diff test/resources/gqlQueries` to see if any previously configured tests require
-updating.
+If there are updated files, run `git diff test/resources/gqlQueries` to see if any previously configured tests require
+updating (mainly if the input parameters change. If there are new files new tests will need to be added.
 
 #### Adding new tests
 

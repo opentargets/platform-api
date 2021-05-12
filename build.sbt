@@ -10,12 +10,12 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala, PlayLogback)
 scalaVersion := "2.12.12"
 maintainer := "ops@opentargets.org"
 
-javacOptions ++= Seq( "-encoding", "UTF-8" )
+javacOptions ++= Seq("-encoding", "UTF-8")
 
 scalacOptions in ThisBuild ++= Seq(
-"-language:_",
-"-Ypartial-unification",
-"-Xfatal-warnings"
+  "-language:_",
+  "-Ypartial-unification",
+  "-Xfatal-warnings"
 )
 
 
@@ -28,6 +28,7 @@ libraryDependencies ++= Seq(guice, caffeine)
 libraryDependencies += "com.github.pathikrit" %% "better-files" % "3.9.1"
 libraryDependencies += "com.typesafe.slick" %% "slick" % "3.3.3"
 libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test
+libraryDependencies += "org.scalatestplus" %% "scalacheck-1-15" % "3.2.8.0" % Test
 
 val playVersion = "2.8.6"
 libraryDependencies += "com.typesafe.play" %% "play" % playVersion
@@ -72,9 +73,12 @@ import scala.sys.process._
 import sbt._
 
 lazy val frontendRepository = settingKey[String]("Git repository with open targets front end.")
+lazy val gqlFileDir = settingKey[File]("Location to save test input queries")
 lazy val getGqlFiles = taskKey[Unit]("Add *.gql files from frontendRepository to test resources")
+lazy val updateGqlFiles = taskKey[Unit]("Report which files are new and which have been updated.")
 
 frontendRepository := "https://github.com/opentargets/platform-app.git"
+gqlFileDir := (Test / resourceDirectory).value / "gqlQueries"
 
 getGqlFiles := {
   sbt.IO.withTemporaryDirectory(td => {
@@ -84,9 +88,36 @@ getGqlFiles := {
     val gqlFiles: Seq[File] = (td ** "*.gql").get
 
     // move files to test resources
-    val dest = (Test / resourceDirectory).value / "gqlQueries"
-    sbt.IO.copy(gqlFiles.map(f => (f, dest / s"${f.getParentFile.name}_${f.name}")))
+    sbt.IO.copy(gqlFiles.map(f => (f, gqlFileDir.value / s"${f.getParentFile.name}_${f.name}")))
   })
+}
+
+updateGqlFiles := {
+  // trigger update
+  val a = getGqlFiles.value
+
+  def gitStatusOpt(option: String): Seq[String] = Process(s"git status -$option ${gqlFileDir.value.getAbsolutePath}")
+    .lineStream
+    .filter(_.contains((Test / resourceDirectory).value.getName))
+
+  val newFiles = gitStatusOpt("u")
+  if (newFiles.nonEmpty) {
+    println("New files found:")
+    newFiles.foreach(println)
+  } else {
+    println("No new files found since last update.")
+  }
+
+  val updatedFiles = gitStatusOpt("uno")
+
+  if (updatedFiles.nonEmpty) {
+    println("Files updated since last refresh:")
+    updatedFiles.foreach(println)
+  } else {
+    println("No existing files have been updated since last check.")
+  }
+
+
 }
 
 
