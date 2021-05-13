@@ -120,5 +120,3 @@ updateGqlFiles := {
 
 }
 
-
-
