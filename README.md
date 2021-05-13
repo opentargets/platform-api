@@ -106,7 +106,7 @@ testing run `sbt updateGqlFiles`. This will print which files are new or updated
 If there are updated files, run `git diff test/resources/gqlQueries` to see if any previously configured tests require
 updating (mainly if the input parameters change. If there are new files new tests will need to be added.
 
-#### Adding new tests
+#### Adding new tests and inputs
 
 If the above step shows that there are more files to add, create a new test for them using an existing one as a
 template. For example:
@@ -136,6 +136,13 @@ query CancerGeneCensusQuery($ensemblId: String!, $efoId: String!, $size: Int!) {
 
 - It just so happens that `TargetDiseaseSize` will generate inputs that satisfy this requirement. To see what else is
   available consider other case classes which extend GqlCase.
+
+##### Adding new inputs
+
+- The GraphQL test are using generators to create inputs for the queries. The generators themselves are defined
+  in `GqlItTestInputs.scala` and read from files in `/test/resources/gqpInputs`.
+- The starting point for the input lists were those used by Checkomatic to identify useful targets and diseases to test
+  against. To add more inputs add them to the resource files.
 
 # Copyright
 
