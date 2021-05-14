@@ -1,4 +1,7 @@
 import com.typesafe.sbt.packager.MappingsHelper._
+import scala.sys.process._
+import sbt._
+
 
 name := """ot-platform-api-beta"""
 organization := "io.opentargets"
@@ -66,11 +69,7 @@ libraryDependencies ++= Seq(
   "com.sksamuel.elastic4s" %% "elastic4s-http-streams" % s4sVersion,
   "com.sksamuel.elastic4s" %% "elastic4s-json-play" % s4sVersion
 )
-// Google app engine logging
-libraryDependencies += "com.google.cloud" % "google-cloud-logging-logback" % "0.120.0-alpha"
 
-import scala.sys.process._
-import sbt._
 
 lazy val frontendRepository = settingKey[String]("Git repository with open targets front end.")
 lazy val gqlFileDir = settingKey[File]("Location to save test input queries")
