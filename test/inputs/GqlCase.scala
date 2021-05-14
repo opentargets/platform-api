@@ -46,7 +46,9 @@ case class Target(file: String) extends GqlCase[String] {
   def generateVariables(target: String): String = {
     s"""
       "variables": {
-      "ensgId": "$target"
+      "ensgId": "$target",
+      "size": 10,
+      "index": 0
     }
     """
   }

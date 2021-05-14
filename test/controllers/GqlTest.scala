@@ -21,10 +21,6 @@ import scala.concurrent.Future
 import scala.reflect.io.File
 
 
-
-
-
-
 object GqlTest {
 
   /**
@@ -91,6 +87,12 @@ class GqlTest
   "Cancer gene census queries" must {
     "return a valid response" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("CancerGeneCensus_sectionQuery"))
+    }
+  }
+
+  "Cancer biomarker queries" must {
+    "return a valid response" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(Target("CancerBiomarkers_CancerBiomarkers"))
     }
   }
 
