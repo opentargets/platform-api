@@ -1,0 +1,100 @@
+query SearchPageQuery(
+  $queryString: String!
+  $index: Int!
+  $entityNames: [String!]!
+) {
+  search(
+    queryString: $queryString
+    entityNames: $entityNames
+    page: { index: $index, size: 10 }
+  ) {
+    total
+    aggregations {
+      entities {
+        name
+        total
+      }
+    }
+    hits {
+      id
+      highlights
+      object {
+        ... on Target {
+          id
+          approvedSymbol
+          proteinAnnotations {
+            id
+            functions
+          }
+        }
+
+        ... on Disease {
+          id
+          name
+          description
+        }
+
+        ... on Drug {
+          id
+          name
+          description
+        }
+      }
+    }
+  }
+  topHit: search(
+    queryString: $queryString
+    entityNames: $entityNames
+    page: { index: 0, size: 1 }
+  ) {
+    hits {
+      object {
+        ... on Target {
+          id
+          approvedSymbol
+          approvedName
+          bioType
+          proteinAnnotations {
+            id
+            functions
+            accessions
+          }
+        }
+        ... on Disease {
+          id
+          name
+          description
+          therapeuticAreas {
+            id
+            name
+          }
+        }
+        ... on Drug {
+          id
+          description
+          name
+          drugType
+          maximumClinicalTrialPhase
+          hasBeenWithdrawn
+          indications {
+            rows {
+              disease {
+                id
+                name
+              }
+            }
+          }
+          linkedTargets {
+            count
+            rows {
+              id
+              approvedSymbol
+            }
+          }
+          synonyms
+          tradeNames
+        }
+      }
+    }
+  }
+}

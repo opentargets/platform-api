@@ -71,20 +71,89 @@ curl --location --request GET 'http://localhost:9000/api/v4/rest/cache/clear' \
 
 ## Logging
 
-Logging to local use / development can be configured by updating the `logback.xml` file in the _conf_ directory. 
+Logging to local use / development can be configured by updating the `logback.xml` file in the _conf_ directory.
 
 Production deployments use the `production.xml` file to configure loggging. These should be set conservatively because
-GCP charges based on the quantity of logs, so we only want to produce what we need for monitoring, basic trouble-shooting.
+GCP charges based on the quantity of logs, so we only want to produce what we need for monitoring, basic
+trouble-shooting.
+
+## Testing
+
+Tests annoted with `IntegrationTestTag` require there to be access to a configured ElasticSearch instance against which
+to run the queries.
+
+### Testing GraphQL queries
+
+The Open Targets Platform front end makes use of pre-written GraphQL queries. Since we want to be aware if changes in
+the API are likely to break the FE, we have integration tests in place to check if this is going to happen.
+
+Note, make sure you have access to ElasticSearch on a configured port!
+
+```
+gcloud beta compute ssh --zone "europe-west1-d" [some es instance] --tunnel-through-iap -- -L 9200:localhost:9200
+```
+
+1. Get the files: run `sbt updateGqlFiles` to retrieve all '*.gql' files from the front-end repository and copy them to
+   the
+   `test/resources/gqlQueries` directory and prints output regarding which files are new / changed.
+2. Run tests `sbt testOnly testOnly controllers.GqlTest`
+
+#### Maintaining up to date
+
+Since the FE and BE are developed independently, it's worth checking what has changed since we last tested. Before
+testing run `sbt updateGqlFiles`. This will print which files are new or updated.
+
+If there are updated files, run `git diff test/resources/gqlQueries` to see if any previously configured tests require
+updating (mainly if the input parameters change. If there are new files new tests will need to be added.
+
+#### Adding new tests and inputs
+
+If the above step shows that there are more files to add, create a new test for them using an existing one as a
+template. For example:
+
+```scala
+"Cancer gene census queries" must {
+  "return a valid response" in {
+    testQueryAgainstGqlEndpoint(TargetDiseaseSize("CancerGeneCensus_sectionQuery"))
+  }
+}
+```
+
+Take note of the following:
+
+- 'CancerGeneCensus_sectionQuery' is the name of the file, this will be used to read in the actual query.
+- `TargetDiseaseSize` is a case class which extends `GqlCase`. You choose the relevant case class based on which inputs
+  are required by the file you are adding. Looking at the 'CancerGeneCensus_sectionQuery' query, we see that it takes
+  three parameters, target, disease and size:
+
+```
+query CancerGeneCensusQuery($ensemblId: String!, $efoId: String!, $size: Int!) {
+  disease(efoId: $efoId) {
+    id
+    evidences(
+      ensemblIds: [$ensemblId]
+```
+
+- It just so happens that `TargetDiseaseSize` will generate inputs that satisfy this requirement. To see what else is
+  available consider other case classes which extend GqlCase.
+
+##### Adding new inputs
+
+- The GraphQL test are using generators to create inputs for the queries. The generators themselves are defined
+  in `GqlItTestInputs.scala` and read from files in `/test/resources/gqpInputs`.
+- The starting point for the input lists were those used by Checkomatic to identify useful targets and diseases to test
+  against. To add more inputs add them to the resource files.
 
 # Copyright
 
-Copyright 2014-2018 Biogen, Celgene Corporation, EMBL - European Bioinformatics Institute, GlaxoSmithKline, Takeda Pharmaceutical Company and Wellcome Sanger Institute
+Copyright 2014-2018 Biogen, Celgene Corporation, EMBL - European Bioinformatics Institute, GlaxoSmithKline, Takeda
+Pharmaceutical Company and Wellcome Sanger Institute
 
-This software was developed as part of the Open Targets project. For more information please see: http://www.opentargets.org
+This software was developed as part of the Open Targets project. For more information please
+see: http://www.opentargets.org
 
-Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance with the License.
-You may obtain a copy of the License at
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with the
+License. You may obtain a copy of the License at
 
 http://www.apache.org/licenses/LICENSE-2.0
 

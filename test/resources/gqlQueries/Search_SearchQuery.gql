@@ -1,0 +1,89 @@
+query SearchQuery($queryString: String!) {
+  topHit: search(
+    queryString: $queryString
+    entityNames: ["target", "disease", "drug"]
+    page: { index: 0, size: 1 }
+  ) {
+    hits {
+      id
+      entity
+      object {
+        ... on Target {
+          id
+          approvedSymbol
+          approvedName
+          proteinAnnotations {
+            id
+            functions
+          }
+        }
+
+        ... on Disease {
+          id
+          name
+          description
+        }
+
+        ... on Drug {
+          id
+          name
+          description
+          mechanismsOfAction {
+            rows {
+              mechanismOfAction
+            }
+          }
+        }
+      }
+    }
+  }
+  targets: search(
+    queryString: $queryString
+    entityNames: ["target"]
+    page: { index: 0, size: 3 }
+  ) {
+    hits {
+      id
+      entity
+      object {
+        ... on Target {
+          id
+          approvedSymbol
+          approvedName
+        }
+      }
+    }
+  }
+  diseases: search(
+    queryString: $queryString
+    entityNames: ["disease"]
+    page: { index: 0, size: 3 }
+  ) {
+    hits {
+      id
+      entity
+      object {
+        ... on Disease {
+          id
+          name
+        }
+      }
+    }
+  }
+  drugs: search(
+    queryString: $queryString
+    entityNames: ["drug"]
+    page: { index: 0, size: 3 }
+  ) {
+    hits {
+      id
+      entity
+      object {
+        ... on Drug {
+          id
+          name
+        }
+      }
+    }
+  }
+}
