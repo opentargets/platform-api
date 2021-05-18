@@ -22,20 +22,20 @@ case class Tractability(id: String, modality: String, value: Boolean)
 case class TargetTissue(
                          efoId: String,
                          label: String,
-                         modelName: String
+                         modelName: Option[String]
                        )
 
 case class SafetyLiability(
-                            assayDescription: String,
-                            assayFormat: String,
-                            assayType: String,
+                            assayDescription: Option[String],
+                            assayFormat: Option[String],
+                            assayType: Option[String],
                             datasource: String,
-                            effects: DoseAndType,
-                            event: String,
-                            eventId: String,
-                            pmid: String,
+                            effects: Option[DoseAndType],
+                            event: Option[String],
+                            eventId: Option[String],
+                            pmid: Option[String],
                             tissue: TargetTissue,
-                            url: String
+                            url: Option[String]
                           )
 
 case class CancerHallmark(description: String, impact: String, label: String, pmid: Long)
@@ -156,7 +156,7 @@ object Target extends Logging {
       (JsPath \ "hallmarks").readNullable[Hallmarks] and
       (JsPath \ "homologues").readWithDefault[Seq[Homologue]](Seq.empty) and
       (JsPath \ "proteinIds").readWithDefault[Seq[IdAndSource]](Seq.empty) and
-      (JsPath \ "safetyLiability").readWithDefault[Seq[SafetyLiability]](Seq.empty) and
+      (JsPath \ "safetyLiabilities").readWithDefault[Seq[SafetyLiability]](Seq.empty) and
       (JsPath \ "subcellularLocations").readWithDefault[Seq[LocationAndSource]](Seq.empty) and
       (JsPath \ "synonyms").readWithDefault[Seq[LabelAndSource]](Seq.empty) and
       (JsPath \ "targetClass").readWithDefault[Seq[TargetClass]](Seq.empty) and
