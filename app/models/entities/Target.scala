@@ -68,20 +68,16 @@ case class IdAndSource(id: String, source: String)
 
 case class Constraint(
                        constraintType: String,
-                       exp: Double,
-                       obs: Long,
-                       oe: Double,
-                       oeLower: Double,
-                       oeUpper: Double,
-                       score: Double
+                       exp: Option[Double],
+                       obs: Option[Long],
+                       oe: Option[Double],
+                       oeLower: Option[Double],
+                       oeUpper: Option[Double],
+                       score: Option[Double],
+                       upperBin: Option[Long],
+                       upperBin6: Option[Long],
+                       upperRank: Option[Long]
                      )
-
-case class GeneticConstraint(
-                              constraints: Seq[Constraint],
-                              upperBin: Long,
-                              upperBin6: Long,
-                              upperRank: Long
-                            )
 
 case class Target(id: String,
                   alternativeGenes: Seq[String],
@@ -90,7 +86,7 @@ case class Target(id: String,
                   biotype: String,
                   dbXrefs: Seq[IdAndSource],
                   functionDescriptions: Seq[String],
-                  geneticConstraint: Option[GeneticConstraint],
+                  geneticConstraint: Seq[Constraint],
                   genomicLocation: GenomicLocation,
                   geneOntology: Seq[GeneOntology],
                   hallmarks: Option[Hallmarks],
@@ -102,7 +98,7 @@ case class Target(id: String,
                   targetClass: Seq[TargetClass],
                   tep: Option[Tep],
                   tractability: Seq[Tractability],
-                  transcriptIds: Seq[IdAndSource])
+                  transcriptIds: Seq[String])
 
 object Target extends Logging {
 
@@ -139,7 +135,6 @@ object Target extends Logging {
   implicit val targetClassImpF = Json.format[TargetClass]
   implicit val tractabilityImpF = Json.format[Tractability]
   implicit val constraintImpF = Json.format[Constraint]
-  implicit val geneticConstraintImpF = Json.format[GeneticConstraint]
   implicit val homologueImpF = Json.format[Homologue]
   implicit val doseAndTypeImpF = Json.format[DoseAndType]
   implicit val tissueImpF = Json.format[TargetTissue]
@@ -155,7 +150,7 @@ object Target extends Logging {
       (JsPath \ "biotype").read[String] and
       (JsPath \ "dbXrefs").readWithDefault[Seq[IdAndSource]](Seq.empty) and
       (JsPath \ "functionDescriptions").readWithDefault[Seq[String]](Seq.empty) and
-      (JsPath \ "geneticConstraint").readNullable[GeneticConstraint] and
+      (JsPath \ "constraint").readWithDefault[Seq[Constraint]](Seq.empty) and
       (JsPath \ "genomicLocation").read[GenomicLocation] and
       (JsPath \ "geneOntology").readWithDefault[Seq[GeneOntology]](Seq.empty) and
       (JsPath \ "hallmarks").readNullable[Hallmarks] and
@@ -167,7 +162,7 @@ object Target extends Logging {
       (JsPath \ "targetClass").readWithDefault[Seq[TargetClass]](Seq.empty) and
       (JsPath \ "tep").readNullable[Tep] and
       (JsPath \ "tractability").readWithDefault[Seq[Tractability]](Seq.empty) and
-      (JsPath \ "transcriptIds").readWithDefault[Seq[IdAndSource]](Seq.empty)
+      (JsPath \ "transcriptIds").readWithDefault[Seq[String]](Seq.empty)
   )(Target.apply _)
 
   def fromJsValue(jObj: JsValue): Option[Target] = {

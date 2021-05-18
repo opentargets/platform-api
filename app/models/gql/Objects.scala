@@ -440,7 +440,6 @@ object Objects extends Logging {
   implicit val targetClassImp = deriveObjectType[Backend, TargetClass]()
   implicit val doseTypeImp = deriveObjectType[Backend, DoseAndType]()
   implicit val constraintImp = deriveObjectType[Backend, Constraint]()
-  implicit val geneticConstraintImp = deriveObjectType[Backend, GeneticConstraint]()
   implicit val homologueImp = deriveObjectType[Backend, Homologue]()
   implicit val targetTissueImp = deriveObjectType[Backend, TargetTissue]()
   implicit val safetyLiabilityImp = deriveObjectType[Backend, SafetyLiability]()
