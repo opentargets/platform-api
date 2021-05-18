@@ -493,5 +493,11 @@ class GqlTest
     "return valid response for variants query" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("UniProtVariants_UniprotVariantsQuery"))
     }
-  }
+
+  "Target queries" must {
+        "support resolution of full object" taggedAs IntegrationTestTag in {
+          testQueryAgainstGqlEndpoint(Target("Target_full_object"))
+        }
+      }
+    }
 }

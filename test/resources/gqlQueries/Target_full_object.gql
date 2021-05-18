@@ -1,0 +1,110 @@
+query TargetFullObject($ensgId: String!) {
+  target(ensemblId: $ensgId) {
+    id
+    alternativeGenes
+    approvedSymbol
+    approvedName
+    biotype
+    dbXrefs {
+      id
+      source
+    }
+    functionDescriptions
+    geneticConstraint {
+      constraintType
+      exp
+      obs
+      oe
+      oeLower
+      oeUpper
+      score
+      upperBin
+      upperBin6
+      upperRank
+    }
+    genomicLocation {
+      chromosome
+      start
+      end
+      strand
+    }
+    geneOntology {
+      id
+      aspect
+      geneProduct
+      source
+      evidence {
+        id
+        label
+      }
+    }
+    hallmarks {
+      attributes {
+        name
+        description
+        pmid
+      }
+      cancerHallmarks {
+        description
+        impact
+        label
+        pmid
+      }
+    }
+    homologues {
+      homologyType
+      queryPercentageIdentity
+      speciesId
+      speciesName
+      targetGeneId
+      targetGeneSymbol
+      targetPercentageIdentity
+    }
+    proteinIds {
+      id
+      source
+    }
+    safetyLiabilities {
+      assayDescription
+      assayFormat
+      assayType
+      datasource
+      effects {
+        dosing
+        type
+      }
+      event
+      eventId
+      pmid
+      tissue {
+        efoId
+        label
+        modelName
+      }
+      url
+    }
+    subcellularLocations {
+      location
+      source
+    }
+    synonyms {
+      label
+      source
+    }
+    targetClass {
+      id
+      label
+      level
+    }
+    tep {
+      uri
+      name
+    }
+    tractability {
+      id
+      modality
+      value
+    }
+    transcriptIds
+  }
+}
