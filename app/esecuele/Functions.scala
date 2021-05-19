@@ -71,6 +71,8 @@ object Functions {
     f("arrayReverseSort", params)
   }
 
+  def replicate(value: Column, array: Column): Column = f("replicate", value, array)
+
   def arraySlice(col: Column, pos: Int, size: Int): Column =
     f("arraySlice", col, literal(pos), literal(size))
 

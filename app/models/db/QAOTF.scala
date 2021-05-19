@@ -231,7 +231,8 @@ case class QAOTF(tableName: String,
       .as(Some("mapped_dts"))
     val scoredDTs = F
       .arrayMap(
-        s"x -> (x.1, arraySum((i, j) -> i / pow(j,2), x.2, arrayEnumerate(x.2)) / ${maxHS.name.rep})",
+        "x -> (x.1, arraySum((i, j) -> i / pow(j,2), x.2, arrayEnumerate(x.2)) / " +
+          "arraySum(arrayMap((x, y) -> x / pow(y, 2),replicate(1.0, x.2),arrayEnumerate(x.2))) )",
         mappedDTs.name)
       .as(Some("score_datatypes"))
 
