@@ -13,7 +13,7 @@ sealed trait GqlCase[T] extends GqlItTestInputs {
 case class Drug(file: String) extends GqlCase[String] {
   override val inputGenerator = drugGenerator
 
-  override def generateVariables(drugId: String) = {
+  override def generateVariables(drugId: String): String = {
     s"""
       "variables": {
       "chemblId": "$drugId"
