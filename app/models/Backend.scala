@@ -275,6 +275,7 @@ class Backend @Inject()(
 
   def getMechanismsOfAction(id: String): Future[MechanismsOfAction] = {
 
+    logger.debug(s"querying ES: getting mechanisms of action for $id")
     val index = getIndexOrDefault("drugMoA")
     val queryTerms = Map("chemblIds.keyword" -> id)
     val mechanismsOfActionRaw: Future[(IndexedSeq[MechanismOfActionRaw], JsValue)] =
@@ -294,10 +295,23 @@ class Backend @Inject()(
   }
 
   def getDrugWarnings(id: String): Future[IndexedSeq[DrugWarning]] = {
+    logger.debug(s"Querying drug warnings for $id")
     val indexName = getIndexOrDefault("drugWarnings")
     val queryTerm = Map("chemblIds.keyword" -> id)
-    logger.debug(s"Querying drug warnings for $id")
-    esRetriever.getByIndexedQueryShould(indexName, queryTerm, Pagination.mkDefault, fromJsValue[DrugWarning]).map(_._1)
+    esRetriever.getByIndexedQueryShould(indexName, queryTerm, Pagination.mkDefault, fromJsValue[DrugWarning]).map(results => {
+      /*
+      Group references by warning type and toxicity class to replicate ChEMBL web interface.
+      This work around relates to ticket opentargets/platform#1506
+       */
+      val drugWarnings = results._1.foldLeft(Map.empty[(String, Option[String]), DrugWarning])((dwMap, dw) => {
+        if (dwMap.contains((dw.warningType, dw.toxicityClass))) {
+          val old = dwMap((dw.warningType, dw.toxicityClass))
+          val newDW = old.copy(references = Some((old.references ++ dw.references).flatten.toSeq))
+          dwMap.updated((dw.warningType, dw.toxicityClass), newDW)
+        } else dwMap + ((dw.warningType, dw.toxicityClass) -> dw)
+      })
+      drugWarnings.values.toIndexedSeq
+    })
   }
 
   def getDiseases(ids: Seq[String]): Future[IndexedSeq[Disease]] = {
