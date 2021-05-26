@@ -30,13 +30,12 @@ class GraphQLControllerTest
 
   "Drug queries" must {
     "return an id " taggedAs IntegrationTestTag in {
-      val responses: Seq[String] = chemblIds.map(idQuery).map { q =>
-        {
-          val request = FakeRequest(POST, "/graphql")
-            .withHeaders(("Content-Type", "application/json"))
-            .withBody(q)
-          contentAsString(controller.gqlBody.apply(request))
-        }
+      val responses: Seq[String] = chemblIds.map(idQuery).map { q => {
+        val request = FakeRequest(POST, "/graphql")
+          .withHeaders(("Content-Type", "application/json"))
+          .withBody(q)
+        contentAsString(controller.gqlBody.apply(request))
+      }
       }
       val results = responses.zip(chemblIds).filter(s => s._1.contains("errors"))
       logger.info(s"${responses.size - results.size} entries had no errors.")
@@ -51,15 +50,14 @@ class GraphQLControllerTest
     "return full objects" taggedAs IntegrationTestTag in {
       val tests = chemblIds.length
       var i = 1
-      val responses: Seq[String] = chemblIds.map(fullQuery).map { q =>
-        {
-          val request = FakeRequest(POST, "/graphql")
-            .withHeaders(("Content-Type", "application/json"))
-            .withBody(q)
-          logger.info(s"Test $i of $tests")
-          i = i + 1
-          contentAsString(controller.gqlBody.apply(request))
-        }
+      val responses: Seq[String] = chemblIds.map(fullQuery).map { q => {
+        val request = FakeRequest(POST, "/graphql")
+          .withHeaders(("Content-Type", "application/json"))
+          .withBody(q)
+        logger.info(s"Test $i of $tests")
+        i = i + 1
+        contentAsString(controller.gqlBody.apply(request))
+      }
       }
       val results = responses.zip(chemblIds).filter(s => s._1.contains("errors"))
       logger.info(s"${responses.size - results.size} entries had no errors.")
@@ -117,13 +115,12 @@ class GraphQLControllerTest
 
   "Adverse event queries" must {
     "return valid objects when an adverse event is associated with the id" taggedAs IntegrationTestTag in {
-      val responses: Seq[String] = aeChemblIds.map(simpleAeQuery).map { q =>
-        {
-          val request = FakeRequest(POST, "/graphql")
-            .withHeaders(("Content-Type", "application/json"))
-            .withBody(q)
-          contentAsString(controller.gqlBody.apply(request))
-        }
+      val responses: Seq[String] = aeChemblIds.map(simpleAeQuery).map { q => {
+        val request = FakeRequest(POST, "/graphql")
+          .withHeaders(("Content-Type", "application/json"))
+          .withBody(q)
+        contentAsString(controller.gqlBody.apply(request))
+      }
       }
       val results = responses.zip(chemblIds).filter(s => s._1.contains("errors"))
       logger.info(s"${responses.size - results.size} entries had no errors.")
@@ -142,8 +139,7 @@ class GraphQLControllerTest
 
   "Drug warning queries" must {
     "return drugWarnings objects when such objects are present" taggedAs IntegrationTestTag in {
-      val responses: Seq[String] = (chemblIdsWithDrugWarning ++ chemblIdsWithoutDrugWarning).map(dwQuery).map { q =>
-      {
+      val responses: Seq[String] = (chemblIdsWithDrugWarning ++ chemblIdsWithoutDrugWarning).map(dwQuery).map { q => {
         val request = FakeRequest(POST, "/graphql")
           .withHeaders(("Content-Type", "application/json"))
           .withBody(q)
@@ -160,6 +156,23 @@ class GraphQLControllerTest
         r mustNot include("errors")
         val jsonResponse = Json.parse(responses.head)
         assert((jsonResponse \ "data" \ "drug" \ "drugWarnings").isDefined)
+      }
+    }
+
+    "return drug warnings grouped by toxicity class" taggedAs IntegrationTestTag in {
+      val responses: Seq[String] = Seq("CHEMBL656").map(dwQuery).map { q => {
+        val request = FakeRequest(POST, "/graphql")
+          .withHeaders(("Content-Type", "application/json"))
+          .withBody(q)
+        contentAsString(controller.gqlBody.apply(request))
+      }
+      }
+      sForAll(responses) { r =>
+        val jsonResponse: JsValue = Json.parse(responses.head)
+        val warningsConsolidated: JsArray = (jsonResponse \ "data" \ "drug" \ "drugWarnings").as[JsArray]
+        r must include("data")
+        r mustNot include("errors")
+        warningsConsolidated.value.size shouldBe (4)
       }
     }
   }

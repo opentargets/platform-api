@@ -5,7 +5,21 @@ import org.scalacheck.Gen
 sealed trait GqlCase[T] extends GqlItTestInputs {
   val file: String
   val inputGenerator: Gen[T]
+
   def generateVariables(inputs: T): String
+}
+
+
+case class Drug(file: String) extends GqlCase[String] {
+  override val inputGenerator = drugGenerator
+
+  override def generateVariables(drugId: String) = {
+    s"""
+      "variables": {
+      "chemblId": "$drugId"
+    }
+    """
+  }
 }
 
 case class Search(file: String) extends GqlCase[String] {

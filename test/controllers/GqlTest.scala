@@ -84,6 +84,21 @@ class GqlTest
     }
   }
 
+  "Adverse events queries" must {
+    "return a valid response" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(Drug("AdverseEvents_AdverseEventsQuery"))
+    }
+  }
+
+  "Bibliography queries" must {
+    "return valid response for BibliographyQuery" taggedAs IntegrationTestTag in {
+      ???
+    }
+    "return valid response for BibliographySimilarEntities" taggedAs IntegrationTestTag in {
+      ???
+    }
+  }
+
   "Cancer gene census queries" must {
     "return a valid response" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("CancerGeneCensus_sectionQuery"))
