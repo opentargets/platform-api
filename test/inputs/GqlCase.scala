@@ -1,5 +1,6 @@
 package inputs
 
+import models.entities.AggregationFilter
 import org.scalacheck.Gen
 
 sealed trait GqlCase[T] extends GqlItTestInputs {
@@ -9,6 +10,37 @@ sealed trait GqlCase[T] extends GqlItTestInputs {
   def generateVariables(inputs: T): String
 }
 
+case class Disease(file: String) extends GqlCase[String] {
+  val inputGenerator = diseaseGenerator
+
+  def generateVariables(disease: String): String =
+    s"""
+      "variables": {
+      "efoId": "$disease",
+      "size": 10,
+      "index": 0
+    }
+    """
+}
+
+case class DiseaseAggregationfilter(file: String) extends GqlCase[(String, AggregationFilter)] {
+  val inputGenerator = for {
+    disease <- diseaseGenerator
+    agg <- aggregationfilterGenerator
+  } yield (disease, agg)
+
+  def generateVariables(inputs: (String, AggregationFilter)): String =
+    s"""
+      "variables": {
+      "efoId": "${inputs._1}",
+      "aggregationFilters": [
+        {
+        "name": "${inputs._2.name}",
+        "path": ${inputs._2.path.mkString("[\"", "\", \"", "\"]")}
+        }]
+    }
+    """
+}
 
 case class Drug(file: String) extends GqlCase[String] {
   override val inputGenerator = drugGenerator

@@ -3,7 +3,7 @@ package controllers
 import akka.util.Timeout
 import controllers.GqlTest.{createRequest, generateQueryString, getQueryFromFile}
 import controllers.api.v4.graphql.GraphQLController
-import inputs.{Drug, GqlCase, Search, SearchPage, Target, TargetDisease, TargetDiseaseSize, TargetDiseaseSizeCursor}
+import inputs.{Disease, DiseaseAggregationfilter, Drug, GqlCase, Search, SearchPage, Target, TargetDisease, TargetDiseaseSize, TargetDiseaseSizeCursor}
 import org.scalacheck.Shrink
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerTest
@@ -103,7 +103,7 @@ class GqlTest
 
   "Bibliography queries" must {
     "return valid response for BibliographyQuery" taggedAs(IntegrationTestTag, ClickhouseTestTag) in {
-      testQueryAgainstGqlEndpoint(Target("Bibliography_BiobliographyQuery"))(t => t.replace("ensgId", "id"))
+      testQueryAgainstGqlEndpoint(Target("Bibliography_BibliographyQuery"))(t => t.replace("ensgId", "id"))
     }
     "return valid response for BibliographySimilarEntities" taggedAs(IntegrationTestTag, ClickhouseTestTag) in {
       testQueryAgainstGqlEndpoint(Target("Bibliography_SimilarEntities"))(t => t.replace("ensgId", "id"))
@@ -122,9 +122,78 @@ class GqlTest
     }
   }
 
+  "Chembl queries" must {
+    "return a valid response" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetDiseaseSize("Chembl_ChemblQuery"))
+    }
+  }
+
+  "ClinGen queries" must {
+    "return a valid response" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetDiseaseSize("ClinGen_ClingenQuery"))
+    }
+  }
+
+  "CRISPR queries" must {
+    "return a valid response" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetDiseaseSize("CRISPR_CrisprQuery"))
+    }
+  }
+
+  // todo DiseasePage_DiseaseAssociations: not sure of the required inputs
+
+  "Disease page queries" must {
+    "return a valid response for disease facets" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(DiseaseAggregationfilter("DiseasePage_DiseaseFacets"))
+    }
+    "return a valid response for disease page" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(Disease("DiseasePage_DiseasePage"))
+    }
+
+  }
+
+  "Drug queries" must {
+    "return a valid response for drug page" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(Drug("DrugPage_DrugPage"))
+    }
+    "return a valid response for drug warning query" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(Drug("DrugWarnings_DrugWarningsQuery"))
+    }
+    "return a valid response for indications" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(Drug("Indications_IndicationsQuery"))
+    }
+    "return a valid response for mechanisms of action" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(Drug("MechanismsOfAction_MechanismsOfActionQuery"))
+    }
+  }
+
   "EuropePmc queries" must {
     "return a valid response" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSizeCursor("EuropePmc_sectionQuery"))
+    }
+  }
+
+  "EVA queries" must {
+    "return valid responses for clinvar" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetDiseaseSizeCursor("EVA_ClinvarQuery"))
+    }
+    "return valid responses for somatic" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetDiseaseSizeCursor("EVASomatic_EvaSomaticQuery"))
+    }
+  }
+
+  "Evidence page queries" must {
+    "return valid responses " taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetDisease("EvidencePage_EvidencePageQuery"))(q => q.replace("ensemblId", "ensgId"))
+    }
+  }
+
+  "Expression queries" must {
+    "return valid responses " taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(Target("Expression_ExpressionQuery"))(q => q.replace("ensgId", "ensemblId"))
+    }
+    "return valid responses for expression atlas" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetDiseaseSize("ExpressionAtlas_ExpressionAtlasQuery"))
     }
   }
 
@@ -153,11 +222,11 @@ class GqlTest
   $size: Int = 10
 ) {
    */
-  //  "MolecularInteractions_InteractionsQuery" must {
-  //    "return a valid response" in {
-  //      testQueryAgainstGqlEndpoint(TargetDisease("MolecularInteractions_InteractionsQuery"))
-  //    }
-  //  }
+  "MolecularInteractions" must {
+    "return a valid response for interaction stats" in {
+      testQueryAgainstGqlEndpoint(Target("MolecularInteractions_InteractionsStats"))
+    }
+  }
 
   "OT genetics queries" must {
     "return valid responses" taggedAs IntegrationTestTag in {
