@@ -1,13 +1,30 @@
 package inputs
 
+import controllers.GqlTest
 import models.entities.AggregationFilter
 import org.scalacheck.Gen
+import play.api.Logging
 
-sealed trait GqlCase[T] extends GqlItTestInputs {
+sealed trait GqlCase[T] extends GqlItTestInputs with Logging {
   val file: String
   val inputGenerator: Gen[T]
 
   def generateVariables(inputs: T): String
+}
+
+sealed trait GqlFragment[T] extends GqlCase[T] {
+  // first capture group is name of fragment ot insert into query
+  val fragmentRegex = """^fragment ([\w]+) on [\w]+""".r
+
+  lazy val fragmentQuery: String = GqlTest.getQueryFromFile(file)
+  lazy val fragmentName: String = fragmentRegex findFirstMatchIn fragmentQuery match {
+    case Some(value) => value.group(1)
+    case None =>
+      logger.error(s"Unable to extract fragment name from $file.")
+      ""
+  }
+
+  def generateFragmentQuery: String
 }
 
 case class Disease(file: String) extends GqlCase[String] {
@@ -42,8 +59,8 @@ case class DiseaseAggregationfilter(file: String) extends GqlCase[(String, Aggre
     """
 }
 
-case class Drug(file: String) extends GqlCase[String] {
-  override val inputGenerator = drugGenerator
+abstract class DrugA extends GqlCase[String] {
+  val inputGenerator = drugGenerator
 
   override def generateVariables(drugId: String): String = {
     s"""
@@ -53,6 +70,15 @@ case class Drug(file: String) extends GqlCase[String] {
     """
   }
 }
+
+case class DrugFragment(file: String) extends DrugA with GqlFragment[String] {
+
+  def generateFragmentQuery: String =
+    s"$fragmentQuery query DrugFragment(xyz: String!) { drug(chemblId: xyz) { ...$fragmentName } }"
+      .replace("xyz", "$chemblId")
+}
+
+case class Drug(file: String) extends DrugA with GqlCase[String]
 
 case class Search(file: String) extends GqlCase[String] {
   override val inputGenerator = searchGenerator

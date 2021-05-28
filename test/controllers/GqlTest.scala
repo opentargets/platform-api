@@ -3,7 +3,7 @@ package controllers
 import akka.util.Timeout
 import controllers.GqlTest.{createRequest, generateQueryString, getQueryFromFile}
 import controllers.api.v4.graphql.GraphQLController
-import inputs.{Disease, DiseaseAggregationfilter, Drug, GqlCase, Search, SearchPage, Target, TargetDisease, TargetDiseaseSize, TargetDiseaseSizeCursor}
+import inputs.{Disease, DiseaseAggregationfilter, Drug, DrugA, DrugFragment, GqlCase, GqlFragment, Search, SearchPage, Target, TargetDisease, TargetDiseaseSize, TargetDiseaseSizeCursor}
 import org.scalacheck.Shrink
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerTest
@@ -76,9 +76,13 @@ class GqlTest
    * @tparam T
    */
   def testQueryAgainstGqlEndpoint[T](gqlCase: GqlCase[T])(implicit queryTransformer: String => String = qt): Unit = {
+    // get query from front end
+    val query: String = gqlCase match {
+      case fragment: GqlFragment[_] => fragment.generateFragmentQuery
+      case _ => getQueryFromFile(gqlCase.file)
+    }
+
     forAll(gqlCase.inputGenerator) { i =>
-      // get query from front end
-      val query = getQueryFromFile(gqlCase.file)
       // create test variables
       val variables = queryTransformer(gqlCase.generateVariables(i))
       // create and execute request
@@ -98,6 +102,9 @@ class GqlTest
   "Adverse events queries" must {
     "return a valid response" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(Drug("AdverseEvents_AdverseEventsQuery"))
+    }
+    "return a valid summary fragment" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(DrugFragment("AdverseEvents_AdverseEventsSummaryFragment"))
     }
   }
 
@@ -214,7 +221,7 @@ class GqlTest
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("IntOgen_sectionQuery"))
     }
   }
-  /* todo: find out what source databank is: requires
+  /* todo: find out what source databank is: requires for molecular interactions query
   query InteractionsSectionQuery(
   $ensgId: String!
   $sourceDatabase: String
