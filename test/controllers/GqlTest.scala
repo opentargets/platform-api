@@ -3,7 +3,7 @@ package controllers
 import akka.util.Timeout
 import controllers.GqlTest.{createRequest, generateQueryString, getQueryFromFile}
 import controllers.api.v4.graphql.GraphQLController
-import inputs.{Disease, DiseaseAggregationfilter, DiseaseFragment, Drug, AbstractDrug, DrugFragment, GqlCase, GqlFragment, Search, SearchPage, Target, TargetDisease, TargetDiseaseSize, TargetDiseaseSizeCursor, TargetFragment}
+import inputs.{Disease, DiseaseAggregationfilter, DiseaseFragment, Drug, DrugFragment, GqlCase, GqlFragment, Search, SearchPage, Target, TargetAggregationfilter, TargetDisease, TargetDiseaseSize, TargetDiseaseSizeCursor, TargetFragment}
 import org.scalacheck.Shrink
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerTest
@@ -166,7 +166,16 @@ class GqlTest
     // todo expression atlast summary fragment
     // todo gene2phenotype summary fragment
     // todo genomics england summary fragment
+    // todo OT genetics summary fragment
     // todo int O gen
+    // todo phenodigm summary fragment
+    // todo phewas summary fragment
+    // todo progeny summary fragment
+    // todo reactome summary fragment
+    // todo slap enrich summary fragment
+    // todo sysbio summary fragment
+    // todo uniprot literature fragment
+    // todo uniprot variants fragment
   }
 
   "Chembl queries" must {
@@ -202,6 +211,21 @@ class GqlTest
     }
     "return a valid response for known drugs" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(DiseaseFragment("KnownDrugs_KnownDrugsSummaryFragment"))
+    }
+    "return a valid response for ontology summary fragment" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(DiseaseFragment("Ontology_OntologySummaryFragment"))
+    }
+    "return a valid response for phenotype summary fragment" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(DiseaseFragment("Phenotypes_PhenotypesSummaryFragment"))
+    }
+    "return a valid response for related diseases" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(Disease("RelatedDiseases_RelatedDiseasesQuery"))
+    }
+    "return a valid response for related diseases summary fragment" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(DiseaseFragment("RelatedDiseases_RelatedDiseasesSummaryFragment"))
+    }
+    "return a valid response for uniprot literature summary fragment" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(DiseaseFragment("UniProtLiterature_UniprotLiteratureSummary"))
     }
   }
 
@@ -308,6 +332,18 @@ class GqlTest
     }
   }
 
+  "Phenotypes_query" must {
+    "return valid responses" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(Disease("Phenotypes_PhenotypesQuery"))
+    }
+  }
+
+  "PheWAS queries" must {
+    "return valid responses" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetDiseaseSize("PheWASCatalog_PhewasCatalogQuery"))
+    }
+  }
+
   "Progeny_sectionQuery" must {
     "return valid responses" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("Progeny_sectionQuery"))
@@ -365,8 +401,25 @@ class GqlTest
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("SysBio_sectionQuery"))
     }
   }
-
-  "Target fragments" must {
+  "Target page" must {
+    "return valid associations visualisation" taggedAs(IntegrationTestTag, ClickhouseTestTag) in {
+      testQueryAgainstGqlEndpoint(TargetAggregationfilter("TargetPage_AssociationsViz"))
+    }
+    "return valid target facets" taggedAs(IntegrationTestTag, ClickhouseTestTag) in {
+      testQueryAgainstGqlEndpoint(TargetAggregationfilter("TargetPage_TargetFacets"))
+    }
+    "return valid target page" taggedAs (IntegrationTestTag) in {
+      testQueryAgainstGqlEndpoint(Target("TargetPage_TargetPage"))
+    }
+    "return valid target profile header fragment" taggedAs (IntegrationTestTag) in {
+      testQueryAgainstGqlEndpoint(TargetFragment("TargetPage_TargetProfileHeader"))
+    }
+    "return valid tep summary fragment" taggedAs (IntegrationTestTag) in {
+      testQueryAgainstGqlEndpoint(TargetFragment("Tep_TepSummaryFragment"))
+    }
+    "return valid tractability summary fragment" taggedAs (IntegrationTestTag) in {
+      testQueryAgainstGqlEndpoint(TargetFragment("Tractability_TractabilitySummary"))
+    }
     "return valid gene ontology response" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetFragment("GeneOntology_GeneOntologySummary"))
     }
@@ -375,6 +428,21 @@ class GqlTest
     }
     "return valid response for molecular interactions" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetFragment("MolecularInteractions_InteractionsSummary"))
+    }
+    "return valid response for mouse phenotypes fragment" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetFragment("MousePhenotypes_MousePhenotypesSummary"))
+    }
+    "return valid response for pathways fragment" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetFragment("Pathways_PathwaysSummary"))
+    }
+  }
+
+  "Uniprot queries" must {
+    "return valid response for literature query" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetDiseaseSize("UniProtLiterature_UniprotLiteratureQuery"))
+    }
+    "return valid response for variants query" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetDiseaseSize("UniProtVariants_UniprotVariantsQuery"))
     }
   }
 }

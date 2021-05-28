@@ -168,6 +168,28 @@ case class TargetDisease(file: String) extends GqlCase[(String, String)] {
   }
 }
 
+case class TargetAggregationfilter(file: String) extends GqlCase[(String, AggregationFilter)] {
+  val inputGenerator = for {
+    gene <- geneGenerator
+    aggregationFilter <- aggregationfilterGenerator
+  } yield (gene, aggregationFilter)
+
+  def generateVariables(inputs: (String, AggregationFilter)): String =
+    s"""
+      "variables": {
+      "ensemblId": "${inputs._1}",
+      "size": 10,
+      "index": 0,
+      "aggregationFilters": [
+        {
+        "name": "${inputs._2.name}",
+        "path": ${inputs._2.path.mkString("[\"", "\", \"", "\"]")}
+        }]
+    }
+    """
+
+}
+
 case class TargetDiseaseSize(file: String) extends GqlCase[(String, String, Int)] {
   val inputGenerator = targetDiseaseSizeGenerator
 
