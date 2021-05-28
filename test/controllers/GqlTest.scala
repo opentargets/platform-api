@@ -3,7 +3,7 @@ package controllers
 import akka.util.Timeout
 import controllers.GqlTest.{createRequest, generateQueryString, getQueryFromFile}
 import controllers.api.v4.graphql.GraphQLController
-import inputs.{Disease, DiseaseAggregationfilter, Drug, DrugA, DrugFragment, GqlCase, GqlFragment, Search, SearchPage, Target, TargetDisease, TargetDiseaseSize, TargetDiseaseSizeCursor}
+import inputs.{Disease, DiseaseAggregationfilter, DiseaseFragment, Drug, AbstractDrug, DrugFragment, GqlCase, GqlFragment, Search, SearchPage, Target, TargetDisease, TargetDiseaseSize, TargetDiseaseSizeCursor, TargetFragment}
 import org.scalacheck.Shrink
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerTest
@@ -115,18 +115,58 @@ class GqlTest
     "return valid response for BibliographySimilarEntities" taggedAs(IntegrationTestTag, ClickhouseTestTag) in {
       testQueryAgainstGqlEndpoint(Target("Bibliography_SimilarEntities"))(t => t.replace("ensgId", "id"))
     }
+    "return valid response for Bibliography summary fragment" taggedAs(IntegrationTestTag, ClickhouseTestTag) in {
+      testQueryAgainstGqlEndpoint(DiseaseFragment("Bibliography_BibliographySummaryFragment"))
+    }
+    "return valid response for Bibliography similar entities summary fragment" taggedAs(IntegrationTestTag, ClickhouseTestTag) in {
+      testQueryAgainstGqlEndpoint(TargetFragment("Bibliography_SimilarEntitiesSummary"))
+    }
   }
 
   "Cancer gene census queries" must {
     "return a valid response" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("CancerGeneCensus_sectionQuery"))
     }
+
   }
 
   "Cancer biomarker queries" must {
     "return a valid response" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(Target("CancerBiomarkers_CancerBiomarkers"))
     }
+    "return a valid response for summary fragment" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetFragment("CancerBiomarkers_CancerBiomarkersSummary"))
+    }
+
+  }
+
+  "Cancer hallmarks queries" must {
+    "return a valid response for summary fragment" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetFragment("CancerHallmarks_HallmarksSummaryFragment"))
+    }
+
+  }
+
+  "Summary fragments" must {
+    "return a valid response for chemical probes" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetFragment("ChemicalProbes_ProbesSummaryFragment"))
+    }
+    // todo chembl summary fragment
+
+    //    "return a valid response for gene census summary" taggedAs IntegrationTestTag in {
+    //      // fixme: this uses an ensgId as an argument to the target object.
+    //      testQueryAgainstGqlEndpoint(DiseaseFragment("CancerGeneCensus_CancerGeneCensusSummaryQuery"))
+    //    }
+
+    // todo clingen summary fragment
+    // todo crispr summary fragment
+    // todo europe pmc summary fragment
+    // todo eva summary fragment
+    // todo eva_somatic summary fragment
+    // todo expression atlast summary fragment
+    // todo gene2phenotype summary fragment
+    // todo genomics england summary fragment
+    // todo int O gen
   }
 
   "Chembl queries" must {
@@ -157,6 +197,12 @@ class GqlTest
       testQueryAgainstGqlEndpoint(Disease("DiseasePage_DiseasePage"))
     }
 
+    "return a valid response for disease profile header" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(DiseaseFragment("DiseasePage_ProfileHeader"))
+    }
+    "return a valid response for known drugs" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(DiseaseFragment("KnownDrugs_KnownDrugsSummaryFragment"))
+    }
   }
 
   "Drug queries" must {
@@ -171,6 +217,18 @@ class GqlTest
     }
     "return a valid response for mechanisms of action" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(Drug("MechanismsOfAction_MechanismsOfActionQuery"))
+    }
+    "return a valid response for mechanisms of action summary fragment" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(DrugFragment("MechanismsOfAction_MechanismsOfActionSummaryFragment"))
+    }
+    "return a valid response for profile header" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(DrugFragment("DrugPage_ProfileHeader"))
+    }
+    "return a valid response for drug warning summary" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(DrugFragment("DrugWarnings_DrugWarningsSummaryFragment"))
+    }
+    "return a valid response for indications summary" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(DrugFragment("Indications_IndicationsSummaryFragment"))
     }
   }
 
@@ -201,6 +259,9 @@ class GqlTest
     }
     "return valid responses for expression atlas" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("ExpressionAtlas_ExpressionAtlasQuery"))
+    }
+    "return valid responses for expression summary" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetFragment("Expression_ExpressionSummary"))
     }
   }
 
@@ -302,6 +363,18 @@ class GqlTest
   "SysBio_sectionQuery" must {
     "return valid responses" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("SysBio_sectionQuery"))
+    }
+  }
+
+  "Target fragments" must {
+    "return valid gene ontology response" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetFragment("GeneOntology_GeneOntologySummary"))
+    }
+    "return valid known drugs fragment response" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetFragment("KnownDrugs_KnownDrugsSummary"))
+    }
+    "return valid response for molecular interactions" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetFragment("MolecularInteractions_InteractionsSummary"))
     }
   }
 }

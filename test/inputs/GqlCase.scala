@@ -59,7 +59,7 @@ case class DiseaseAggregationfilter(file: String) extends GqlCase[(String, Aggre
     """
 }
 
-abstract class DrugA extends GqlCase[String] {
+abstract class AbstractDrug extends GqlCase[String] {
   val inputGenerator = drugGenerator
 
   override def generateVariables(drugId: String): String = {
@@ -71,14 +71,52 @@ abstract class DrugA extends GqlCase[String] {
   }
 }
 
-case class DrugFragment(file: String) extends DrugA with GqlFragment[String] {
+abstract class AbstractTarget extends GqlCase[String] {
+  val inputGenerator = geneGenerator
+
+  def generateVariables(target: String): String = {
+    s"""
+      "variables": {
+      "ensgId": "$target",
+      "size": 10,
+      "index": 0
+    }
+    """
+  }
+}
+
+abstract class AbstractDisease extends GqlCase[String] {
+  val inputGenerator = diseaseGenerator
+
+  def generateVariables(disease: String): String = {
+    s"""
+      "variables": {
+      "efoId": "$disease"
+    }
+    """
+  }
+}
+
+case class DrugFragment(file: String) extends AbstractDrug with GqlFragment[String] {
 
   def generateFragmentQuery: String =
     s"$fragmentQuery query DrugFragment(xyz: String!) { drug(chemblId: xyz) { ...$fragmentName } }"
       .replace("xyz", "$chemblId")
 }
 
-case class Drug(file: String) extends DrugA with GqlCase[String]
+case class TargetFragment(file: String) extends AbstractTarget with GqlFragment[String] {
+  def generateFragmentQuery: String =
+    s"$fragmentQuery query TargetFragment(xyz: String!) { target(ensemblId: xyz) { ...$fragmentName } }"
+      .replace("xyz", "$ensgId")
+}
+
+case class DiseaseFragment(file: String) extends AbstractDisease with GqlFragment[String] {
+  def generateFragmentQuery: String =
+    s"$fragmentQuery query DiseaseFragment(xyz: String!) { disease(efoId: xyz) { ...$fragmentName } }"
+      .replace("xyz", "$efoId")
+}
+
+case class Drug(file: String) extends AbstractDrug with GqlCase[String]
 
 case class Search(file: String) extends GqlCase[String] {
   override val inputGenerator = searchGenerator
@@ -111,20 +149,7 @@ case class SearchPage(file: String) extends GqlCase[(String, String, Int)] {
     """
 }
 
-case class Target(file: String) extends GqlCase[String] {
-
-  val inputGenerator = geneGenerator
-
-  def generateVariables(target: String): String = {
-    s"""
-      "variables": {
-      "ensgId": "$target",
-      "size": 10,
-      "index": 0
-    }
-    """
-  }
-}
+case class Target(file: String) extends AbstractTarget with GqlCase[String]
 
 case class TargetDisease(file: String) extends GqlCase[(String, String)] {
   val inputGenerator = for {
@@ -136,8 +161,8 @@ case class TargetDisease(file: String) extends GqlCase[(String, String)] {
     val (target, disease) = inputs
     s"""
       "variables": {
-      "efoId": "$target",
-      "ensemblId": "$disease"
+      "efoId": "$disease",
+      "ensemblId": "$target"
     }
     """
   }
@@ -152,8 +177,8 @@ case class TargetDiseaseSize(file: String) extends GqlCase[(String, String, Int)
   def generateVariables(target: String, disease: String, size: Int): String = {
     s"""
       "variables": {
-      "efoId": "$target",
-      "ensemblId": "$disease",
+      "efoId": "$disease",
+      "ensemblId": "$target",
       "size": $size
     }
     """
@@ -169,8 +194,8 @@ case class TargetDiseaseSizeCursor(file: String) extends GqlCase[(String, String
   def generateVariables(target: String, disease: String, size: Int): String = {
     s"""
     "variables": {
-      "efoId": "$target",
-      "ensemblId": "$disease",
+      "efoId": "$disease",
+      "ensemblId": "$target",
       "size": $size,
       "cursor": null
     }
