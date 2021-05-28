@@ -3,23 +3,22 @@ package controllers
 import akka.util.Timeout
 import controllers.GqlTest.{createRequest, generateQueryString, getQueryFromFile}
 import controllers.api.v4.graphql.GraphQLController
-import inputs.{Disease, DiseaseAggregationfilter, DiseaseFragment, Drug, DrugFragment, GqlCase, GqlFragment, Search, SearchPage, Target, TargetAggregationfilter, TargetDisease, TargetDiseaseSize, TargetDiseaseSizeCursor, TargetFragment}
+import inputs._
 import org.scalacheck.Shrink
+import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.play.PlaySpec
 import org.scalatestplus.play.guice.GuiceOneAppPerTest
 import org.scalatestplus.scalacheck.ScalaCheckDrivenPropertyChecks
 import play.api.Logging
-import play.api.test.Helpers.{POST, contentAsString}
-import play.api.test.{FakeRequest, Injecting}
-import org.scalatest.concurrent.ScalaFutures
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.{Request, Result}
+import play.api.test.Helpers.{POST, contentAsString}
+import play.api.test.{FakeRequest, Injecting}
 import test_configuration.{ClickhouseTestTag, IntegrationTestTag}
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.Future
 import scala.reflect.io.File
-
 
 object GqlTest {
 
@@ -52,7 +51,8 @@ class GqlTest
     with GuiceOneAppPerTest
     with Injecting
     with Logging
-    with ScalaFutures with ScalaCheckDrivenPropertyChecks {
+    with ScalaFutures
+    with ScalaCheckDrivenPropertyChecks {
 
   lazy val controller: GraphQLController = inject[GraphQLController]
   implicit lazy val timeout: Timeout = Timeout(1120, TimeUnit.SECONDS)
@@ -75,7 +75,8 @@ class GqlTest
    *                         how to modify it if necessary.
    * @tparam T
    */
-  def testQueryAgainstGqlEndpoint[T](gqlCase: GqlCase[T])(implicit queryTransformer: String => String = qt): Unit = {
+  def testQueryAgainstGqlEndpoint[T](gqlCase: GqlCase[T])(
+    implicit queryTransformer: String => String = qt): Unit = {
     // get query from front end
     val query: String = gqlCase match {
       case fragment: GqlFragment[_] => fragment.generateFragmentQuery
@@ -110,10 +111,12 @@ class GqlTest
 
   "Bibliography queries" must {
     "return valid response for BibliographyQuery" taggedAs(IntegrationTestTag, ClickhouseTestTag) in {
-      testQueryAgainstGqlEndpoint(Target("Bibliography_BibliographyQuery"))(t => t.replace("ensgId", "id"))
+      testQueryAgainstGqlEndpoint(Target("Bibliography_BibliographyQuery"))(t =>
+        t.replace("ensgId", "id"))
     }
     "return valid response for BibliographySimilarEntities" taggedAs(IntegrationTestTag, ClickhouseTestTag) in {
-      testQueryAgainstGqlEndpoint(Target("Bibliography_SimilarEntities"))(t => t.replace("ensgId", "id"))
+      testQueryAgainstGqlEndpoint(Target("Bibliography_SimilarEntities"))(t =>
+        t.replace("ensgId", "id"))
     }
     "return valid response for Bibliography summary fragment" taggedAs(IntegrationTestTag, ClickhouseTestTag) in {
       testQueryAgainstGqlEndpoint(DiseaseFragment("Bibliography_BibliographySummaryFragment"))
@@ -151,31 +154,83 @@ class GqlTest
     "return a valid response for chemical probes" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetFragment("ChemicalProbes_ProbesSummaryFragment"))
     }
-    // todo chembl summary fragment
+    "return a valid response for cancer gene census summary fragments" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(
+        DiseaseSummaryFragment("CancerGeneCensus_CancerGeneCensusSummaryQuery"))
+    }
+    "return a valid response for chembl summary fragments" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(
+        DiseaseSummaryFragment("Chembl_ChemblSummaryFragment"))
+    }
+    "return a valid response for clingen summary fragments" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(
+        DiseaseSummaryFragment("ClinGen_ClinGenSummaryFragment"))
+    }
+    "return a valid response for Europe PMC summary fragments" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(
+        DiseaseSummaryFragment("EuropePmc_EuropePmcSummaryFragment"))
+    }
+    "return a valid response for EVA summary fragments" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(
+        DiseaseSummaryFragment("EVA_EVASummaryQuery"))
+    }
+    "return a valid response for EVA somatic summary fragments" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(
+        DiseaseSummaryFragment("EVASomatic_EvaSomaticSummary"))
+    }
+    "return a valid response for Expression atlas summary fragments" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(
+        DiseaseSummaryFragment("ExpressionAtlas_ExpressionAtlasSummary"))
+    }
+    "return a valid response for Gene to phenotype summary fragments" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(
+        DiseaseSummaryFragment("Gene2Phenotype_Gene2PhenotypeSummaryFragment"))
+    }
+    "return a valid response for Genomics England summary fragments" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(
+        DiseaseSummaryFragment("GenomicsEngland_GenomicsEnglandSummaryFragment"))
+    }
+    "return a valid response for IntoOGen summary fragments" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(
+        DiseaseSummaryFragment("IntOgen_IntOgenSummaryQuery"))
+    }
+    "return a valid response for Open Targets Genetics summary fragments" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(
+        DiseaseSummaryFragment("OTGenetics_OpenTargetsGeneticsSummary"))
 
-    //    "return a valid response for gene census summary" taggedAs IntegrationTestTag in {
-    //      // fixme: this uses an ensgId as an argument to the target object.
-    //      testQueryAgainstGqlEndpoint(DiseaseFragment("CancerGeneCensus_CancerGeneCensusSummaryQuery"))
-    //    }
-
-    // todo clingen summary fragment
-    // todo crispr summary fragment
-    // todo europe pmc summary fragment
-    // todo eva summary fragment
-    // todo eva_somatic summary fragment
-    // todo expression atlast summary fragment
-    // todo gene2phenotype summary fragment
-    // todo genomics england summary fragment
-    // todo OT genetics summary fragment
-    // todo int O gen
-    // todo phenodigm summary fragment
-    // todo phewas summary fragment
-    // todo progeny summary fragment
-    // todo reactome summary fragment
-    // todo slap enrich summary fragment
-    // todo sysbio summary fragment
-    // todo uniprot literature fragment
-    // todo uniprot variants fragment
+    }
+    "return a valid response for Phenodigm summary fragments" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(
+        DiseaseSummaryFragment("Phenodigm_PhenodigmSummaryFragment"))
+    }
+    "return a valid response for PheWAS Catalogue summary fragments" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(
+        DiseaseSummaryFragment("PheWASCatalog_PheWASCatalogSummaryQuery"))
+    }
+    "return a valid response for Progeny summary fragments" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(
+        DiseaseSummaryFragment("Progeny_ProgenySummaryFragment"))
+    }
+    "return a valid response for Reactome summary fragments" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(
+        DiseaseSummaryFragment("Reactome_ReactomeSummary"))
+    }
+    "return a valid response for Slap enrich summary fragments" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(
+        DiseaseSummaryFragment("SlapEnrich_SlapEnrichSummaryFragment"))
+    }
+    "return a valid response for SysBio summary fragments" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(
+        DiseaseSummaryFragment("SysBio_SysBioSummaryFragment"))
+    }
+    "return a valid response for Uniprot literature summary fragments" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(
+        DiseaseSummaryFragment("UniProtLiterature_UniprotLiteratureSummary"))
+    }
+    "return a valid response for Uniprot variants summary fragments" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(
+        DiseaseSummaryFragment("UniProtVariants_UniprotVariantsSummaryQuery"))
+    }
   }
 
   "Chembl queries" must {
@@ -243,7 +298,8 @@ class GqlTest
       testQueryAgainstGqlEndpoint(Drug("MechanismsOfAction_MechanismsOfActionQuery"))
     }
     "return a valid response for mechanisms of action summary fragment" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(DrugFragment("MechanismsOfAction_MechanismsOfActionSummaryFragment"))
+      testQueryAgainstGqlEndpoint(
+        DrugFragment("MechanismsOfAction_MechanismsOfActionSummaryFragment"))
     }
     "return a valid response for profile header" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(DrugFragment("DrugPage_ProfileHeader"))
@@ -273,13 +329,15 @@ class GqlTest
 
   "Evidence page queries" must {
     "return valid responses " taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(TargetDisease("EvidencePage_EvidencePageQuery"))(q => q.replace("ensemblId", "ensgId"))
+      testQueryAgainstGqlEndpoint(TargetDisease("EvidencePage_EvidencePageQuery"))(q =>
+        q.replace("ensemblId", "ensgId"))
     }
   }
 
   "Expression queries" must {
     "return valid responses " taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(Target("Expression_ExpressionQuery"))(q => q.replace("ensgId", "ensemblId"))
+      testQueryAgainstGqlEndpoint(Target("Expression_ExpressionQuery"))(q =>
+        q.replace("ensgId", "ensemblId"))
     }
     "return valid responses for expression atlas" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("ExpressionAtlas_ExpressionAtlasQuery"))

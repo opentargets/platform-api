@@ -90,6 +90,10 @@ trait GqlItTestInputs {
     disease <- diseaseGenerator
     size <- sizeGenerator
   } yield (gene, disease, size)
+  val targetDiseaseGenerator: Gen[(String, String)] = for {
+    gene <- geneGenerator
+    disease <- diseaseGenerator
+  } yield (gene, disease)
 
   val searchGenerator: Gen[String] = Gen.oneOf(geneGenerator, diseaseGenerator)
 }
