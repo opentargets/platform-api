@@ -266,12 +266,6 @@ class GqlTest
     "return a valid response for phenotype summary fragment" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(DiseaseFragment("Phenotypes_PhenotypesSummaryFragment"))
     }
-    "return a valid response for related diseases" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(Disease("RelatedDiseases_RelatedDiseasesQuery"))
-    }
-    "return a valid response for related diseases summary fragment" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(DiseaseFragment("RelatedDiseases_RelatedDiseasesSummaryFragment"))
-    }
   }
 
   "Drug queries" must {
@@ -362,7 +356,7 @@ class GqlTest
   }
 
   "MolecularInteractions" must {
-    "return a valid response for interaction stats" in {
+    "return a valid response for interaction stats" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(Target("MolecularInteractions_InteractionsStats"))
     }
   }
@@ -401,14 +395,8 @@ class GqlTest
     "return valid responses for section query" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(Target("ProteinInformation_sectionQuery"))
     }
-    "return valid responses for summary query" in {
+    "return valid responses for summary query" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetFragment("ProteinInformation_summaryQuery"))
-    }
-  }
-
-  "ProteinInteractions" must {
-    "return valid responses for section query" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(Target("ProteinInteractions_sectionQuery"))
     }
   }
 
