@@ -27,6 +27,52 @@ sealed trait GqlFragment[T] extends GqlCase[T] {
   def generateFragmentQuery: String
 }
 
+case class AssociationDisease(file: String) extends GqlCase[(String, AggregationFilter)] {
+  val inputGenerator = for {
+    disease <- diseaseGenerator
+    agg <- aggregationfilterGenerator
+  } yield (disease, agg)
+
+  def generateVariables(inputs: (String, AggregationFilter)) = {
+    s"""
+      "variables": {
+      "efoId": "${inputs._1}",
+      "index": 0,
+      "size": 10,
+      "sortBy": "",
+      "aggregationFilters": [
+        {
+        "name": "${inputs._2.name}",
+        "path": ${inputs._2.path.mkString("[\"", "\", \"", "\"]")}
+        }]
+    }
+    """
+  }
+}
+
+case class AssociationTarget(file: String) extends GqlCase[(String, AggregationFilter)] {
+  val inputGenerator = for {
+    target <- geneGenerator
+    agg <- aggregationfilterGenerator
+  } yield (target, agg)
+
+  def generateVariables(inputs: (String, AggregationFilter)) = {
+    s"""
+      "variables": {
+      "ensemblId": "${inputs._1}",
+      "index": 0,
+      "size": 10,
+      "sortBy": "",
+      "aggregationFilters": [
+        {
+        "name": "${inputs._2.name}",
+        "path": ${inputs._2.path.mkString("[\"", "\", \"", "\"]")}
+        }]
+    }
+    """
+  }
+}
+
 case class Disease(file: String) extends GqlCase[String] {
   val inputGenerator = diseaseGenerator
 
@@ -136,6 +182,19 @@ case class DiseaseSummaryFragment(file: String) extends GqlFragment[(String, Str
 }
 
 case class Drug(file: String) extends AbstractDrug with GqlCase[String]
+
+case class KnownDrugs(file: String) extends GqlCase[String] {
+  val inputGenerator = diseaseGenerator
+
+  def generateVariables(disease: String) =
+    s"""
+      "variables": {
+      "efoId": "$disease",
+      "cursor": null,
+      "freeTextQuery": null
+    }
+    """
+}
 
 case class Search(file: String) extends GqlCase[String] {
   override val inputGenerator = searchGenerator

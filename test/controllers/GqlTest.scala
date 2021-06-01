@@ -109,6 +109,15 @@ class GqlTest
     }
   }
 
+  "Association page queries" must {
+    "return a valid response for target associations" taggedAs(IntegrationTestTag, ClickhouseTestTag) in {
+      testQueryAgainstGqlEndpoint(AssociationTarget("TargetPage_TargetAssociations"))
+    }
+    "return a valid response for disease associations" taggedAs(IntegrationTestTag, ClickhouseTestTag) in {
+      testQueryAgainstGqlEndpoint(AssociationDisease("DiseasePage_DiseaseAssociations"))
+    }
+  }
+
   "Bibliography queries" must {
     "return valid response for BibliographyQuery" taggedAs(IntegrationTestTag, ClickhouseTestTag) in {
       testQueryAgainstGqlEndpoint(Target("Bibliography_BibliographyQuery"))(t =>
@@ -251,10 +260,8 @@ class GqlTest
     }
   }
 
-  // todo DiseasePage_DiseaseAssociations: not sure of the required inputs
-
   "Disease page queries" must {
-    "return a valid response for disease facets" taggedAs IntegrationTestTag in {
+    "return a valid response for disease facets" taggedAs(IntegrationTestTag, ClickhouseTestTag) in {
       testQueryAgainstGqlEndpoint(DiseaseAggregationfilter("DiseasePage_DiseaseFacets"))
     }
     "return a valid response for disease page" taggedAs IntegrationTestTag in {
@@ -278,9 +285,6 @@ class GqlTest
     }
     "return a valid response for related diseases summary fragment" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(DiseaseFragment("RelatedDiseases_RelatedDiseasesSummaryFragment"))
-    }
-    "return a valid response for uniprot literature summary fragment" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(DiseaseFragment("UniProtLiterature_UniprotLiteratureSummary"))
     }
   }
 
@@ -364,14 +368,13 @@ class GqlTest
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("IntOgen_sectionQuery"))
     }
   }
-  /* todo: find out what source databank is: requires for molecular interactions query
-  query InteractionsSectionQuery(
-  $ensgId: String!
-  $sourceDatabase: String
-  $index: Int = 0
-  $size: Int = 10
-) {
-   */
+
+  "Known Drugs query" must {
+    "return a valid response" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(KnownDrugs("KnownDrugs_KnownDrugsQuery"))
+    }
+  }
+
   "MolecularInteractions" must {
     "return a valid response for interaction stats" in {
       testQueryAgainstGqlEndpoint(Target("MolecularInteractions_InteractionsStats"))
@@ -412,10 +415,9 @@ class GqlTest
     "return valid responses for section query" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(Target("ProteinInformation_sectionQuery"))
     }
-    // todo: figure out what to do with fragments.
-    //    "return valid responses for summary query" in {
-    //      testQueryAgainstGqlEndpoint(TargetDiseaseSize("ProteinInformation_summaryQuery"))
-    //    }
+    "return valid responses for summary query" in {
+      testQueryAgainstGqlEndpoint(TargetFragment("ProteinInformation_summaryQuery"))
+    }
   }
 
   "ProteinInteractions" must {
