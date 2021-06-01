@@ -168,28 +168,22 @@ class GqlTest
         DiseaseSummaryFragment("CancerGeneCensus_CancerGeneCensusSummaryQuery"))
     }
     "return a valid response for chembl summary fragments" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(
-        DiseaseSummaryFragment("Chembl_ChemblSummaryFragment"))
+      testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("Chembl_ChemblSummaryFragment"))
     }
     "return a valid response for clingen summary fragments" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(
-        DiseaseSummaryFragment("ClinGen_ClinGenSummaryFragment"))
+      testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("ClinGen_ClinGenSummaryFragment"))
     }
     "return a valid response for Europe PMC summary fragments" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(
-        DiseaseSummaryFragment("EuropePmc_EuropePmcSummaryFragment"))
+      testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("EuropePmc_EuropePmcSummaryFragment"))
     }
     "return a valid response for EVA summary fragments" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(
-        DiseaseSummaryFragment("EVA_EVASummaryQuery"))
+      testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("EVA_EVASummaryQuery"))
     }
     "return a valid response for EVA somatic summary fragments" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(
-        DiseaseSummaryFragment("EVASomatic_EvaSomaticSummary"))
+      testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("EVASomatic_EvaSomaticSummary"))
     }
     "return a valid response for Expression atlas summary fragments" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(
-        DiseaseSummaryFragment("ExpressionAtlas_ExpressionAtlasSummary"))
+      testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("ExpressionAtlas_ExpressionAtlasSummary"))
     }
     "return a valid response for Gene to phenotype summary fragments" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(
@@ -200,37 +194,29 @@ class GqlTest
         DiseaseSummaryFragment("GenomicsEngland_GenomicsEnglandSummaryFragment"))
     }
     "return a valid response for IntoOGen summary fragments" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(
-        DiseaseSummaryFragment("IntOgen_IntOgenSummaryQuery"))
+      testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("IntOgen_IntOgenSummaryQuery"))
     }
     "return a valid response for Open Targets Genetics summary fragments" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(
-        DiseaseSummaryFragment("OTGenetics_OpenTargetsGeneticsSummary"))
+      testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("OTGenetics_OpenTargetsGeneticsSummary"))
 
     }
     "return a valid response for Phenodigm summary fragments" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(
-        DiseaseSummaryFragment("Phenodigm_PhenodigmSummaryFragment"))
+      testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("Phenodigm_PhenodigmSummaryFragment"))
     }
     "return a valid response for PheWAS Catalogue summary fragments" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(
-        DiseaseSummaryFragment("PheWASCatalog_PheWASCatalogSummaryQuery"))
+      testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("PheWASCatalog_PheWASCatalogSummaryQuery"))
     }
     "return a valid response for Progeny summary fragments" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(
-        DiseaseSummaryFragment("Progeny_ProgenySummaryFragment"))
+      testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("Progeny_ProgenySummaryFragment"))
     }
     "return a valid response for Reactome summary fragments" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(
-        DiseaseSummaryFragment("Reactome_ReactomeSummary"))
+      testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("Reactome_ReactomeSummary"))
     }
     "return a valid response for Slap enrich summary fragments" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(
-        DiseaseSummaryFragment("SlapEnrich_SlapEnrichSummaryFragment"))
+      testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("SlapEnrich_SlapEnrichSummaryFragment"))
     }
     "return a valid response for SysBio summary fragments" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(
-        DiseaseSummaryFragment("SysBio_SysBioSummaryFragment"))
+      testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("SysBio_SysBioSummaryFragment"))
     }
     "return a valid response for Uniprot literature summary fragments" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(
@@ -424,10 +410,6 @@ class GqlTest
     "return valid responses for section query" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(Target("ProteinInteractions_sectionQuery"))
     }
-    // todo: figure out what to do with fragments.
-    //    "return valid responses for summary query" in {
-    //      testQueryAgainstGqlEndpoint(TargetDiseaseSize("ProteinInteractions_summaryQuery"))
-    //    }
   }
 
   "Reactome_sectionQuery" must {
@@ -435,8 +417,6 @@ class GqlTest
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("Reactome_sectionQuery"))
     }
   }
-
-  // todo Safety_summaryQuery <- fragment.
 
   "Search_SearchQuery" must {
     "return valid responses" taggedAs IntegrationTestTag in {
@@ -461,6 +441,7 @@ class GqlTest
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("SysBio_sectionQuery"))
     }
   }
+
   "Target page" must {
     "return valid associations visualisation" taggedAs(IntegrationTestTag, ClickhouseTestTag) in {
       testQueryAgainstGqlEndpoint(TargetAggregationfilter("TargetPage_AssociationsViz"))
@@ -494,6 +475,9 @@ class GqlTest
     }
     "return valid response for pathways fragment" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetFragment("Pathways_PathwaysSummary"))
+    }
+    "return valid response for safety summary fragment" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetFragment("Safety_summaryQuery"))
     }
   }
 
