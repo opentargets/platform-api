@@ -9,7 +9,7 @@ trait GqlItTestInputs {
 
   lazy val geneInputs = File(this.getClass.getResource(s"/gqlInputs/genes.txt").getPath).lines.toList
   lazy val diseaseInputs = File(this.getClass.getResource(s"/gqlInputs/efos.txt").getPath).lines.toList
-  lazy val drugInputs = Seq("CHEMBL1430")
+  lazy val drugInputs = File(this.getClass.getResource(s"/gqlInputs/drugs.txt").getPath).lines.toList
 
   val aggregationFilterMap: Map[String, Seq[String]] = Map(
     "pathwayTypes" -> Seq(

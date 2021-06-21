@@ -674,7 +674,8 @@ object Objects extends Logging {
 
   implicit lazy val indicationsImp = deriveObjectType[Backend, Indications](
     ExcludeFields("id"),
-    RenameField("indications", "rows")
+    RenameField("indications", "rows"),
+    RenameField("indicationCount", "count"),
   )
 
   implicit lazy val mechanismOfActionImp = deriveObjectType[Backend, MechanismsOfAction]()
@@ -705,8 +706,6 @@ object Objects extends Logging {
                     " post-marketing package inserts"),
     DocumentField("isApproved", "Alias for maximumClinicalTrialPhase == 4"),
     DocumentField("hasBeenWithdrawn", "Has drug been withdrawn from the market"),
-    DocumentField("approvedIndications",
-                  "Indications for which there is a phase IV clinical trial"),
     DocumentField("blackBoxWarning", "Alert on life-threteaning drug side effects provided by FDA"),
     DocumentField("description", "Drug description"),
     ReplaceField(
@@ -726,6 +725,13 @@ object Objects extends Logging {
       )
     ),
     AddFields(
+      Field(
+        "approvedIndications",
+        OptionType(ListType(StringType)),
+        description = Some("Indications for which there is a phase IV clinical trial"),
+        resolve = r => DeferredValue(indicationFetcher.deferOpt(r.value.id))
+          .map(_.flatMap(_.approvedIndications))
+      ),
       Field(
         "drugWarnings",
         ListType(drugWarningsImp),

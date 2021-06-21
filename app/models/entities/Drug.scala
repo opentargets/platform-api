@@ -28,7 +28,7 @@ case class IndicationRow(maxPhaseForIndication: Long,
 
 case class LinkedIds(count: Int, rows: Seq[String])
 
-case class Indications(id: String, indications: Seq[IndicationRow], count: Long)
+case class Indications(id: String, indications: Seq[IndicationRow], indicationCount: Long, approvedIndications: Option[Seq[String]])
 
 case class MechanismsOfAction(rows: Seq[MechanismOfActionRow],
                               uniqueActionTypes: Seq[String],
@@ -55,7 +55,6 @@ case class Drug(id: String,
                 parentId: Option[String],
                 maximumClinicalTrialPhase: Option[Int],
                 hasBeenWithdrawn: Boolean,
-                approvedIndications: Option[Seq[String]],
                 linkedDiseases: Option[LinkedIds],
                 linkedTargets: Option[LinkedIds],
                 blackBoxWarning: Boolean,
