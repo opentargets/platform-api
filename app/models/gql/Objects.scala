@@ -729,13 +729,8 @@ object Objects extends Logging {
         "approvedIndications",
         OptionType(ListType(StringType)),
         description = Some("Indications for which there is a phase IV clinical trial"),
-        resolve = c => {
-          val indications = DeferredValue(indicationFetcher.deferOpt(c.value.id))
-          indications.map {
-            case Some(value) => value.approvedIndications
-            case None => Some(Seq.empty)
-          }
-        }
+        resolve = r => DeferredValue(indicationFetcher.deferOpt(r.value.id))
+          .map(_.get.approvedIndications)
       ),
       Field(
         "drugWarnings",
