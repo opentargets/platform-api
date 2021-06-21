@@ -730,7 +730,7 @@ object Objects extends Logging {
         OptionType(ListType(StringType)),
         description = Some("Indications for which there is a phase IV clinical trial"),
         resolve = r => DeferredValue(indicationFetcher.deferOpt(r.value.id))
-          .map(_.get.approvedIndications)
+          .map(_.flatMap(_.approvedIndications))
       ),
       Field(
         "drugWarnings",
