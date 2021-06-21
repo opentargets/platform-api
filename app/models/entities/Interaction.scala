@@ -18,7 +18,7 @@ object Interaction extends Logging {
   case class Key(intA: String,
                  intB: String,
                  targetA: String,
-                 targetB: String,
+                 targetB: Option[String],
                  intABiologicalRole: String,
                  intBBiologicalRole: String,
                  sourceDatabase: String)
@@ -151,7 +151,7 @@ object Interaction extends Logging {
       }),
       Field("intB", StringType, description = None, resolve = js => (js.value \ "intB").as[String]),
       Field("targetB", OptionType(targetImp), description = None, resolve = js => {
-        val tID = (js.value \ "targetB").as[String]
+        val tID = (js.value \ "targetB").asOpt[String]
         targetsFetcher.deferOpt(tID)
       }),
       Field("intABiologicalRole",
@@ -209,14 +209,13 @@ object Interaction extends Logging {
     val kv = List(
       "interactionResources.sourceDatabase.keyword" -> interaction.sourceDatabase,
       "targetA.keyword" -> interaction.targetA,
-      "targetB.keyword" -> interaction.targetB,
       "intA.keyword" -> interaction.intA,
       "intB.keyword" -> interaction.intB,
       "intABiologicalRole.keyword" -> interaction.intABiologicalRole,
       "intBBiologicalRole.keyword" -> interaction.intBBiologicalRole
-    ).toMap
+    ) ++ interaction.targetB.map("targetB.keyword" -> _)
 
-    esRetriever.getByIndexedQueryMust(cbIndex, kv, pag, fromJsValue[JsValue]).map {
+    esRetriever.getByIndexedQueryMust(cbIndex, kv.toMap, pag, fromJsValue[JsValue]).map {
       case (Seq(), _) => IndexedSeq.empty
       case (seq, _)   => seq
     }
