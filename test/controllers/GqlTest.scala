@@ -199,6 +199,9 @@ class GqlTest
     "return a valid response for Open Targets Genetics summary fragments" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("OTGenetics_OpenTargetsGeneticsSummary"))
     }
+    "return a valid response for Open Targets Projects summary fragments" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("OTProjects_OTProjectsSummaryFragment"))
+    }
     "return a valid response for orphanet summary fragment" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("Orphanet_OrphanetSummaryFragment"))
     }
@@ -366,6 +369,12 @@ class GqlTest
   "OT genetics queries" must {
     "return valid responses" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("OTGenetics_sectionQuery"))
+    }
+  }
+
+  "OT projects queries" must {
+    "return valid responses" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(Disease("OTProjects_OTProjectsQuery"))
     }
   }
 
