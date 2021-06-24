@@ -100,14 +100,14 @@ updateGqlFiles := {
     .filter(_.contains((Test / resourceDirectory).value.getName))
 
   val newFiles = gitStatusOpt("u")
+  val updatedFiles = gitStatusOpt("uno")
+
   if (newFiles.nonEmpty) {
     println("New files found:")
-    newFiles.foreach(println)
+    newFiles.filterNot(f => updatedFiles.contains(f)).foreach(println)
   } else {
     println("No new files found since last update.")
   }
-
-  val updatedFiles = gitStatusOpt("uno")
 
   if (updatedFiles.nonEmpty) {
     println("Files updated since last refresh:")
@@ -115,7 +115,6 @@ updateGqlFiles := {
   } else {
     println("No existing files have been updated since last check.")
   }
-
 
 }
 
