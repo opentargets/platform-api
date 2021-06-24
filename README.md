@@ -22,8 +22,8 @@ Promote the deployed version to receive all traffic or deploy an AppEngine speci
 The first step is tag to the new release. 
 
 ```bash
-git tag -a 0.46.4 -m "Release 0.46.4"
-git push origin 0.46.4
+git tag -a 0.75.0 -m "Release 0.75.0"
+git push origin 0.75.0
 git push --tags
 ```
 
