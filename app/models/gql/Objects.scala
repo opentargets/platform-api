@@ -151,9 +151,9 @@ object Objects extends Logging {
           ctx.ctx.getAssociationsTargetFixed(
             ctx.value,
             ctx arg datasourceSettingsListArg,
-            ctx arg indirectEvidences getOrElse (false),
-            ctx arg aggregationFiltersListArg getOrElse (Seq.empty),
-            ctx arg BIds map (_.toSet) getOrElse (Set.empty),
+            ctx arg indirectEvidences getOrElse false,
+            ctx arg aggregationFiltersListArg getOrElse Seq.empty,
+            ctx arg BIds map (_.toSet) getOrElse Set.empty,
             ctx arg BFilterString,
             (ctx arg scoreSorting) map (_.split(" ").take(2).toList match {
               case a :: b :: Nil => (a, b)
