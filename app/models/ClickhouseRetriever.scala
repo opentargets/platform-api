@@ -38,13 +38,13 @@ class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: O
     val l = Limit(0, 100000)
     val q = Q(s, f, g, l)
 
-    logger.debug(s"get distinct $of from $from with query ${q.toString}")
+    logger.debug(s"getUniqList get distinct $of from $from with query ${q.toString}")
     val qq = q.as[A]
 
     db.run(qq.asTry).map {
       case Success(v) => v
       case Failure(ex) =>
-        logger.error(s"An exception was thrown ${ex.getMessage}")
+        logger.error(s"getUniqList an exception was thrown ${ex.getMessage}")
         Vector.empty
     }
   }
@@ -56,7 +56,8 @@ class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: O
     db.run(qq.asTry).map {
       case Success(v) => v
       case Failure(ex) =>
-        logger.error(s"An exception was thrown ${ex.getMessage}")
+        val qStr = qq.statements.mkString("\n")
+        logger.error(s"executeQuery an exception was thrown ${ex.getMessage} with Query $qStr")
         Vector.empty
     }
   }
