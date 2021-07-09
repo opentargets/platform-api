@@ -14,6 +14,6 @@ class HomeController @Inject()(implicit ec: ExecutionContext,
 
   // example from here https://github.com/nemoo/play-slick3-example/blob/master/app/controllers/Application.scala
   def index = Action { _ =>
-    Ok(views.html.index())
+    Ok(views.html.index(backend.getMeta))
   }
 }
