@@ -7,8 +7,8 @@ import play.api.libs.json._
 
 
 case class DoseAndType(
-                        dosing: Seq[String],
-                        `type`: Seq[String]
+                        effectType: String,
+                        effectDose: String
                       )
 
 case class LocationAndSource(location: String, source: String)
@@ -20,8 +20,8 @@ case class LabelAndSource(label: String, source: String)
 case class Tractability(id: String, modality: String, value: Boolean)
 
 case class TargetTissue(
-                         efoId: String,
-                         label: String,
+                         efoId: Option[String],
+                         label: Option[String],
                          modelName: Option[String]
                        )
 
@@ -30,11 +30,11 @@ case class SafetyLiability(
                             assayFormat: Option[String],
                             assayType: Option[String],
                             datasource: String,
-                            effects: Option[DoseAndType],
+                            effects: Option[Seq[DoseAndType]],
                             event: Option[String],
                             eventId: Option[String],
                             pmid: Option[String],
-                            tissue: TargetTissue,
+                            tissue: Option[TargetTissue],
                             url: Option[String]
                           )
 
