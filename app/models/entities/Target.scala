@@ -152,7 +152,7 @@ object Target extends Logging {
       (JsPath \ "functionDescriptions").readWithDefault[Seq[String]](Seq.empty) and
       (JsPath \ "constraint").readWithDefault[Seq[Constraint]](Seq.empty) and
       (JsPath \ "genomicLocation").read[GenomicLocation] and
-      (JsPath \ "geneOntology").readWithDefault[Seq[GeneOntology]](Seq.empty) and
+      (JsPath \ "go").readWithDefault[Seq[GeneOntology]](Seq.empty) and
       (JsPath \ "hallmarks").readNullable[Hallmarks] and
       (JsPath \ "homologues").readWithDefault[Seq[Homologue]](Seq.empty) and
       (JsPath \ "proteinIds").readWithDefault[Seq[IdAndSource]](Seq.empty) and
