@@ -92,7 +92,7 @@ case class Target(id: String,
                   hallmarks: Option[Hallmarks],
                   homologues: Seq[Homologue],
                   proteinIds: Seq[IdAndSource],
-                  safetyLiabilities: Seq[SafetyLiability],
+                  //                  safetyLiabilities: Seq[SafetyLiability],
                   subcellularLocations: Seq[LocationAndSource],
                   synonyms: Seq[LabelAndSource], // double check, this is name and symbol
                   targetClass: Seq[TargetClass],
@@ -156,7 +156,7 @@ object Target extends Logging {
       (JsPath \ "hallmarks").readNullable[Hallmarks] and
       (JsPath \ "homologues").readWithDefault[Seq[Homologue]](Seq.empty) and
       (JsPath \ "proteinIds").readWithDefault[Seq[IdAndSource]](Seq.empty) and
-      (JsPath \ "safetyLiabilities").readWithDefault[Seq[SafetyLiability]](Seq.empty) and
+      //      (JsPath \ "safetyLiabilities").readWithDefault[Seq[SafetyLiability]](Seq.empty) and
       (JsPath \ "subcellularLocations").readWithDefault[Seq[LocationAndSource]](Seq.empty) and
       (JsPath \ "synonyms").readWithDefault[Seq[LabelAndSource]](Seq.empty) and
       (JsPath \ "targetClass").readWithDefault[Seq[TargetClass]](Seq.empty) and

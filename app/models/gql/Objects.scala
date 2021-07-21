@@ -36,7 +36,7 @@ object Objects extends Logging {
         "malignant growth"),
     DocumentField("homologues", "Gene homologues"),
     DocumentField("proteinIds", "Related protein IDs"),
-    DocumentField("safetyLiabilities", "Known target safety effects and target safety risk information"),
+//    DocumentField("safetyLiabilities", "Known target safety effects and target safety risk information"),
     DocumentField("subcellularLocations", "Location of ..."), // todo
     DocumentField("synonyms", "Alternative names and symbols"),
     DocumentField("tep", "Target Enabling Package (TEP)"),
