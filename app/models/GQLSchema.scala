@@ -113,10 +113,10 @@ object GQLSchema {
       ),
       Field(
         "geneOntologyTerms",
-        ListType(geneOntologyTermImp),
+        ListType(OptionType(geneOntologyTermImp)),
         description = Some("Gene ontology terms"),
         arguments = goIds :: Nil,
-        resolve = ctx => goFetcher.deferSeqOpt(ctx.arg(goIds))
+        resolve = ctx => goFetcher.deferSeqOptExplicit(ctx.arg(goIds))
       )
     )
   )
