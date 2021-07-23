@@ -10,6 +10,7 @@ trait GqlItTestInputs {
   lazy val geneInputs = File(this.getClass.getResource(s"/gqlInputs/genes.txt").getPath).lines.toList
   lazy val diseaseInputs = File(this.getClass.getResource(s"/gqlInputs/efos.txt").getPath).lines.toList
   lazy val drugInputs = File(this.getClass.getResource(s"/gqlInputs/drugs.txt").getPath).lines.toList
+  lazy val goInputs = File(this.getClass.getResource(s"/gqlInputs/goIds.txt").getPath).lines.toList
 
   val aggregationFilterMap: Map[String, Seq[String]] = Map(
     "pathwayTypes" -> Seq(
@@ -84,6 +85,8 @@ trait GqlItTestInputs {
   val geneGenerator: Gen[String] = Gen.oneOf(geneInputs)
   val diseaseGenerator: Gen[String] = Gen.oneOf(diseaseInputs)
   val drugGenerator: Gen[String] = Gen.oneOf(drugInputs)
+  val goGenerator: Gen[String] = Gen.oneOf(goInputs)
+  val goListGenerator: Gen[List[String]] = Gen.listOf(goGenerator)
   val sizeGenerator: Gen[Int] = Gen.chooseNum(1, 10)
   val targetDiseaseSizeGenerator: Gen[(String, String, Int)] = for {
     gene <- geneGenerator

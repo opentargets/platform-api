@@ -819,7 +819,7 @@ object Objects extends Logging {
                        Some("Associated Targets using (On the fly method)"),
                        resolve = r => r.value.rows))
   )
-
+  implicit val geneOntologyTermImp = deriveObjectType[Backend, GeneOntologyTerm]()
   implicit val knownDrugReferenceImp = deriveObjectType[Backend, KnownDrugReference]()
 
   implicit val URLImp: ObjectType[Backend, URL] = deriveObjectType[Backend, URL](

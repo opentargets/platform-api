@@ -62,6 +62,8 @@ case class GeneOntology(id: String,
                         geneProduct: String,
                         source: String)
 
+case class GeneOntologyLookup(id: String, name: String)
+
 case class Tep(uri: String, name: String)
 
 case class IdAndSource(id: String, source: String)

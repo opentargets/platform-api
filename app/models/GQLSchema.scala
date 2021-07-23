@@ -42,7 +42,8 @@ object GQLSchema {
     mousePhenotypeFetcher,
     otarProjectsFetcher,
     soTermsFetcher,
-    indicationFetcher
+    indicationFetcher,
+    goFetcher
   )
 
   val query = ObjectType(
@@ -109,6 +110,13 @@ object GQLSchema {
           import ctx.ctx._
           Interactions.listResources
         }
+      ),
+      Field(
+        "geneOntologyTerms",
+        ListType(geneOntologyTermImp),
+        description = Some("Gene ontology terms"),
+        arguments = goIds :: Nil,
+        resolve = ctx => goFetcher.deferSeqOpt(ctx.arg(goIds))
       )
     )
   )

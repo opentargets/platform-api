@@ -1,19 +1,8 @@
 package models.gql
 
 import models.Helpers.fromJsValue
+import models.entities.{Disease, Drug, ECO, Expressions, GeneOntologyTerm, HPO, Indications, MousePhenotypes, OtarProjects, Reactome, Target, GeneOntology => GO}
 import models.{Backend, entities}
-import models.entities.{
-  Disease,
-  Drug,
-  ECO,
-  Expressions,
-  Indications,
-  HPO,
-  MousePhenotypes,
-  OtarProjects,
-  Reactome,
-  Target
-}
 import play.api.Logging
 import play.api.libs.json.JsValue
 import sangria.execution.deferred.{Fetcher, FetcherCache, FetcherConfig, HasId, SimpleFetcherCache}
@@ -125,6 +114,15 @@ object Fetchers extends Logging {
     fetch = (ctx: Backend, ids: Seq[String]) => {
       ctx.getIndications(ids)
     })
+
+  implicit val goFetcherId = HasId[GeneOntologyTerm, String](_.id)
+  val goFetcherCache = FetcherCache.simple
+  val goFetcher = Fetcher(
+    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(goFetcherCache),
+    fetch = (ctx: Backend, ids: Seq[String]) => {
+      ctx.getGoTerms(ids)
+    }
+  )
 
   def buildFetcher(index: String) = {
     implicit val soTermHasId = HasId[JsValue, String](el => (el \ "id").as[String])

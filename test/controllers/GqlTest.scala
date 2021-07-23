@@ -348,6 +348,12 @@ class GqlTest
     }
   }
 
+  "GeneOntologyQuery" must {
+    "return a valid response" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(GeneOntology("GeneOntologyQuery"))
+    }
+  }
+
   "IntOgen_sectionQuery" must {
     "return a valid response" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("IntOgen_sectionQuery"))

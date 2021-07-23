@@ -1,0 +1,6 @@
+query GO($goIds: [String!]!) {
+  geneOntologyTerms(goIds: $goIds) {
+    id
+    name
+  }
+}

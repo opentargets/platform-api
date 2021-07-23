@@ -183,6 +183,18 @@ case class DiseaseSummaryFragment(file: String) extends GqlFragment[(String, Str
 
 case class Drug(file: String) extends AbstractDrug with GqlCase[String]
 
+case class GeneOntology(file: String) extends GqlCase[List[String]] {
+  val inputGenerator = goListGenerator
+
+  def generateVariables(inputs: List[String]): String = {
+    s"""
+       "variables": {
+         "goIds": "${inputs.mkString("[", ",", "]")}"
+       }
+     """
+  }
+}
+
 case class KnownDrugs(file: String) extends GqlCase[String] {
   val inputGenerator = diseaseGenerator
 

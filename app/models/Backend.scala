@@ -144,6 +144,12 @@ class Backend @Inject()(
     }
   }
 
+  def getGoTerms(ids: Seq[String]): Future[IndexedSeq[GeneOntologyTerm]] = {
+    val targetIndexName = getIndexOrDefault("go")
+
+    esRetriever.getByIds(targetIndexName, ids, fromJsValue[GeneOntologyTerm])
+  }
+
   def getKnownDrugs(queryString: String,
                     kv: Map[String, String],
                     sizeLimit: Option[Int],
