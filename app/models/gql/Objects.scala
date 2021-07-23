@@ -408,12 +408,12 @@ object Objects extends Logging {
   implicit val otarProjectsImp = deriveObjectType[Backend, OtarProjects]()
 
   // howto doc https://sangria-graphql.org/learn/#macro-based-graphql-type-derivation
-  implicit val geneObtologyImp = deriveObjectType[Backend, GeneOntology](
-    ReplaceField("evidence",
-                 Field("evidence",
-                       ecoImp,
-                       Some("ECO object"),
-                       resolve = r => ecosFetcher.defer(r.value.evidence)))
+  implicit val geneOntologyImp = deriveObjectType[Backend, GeneOntology](
+    ReplaceField("ecoId",
+      Field("eco",
+        OptionType(ecoImp),
+        Some("ECO object"),
+        resolve = r => ecosFetcher.deferOpt(r.value.evidence)))
   )
 
   implicit val cancerHallmarkImp = deriveObjectType[Backend, CancerHallmark]()
@@ -814,10 +814,10 @@ object Objects extends Logging {
   implicit val associatedOTFDiseasesImp = deriveObjectType[Backend, Associations](
     ObjectTypeName("AssociatedDiseases"),
     ReplaceField("rows",
-                 Field("rows",
-                       ListType(associatedOTFDiseaseImp),
-                       Some("Associated Targets using (On the fly method)"),
-                       resolve = r => r.value.rows))
+      Field("rows",
+        ListType(associatedOTFDiseaseImp),
+        Some("Associated Targets using (On the fly method)"),
+        resolve = r => r.value.rows))
   )
   implicit val geneOntologyTermImp = deriveObjectType[Backend, GeneOntologyTerm]()
   implicit val knownDrugReferenceImp = deriveObjectType[Backend, KnownDrugReference]()
