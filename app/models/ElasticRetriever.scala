@@ -54,16 +54,17 @@ class ElasticRetriever @Inject()(client: ElasticClient,
           }
           .filter(_ != null)
 
-        if (logger.isDebugEnabled) {
-          logger.debug(
-            s"base64 $sa decoded and parsed into JsValue " +
-              s"as ${Json.stringify(vv.getOrElse(JsNull))} and transformed into " +
-              s"${flattenedValues.mkString("Seq(", ", ", ")")}")
-        }
+        logger.trace(
+          s"base64 $sa decoded and parsed into JsValue " +
+            s"as ${Json.stringify(vv.getOrElse(JsNull))} and transformed into " +
+            s"${flattenedValues.mkString("Seq(", ", ", ")")}")
 
         flattenedValues
       })
-      .getOrElse(Seq.empty)
+      .getOrElse({
+        logger.info("No results decoded from search, returning empty collection.")
+        Seq.empty
+      })
 
   private def encodeSearchAfter(jsArray: Option[JsValue]): Option[String] =
     jsArray.map(jsv => Base64Engine.encode(Json.stringify(jsv))).map(new String(_))
@@ -85,7 +86,7 @@ class ElasticRetriever @Inject()(client: ElasticClient,
 
     // just log and execute the query
     val elems: Future[Response[SearchResponse]] = client.execute {
-      logger.debug(client.show(q))
+      logger.debug(s"Elasticsearch query to execute: \n\t${client.show(q)}")
       q
     }
 
@@ -96,7 +97,7 @@ class ElasticRetriever @Inject()(client: ElasticClient,
         // thus, we can apply Json Transformations from JSON Play
         val result = Json.parse(results.body.get)
 
-        logger.debug(Json.prettyPrint(result))
+        logger.trace(Json.prettyPrint(result))
         val hits = (result \ "hits" \ "hits").get.as[JsArray].value
         val aggs = (result \ "aggregations").getOrElse(JsNull)
         aggs
@@ -170,7 +171,7 @@ class ElasticRetriever @Inject()(client: ElasticClient,
         // parse the full body response into JsValue
         val result = Json.parse(results.body.get)
 
-        logger.debug(Json.prettyPrint(result))
+        logger.trace(Json.prettyPrint(result))
         val hits = (result \ "hits" \ "hits").get.as[JsArray].value
         val aggs = (result \ "aggregations").getOrElse(JsNull)
 
@@ -210,7 +211,7 @@ class ElasticRetriever @Inject()(client: ElasticClient,
 
       }
 
-      logger.debug(client.show(qq))
+      logger.debug(s"Elasticsearch query to execute: ${client.show(qq)}")
       qq
     }
 
@@ -221,7 +222,7 @@ class ElasticRetriever @Inject()(client: ElasticClient,
         // thus, we can apply Json Transformations from JSON Play
         val result = Json.parse(results.body.get)
 
-        logger.debug(Json.prettyPrint(result))
+        logger.trace(Json.prettyPrint(result))
         val hits = (result \ "hits" \ "hits").get.as[JsArray].value
         val totalHits = results.result.totalHits
 
@@ -277,7 +278,7 @@ class ElasticRetriever @Inject()(client: ElasticClient,
         case None => q
       }
 
-      logger.debug(client.show(qq))
+      logger.debug(s"Elasticsearch query to execute: \n\t${client.show(qq)}")
       qq
     }
 
@@ -288,7 +289,7 @@ class ElasticRetriever @Inject()(client: ElasticClient,
         // thus, we can apply Json Transformations from JSON Play
         val result = Json.parse(results.body.get)
 
-        logger.debug(Json.prettyPrint(result))
+        logger.trace(Json.prettyPrint(result))
         val hits = (result \ "hits" \ "hits").get.as[JsArray].value
         val totalHits = results.result.totalHits
 
@@ -361,7 +362,7 @@ class ElasticRetriever @Inject()(client: ElasticClient,
           case None => q
         }
 
-        logger.debug(client.show(qq))
+        logger.debug(s"Elasticsearch query to execute: \n\t${client.show(qq)}")
         qq
       }
 
@@ -372,7 +373,7 @@ class ElasticRetriever @Inject()(client: ElasticClient,
         // thus, we can apply Json Transformations from JSON Play
         val result = Json.parse(results.body.get)
 
-        logger.debug(Json.prettyPrint(result))
+        logger.trace(Json.prettyPrint(result))
         val hits = (result \ "hits" \ "hits").get.as[JsArray].value
         val aggs = (result \ "aggregations").getOrElse(JsNull)
 
@@ -408,7 +409,7 @@ class ElasticRetriever @Inject()(client: ElasticClient,
             idsQuery(ids)
           } limit (Configuration.batchSize) trackTotalHits (true) sourceExclude (excludedFields)
 
-          logger.debug(client.show(q))
+          logger.debug(s"Elasticsearch query to execute: \n\t${client.show(q)}")
           q
         }
 
@@ -419,7 +420,7 @@ class ElasticRetriever @Inject()(client: ElasticClient,
             // thus, we can apply Json Transformations from JSON Play
             val result = Json.parse(results.body.get)
 
-            logger.debug(Json.prettyPrint(result))
+            logger.trace(Json.prettyPrint(result))
 
             val hits = (result \ "hits" \ "hits").get.as[JsArray].value
 
@@ -475,12 +476,12 @@ class ElasticRetriever @Inject()(client: ElasticClient,
     val fnQueries = boolQuery.should(keywordQueryFn, stringQueryFn) :: Nil
     val mainQuery = boolQuery.must(fnQueries ::: filterQueries)
 
-    if (qString.length > 0) {
+    if (qString.nonEmpty) {
       client
         .execute {
           val aggregations =
             search(searchEntities) query (fnQueries.head) aggs (aggFns) size (0)
-          logger.debug(client.show(aggregations))
+          logger.trace(client.show(aggregations))
           aggregations trackTotalHits (true)
         }
         .zip {
@@ -492,7 +493,7 @@ class ElasticRetriever @Inject()(client: ElasticClient,
               .highlighting(HighlightOptions(highlighterType = Some("fvh")), hlFieldSeq)
               .trackTotalHits(true)
               .sourceExclude("terms", "terms5", "terms25")
-            logger.debug(client.show(mhits))
+            logger.trace(client.show(mhits))
             mhits
           }
         }
@@ -506,9 +507,9 @@ class ElasticRetriever @Inject()(client: ElasticClient,
                 None
             }
 
-            if (logger.isDebugEnabled) {
+            if (logger.isTraceEnabled) {
               val jsHits = Json.parse(hits.body.get)
-              logger.debug(Json.prettyPrint(jsHits))
+              logger.trace(Json.prettyPrint(jsHits))
             }
 
             val sresults =
