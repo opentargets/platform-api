@@ -88,7 +88,7 @@ object Helpers extends Logging {
       .transform(source)
       .asOpt
       .map(obj => {
-        logger.debug(Json.prettyPrint(obj))
+        logger.trace(Json.prettyPrint(obj))
         obj.as[A]
       })
   }
