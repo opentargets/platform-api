@@ -239,6 +239,11 @@ class GqlTest
     }
   }
 
+  "Chemical Probe queries" must {
+    "return a valid response" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(Target("ChemicalProbesQuery"))
+    }
+  }
   "ClinGen queries" must {
     "return a valid response" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("ClinGen_ClingenQuery"))

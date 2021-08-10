@@ -1,0 +1,23 @@
+query ChemicalProbesQuery($ensemblId: String!) {
+  target(ensemblId: $ensemblId) {
+    id
+    chemicalProbes {
+          id
+          control
+          drugId
+          inchiKey
+          mechanismOfAction
+          origin
+          probeMinerScore
+          probesDrugScore
+          scoreInCells
+          scoreInOrganisms
+          targetFromSourceId
+          urls {
+            niceName
+            url
+          }
+        }
+    }
+  }
+}

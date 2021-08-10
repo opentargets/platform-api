@@ -5,6 +5,22 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 
+case class ChemicalProbeUrl(niceName: String, url: Option[String])
+
+case class ChemicalProbe(
+                          id: String,
+                          control: Option[String],
+                          drugId: Option[String],
+                          inchiKey: String,
+                          mechanismOfAction: Option[String],
+                          origin: String,
+                          probeMinerScore: Option[String],
+                          probesDrugScore: Option[String],
+                          scoreInCells: Option[String],
+                          scoreInOrganisms: Option[String],
+                          targetFromSourceId: String,
+                          urls: Vector[ChemicalProbeUrl]
+                        )
 
 case class DoseAndType(
                         effectType: String,
@@ -87,6 +103,7 @@ case class Target(id: String,
                   approvedSymbol: String,
                   approvedName: String,
                   biotype: String,
+                  chemicalProbes: Seq[ChemicalProbe],
                   dbXrefs: Seq[IdAndSource],
                   functionDescriptions: Seq[String],
                   geneticConstraint: Seq[Constraint],
@@ -111,6 +128,9 @@ object Target extends Logging {
       (__ \ "impact").read[String] and
       (__ \ "label").read[String] and
       (__ \ "pmid").read[Long]) (CancerHallmark.apply _)
+
+  implicit val chemicalProbeUrlImp = Json.format[ChemicalProbeUrl]
+  implicit val chemicalProbeImp = Json.format[ChemicalProbe]
 
   implicit val hallmarkAttributeImpW = Json.writes[HallmarkAttribute]
   implicit val hallmarkAttributeImpR: Reads[HallmarkAttribute] =
@@ -152,6 +172,7 @@ object Target extends Logging {
       (JsPath \ "approvedSymbol").read[String] and
       (JsPath \ "approvedName").read[String] and
       (JsPath \ "biotype").read[String] and
+      (JsPath \ "chemicalProbes").readWithDefault[Seq[ChemicalProbe]](Seq.empty) and
       (JsPath \ "dbXrefs").readWithDefault[Seq[IdAndSource]](Seq.empty) and
       (JsPath \ "functionDescriptions").readWithDefault[Seq[String]](Seq.empty) and
       (JsPath \ "constraint").readWithDefault[Seq[Constraint]](Seq.empty) and
@@ -169,17 +190,4 @@ object Target extends Logging {
       (JsPath \ "transcriptIds").readWithDefault[Seq[String]](Seq.empty)
   )(Target.apply _)
 
-  def fromJsValue(jObj: JsValue): Option[Target] = {
-    /* apply transformers for json and fill the target
-     start from internal objects and then map the external
-     */
-    val source = (__ \ '_source).json.pick
-    jObj
-      .transform(source)
-      .asOpt
-      .map(obj => {
-        logger.debug(Json.prettyPrint(obj))
-        obj.as[Target]
-      })
-  }
 }

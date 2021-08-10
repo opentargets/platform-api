@@ -155,15 +155,17 @@ object Objects extends Logging {
             ctx arg BFilterString,
             (ctx arg scoreSorting) map (_.split(" ").take(2).toList match {
               case a :: b :: Nil => (a, b)
-              case a :: Nil      => (a, "desc")
-              case _             => ("score", "desc")
+              case a :: Nil => (a, "desc")
+              case _ => ("score", "desc")
             }),
             ctx arg pageArg
-        )
+          )
       ),
     )
   )
 
+  implicit lazy val chemicalProbeUrlImp = deriveObjectType[Backend, ChemicalProbeUrl]()
+  implicit lazy val chemicalProbeImp = deriveObjectType[Backend, ChemicalProbe]()
   // disease
   implicit lazy val diseaseSynonymsImp = deriveObjectType[Backend, DiseaseSynonyms]()
 
