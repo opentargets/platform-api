@@ -16,7 +16,7 @@
     <logger name="application" level="WARN"/>
     <logger name="org.apache" level="WARN"/>
     <logger name="httpclient" level="WARN"/>
-    <logger name="models" level="INFO"/>
+    <logger name="models" level="DEBUG"/>
     <logger name="controllers" level="INFO"/>
 
     <!-- Off these ones as they are annoying, and anyway we manage configuration ourselves -->
