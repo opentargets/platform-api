@@ -413,6 +413,11 @@ object Objects extends Logging {
 
   // howto doc https://sangria-graphql.org/learn/#macro-based-graphql-type-derivation
   implicit val geneOntologyImp = deriveObjectType[Backend, GeneOntology](
+    ReplaceField("id",
+      Field("term",
+        OptionType(geneOntologyTermImp),
+        Some("Gene ontology term"),
+        resolve = r => goFetcher.deferOpt(r.value.id))),
     ReplaceField("ecoId",
       Field("eco",
         OptionType(ecoImp),

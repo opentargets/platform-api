@@ -29,7 +29,10 @@ query TargetFullObject($ensgId: String!) {
       strand
     }
     geneOntology {
-      id
+      term {
+        id
+        name
+      }
       aspect
       geneProduct
       source
