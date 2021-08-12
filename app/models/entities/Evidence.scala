@@ -388,10 +388,10 @@ object Evidence {
             OptionType(StringType),
             description = None,
             resolve = js => (js.value \ "contrast").asOpt[String]),
-      Field("studyDescription",
+      Field("studyOverview",
             OptionType(StringType),
             description = None,
-            resolve = js => (js.value \ "studyDescription").asOpt[String]),
+            resolve = js => (js.value \ "studyOverview").asOpt[String]),
       Field("crisprScreenLibrary",
             OptionType(StringType),
             description = None,
@@ -404,10 +404,10 @@ object Evidence {
             OptionType(StringType),
             description = None,
             resolve = js => (js.value \ "cellLineBackground").asOpt[String]),
-      Field("direction",
+      Field("statisticalTestTail",
             OptionType(StringType),
             description = None,
-            resolve = js => (js.value \ "direction").asOpt[String])
+            resolve = js => (js.value \ "statisticalTestTail").asOpt[String])
     )
   )
 }
