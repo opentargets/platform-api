@@ -33,7 +33,8 @@ query TargetFullObject($ensgId: String!) {
       aspect
       geneProduct
       source
-      evidence {
+      evidence
+      eco {
         id
         label
       }
@@ -64,25 +65,25 @@ query TargetFullObject($ensgId: String!) {
       id
       source
     }
-    safetyLiabilities {
-      assayDescription
-      assayFormat
-      assayType
-      datasource
-      effects {
-        dosing
-        type
-      }
-      event
-      eventId
-      pmid
-      tissue {
-        efoId
-        label
-        modelName
-      }
-      url
-    }
+    #safetyLiabilities {
+    #  assayDescription
+    #  assayFormat
+    #  assayType
+    #  datasource
+    #  effects {
+    #    dosing
+    #    type
+    #  }
+    #  event
+    #  eventId
+    #  pmid
+    #  tissue {
+    #    efoId
+    #    label
+    #    modelName
+    #  }
+    #  url
+    #}
     subcellularLocations {
       location
       source
@@ -106,5 +107,29 @@ query TargetFullObject($ensgId: String!) {
       value
     }
     transcriptIds
+    chemicalProbes {
+      id
+      control
+      drugId
+      inchiKey
+      mechanismOfAction
+      origin
+      isHighQuality
+      probeMinerScore
+      probesDrugScore
+      scoreInCells
+      scoreInOrganisms
+      targetFromSourceId
+      urls {
+        niceName
+        url
+      }
+    }
+    pathways {
+      pathway
+      pathwayId
+      topLevelTerm
+      url
+    }
   }
 }

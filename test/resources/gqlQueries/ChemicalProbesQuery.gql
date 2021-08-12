@@ -8,6 +8,7 @@ query ChemicalProbesQuery($ensemblId: String!) {
           inchiKey
           mechanismOfAction
           origin
+          isHighQuality
           probeMinerScore
           probesDrugScore
           scoreInCells
