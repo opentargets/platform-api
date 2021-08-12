@@ -98,6 +98,8 @@ case class Constraint(
                        upperRank: Option[Long]
                      )
 
+case class ReactomePathway(pathway: String, pathwayId: String, topLevelTerm: String, url: String)
+
 case class Target(id: String,
                   alternativeGenes: Seq[String],
                   approvedSymbol: String,
@@ -111,6 +113,7 @@ case class Target(id: String,
                   geneOntology: Seq[GeneOntology],
                   hallmarks: Option[Hallmarks],
                   homologues: Seq[Homologue],
+                  pathways: Seq[ReactomePathway],
                   proteinIds: Seq[IdAndSource],
                   //                  safetyLiabilities: Seq[SafetyLiability],
                   subcellularLocations: Seq[LocationAndSource],
@@ -164,6 +167,7 @@ object Target extends Logging {
   implicit val tissueImpF = Json.format[TargetTissue]
   implicit val safetyLiabilityImpF = Json.format[SafetyLiability]
   implicit val genomicLocationImpW = Json.format[models.entities.GenomicLocation]
+  implicit val reactomePathwayImpF = Json.format[models.entities.ReactomePathway]
 
   implicit val targetImpW = Json.writes[models.entities.Target]
   implicit val targetImpR: Reads[models.entities.Target] = (
@@ -180,6 +184,7 @@ object Target extends Logging {
       (JsPath \ "go").readWithDefault[Seq[GeneOntology]](Seq.empty) and
       (JsPath \ "hallmarks").readNullable[Hallmarks] and
       (JsPath \ "homologues").readWithDefault[Seq[Homologue]](Seq.empty) and
+      (JsPath \ "pathways").readWithDefault[Seq[ReactomePathway]](Seq.empty) and
       (JsPath \ "proteinIds").readWithDefault[Seq[IdAndSource]](Seq.empty) and
       //      (JsPath \ "safetyLiabilities").readWithDefault[Seq[SafetyLiability]](Seq.empty) and
       (JsPath \ "subcellularLocations").readWithDefault[Seq[LocationAndSource]](Seq.empty) and

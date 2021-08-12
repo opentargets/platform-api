@@ -36,13 +36,13 @@ object Objects extends Logging {
         "malignant growth"),
     DocumentField("homologues", "Gene homologues"),
     DocumentField("proteinIds", "Related protein IDs"),
-//    DocumentField("safetyLiabilities", "Known target safety effects and target safety risk information"),
+    //    DocumentField("safetyLiabilities", "Known target safety effects and target safety risk information"),
     DocumentField("subcellularLocations", "Location of ..."), // todo
     DocumentField("synonyms", "Alternative names and symbols"),
     DocumentField("tep", "Target Enabling Package (TEP)"),
     DocumentField("tractability", "Target druggability assessment"),
     DocumentField("transcriptIds", "Ensembl transcript IDs"),
-    //fixme: What to do about reactome?
+    DocumentField("pathways", "Reactome pathways"),
     AddFields(
       Field(
         "similarEntities",
@@ -166,6 +166,8 @@ object Objects extends Logging {
 
   implicit lazy val chemicalProbeUrlImp = deriveObjectType[Backend, ChemicalProbeUrl]()
   implicit lazy val chemicalProbeImp = deriveObjectType[Backend, ChemicalProbe]()
+
+  implicit lazy val reactomePathwayImp = deriveObjectType[Backend, ReactomePathway]()
   // disease
   implicit lazy val diseaseSynonymsImp = deriveObjectType[Backend, DiseaseSynonyms]()
 
