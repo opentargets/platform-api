@@ -68,7 +68,8 @@ case class Homologue(
                       speciesName: String,
                       targetGeneId: String,
                       targetGeneSymbol: String,
-                      targetPercentageIdentity: Double
+                      targetPercentageIdentity: Double,
+                      isHighConfidence: Option[Int]
                     )
 
 case class GenomicLocation(chromosome: String, start: Long, end: Long, strand: Int)
