@@ -99,7 +99,7 @@ case class Constraint(
                        upperRank: Option[Long]
                      )
 
-case class ReactomePathway(pathway: String, pathwayId: String, topLevelTerm: String, url: String)
+case class ReactomePathway(pathway: String, pathwayId: String, topLevelTerm: String)
 
 case class Target(id: String,
                   alternativeGenes: Seq[String],

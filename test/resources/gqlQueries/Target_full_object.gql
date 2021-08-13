@@ -132,7 +132,6 @@ query TargetFullObject($ensgId: String!) {
       pathway
       pathwayId
       topLevelTerm
-      url
     }
   }
 }
