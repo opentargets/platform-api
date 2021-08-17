@@ -5,9 +5,7 @@ import com.sksamuel.elastic4s._
 import com.sksamuel.elastic4s.http.JavaClient
 import com.sksamuel.elastic4s.requests.searches._
 import com.sksamuel.elastic4s.requests.searches.aggs._
-import com.sksamuel.elastic4s.requests.searches.queries.BoolQuery
-import com.sksamuel.elastic4s.requests.searches.queries.matches.MatchQuery
-import com.sksamuel.elastic4s.requests.searches.sort.{FieldSort, SortOrder}
+import com.sksamuel.elastic4s.requests.searches.sort.SortOrder
 import esecuele._
 
 import javax.inject.Inject
@@ -16,7 +14,6 @@ import models.db.{QAOTF, QLITAGG, QW2V}
 import models.entities.Publication._
 import models.entities.Aggregations._
 import models.entities.Associations._
-import models.entities.CancerBiomarkers._
 import models.entities.Configuration._
 import models.entities.DiseaseHPOs._
 import models.entities.Drug._
@@ -92,34 +89,6 @@ class Backend @Inject()(
           val counts = (agg \ "eventCount" \ "value").as[Long]
           Some(AdverseEvents(counts, seq.head.criticalValue, seq))
       }
-  }
-
-  def getCancerBiomarkers(id: String,
-                          pagination: Option[Pagination]): Future[Option[CancerBiomarkers]] = {
-
-    val pag = pagination.getOrElse(Pagination.mkDefault)
-
-    val cbIndex = getIndexOrDefault("cancerBiomarker")
-
-    val kv = Map("target.keyword" -> id)
-
-    val aggs = Seq(
-      cardinalityAgg("uniqueDrugs", "drugName.keyword"),
-      cardinalityAgg("uniqueDiseases", "disease.keyword"),
-      cardinalityAgg("uniqueBiomarkers", "id.keyword"),
-      valueCountAgg("rowsCount", "id.keyword")
-    )
-
-    esRetriever.getByIndexedQueryMust(cbIndex, kv, pag, fromJsValue[CancerBiomarker], aggs).map {
-      case (Seq(), _) => Some(CancerBiomarkers(0,0,0,0, Seq()))
-      case (seq, agg) =>
-        logger.debug(Json.prettyPrint(agg))
-        val drugs = (agg \ "uniqueDrugs" \ "value").as[Long]
-        val diseases = (agg \ "uniqueDiseases" \ "value").as[Long]
-        val biomarkers = (agg \ "uniqueBiomarkers" \ "value").as[Long]
-        val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
-        Some(CancerBiomarkers(drugs, diseases, biomarkers, rowsCount, seq))
-    }
   }
 
   def getDiseaseHPOs(id: String,

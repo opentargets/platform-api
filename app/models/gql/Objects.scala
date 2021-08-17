@@ -132,15 +132,6 @@ object Objects extends Logging {
         }
       ),
       Field(
-        "cancerBiomarkers",
-        OptionType(cancerBiomarkersImp),
-        description = Some(
-          "Clinical relevance and drug responses of tumor genomic alterations " +
-            "on the target"),
-        arguments = pageArg :: Nil,
-        resolve = ctx => ctx.ctx.getCancerBiomarkers(ctx.value.id, ctx.arg(pageArg))
-      ),
-      Field(
         "associatedDiseases",
         associatedOTFDiseasesImp,
         description = Some("associations on the fly"),
@@ -452,49 +443,6 @@ object Objects extends Logging {
   implicit val homologueImp = deriveObjectType[Backend, Homologue]()
   implicit val targetTissueImp = deriveObjectType[Backend, TargetTissue]()
   implicit val safetyLiabilityImp = deriveObjectType[Backend, SafetyLiability]()
-
-  // cancerbiomarkers
-  implicit val cancerBiomarkerSourceImp = deriveObjectType[Backend, CancerBiomarkerSource](
-    ObjectTypeDescription("Detail on Cancer Biomarker sources"),
-    DocumentField("description", "Source description"),
-    DocumentField("link", "Source link"),
-    DocumentField("name", "Source name")
-  )
-
-  implicit val cancerBiomarkerImp = deriveObjectType[Backend, CancerBiomarker](
-    ObjectTypeDescription(
-      "Entry on clinical relevance and drug responses of tumor genomic " +
-        "alterations on the target"),
-    DocumentField("id", "Target symbol and variant id"),
-    DocumentField("associationType", "Drug responsiveness"),
-    DocumentField("drugName", "Drug family or name"),
-    DocumentField("evidenceLevel", "Source type"),
-    DocumentField("sources", "Sources"),
-    DocumentField("pubmedIds", "List of supporting publications"),
-    DocumentField("evidenceLevel", "Source type"),
-    ReplaceField("target",
-                 Field("target",
-                       targetImp,
-                       Some("Target entity"),
-                       resolve = r => targetsFetcher.defer(r.value.target))),
-    ReplaceField("disease",
-                 Field("disease",
-                       OptionType(diseaseImp),
-                       Some("Disease entity"),
-                       resolve = r => diseasesFetcher.deferOpt(r.value.disease)))
-  )
-
-  implicit val cancerBiomarkersImp = deriveObjectType[Backend, CancerBiomarkers](
-    ObjectTypeDescription(
-      "Set of clinical relevance and drug responses of tumor " +
-        "genomic alterations on the target entries"),
-    DocumentField("uniqueDrugs", "Number of unique drugs with response information"),
-    DocumentField("uniqueDiseases",
-                  "Number of unique cancer diseases with drug response information"),
-    DocumentField("uniqueBiomarkers", "Number of unique biomarkers with drug response information"),
-    DocumentField("count", "Number of entries"),
-    DocumentField("rows", "Cancer Biomarker entries")
-  )
 
   // hpo
   implicit lazy val hpoImp: ObjectType[Backend, HPO] = deriveObjectType(
