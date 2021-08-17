@@ -55,9 +55,9 @@ case class SafetyLiability(
                             url: Option[String]
                           )
 
-case class CancerHallmark(description: String, impact: String, label: String, pmid: Long)
+case class CancerHallmark(description: String, impact: Option[String], label: String, pmid: Long)
 
-case class HallmarkAttribute(name: String, description: String, pmid: Long)
+case class HallmarkAttribute(name: String, description: String, pmid: Option[Long])
 
 case class Hallmarks(cancerHallmarks: Seq[CancerHallmark], attributes: Seq[HallmarkAttribute])
 
@@ -130,7 +130,7 @@ object Target extends Logging {
   implicit val cancerHallmarkImpW = Json.writes[CancerHallmark]
   implicit val cancerHallmarkImpR: Reads[CancerHallmark] =
     ((__ \ "description").read[String] and
-      (__ \ "impact").read[String] and
+      (__ \ "impact").readNullable[String] and
       (__ \ "label").read[String] and
       (__ \ "pmid").read[Long]) (CancerHallmark.apply _)
 
@@ -141,7 +141,7 @@ object Target extends Logging {
   implicit val hallmarkAttributeImpR: Reads[HallmarkAttribute] =
     ((__ \ "attribute_name").read[String] and
       (__ \ "description").read[String] and
-      (__ \ "pmid").read[Long]) (HallmarkAttribute.apply _)
+      (__ \ "pmid").readNullable[Long]) (HallmarkAttribute.apply _)
 
   implicit val hallmarksImpW = Json.writes[Hallmarks]
   implicit val hallmarksImpR: Reads[Hallmarks] =
