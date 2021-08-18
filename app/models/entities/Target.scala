@@ -23,10 +23,10 @@ case class ChemicalProbe(
                           urls: Vector[ChemicalProbeUrl]
                         )
 
-case class DoseAndType(
-                        effectType: String,
-                        effectDose: String
-                      )
+case class SafetyEffects(
+                          direction: String,
+                          dosing: String
+                        )
 
 case class LocationAndSource(location: String, source: String)
 
@@ -36,23 +36,24 @@ case class LabelAndSource(label: String, source: String)
 
 case class Tractability(id: String, modality: String, value: Boolean)
 
-case class TargetTissue(
-                         efoId: Option[String],
-                         label: Option[String],
-                         modelName: Option[String]
-                       )
+case class SafetyBiosample(
+                            tissueLabel: Option[String],
+                            tissueId: Option[String],
+                            cellLabel: Option[String],
+                            cellFormat: Option[String],
+                            cellId: Option[String]
+                          )
+
+case class SafetyStudy(name: Option[String], description: Option[String], `type`: Option[String])
 
 case class SafetyLiability(
-                            assayDescription: Option[String],
-                            assayFormat: Option[String],
-                            assayType: Option[String],
+                            biosample: Option[Seq[SafetyBiosample]],
                             datasource: String,
-                            effects: Option[Seq[DoseAndType]],
+                            effects: Option[Seq[SafetyEffects]],
                             event: Option[String],
                             eventId: Option[String],
-                            pmid: Option[String],
-                            tissue: Option[TargetTissue],
-                            url: Option[String]
+                            literature: Option[String],
+                            study: Option[Seq[SafetyStudy]],
                           )
 
 case class CancerHallmark(description: String, impact: Option[String], label: String, pmid: Long)
@@ -117,7 +118,7 @@ case class Target(id: String,
                   homologues: Seq[Homologue],
                   pathways: Seq[ReactomePathway],
                   proteinIds: Seq[IdAndSource],
-                  //                  safetyLiabilities: Seq[SafetyLiability],
+                  safetyLiabilities: Seq[SafetyLiability],
                   subcellularLocations: Seq[LocationAndSource],
                   synonyms: Seq[LabelAndSource], // double check, this is name and symbol
                   targetClass: Seq[TargetClass],
@@ -165,8 +166,9 @@ object Target extends Logging {
   implicit val tractabilityImpF = Json.format[Tractability]
   implicit val constraintImpF = Json.format[Constraint]
   implicit val homologueImpF = Json.format[Homologue]
-  implicit val doseAndTypeImpF = Json.format[DoseAndType]
-  implicit val tissueImpF = Json.format[TargetTissue]
+  implicit val doseAndTypeImpF = Json.format[SafetyEffects]
+  implicit val tissueImpF = Json.format[SafetyBiosample]
+  implicit val safetyStudyImpF = Json.format[SafetyStudy]
   implicit val safetyLiabilityImpF = Json.format[SafetyLiability]
   implicit val genomicLocationImpW = Json.format[models.entities.GenomicLocation]
   implicit val reactomePathwayImpF = Json.format[models.entities.ReactomePathway]
@@ -188,7 +190,7 @@ object Target extends Logging {
       (JsPath \ "homologues").readWithDefault[Seq[Homologue]](Seq.empty) and
       (JsPath \ "pathways").readWithDefault[Seq[ReactomePathway]](Seq.empty) and
       (JsPath \ "proteinIds").readWithDefault[Seq[IdAndSource]](Seq.empty) and
-      //      (JsPath \ "safetyLiabilities").readWithDefault[Seq[SafetyLiability]](Seq.empty) and
+      (JsPath \ "safetyLiabilities").readWithDefault[Seq[SafetyLiability]](Seq.empty) and
       (JsPath \ "subcellularLocations").readWithDefault[Seq[LocationAndSource]](Seq.empty) and
       (JsPath \ "synonyms").readWithDefault[Seq[LabelAndSource]](Seq.empty) and
       (JsPath \ "targetClass").readWithDefault[Seq[TargetClass]](Seq.empty) and

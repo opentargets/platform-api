@@ -69,25 +69,28 @@ query TargetFullObject($ensgId: String!) {
       id
       source
     }
-    #safetyLiabilities {
-    #  assayDescription
-    #  assayFormat
-    #  assayType
-    #  datasource
-    #  effects {
-    #    dosing
-    #    type
-    #  }
-    #  event
-    #  eventId
-    #  pmid
-    #  tissue {
-    #    efoId
-    #    label
-    #    modelName
-    #  }
-    #  url
-    #}
+    safetyLiabilities {
+      biosample {
+        tissueId
+        tissueLabel
+        cellId
+        cellLabel
+        cellFormat
+      }
+      datasource
+      effects {
+        dosing
+        direction
+      }
+      event
+      eventId
+      literature
+      study {
+        name
+        description
+        type
+      }
+    }
     subcellularLocations {
       location
       source

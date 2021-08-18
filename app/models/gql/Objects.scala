@@ -36,7 +36,7 @@ object Objects extends Logging {
         "malignant growth"),
     DocumentField("homologues", "Gene homologues"),
     DocumentField("proteinIds", "Related protein IDs"),
-    //    DocumentField("safetyLiabilities", "Known target safety effects and target safety risk information"),
+    DocumentField("safetyLiabilities", "Known target safety effects and target safety risk information"),
     DocumentField("subcellularLocations", "Location of ..."), // todo
     DocumentField("synonyms", "Alternative names and symbols"),
     DocumentField("tep", "Target Enabling Package (TEP)"),
@@ -438,10 +438,11 @@ object Objects extends Logging {
   implicit val labelAndSourceImp = deriveObjectType[Backend, LabelAndSource]()
   implicit val genomicLocationImp = deriveObjectType[Backend, GenomicLocation]()
   implicit val targetClassImp = deriveObjectType[Backend, TargetClass]()
-  implicit val doseTypeImp = deriveObjectType[Backend, DoseAndType]()
+  implicit val doseTypeImp = deriveObjectType[Backend, SafetyEffects]()
   implicit val constraintImp = deriveObjectType[Backend, Constraint]()
   implicit val homologueImp = deriveObjectType[Backend, Homologue]()
-  implicit val targetTissueImp = deriveObjectType[Backend, TargetTissue]()
+  implicit val targetBiosampleImp = deriveObjectType[Backend, SafetyBiosample]()
+  implicit val targetSafetyStudyImp = deriveObjectType[Backend, SafetyStudy]()
   implicit val safetyLiabilityImp = deriveObjectType[Backend, SafetyLiability]()
 
   // hpo
