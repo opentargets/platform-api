@@ -17,6 +17,7 @@ import models.entities.Associations._
 import models.entities.Configuration._
 import models.entities.DiseaseHPOs._
 import models.entities.Drug._
+import models.entities.MousePhenotypes._
 import models.entities._
 import play.api.cache.AsyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
@@ -210,10 +211,14 @@ class Backend @Inject()(
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[HPO])
   }
 
-  def getMousePhenotypes(ids: Seq[String]): Future[IndexedSeq[MousePhenotypes]] = {
-    val targetIndexName = getIndexOrDefault("mp")
+  def getMousePhenotypes(ids: Seq[String]): Future[IndexedSeq[MousePhenotype]] = {
+    val indexName = getIndexOrDefault("mouse_phenotypes", Some("mouse_phenotypes"))
+    val queryTerm = Map("targetFromSourceId.keyword" -> ids)
+    logger.debug(s"Querying mouse phenotypes for: $ids")
 
-    esRetriever.getByIds(targetIndexName, ids, fromJsValue[MousePhenotypes])
+    // The entry with the highest number of MP is ENSG00000157404 with 1828. Pagination max size is 5000, so we have plenty
+    // of headroom for now.
+    esRetriever.getByIndexedQueryMust(indexName, queryTerm, Pagination(0, Pagination.sizeMax), fromJsValue[MousePhenotype]).map(_._1)
   }
 
   def getOtarProjects(ids: Seq[String]): Future[IndexedSeq[OtarProjects]] = {
@@ -237,12 +242,11 @@ class Backend @Inject()(
   def getTargets(ids: Seq[String]): Future[IndexedSeq[Target]] = {
     val targetIndexName = getIndexOrDefault("target", Some("targets"))
 
-    val excludedFields = List("mousePhenotypes*")
-    esRetriever.getByIds(targetIndexName, ids, fromJsValue[Target], excludedFields = excludedFields)
+    esRetriever.getByIds(targetIndexName, ids, fromJsValue[Target])
   }
 
   def getDrugs(ids: Seq[String]): Future[IndexedSeq[Drug]] = {
-    logger.info(s"Querying drugs: $ids")
+    logger.debug(s"Querying drugs: $ids")
     val drugIndexName = getIndexOrDefault("drug")
     val queryTerm = Map("id.keyword" -> ids)
     esRetriever.getByIndexedQueryShould(drugIndexName, queryTerm, Pagination(0, ids.size), fromJsValue[Drug]).map(_._1)
@@ -714,6 +718,11 @@ class Backend @Inject()(
     }
   }
 
+  /**
+   * @param index   key of index (name field) in application.conf
+   * @param default fallback index name
+   * @return elasticsearch index name resolved from application.conf or default.
+   */
   private def getIndexOrDefault(index: String, default: Option[String] = None): String =
     defaultESSettings.entities
       .find(_.name == index)

@@ -99,13 +99,13 @@ object Objects extends Logging {
       ),
       Field(
         "mousePhenotypes",
-        ListType(mouseGeneImp),
+        ListType(mousePhenotypeImp),
         description = Some("Biological pathway membership from Reactome"),
-        resolve = r =>
-          DeferredValue(mousePhenotypeFetcher.deferOpt(r.value.id)).map {
-            case Some(mouseGenes) => mouseGenes.rows
-            case None             => Seq.empty
+        resolve = ctx => {
+          val mp = ctx.ctx.getMousePhenotypes(Seq(ctx.value.id))
+          mp
         }
+
       ),
       Field(
         "expressions",
@@ -420,14 +420,9 @@ object Objects extends Logging {
   implicit val hallmarksAttributeImp = deriveObjectType[Backend, HallmarkAttribute]()
   implicit val hallmarksImp = deriveObjectType[Backend, Hallmarks]()
 
-  //  implicit val orthologImp = deriveObjectType[Backend, Ortholog]()
-  //  implicit val orthologsImp = deriveObjectType[Backend, Orthologs]()
-
-
-  implicit val genotypePhenotypeImp = deriveObjectType[Backend, GenotypePhenotype]()
-  implicit val mousePhenotypeImp = deriveObjectType[Backend, MousePhenotype]()
-  implicit val mouseGeneImp = deriveObjectType[Backend, MouseGene]()
-  implicit val mousePhenotypesImp = deriveObjectType[Backend, MousePhenotypes]()
+  implicit val mousePhenotypeImp = deriveObjectType[Backend, MousePhenotype](
+    ExcludeFields("targetFromSourceId")
+  )
 
   implicit val tepImp = deriveObjectType[Backend, Tep](
     ObjectTypeDescription("Target Enabling Package (TEP)")
