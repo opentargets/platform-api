@@ -239,6 +239,11 @@ class GqlTest
     }
   }
 
+  "Chemical Probe queries" must {
+    "return a valid response" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(Target("ChemicalProbesQuery"))
+    }
+  }
   "ClinGen queries" must {
     "return a valid response" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("ClinGen_ClingenQuery"))
@@ -345,6 +350,12 @@ class GqlTest
   "GenomicsEngland_sectionQuery" must {
     "return a valid response" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDisease("GenomicsEngland_sectionQuery"))
+    }
+  }
+
+  "GeneOntologyQuery" must {
+    "return a valid response" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(GeneOntology("GeneOntologyQuery"))
     }
   }
 
@@ -493,5 +504,11 @@ class GqlTest
     "return valid response for variants query" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("UniProtVariants_UniprotVariantsQuery"))
     }
-  }
+
+  "Target queries" must {
+        "support resolution of full object" taggedAs IntegrationTestTag in {
+          testQueryAgainstGqlEndpoint(Target("Target_full_object"))
+        }
+      }
+    }
 }

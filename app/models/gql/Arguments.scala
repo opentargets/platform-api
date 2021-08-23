@@ -44,8 +44,10 @@ object Arguments {
   val ensemblIds =
     Argument("ensemblIds", ListInputType(StringType), description = "List of Ensembl IDs")
   val chemblId = Argument("chemblId", StringType, description = "Chembl ID")
-  val chemblIds =
+  val chemblIds = {
     Argument("chemblIds", ListInputType(StringType), description = "List of Chembl IDs")
+  }
+  val goIds = Argument("goIds", ListInputType(StringType), description = "List of GO IDs, eg. GO:0005515")
   val indirectEvidences = Argument(
     "enableIndirect",
     OptionInputType(BooleanType),

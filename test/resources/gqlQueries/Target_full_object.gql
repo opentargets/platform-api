@@ -1,0 +1,154 @@
+query TargetFullObject($ensgId: String!) {
+  target(ensemblId: $ensgId) {
+    id
+    alternativeGenes
+    approvedSymbol
+    approvedName
+    biotype
+    dbXrefs {
+      id
+      source
+    }
+    functionDescriptions
+    geneticConstraint {
+      constraintType
+      exp
+      obs
+      oe
+      oeLower
+      oeUpper
+      score
+      upperBin
+      upperBin6
+      upperRank
+    }
+    genomicLocation {
+      chromosome
+      start
+      end
+      strand
+    }
+    geneOntology {
+      term {
+        id
+        name
+      }
+      aspect
+      geneProduct
+      source
+      evidence
+      eco {
+        id
+        label
+      }
+    }
+    hallmarks {
+      attributes {
+        name
+        description
+        pmid
+      }
+      cancerHallmarks {
+        description
+        impact
+        label
+        pmid
+      }
+    }
+    homologues {
+      homologyType
+      queryPercentageIdentity
+      speciesId
+      speciesName
+      targetGeneId
+      targetGeneSymbol
+      targetPercentageIdentity
+      isHighConfidence
+    }
+    proteinIds {
+      id
+      source
+    }
+    safetyLiabilities {
+      biosample {
+        tissueId
+        tissueLabel
+        cellId
+        cellLabel
+        cellFormat
+      }
+      datasource
+      effects {
+        dosing
+        direction
+      }
+      event
+      eventId
+      literature
+      study {
+        name
+        description
+        type
+      }
+    }
+    subcellularLocations {
+      location
+      source
+    }
+    synonyms {
+      label
+      source
+    }
+    targetClass {
+      id
+      label
+      level
+    }
+    tep {
+      uri
+      name
+    }
+    tractability {
+      id
+      modality
+      value
+    }
+    transcriptIds
+    chemicalProbes {
+      id
+      control
+      drugId
+      inchiKey
+      mechanismOfAction
+      origin
+      isHighQuality
+      probeMinerScore
+      probesDrugScore
+      scoreInCells
+      scoreInOrganisms
+      targetFromSourceId
+      urls {
+        niceName
+        url
+      }
+    }
+    pathways {
+      pathway
+      pathwayId
+      topLevelTerm
+    }
+    mousePhenotypes {
+          biologicalModelAllelicComposition
+          biologicalModelGeneticBackground
+          biologicalModelId
+          literature
+          modelPhenotypeClassId
+          modelPhenotypeClassLabel
+          modelPhenotypeId
+          modelPhenotypeLabel
+          targetInModel
+          targetInModelEnsemblId
+          targetInModelMgiId
+    }
+  }
+}

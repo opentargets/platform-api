@@ -25,26 +25,24 @@ object Objects extends Logging {
     DocumentField("id", "Open Targets target id"),
     DocumentField("approvedSymbol", "HGNC approved symbol"),
     DocumentField("approvedName", "Approved gene name"),
-    DocumentField("bioType", "Molecule biotype"),
-    DocumentField("hgncId", "HGNC approved id"),
-    DocumentField("nameSynonyms", "Gene name synonyms"),
-    DocumentField("symbolSynonyms", "Symbol synonyms"),
+    DocumentField("biotype", "Molecule biotype"),
+    DocumentField("dbXrefs", "Database cross references"),
+    DocumentField("functionDescriptions", "..."), // todo
+    DocumentField("geneticConstraint", "Symbol synonyms"),
     DocumentField("genomicLocation", "Chromosomic location"),
-    DocumentField("proteinAnnotations", "Various protein coding annotation"),
     DocumentField("geneOntology", "Gene Ontology annotations"),
-    DocumentField("safety", "Known target safety effects and target safety risk information"),
-    DocumentField("chemicalProbes", "Potent, selective and cell-permeable chemical probes"),
     DocumentField("hallmarks",
-                  "Target-modulated essential alterations in cell physiology that dictate " +
-                    "malignant growth"),
+      "Target-modulated essential alterations in cell physiology that dictate " +
+        "malignant growth"),
+    DocumentField("homologues", "Gene homologues"),
+    DocumentField("proteinIds", "Related protein IDs"),
+    DocumentField("safetyLiabilities", "Known target safety effects and target safety risk information"),
+    DocumentField("subcellularLocations", "Location of ..."), // todo
+    DocumentField("synonyms", "Alternative names and symbols"),
     DocumentField("tep", "Target Enabling Package (TEP)"),
     DocumentField("tractability", "Target druggability assessment"),
-    DocumentField("reactome", "Biological pathway membership from Reactome"),
-    ReplaceField("reactome",
-                 Field("reactome",
-                       ListType(reactomeImp),
-                       None,
-                       resolve = r => reactomeFetcher.deferSeq(r.value.reactome))),
+    DocumentField("transcriptIds", "Ensembl transcript IDs"),
+    DocumentField("pathways", "Reactome pathways"),
     AddFields(
       Field(
         "similarEntities",
@@ -101,13 +99,13 @@ object Objects extends Logging {
       ),
       Field(
         "mousePhenotypes",
-        ListType(mouseGeneImp),
+        ListType(mousePhenotypeImp),
         description = Some("Biological pathway membership from Reactome"),
-        resolve = r =>
-          DeferredValue(mousePhenotypeFetcher.deferOpt(r.value.id)).map {
-            case Some(mouseGenes) => mouseGenes.rows
-            case None             => Seq.empty
+        resolve = ctx => {
+          val mp = ctx.ctx.getMousePhenotypes(Seq(ctx.value.id))
+          mp
         }
+
       ),
       Field(
         "expressions",
@@ -134,15 +132,6 @@ object Objects extends Logging {
         }
       ),
       Field(
-        "cancerBiomarkers",
-        OptionType(cancerBiomarkersImp),
-        description = Some(
-          "Clinical relevance and drug responses of tumor genomic alterations " +
-            "on the target"),
-        arguments = pageArg :: Nil,
-        resolve = ctx => ctx.ctx.getCancerBiomarkers(ctx.value.id, ctx.arg(pageArg))
-      ),
-      Field(
         "associatedDiseases",
         associatedOTFDiseasesImp,
         description = Some("associations on the fly"),
@@ -157,15 +146,19 @@ object Objects extends Logging {
             ctx arg BFilterString,
             (ctx arg scoreSorting) map (_.split(" ").take(2).toList match {
               case a :: b :: Nil => (a, b)
-              case a :: Nil      => (a, "desc")
-              case _             => ("score", "desc")
+              case a :: Nil => (a, "desc")
+              case _ => ("score", "desc")
             }),
             ctx arg pageArg
-        )
+          )
       ),
     )
   )
 
+  implicit lazy val chemicalProbeUrlImp = deriveObjectType[Backend, ChemicalProbeUrl]()
+  implicit lazy val chemicalProbeImp = deriveObjectType[Backend, ChemicalProbe]()
+
+  implicit lazy val reactomePathwayImp = deriveObjectType[Backend, ReactomePathway]()
   // disease
   implicit lazy val diseaseSynonymsImp = deriveObjectType[Backend, DiseaseSynonyms]()
 
@@ -322,15 +315,6 @@ object Objects extends Logging {
     )
   )
 
-  implicit val otherModalitiesCategoriesImp = deriveObjectType[Backend, OtherModalitiesCategories]()
-  implicit val otherModalitiesImp = deriveObjectType[Backend, OtherModalities]()
-  implicit val tractabilityAntibodyCategoriesImp =
-    deriveObjectType[Backend, TractabilityAntibodyCategories]()
-  implicit val tractabilitySmallMoleculeCategoriesImp =
-    deriveObjectType[Backend, TractabilitySmallMoleculeCategories]()
-
-  implicit val tractabilityAntibodyImp = deriveObjectType[Backend, TractabilityAntibody]()
-  implicit val tractabilitySmallMoleculeImp = deriveObjectType[Backend, TractabilitySmallMolecule]()
   implicit val tractabilityImp = deriveObjectType[Backend, Tractability]()
 
   implicit val scoredDataTypeImp = deriveObjectType[Backend, ScoredComponent]()
@@ -419,123 +403,42 @@ object Objects extends Logging {
   implicit val otarProjectsImp = deriveObjectType[Backend, OtarProjects]()
 
   // howto doc https://sangria-graphql.org/learn/#macro-based-graphql-type-derivation
-  implicit val geneObtologyImp = deriveObjectType[Backend, GeneOntology](
-    ReplaceField("evidence",
-                 Field("evidence",
-                       ecoImp,
-                       Some("ECO object"),
-                       resolve = r => ecosFetcher.defer(r.value.evidence)))
+  implicit val geneOntologyImp = deriveObjectType[Backend, GeneOntology](
+    ReplaceField("id",
+      Field("term",
+        OptionType(geneOntologyTermImp),
+        Some("Gene ontology term"),
+        resolve = r => goFetcher.deferOpt(r.value.id))),
+    ReplaceField("ecoId",
+      Field("eco",
+        OptionType(ecoImp),
+        Some("ECO object"),
+        resolve = r => ecosFetcher.deferOpt(r.value.evidence)))
   )
 
-  implicit val literatureReferenceImp = deriveObjectType[Backend, LiteratureReference]()
   implicit val cancerHallmarkImp = deriveObjectType[Backend, CancerHallmark]()
   implicit val hallmarksAttributeImp = deriveObjectType[Backend, HallmarkAttribute]()
   implicit val hallmarksImp = deriveObjectType[Backend, Hallmarks]()
 
-  //  implicit val orthologImp = deriveObjectType[Backend, Ortholog]()
-  //  implicit val orthologsImp = deriveObjectType[Backend, Orthologs]()
-
-  implicit val sourceLinkImp = deriveObjectType[Backend, SourceLink](
-    ObjectTypeDescription("\"Datasource link\""),
-    DocumentField("source", "Source name"),
-    DocumentField("link", "Source full url")
+  implicit val mousePhenotypeImp = deriveObjectType[Backend, MousePhenotype](
+    ExcludeFields("targetFromSourceId")
   )
-  implicit val portalProbeImp = deriveObjectType[Backend, PortalProbe](
-    ObjectTypeDescription("Chemical Probe entries (excluding Probeminer)"),
-    DocumentField("note", "Additional note"),
-    DocumentField("chemicalprobe", "Chemical probe name"),
-    DocumentField("gene", "Chemical probe target as reported by source"),
-    DocumentField("sourcelinks", "Sources")
-  )
-
-  implicit val chemicalProbesImp = deriveObjectType[Backend, ChemicalProbes](
-    ObjectTypeDescription("Set of potent, selective and cell-permeable chemical probes"),
-    DocumentField("probeminer", "Probeminer chemical probe url"),
-    DocumentField("rows", "Chemical probes entries in SGC or ChemicalProbes.org")
-  )
-
-  implicit val experimentDetailsImp = deriveObjectType[Backend, ExperimentDetails]()
-  implicit val experimentalToxicityImp = deriveObjectType[Backend, ExperimentalToxicity]()
-  implicit val safetyCodeImp = deriveObjectType[Backend, SafetyCode]()
-  implicit val safetyReferenceImp = deriveObjectType[Backend, SafetyReference]()
-  implicit val adverseEffectsActivationEffectsImp =
-    deriveObjectType[Backend, AdverseEffectsActivationEffects]()
-  implicit val adverseEffectsInhibitionEffectsImp =
-    deriveObjectType[Backend, AdverseEffectsInhibitionEffects]()
-  implicit val adverseEffectsImp = deriveObjectType[Backend, AdverseEffects](
-    ObjectTypeDescription("Curated target safety effects")
-  )
-  implicit val safetyRiskInfoImp = deriveObjectType[Backend, SafetyRiskInfo]()
-  implicit val safetyImp = deriveObjectType[Backend, Safety]()
-
-  implicit val genotypePhenotypeImp = deriveObjectType[Backend, GenotypePhenotype]()
-  implicit val mousePhenotypeImp = deriveObjectType[Backend, MousePhenotype]()
-  implicit val mouseGeneImp = deriveObjectType[Backend, MouseGene]()
-  implicit val mousePhenotypesImp = deriveObjectType[Backend, MousePhenotypes]()
 
   implicit val tepImp = deriveObjectType[Backend, Tep](
     ObjectTypeDescription("Target Enabling Package (TEP)")
   )
 
-  implicit val proteinClassPathNodeImp = deriveObjectType[Backend, ProteinClassPathNode]()
-  implicit val proteinClassPathImp = deriveObjectType[Backend, ProteinClassPath]()
-
-  implicit val proteinImp = deriveObjectType[Backend, ProteinAnnotations](
-    ObjectTypeDescription("Various protein coding annotation derived from Uniprot"),
-    DocumentField("id", "Uniprot reference accession"),
-    DocumentField("accessions", "All accessions"),
-    DocumentField("functions", "Protein function"),
-    DocumentField("pathways", "Pathway membership"),
-    DocumentField("similarities", "Protein similarities (families, etc.)"),
-    DocumentField("subcellularLocations", "Subcellular locations"),
-    DocumentField("subunits", "Protein subunits"),
-    DocumentField("classes", "Chembl target classification")
-  )
-
+  implicit val idAndSourceImp = deriveObjectType[Backend, IdAndSource]()
+  implicit val locationAndSourceImp = deriveObjectType[Backend, LocationAndSource]()
+  implicit val labelAndSourceImp = deriveObjectType[Backend, LabelAndSource]()
   implicit val genomicLocationImp = deriveObjectType[Backend, GenomicLocation]()
-
-  // cancerbiomarkers
-  implicit val cancerBiomarkerSourceImp = deriveObjectType[Backend, CancerBiomarkerSource](
-    ObjectTypeDescription("Detail on Cancer Biomarker sources"),
-    DocumentField("description", "Source description"),
-    DocumentField("link", "Source link"),
-    DocumentField("name", "Source name")
-  )
-
-  implicit val cancerBiomarkerImp = deriveObjectType[Backend, CancerBiomarker](
-    ObjectTypeDescription(
-      "Entry on clinical relevance and drug responses of tumor genomic " +
-        "alterations on the target"),
-    DocumentField("id", "Target symbol and variant id"),
-    DocumentField("associationType", "Drug responsiveness"),
-    DocumentField("drugName", "Drug family or name"),
-    DocumentField("evidenceLevel", "Source type"),
-    DocumentField("sources", "Sources"),
-    DocumentField("pubmedIds", "List of supporting publications"),
-    DocumentField("evidenceLevel", "Source type"),
-    ReplaceField("target",
-                 Field("target",
-                       targetImp,
-                       Some("Target entity"),
-                       resolve = r => targetsFetcher.defer(r.value.target))),
-    ReplaceField("disease",
-                 Field("disease",
-                       OptionType(diseaseImp),
-                       Some("Disease entity"),
-                       resolve = r => diseasesFetcher.deferOpt(r.value.disease)))
-  )
-
-  implicit val cancerBiomarkersImp = deriveObjectType[Backend, CancerBiomarkers](
-    ObjectTypeDescription(
-      "Set of clinical relevance and drug responses of tumor " +
-        "genomic alterations on the target entries"),
-    DocumentField("uniqueDrugs", "Number of unique drugs with response information"),
-    DocumentField("uniqueDiseases",
-                  "Number of unique cancer diseases with drug response information"),
-    DocumentField("uniqueBiomarkers", "Number of unique biomarkers with drug response information"),
-    DocumentField("count", "Number of entries"),
-    DocumentField("rows", "Cancer Biomarker entries")
-  )
+  implicit val targetClassImp = deriveObjectType[Backend, TargetClass]()
+  implicit val doseTypeImp = deriveObjectType[Backend, SafetyEffects]()
+  implicit val constraintImp = deriveObjectType[Backend, Constraint]()
+  implicit val homologueImp = deriveObjectType[Backend, Homologue]()
+  implicit val targetBiosampleImp = deriveObjectType[Backend, SafetyBiosample]()
+  implicit val targetSafetyStudyImp = deriveObjectType[Backend, SafetyStudy]()
+  implicit val safetyLiabilityImp = deriveObjectType[Backend, SafetyLiability]()
 
   // hpo
   implicit lazy val hpoImp: ObjectType[Backend, HPO] = deriveObjectType(
@@ -864,12 +767,12 @@ object Objects extends Logging {
   implicit val associatedOTFDiseasesImp = deriveObjectType[Backend, Associations](
     ObjectTypeName("AssociatedDiseases"),
     ReplaceField("rows",
-                 Field("rows",
-                       ListType(associatedOTFDiseaseImp),
-                       Some("Associated Targets using (On the fly method)"),
-                       resolve = r => r.value.rows))
+      Field("rows",
+        ListType(associatedOTFDiseaseImp),
+        Some("Associated Targets using (On the fly method)"),
+        resolve = r => r.value.rows))
   )
-
+  implicit val geneOntologyTermImp = deriveObjectType[Backend, GeneOntologyTerm]()
   implicit val knownDrugReferenceImp = deriveObjectType[Backend, KnownDrugReference]()
 
   implicit val URLImp: ObjectType[Backend, URL] = deriveObjectType[Backend, URL](

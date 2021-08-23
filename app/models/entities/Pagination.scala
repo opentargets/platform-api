@@ -33,6 +33,10 @@ object Pagination {
   val sizeMax: Int = 5000
   val sizeDefault: Int = 25
   val indexDefault: Int = 0
+
+  /**
+   * @return page with defaults: index = 0, size = 25.
+   */
   def mkDefault: Pagination = Pagination(indexDefault, sizeDefault)
 
   implicit val paginationJSONImp = Json.format[models.entities.Pagination]

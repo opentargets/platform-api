@@ -1,19 +1,8 @@
 package models.gql
 
 import models.Helpers.fromJsValue
+import models.entities.{Disease, Drug, ECO, Expressions, GeneOntologyTerm, HPO, Indications, MousePhenotype, MousePhenotypes, OtarProjects, Reactome, Target, GeneOntology => GO}
 import models.{Backend, entities}
-import models.entities.{
-  Disease,
-  Drug,
-  ECO,
-  Expressions,
-  Indications,
-  HPO,
-  MousePhenotypes,
-  OtarProjects,
-  Reactome,
-  Target
-}
 import play.api.Logging
 import play.api.libs.json.JsValue
 import sangria.execution.deferred.{Fetcher, FetcherCache, FetcherConfig, HasId, SimpleFetcherCache}
@@ -64,17 +53,7 @@ object Fetchers extends Logging {
       ctx.getOtarProjects(ids)
     }
   )
-  val mousePhenotypeFetcherCache = FetcherCache.simple
 
-  implicit val mousePhenotypeHasId = HasId[MousePhenotypes, String](_.id)
-  val mousePhenotypeFetcher = Fetcher(
-    config = FetcherConfig
-      .maxBatchSize(entities.Configuration.batchSize)
-      .caching(mousePhenotypeFetcherCache),
-    fetch = (ctx: Backend, ids: Seq[String]) => {
-      ctx.getMousePhenotypes(ids)
-    }
-  )
   val reactomeFetcherCache = FetcherCache.simple
 
   implicit val reactomeHasId = HasId[Reactome, String](_.id)
@@ -126,6 +105,15 @@ object Fetchers extends Logging {
       ctx.getIndications(ids)
     })
 
+  implicit val goFetcherId = HasId[GeneOntologyTerm, String](_.id)
+  val goFetcherCache = FetcherCache.simple
+  val goFetcher = Fetcher(
+    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(goFetcherCache),
+    fetch = (ctx: Backend, ids: Seq[String]) => {
+      ctx.getGoTerms(ids)
+    }
+  )
+
   def buildFetcher(index: String) = {
     implicit val soTermHasId = HasId[JsValue, String](el => (el \ "id").as[String])
     Fetcher(
@@ -151,7 +139,6 @@ object Fetchers extends Logging {
       ecosFetcherCache,
       reactomeFetcherCache,
       expressionFetcherCache,
-      mousePhenotypeFetcherCache,
       otarProjectsFetcherCache,
       soTermsFetcherCache
     )

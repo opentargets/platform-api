@@ -5,9 +5,7 @@ import com.sksamuel.elastic4s._
 import com.sksamuel.elastic4s.http.JavaClient
 import com.sksamuel.elastic4s.requests.searches._
 import com.sksamuel.elastic4s.requests.searches.aggs._
-import com.sksamuel.elastic4s.requests.searches.queries.BoolQuery
-import com.sksamuel.elastic4s.requests.searches.queries.matches.MatchQuery
-import com.sksamuel.elastic4s.requests.searches.sort.{FieldSort, SortOrder}
+import com.sksamuel.elastic4s.requests.searches.sort.SortOrder
 import esecuele._
 
 import javax.inject.Inject
@@ -16,10 +14,10 @@ import models.db.{QAOTF, QLITAGG, QW2V}
 import models.entities.Publication._
 import models.entities.Aggregations._
 import models.entities.Associations._
-import models.entities.CancerBiomarkers._
 import models.entities.Configuration._
 import models.entities.DiseaseHPOs._
 import models.entities.Drug._
+import models.entities.MousePhenotypes._
 import models.entities._
 import play.api.cache.AsyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
@@ -94,34 +92,6 @@ class Backend @Inject()(
       }
   }
 
-  def getCancerBiomarkers(id: String,
-                          pagination: Option[Pagination]): Future[Option[CancerBiomarkers]] = {
-
-    val pag = pagination.getOrElse(Pagination.mkDefault)
-
-    val cbIndex = getIndexOrDefault("cancerBiomarker")
-
-    val kv = Map("target.keyword" -> id)
-
-    val aggs = Seq(
-      cardinalityAgg("uniqueDrugs", "drugName.keyword"),
-      cardinalityAgg("uniqueDiseases", "disease.keyword"),
-      cardinalityAgg("uniqueBiomarkers", "id.keyword"),
-      valueCountAgg("rowsCount", "id.keyword")
-    )
-
-    esRetriever.getByIndexedQueryMust(cbIndex, kv, pag, fromJsValue[CancerBiomarker], aggs).map {
-      case (Seq(), _) => Some(CancerBiomarkers(0,0,0,0, Seq()))
-      case (seq, agg) =>
-        logger.debug(Json.prettyPrint(agg))
-        val drugs = (agg \ "uniqueDrugs" \ "value").as[Long]
-        val diseases = (agg \ "uniqueDiseases" \ "value").as[Long]
-        val biomarkers = (agg \ "uniqueBiomarkers" \ "value").as[Long]
-        val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
-        Some(CancerBiomarkers(drugs, diseases, biomarkers, rowsCount, seq))
-    }
-  }
-
   def getDiseaseHPOs(id: String,
                      pagination: Option[Pagination]): Future[Option[DiseaseHPOs]] = {
 
@@ -142,6 +112,12 @@ class Backend @Inject()(
         val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
         Some(DiseaseHPOs(rowsCount, seq))
     }
+  }
+
+  def getGoTerms(ids: Seq[String]): Future[IndexedSeq[GeneOntologyTerm]] = {
+    val targetIndexName = getIndexOrDefault("go")
+
+    esRetriever.getByIds(targetIndexName, ids, fromJsValue[GeneOntologyTerm])
   }
 
   def getKnownDrugs(queryString: String,
@@ -235,10 +211,14 @@ class Backend @Inject()(
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[HPO])
   }
 
-  def getMousePhenotypes(ids: Seq[String]): Future[IndexedSeq[MousePhenotypes]] = {
-    val targetIndexName = getIndexOrDefault("mp")
+  def getMousePhenotypes(ids: Seq[String]): Future[IndexedSeq[MousePhenotype]] = {
+    val indexName = getIndexOrDefault("mouse_phenotypes", Some("mouse_phenotypes"))
+    val queryTerm = Map("targetFromSourceId.keyword" -> ids)
+    logger.debug(s"Querying mouse phenotypes for: $ids")
 
-    esRetriever.getByIds(targetIndexName, ids, fromJsValue[MousePhenotypes])
+    // The entry with the highest number of MP is ENSG00000157404 with 1828. Pagination max size is 5000, so we have plenty
+    // of headroom for now.
+    esRetriever.getByIndexedQueryMust(indexName, queryTerm, Pagination(0, Pagination.sizeMax), fromJsValue[MousePhenotype]).map(_._1)
   }
 
   def getOtarProjects(ids: Seq[String]): Future[IndexedSeq[OtarProjects]] = {
@@ -262,12 +242,11 @@ class Backend @Inject()(
   def getTargets(ids: Seq[String]): Future[IndexedSeq[Target]] = {
     val targetIndexName = getIndexOrDefault("target", Some("targets"))
 
-    val excludedFields = List("mousePhenotypes*")
-    esRetriever.getByIds(targetIndexName, ids, fromJsValue[Target], excludedFields = excludedFields)
+    esRetriever.getByIds(targetIndexName, ids, fromJsValue[Target])
   }
 
   def getDrugs(ids: Seq[String]): Future[IndexedSeq[Drug]] = {
-    logger.info(s"Querying drugs: $ids")
+    logger.debug(s"Querying drugs: $ids")
     val drugIndexName = getIndexOrDefault("drug")
     val queryTerm = Map("id.keyword" -> ids)
     esRetriever.getByIndexedQueryShould(drugIndexName, queryTerm, Pagination(0, ids.size), fromJsValue[Drug]).map(_._1)
@@ -739,6 +718,11 @@ class Backend @Inject()(
     }
   }
 
+  /**
+   * @param index   key of index (name field) in application.conf
+   * @param default fallback index name
+   * @return elasticsearch index name resolved from application.conf or default.
+   */
   private def getIndexOrDefault(index: String, default: Option[String] = None): String =
     defaultESSettings.entities
       .find(_.name == index)

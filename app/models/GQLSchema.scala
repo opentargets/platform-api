@@ -1,28 +1,11 @@
 package models
 
-import play.api.libs.json.Json
 import play.api.Logging
 import sangria.schema._
-import sangria.macros._
-import sangria.macros.derive._
-import sangria.ast
-import sangria.execution._
-import sangria.marshalling.playJson._
-import sangria.schema.AstSchemaBuilder._
-import sangria.util._
 import entities._
-import entities.Configuration._
-import play.api.Configuration
-import play.api.mvc.CookieBaker
 import sangria.execution.deferred._
-import entities.MousePhenotypes
-import entities.MousePhenotypes._
-import entities.SearchResults._
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent._
-import com.sksamuel.elastic4s.requests.searches._
-import com.sksamuel.elastic4s.requests.searches.sort._
 import models.entities.Interaction._
 import models.gql.Objects._
 import models.gql.Arguments._
@@ -39,10 +22,10 @@ object GQLSchema {
     hposFetcher,
     reactomeFetcher,
     expressionFetcher,
-    mousePhenotypeFetcher,
     otarProjectsFetcher,
     soTermsFetcher,
-    indicationFetcher
+    indicationFetcher,
+    goFetcher
   )
 
   val query = ObjectType(
@@ -109,6 +92,13 @@ object GQLSchema {
           import ctx.ctx._
           Interactions.listResources
         }
+      ),
+      Field(
+        "geneOntologyTerms",
+        ListType(OptionType(geneOntologyTermImp)),
+        description = Some("Gene ontology terms"),
+        arguments = goIds :: Nil,
+        resolve = ctx => goFetcher.deferSeqOptExplicit(ctx.arg(goIds))
       )
     )
   )
