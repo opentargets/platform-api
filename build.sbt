@@ -86,6 +86,8 @@ getGqlFiles := {
     // filter files of interest
     val gqlFiles: Seq[File] = (td ** "*.gql").get
 
+    // delete files in current gql test resources so we can identify when the FE deletes a file
+    sbt.IO.delete(gqlFileDir.value)
     // move files to test resources
     sbt.IO.copy(gqlFiles.map(f => (f, gqlFileDir.value / s"${f.getParentFile.name}_${f.name}")))
   })
@@ -93,7 +95,7 @@ getGqlFiles := {
 
 updateGqlFiles := {
   // trigger update
-  val a = getGqlFiles.value
+  val a: Unit = getGqlFiles.value
 
   def gitStatusOpt(option: String): Seq[String] = Process(s"git status -$option ${gqlFileDir.value.getAbsolutePath}")
     .lineStream

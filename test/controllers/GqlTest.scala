@@ -147,16 +147,6 @@ class GqlTest
 
   }
 
-  "Cancer biomarker queries" must {
-    "return a valid response" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(Target("CancerBiomarkers_CancerBiomarkers"))
-    }
-    "return a valid response for summary fragment" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(TargetFragment("CancerBiomarkers_CancerBiomarkersSummary"))
-    }
-
-  }
-
   "Cancer hallmarks queries" must {
     "return a valid response for summary fragment" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetFragment("CancerHallmarks_HallmarksSummaryFragment"))
@@ -244,11 +234,6 @@ class GqlTest
     }
   }
 
-  "Chemical Probe queries" must {
-    "return a valid response" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(Target("ChemicalProbesQuery"))
-    }
-  }
   "ClinGen queries" must {
     "return a valid response" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("ClinGen_ClingenQuery"))
@@ -366,12 +351,6 @@ class GqlTest
     }
   }
 
-  "GeneOntologyQuery" must {
-    "return a valid response" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(GeneOntology("GeneOntologyQuery"))
-    }
-  }
-
   "IntOgen_sectionQuery" must {
     "return a valid response" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("IntOgen_sectionQuery"))
@@ -429,15 +408,6 @@ class GqlTest
   "Progeny_sectionQuery" must {
     "return valid responses" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("Progeny_sectionQuery"))
-    }
-  }
-
-  "ProteinInformation" must {
-    "return valid responses for section query" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(Target("ProteinInformation_sectionQuery"))
-    }
-    "return valid responses for summary query" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(TargetFragment("ProteinInformation_summaryQuery"))
     }
   }
 
