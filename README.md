@@ -96,7 +96,7 @@ gcloud beta compute ssh --zone "europe-west1-d" [some es instance] --tunnel-thro
 1. Get the files: run `sbt updateGqlFiles` to retrieve all '*.gql' files from the front-end repository and copy them to
    the
    `test/resources/gqlQueries` directory and prints output regarding which files are new / changed.
-2. Run tests `sbt testOnly testOnly controllers.GqlTest`
+2. Run tests `sbt testOnly controllers.GqlTest`
 
 #### Maintaining up to date
 
