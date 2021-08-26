@@ -64,6 +64,7 @@ class GqlTest
    */
   implicit def noShrink[T]: Shrink[T] = Shrink.shrinkAny
 
+  /** Identity query transformer to create default */
   val qt: String => String = (in: String) => in
 
   /**

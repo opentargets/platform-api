@@ -87,7 +87,8 @@ getGqlFiles := {
     val gqlFiles: Seq[File] = (td ** "*.gql").get
 
     // delete files in current gql test resources so we can identify when the FE deletes a file
-    sbt.IO.delete(gqlFileDir.value)
+    val filesToDelete: Seq[File] = sbt.IO.listFiles(gqlFileDir.value, NameFilter.fnToNameFilter(!_.contains("full")))
+    sbt.IO.delete(filesToDelete)
     // move files to test resources
     sbt.IO.copy(gqlFiles.map(f => (f, gqlFileDir.value / s"${f.getParentFile.name}_${f.name}")))
   })
