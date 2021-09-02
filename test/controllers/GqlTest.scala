@@ -64,6 +64,7 @@ class GqlTest
    */
   implicit def noShrink[T]: Shrink[T] = Shrink.shrinkAny
 
+  /** Identity query transformer to create default */
   val qt: String => String = (in: String) => in
 
   /**
@@ -99,6 +100,11 @@ class GqlTest
       resultHasNoErrors mustBe true
     }
   }
+
+  /**
+   * Convert from input variable being 'ensgId' to 'ensemblId'
+   */
+  val ensgTransform = (t: String) => t.replace("ensgId", "ensemblId")
 
   "Adverse events queries" must {
     "return a valid response" taggedAs IntegrationTestTag in {
@@ -138,16 +144,6 @@ class GqlTest
   "Cancer gene census queries" must {
     "return a valid response" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("CancerGeneCensus_sectionQuery"))
-    }
-
-  }
-
-  "Cancer biomarker queries" must {
-    "return a valid response" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(Target("CancerBiomarkers_CancerBiomarkers"))
-    }
-    "return a valid response for summary fragment" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(TargetFragment("CancerBiomarkers_CancerBiomarkersSummary"))
     }
 
   }
@@ -239,14 +235,18 @@ class GqlTest
     }
   }
 
-  "Chemical Probe queries" must {
-    "return a valid response" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(Target("ChemicalProbesQuery"))
-    }
-  }
   "ClinGen queries" must {
     "return a valid response" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("ClinGen_ClingenQuery"))
+    }
+  }
+
+  "ComparativeGenomics queries" must {
+    "CompGenomics should return a valid response" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(Target("ComparativeGenomics_CompGenomics"))(ensgTransform)
+    }
+    "Comparative genomics fragment should return a valid response" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetFragment("ComparativeGenomics_CompGenomicsSummaryFragment"))
     }
   }
 
@@ -330,8 +330,7 @@ class GqlTest
 
   "Expression queries" must {
     "return valid responses " taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(Target("Expression_ExpressionQuery"))(q =>
-        q.replace("ensgId", "ensemblId"))
+      testQueryAgainstGqlEndpoint(Target("Expression_ExpressionQuery"))(ensgTransform)
     }
     "return valid responses for expression atlas" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("ExpressionAtlas_ExpressionAtlasQuery"))
@@ -350,12 +349,6 @@ class GqlTest
   "GenomicsEngland_sectionQuery" must {
     "return a valid response" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDisease("GenomicsEngland_sectionQuery"))
-    }
-  }
-
-  "GeneOntologyQuery" must {
-    "return a valid response" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(GeneOntology("GeneOntologyQuery"))
     }
   }
 
@@ -416,15 +409,6 @@ class GqlTest
   "Progeny_sectionQuery" must {
     "return valid responses" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("Progeny_sectionQuery"))
-    }
-  }
-
-  "ProteinInformation" must {
-    "return valid responses for section query" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(Target("ProteinInformation_sectionQuery"))
-    }
-    "return valid responses for summary query" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(TargetFragment("ProteinInformation_summaryQuery"))
     }
   }
 
@@ -492,8 +476,20 @@ class GqlTest
     "return valid response for pathways fragment" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetFragment("Pathways_PathwaysSummary"))
     }
+    "return valid response for pathways target query" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(Target("Pathways_Pathways"))(ensgTransform)
+    }
+    "return valid response for protvista target fragment" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetFragment("ProtVista_summaryQuery"))
+    }
     "return valid response for safety summary fragment" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetFragment("Safety_summaryQuery"))
+    }
+    "return valid response for subcellular location target query" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(Target("SubcellularLocation_SubcellularLocation"))(ensgTransform)
+    }
+    "return valid response for subcellular location fragment" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetFragment("SubcellularLocation_SubcellularLocationFragment"))
     }
   }
 
