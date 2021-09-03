@@ -138,17 +138,21 @@ query TargetFullObject($ensgId: String!) {
       topLevelTerm
     }
     mousePhenotypes {
-          biologicalModelAllelicComposition
-          biologicalModelGeneticBackground
-          biologicalModelId
-          literature
-          modelPhenotypeClassId
-          modelPhenotypeClassLabel
-          modelPhenotypeId
-          modelPhenotypeLabel
-          targetInModel
-          targetInModelEnsemblId
-          targetInModelMgiId
+         modelPhenotypeId
+         modelPhenotypeLabel
+         modelPhenotypeClasses {
+           id
+           label
+         }
+         biologicalModels {
+           id
+           allelicComposition
+           geneticBackground
+           literature
+         }
+         targetInModel
+         targetInModelEnsemblId
+         targetInModelMgiId
     }
   }
 }
