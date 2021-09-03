@@ -420,6 +420,9 @@ object Objects extends Logging {
   implicit val hallmarksAttributeImp = deriveObjectType[Backend, HallmarkAttribute]()
   implicit val hallmarksImp = deriveObjectType[Backend, Hallmarks]()
 
+  implicit val mousePhenotypeBiologicalModel = deriveObjectType[Backend, BiologicalModels]()
+  implicit val mousePhenotypeModelPhenotypeClasses = deriveObjectType[Backend, ModelPhenotypeClasses]()
+
   implicit val mousePhenotypeImp = deriveObjectType[Backend, MousePhenotype](
     ExcludeFields("targetFromSourceId")
   )

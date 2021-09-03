@@ -5,13 +5,21 @@ import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 
+case class BiologicalModels(
+                             allelicComposition: String,
+                             geneticBackground: String,
+                             id: Option[String],
+                             literature: Option[Seq[String]]
+                           )
+
+case class ModelPhenotypeClasses(
+                                  id: String,
+                                  label: String
+                                )
+
 case class MousePhenotype(
-                           biologicalModelAllelicComposition: String,
-                           biologicalModelGeneticBackground: String,
-                           biologicalModelId: Option[String],
-                           literature: Seq[String],
-                           modelPhenotypeClassId: String,
-                           modelPhenotypeClassLabel: String,
+                           biologicalModels: Seq[BiologicalModels],
+                           modelPhenotypeClasses: Seq[ModelPhenotypeClasses],
                            modelPhenotypeId: String,
                            modelPhenotypeLabel: String,
                            targetFromSourceId: String,
@@ -23,15 +31,13 @@ case class MousePhenotype(
 
 object MousePhenotypes extends Logging {
 
+  implicit val biologicalModelsF = Json.format[BiologicalModels]
+  implicit val modelPhenotypeClassesF = Json.format[ModelPhenotypeClasses]
   implicit val mousePhenotypeW = Json.writes[MousePhenotype]
 
   implicit val mousePhenotypeR: Reads[MousePhenotype] = (
-    (__ \ "biologicalModelAllelicComposition").read[String] and
-      (__ \ "biologicalModelGeneticBackground").read[String] and
-      (__ \ "biologicalModelId").readNullable[String] and
-      (__ \ "literature").readWithDefault[Seq[String]](Seq.empty) and
-      (__ \ "modelPhenotypeClassId").read[String] and
-      (__ \ "modelPhenotypeClassLabel").read[String] and
+    (__ \ "biologicalModels").read[Seq[BiologicalModels]] and
+      (__ \ "modelPhenotypeClasses").read[Seq[ModelPhenotypeClasses]] and
       (__ \ "modelPhenotypeId").read[String] and
       (__ \ "modelPhenotypeLabel").read[String] and
       (__ \ "targetFromSourceId").read[String] and
