@@ -86,7 +86,7 @@ class Backend @Inject()(
           None
         }
         case (seq, agg) =>
-          logger.debug(Json.prettyPrint(agg))
+          logger.trace(Json.prettyPrint(agg))
           val counts = (agg \ "eventCount" \ "value").as[Long]
           Some(AdverseEvents(counts, seq.head.criticalValue, seq))
       }
@@ -108,7 +108,7 @@ class Backend @Inject()(
     esRetriever.getByIndexedQueryMust(cbIndex, kv, pag, fromJsValue[DiseaseHPO], aggs).map {
       case (Seq(), _) => Some(DiseaseHPOs(0, Seq()))
       case (seq, agg) =>
-        logger.debug(Json.prettyPrint(agg))
+        logger.trace(Json.prettyPrint(agg))
         val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
         Some(DiseaseHPOs(rowsCount, seq))
     }
@@ -149,7 +149,7 @@ class Backend @Inject()(
       .map {
         case (Seq(), _, _) => None
         case (seq, agg, nextCursor) =>
-          logger.debug(Json.prettyPrint(agg))
+          logger.trace(Json.prettyPrint(agg))
           val drugs = (agg \ "uniqueDrugs" \ "value").as[Long]
           val diseases = (agg \ "uniqueDiseases" \ "value").as[Long]
           val targets = (agg \ "uniqueTargets" \ "value").as[Long]
@@ -349,14 +349,17 @@ class Backend @Inject()(
 
     val mappings = Map(
       "dataTypes" -> AggregationMapping("datatype_id",
-                                        IndexedSeq("datatype_id", "datasource_id"),
-                                        false),
+        IndexedSeq("datatype_id", "datasource_id"),
+        false),
       "tractabilitySmallMolecule" -> AggregationMapping("facet_tractability_smallmolecule",
-                                                        IndexedSeq.empty,
-                                                        false),
+        IndexedSeq.empty,
+        false),
       "tractabilityAntibody" -> AggregationMapping("facet_tractability_antibody",
-                                                   IndexedSeq.empty,
-                                                   false),
+        IndexedSeq.empty,
+        false),
+      "tractabilityProtac" -> AggregationMapping("facet_tractability_protac",
+        IndexedSeq.empty,
+        false),
       "pathwayTypes" -> AggregationMapping("facet_reactome", IndexedSeq("l1", "l2"), true),
       "targetClasses" -> AggregationMapping("facet_classes", IndexedSeq("l1", "l2"), true)
     )
@@ -415,11 +418,24 @@ class Backend @Inject()(
         subaggs = Seq(
           uniqueTargetsAgg,
           TermsAggregation("aggs",
-                           Some("facet_tractability_antibody.keyword"),
-                           size = Some(100),
-                           subaggs = Seq(
-                             uniqueTargetsAgg
-                           ))
+            Some("facet_tractability_antibody.keyword"),
+            size = Some(100),
+            subaggs = Seq(
+              uniqueTargetsAgg
+            ))
+        )
+      ),
+      FilterAggregation(
+        "tractabilityProtac",
+        filtersMap("tractabilityProtac"),
+        subaggs = Seq(
+          uniqueTargetsAgg,
+          TermsAggregation("aggs",
+            Some("facet_tractability_protac.keyword"),
+            size = Some(100),
+            subaggs = Seq(
+              uniqueTargetsAgg
+            ))
         )
       ),
       FilterAggregation(
@@ -488,7 +504,7 @@ class Backend @Inject()(
       queryAggs
     ) map {
       case obj: JsObject =>
-        logger.debug(Json.prettyPrint(obj))
+        logger.trace(Json.prettyPrint(obj))
 
         val ids = (obj \ "uniques" \ "ids" \ "buckets" \\ "key").map(_.as[String]).toSet
         val uniques = (obj \ "uniques" \\ "value").head.as[Long]
@@ -639,7 +655,7 @@ class Backend @Inject()(
       queryAggs
     ) map {
       case obj: JsObject =>
-        logger.debug(Json.prettyPrint(obj))
+        logger.trace(Json.prettyPrint(obj))
 
         val ids = (obj \ "uniques" \ "ids" \ "buckets" \\ "key").map(_.as[String]).toSet
         val uniques = (obj \ "uniques" \\ "value").head.as[Long]
