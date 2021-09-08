@@ -84,7 +84,7 @@ case class GeneOntology(id: String,
 
 case class GeneOntologyLookup(id: String, name: String)
 
-case class Tep(uri: String, name: String)
+case class Tep(targetFromSource: String, url: String, disease: String, description: String)
 
 case class IdAndSource(id: String, source: String)
 
