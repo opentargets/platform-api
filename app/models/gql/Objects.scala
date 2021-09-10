@@ -39,6 +39,10 @@ object Objects extends Logging {
     DocumentField("safetyLiabilities", "Known target safety effects and target safety risk information"),
     DocumentField("subcellularLocations", "Location of ..."), // todo
     DocumentField("synonyms", "Alternative names and symbols"),
+    DocumentField("obsoleteSymbols", "Obsolete symbols"),
+    DocumentField("obsoleteNames", "Obsolete names"),
+    DocumentField("nameSynonyms", "Alternative names"),
+    DocumentField("symbolSynonyms", "Alternative symbols"),
     DocumentField("tep", "Target Enabling Package (TEP)"),
     DocumentField("tractability", "Target druggability assessment"),
     DocumentField("transcriptIds", "Ensembl transcript IDs"),

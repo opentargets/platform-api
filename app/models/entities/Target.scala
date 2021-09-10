@@ -5,6 +5,8 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 
+import shapeless.Generic
+
 case class ChemicalProbeUrl(niceName: String, url: Option[String])
 
 case class ChemicalProbe(
@@ -103,6 +105,34 @@ case class Constraint(
 
 case class ReactomePathway(pathway: String, pathwayId: String, topLevelTerm: String)
 
+case class TH1(id: String,
+                    alternativeGenes: Seq[String],
+                    approvedSymbol: String,
+                    approvedName: String,
+                    biotype: String,
+                    chemicalProbes: Seq[ChemicalProbe],
+                    dbXrefs: Seq[IdAndSource],
+                    functionDescriptions: Seq[String],
+                    geneticConstraint: Seq[Constraint],
+                    genomicLocation: GenomicLocation,
+                    geneOntology: Seq[GeneOntology],
+                    hallmarks: Option[Hallmarks])
+
+case class TH2(homologues: Seq[Homologue],
+               pathways: Seq[ReactomePathway],
+               proteinIds: Seq[IdAndSource],
+               safetyLiabilities: Seq[SafetyLiability],
+               subcellularLocations: Seq[LocationAndSource],
+               synonyms: Seq[LabelAndSource],
+               symbolSynonyms: Seq[LabelAndSource],
+               nameSynonyms: Seq[LabelAndSource],
+               obsoleteSymbols: Seq[LabelAndSource],
+               obsoleteNames: Seq[LabelAndSource],
+               targetClass: Seq[TargetClass],
+               tep: Option[Tep],
+               tractability: Seq[Tractability],
+               transcriptIds: Seq[String])
+
 case class Target(id: String,
                   alternativeGenes: Seq[String],
                   approvedSymbol: String,
@@ -121,6 +151,10 @@ case class Target(id: String,
                   safetyLiabilities: Seq[SafetyLiability],
                   subcellularLocations: Seq[LocationAndSource],
                   synonyms: Seq[LabelAndSource], // double check, this is name and symbol
+                  symbolSynonyms: Seq[LabelAndSource],
+                  nameSynonyms: Seq[LabelAndSource],
+                  obsoleteSymbols: Seq[LabelAndSource],
+                  obsoleteNames: Seq[LabelAndSource],
                   targetClass: Seq[TargetClass],
                   tep: Option[Tep],
                   tractability: Seq[Tractability],
@@ -173,8 +207,9 @@ object Target extends Logging {
   implicit val genomicLocationImpW = Json.format[models.entities.GenomicLocation]
   implicit val reactomePathwayImpF = Json.format[models.entities.ReactomePathway]
 
-  implicit val targetImpW = Json.writes[models.entities.Target]
-  implicit val targetImpR: Reads[models.entities.Target] = (
+  implicit val targetImpW = Json.writes[Target]
+
+  val targetH1: Reads[TH1] = (
     (JsPath \ "id").read[String] and
       (JsPath \ "alternativeGenes").readWithDefault[Seq[String]](Seq.empty) and
       (JsPath \ "approvedSymbol").read[String] and
@@ -186,17 +221,38 @@ object Target extends Logging {
       (JsPath \ "constraint").readWithDefault[Seq[Constraint]](Seq.empty) and
       (JsPath \ "genomicLocation").read[GenomicLocation] and
       (JsPath \ "go").readWithDefault[Seq[GeneOntology]](Seq.empty) and
-      (JsPath \ "hallmarks").readNullable[Hallmarks] and
-      (JsPath \ "homologues").readWithDefault[Seq[Homologue]](Seq.empty) and
+      (JsPath \ "hallmarks").readNullable[Hallmarks]
+    )(TH1.apply _)
+
+  val targetH2: Reads[TH2] = (
+    (JsPath \ "homologues").readWithDefault[Seq[Homologue]](Seq.empty) and
       (JsPath \ "pathways").readWithDefault[Seq[ReactomePathway]](Seq.empty) and
       (JsPath \ "proteinIds").readWithDefault[Seq[IdAndSource]](Seq.empty) and
       (JsPath \ "safetyLiabilities").readWithDefault[Seq[SafetyLiability]](Seq.empty) and
       (JsPath \ "subcellularLocations").readWithDefault[Seq[LocationAndSource]](Seq.empty) and
       (JsPath \ "synonyms").readWithDefault[Seq[LabelAndSource]](Seq.empty) and
+      (JsPath \ "symbolSynonyms").readWithDefault[Seq[LabelAndSource]](Seq.empty) and
+      (JsPath \ "nameSynonyms").readWithDefault[Seq[LabelAndSource]](Seq.empty) and
+      (JsPath \ "obsoleteSymbols").readWithDefault[Seq[LabelAndSource]](Seq.empty) and
+      (JsPath \ "obsoleteNames").readWithDefault[Seq[LabelAndSource]](Seq.empty) and
       (JsPath \ "targetClass").readWithDefault[Seq[TargetClass]](Seq.empty) and
       (JsPath \ "tep").readNullable[Tep] and
       (JsPath \ "tractability").readWithDefault[Seq[Tractability]](Seq.empty) and
       (JsPath \ "transcriptIds").readWithDefault[Seq[String]](Seq.empty)
-  )(Target.apply _)
+    )(TH2.apply _)
 
+ implicit val targetImpR: Reads[Target] = (targetH1 and targetH2) {
+   (t1, t2) => {
+     val tGen = Generic[Target]
+     val t1Gen = Generic[TH1]
+     val t2Gen = Generic[TH2]
+
+     val ht1 = t1Gen.to(t1)
+     val ht2 = t2Gen.to(t2)
+     val ht = ht1 ::: ht2
+
+     val c = tGen.from(ht)
+     c
+   }
+ }
 }
