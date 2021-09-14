@@ -403,7 +403,19 @@ object Evidence {
       Field("statisticalTestTail",
             OptionType(StringType),
             description = None,
-            resolve = js => (js.value \ "statisticalTestTail").asOpt[String])
+            resolve = js => (js.value \ "statisticalTestTail").asOpt[String]),
+      Field("biomarkerName",
+            OptionType(StringType),
+            description = None,
+            resolve = js => (js.value \ "biomarkerName").asOpt[String]),
+      Field("drugFromSource",
+            OptionType(StringType),
+            description = None,
+            resolve = js => (js.value \ "drugFromSource").asOpt[String]),
+      Field("drugResponse",
+            OptionType(StringType),
+            description = None,
+            resolve = js => (js.value \ "drugResponse").asOpt[String])
     )
   )
 }
