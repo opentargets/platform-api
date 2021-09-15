@@ -86,7 +86,7 @@ case class GeneOntology(id: String,
 
 case class GeneOntologyLookup(id: String, name: String)
 
-case class Tep(targetFromSource: String, url: String, disease: String, description: String)
+case class Tep(targetFromSource: String, url: String, therapeuticArea: String, description: String)
 
 case class IdAndSource(id: String, source: String)
 
@@ -207,9 +207,7 @@ object Target extends Logging {
   implicit val genomicLocationImpW = Json.format[models.entities.GenomicLocation]
   implicit val reactomePathwayImpF = Json.format[models.entities.ReactomePathway]
 
-  implicit val targetImpW = Json.writes[Target]
-
-  val targetH1: Reads[TH1] = (
+  implicit val targetH1R: Reads[TH1] = (
     (JsPath \ "id").read[String] and
       (JsPath \ "alternativeGenes").readWithDefault[Seq[String]](Seq.empty) and
       (JsPath \ "approvedSymbol").read[String] and
@@ -224,7 +222,9 @@ object Target extends Logging {
       (JsPath \ "hallmarks").readNullable[Hallmarks]
     )(TH1.apply _)
 
-  val targetH2: Reads[TH2] = (
+  implicit val targetH1W: OWrites[TH1] = Json.writes[TH1]
+
+  implicit val targetH2R: Reads[TH2] = (
     (JsPath \ "homologues").readWithDefault[Seq[Homologue]](Seq.empty) and
       (JsPath \ "pathways").readWithDefault[Seq[ReactomePathway]](Seq.empty) and
       (JsPath \ "proteinIds").readWithDefault[Seq[IdAndSource]](Seq.empty) and
@@ -241,18 +241,20 @@ object Target extends Logging {
       (JsPath \ "transcriptIds").readWithDefault[Seq[String]](Seq.empty)
     )(TH2.apply _)
 
- implicit val targetImpR: Reads[Target] = (targetH1 and targetH2) {
-   (t1, t2) => {
-     val tGen = Generic[Target]
-     val t1Gen = Generic[TH1]
-     val t2Gen = Generic[TH2]
+  implicit val targetH2W: OWrites[TH2] = Json.writes[TH2]
 
-     val ht1 = t1Gen.to(t1)
-     val ht2 = t2Gen.to(t2)
-     val ht = ht1 ::: ht2
+  implicit val targetImpR = (targetH1R and targetH2R) {
+    (t1, t2) => {
+      val tGen = Generic[Target]
+      val t1Gen = Generic[TH1]
+      val t2Gen = Generic[TH2]
 
-     val c = tGen.from(ht)
-     c
-   }
- }
+      val ht1 = t1Gen.to(t1)
+      val ht2 = t2Gen.to(t2)
+      val ht = ht1 ::: ht2
+
+      val c = tGen.from(ht)
+      c
+    }
+  }
 }
