@@ -27,7 +27,7 @@ case class ChemicalProbe(
 
 case class SafetyEffects(
                           direction: String,
-                          dosing: String
+                          dosing: Option[String]
                         )
 
 case class LocationAndSource(location: String, source: String)
