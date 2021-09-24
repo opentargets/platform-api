@@ -27,7 +27,7 @@ case class ChemicalProbe(
 
 case class SafetyEffects(
                           direction: String,
-                          dosing: String
+                          dosing: Option[String]
                         )
 
 case class LocationAndSource(location: String, source: String)
@@ -86,7 +86,7 @@ case class GeneOntology(id: String,
 
 case class GeneOntologyLookup(id: String, name: String)
 
-case class Tep(targetFromSource: String, url: String, therapeuticArea: String, description: String)
+case class Tep(targetFromSourceId: String, url: String, therapeuticArea: String, description: String)
 
 case class IdAndSource(id: String, source: String)
 

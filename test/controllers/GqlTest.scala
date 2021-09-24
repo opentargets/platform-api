@@ -473,6 +473,9 @@ class GqlTest
     "return valid response for mouse phenotypes fragment" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetFragment("MousePhenotypes_MousePhenotypesSummary"))
     }
+    "return valid response for mouse phenotypes target query" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(Target("MousePhenotypes_MousePhenotypes"))(ensgTransform)
+    }
     "return valid response for pathways fragment" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetFragment("Pathways_PathwaysSummary"))
     }
@@ -485,11 +488,20 @@ class GqlTest
     "return valid response for safety summary fragment" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetFragment("Safety_summaryQuery"))
     }
+    "return valid response for target safety query" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(Target("Safety_Safety"))(ensgTransform)
+    }
     "return valid response for subcellular location target query" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(Target("SubcellularLocation_SubcellularLocation"))(ensgTransform)
     }
     "return valid response for subcellular location fragment" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetFragment("SubcellularLocation_SubcellularLocationFragment"))
+    }
+    "return a valid response for genetic contraint query" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(Target("GeneticConstraint_GeneticConstraint"))(ensgTransform)
+    }
+    "return a valid response for genetic contraint fragment query" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetFragment("GeneticConstraint_GeneticConstraintFragment"))
     }
   }
 
