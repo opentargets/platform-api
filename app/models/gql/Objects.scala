@@ -433,7 +433,7 @@ object Objects extends Logging {
 
   implicit val tepImp = deriveObjectType[Backend, Tep](
     ObjectTypeDescription("Target Enabling Package (TEP)"),
-    RenameField("targetFromSource", "name"),
+    RenameField("targetFromSourceId", "name"),
     RenameField("url", "uri")
   )
 
