@@ -455,8 +455,8 @@ class GqlTest
     "return valid target profile header fragment" taggedAs (IntegrationTestTag) in {
       testQueryAgainstGqlEndpoint(TargetFragment("TargetPage_TargetProfileHeader"))
     }
-    "return valid tep summary fragment" taggedAs (IntegrationTestTag) in {
-      testQueryAgainstGqlEndpoint(TargetFragment("Tep_TepSummaryFragment"))
+    "return valid tep information" taggedAs (IntegrationTestTag) in {
+      testQueryAgainstGqlEndpoint(Target("ExternalLink_TepLinkQuery"))
     }
     "return valid tractability summary fragment" taggedAs (IntegrationTestTag) in {
       testQueryAgainstGqlEndpoint(TargetFragment("Tractability_TractabilitySummary"))
