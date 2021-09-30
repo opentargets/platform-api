@@ -81,7 +81,6 @@ case class GeneOntology(id: String,
                         aspect: String,
                         evidence: String,
                         geneProduct: String,
-                        ecoId: Option[String],
                         source: String)
 
 case class GeneOntologyLookup(id: String, name: String)
@@ -189,7 +188,6 @@ object Target extends Logging {
       (__ \ "aspect").read[String] and
       (__ \ "evidence").read[String] and
       (__ \ "geneProduct").read[String] and
-      (__ \ "ecoId").readNullable[String] and
       (__ \ "source").read[String]) (GeneOntology.apply _)
 
   implicit val tepImpF = Json.format[Tep]

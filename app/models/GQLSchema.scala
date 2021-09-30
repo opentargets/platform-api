@@ -18,7 +18,6 @@ object GQLSchema {
     targetsFetcher,
     drugsFetcher,
     diseasesFetcher,
-    ecosFetcher,
     hposFetcher,
     reactomeFetcher,
     expressionFetcher,

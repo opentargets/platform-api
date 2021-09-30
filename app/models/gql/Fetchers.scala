@@ -1,7 +1,7 @@
 package models.gql
 
 import models.Helpers.fromJsValue
-import models.entities.{Disease, Drug, ECO, Expressions, GeneOntologyTerm, HPO, Indications, MousePhenotype, MousePhenotypes, OtarProjects, Reactome, Target, GeneOntology => GO}
+import models.entities.{Disease, Drug, Expressions, GeneOntologyTerm, HPO, Indications, OtarProjects, Reactome, Target, GeneOntology => GO}
 import models.{Backend, entities}
 import play.api.Logging
 import play.api.libs.json.JsValue
@@ -62,16 +62,6 @@ object Fetchers extends Logging {
       FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(reactomeFetcherCache),
     fetch = (ctx: Backend, ids: Seq[String]) => {
       ctx.getReactomeNodes(ids)
-    }
-  )
-  val ecosFetcherCache = FetcherCache.simple
-
-  implicit val ecoHasId = HasId[ECO, String](_.id)
-  val ecosFetcher = Fetcher(
-    config =
-      FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(diseasesFetcherCache),
-    fetch = (ctx: Backend, ids: Seq[String]) => {
-      ctx.getECOs(ids)
     }
   )
 
@@ -136,7 +126,6 @@ object Fetchers extends Logging {
       targetsFetcherCache,
       drugsFetcherCache,
       diseasesFetcherCache,
-      ecosFetcherCache,
       reactomeFetcherCache,
       expressionFetcherCache,
       otarProjectsFetcherCache,

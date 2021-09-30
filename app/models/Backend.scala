@@ -199,12 +199,6 @@ class Backend @Inject()(
       }
   }
 
-  def getECOs(ids: Seq[String]): Future[IndexedSeq[ECO]] = {
-    val targetIndexName = getIndexOrDefault("eco")
-
-    esRetriever.getByIds(targetIndexName, ids, fromJsValue[ECO])
-  }
-
   def getHPOs(ids: Seq[String]): Future[IndexedSeq[HPO]] = {
     val targetIndexName = getIndexOrDefault("hpo")
 
