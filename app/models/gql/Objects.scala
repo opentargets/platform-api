@@ -9,6 +9,7 @@ import models.entities._
 import models.gql.Arguments._
 import models.gql.Fetchers._
 import play.api.Logging
+import sangria.execution.deferred.FetcherDeferredOpt
 import sangria.macros.derive.{DocumentField, _}
 import sangria.schema._
 
@@ -341,12 +342,6 @@ object Objects extends Logging {
                        resolve = r => diseasesFetcher.defer(r.value.id)))
   )
 
-  implicit val ecoImp = deriveObjectType[Backend, ECO](
-    ObjectTypeDescription("Evidence & Conclusion Ontology (ECO) annotation"),
-    DocumentField("id", "ECO term id"),
-    DocumentField("label", "ECO term label")
-  )
-
   implicit lazy val reactomeImp: ObjectType[Backend, Reactome] =
     deriveObjectType[Backend, Reactome](
       AddFields(
@@ -412,12 +407,7 @@ object Objects extends Logging {
       Field("term",
         OptionType(geneOntologyTermImp),
         Some("Gene ontology term"),
-        resolve = r => goFetcher.deferOpt(r.value.id))),
-    ReplaceField("ecoId",
-      Field("eco",
-        OptionType(ecoImp),
-        Some("ECO object"),
-        resolve = r => ecosFetcher.deferOpt(r.value.evidence)))
+        resolve = r => goFetcher.deferOpt(r.value.id)))
   )
 
   implicit val cancerHallmarkImp = deriveObjectType[Backend, CancerHallmark]()

@@ -37,10 +37,6 @@ query TargetFullObject($ensgId: String!) {
       geneProduct
       source
       evidence
-      eco {
-        id
-        label
-      }
     }
     hallmarks {
       attributes {
