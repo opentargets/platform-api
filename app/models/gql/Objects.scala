@@ -402,12 +402,19 @@ object Objects extends Logging {
   implicit val otarProjectsImp = deriveObjectType[Backend, OtarProjects]()
 
   // howto doc https://sangria-graphql.org/learn/#macro-based-graphql-type-derivation
-  implicit val geneOntologyImp = deriveObjectType[Backend, GeneOntology](
+  implicit val geneOntologyImp: ObjectType[Backend, GeneOntology] = deriveObjectType[Backend, GeneOntology](
     ReplaceField("id",
       Field("term",
-        OptionType(geneOntologyTermImp),
+        geneOntologyTermImp,
         Some("Gene ontology term"),
-        resolve = r => goFetcher.deferOpt(r.value.id)))
+        resolve = r => {
+          DeferredValue(goFetcher.deferOpt(r.value.id)).map {
+            case Some(value) => value
+            case None =>
+              logger.warn(s"GO: ${r.value.id} was not found in GO index, using default GO name")
+              GeneOntologyTerm(r.value.id, "Name unknown in Open Targets")
+          }
+        }))
   )
 
   implicit val cancerHallmarkImp = deriveObjectType[Backend, CancerHallmark]()
