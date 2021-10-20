@@ -90,6 +90,8 @@ query TargetFullObject($ensgId: String!) {
     subcellularLocations {
       location
       source
+      termSL
+      labelSL
     }
     synonyms {
       label
