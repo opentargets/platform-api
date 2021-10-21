@@ -30,7 +30,7 @@ case class SafetyEffects(
                           dosing: Option[String]
                         )
 
-case class LocationAndSource(location: String, source: String)
+case class LocationAndSource(location: String, source: String, termSL: Option[String], labelSL: Option[String])
 
 case class TargetClass(id: Long, label: String, level: String)
 
