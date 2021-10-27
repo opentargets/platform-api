@@ -1,11 +1,26 @@
 package models.entities
 
 import models.Backend
-import models.gql.Fetchers.{diseasesFetcher, drugsFetcher, goFetcher, soTermsFetcher, targetsFetcher}
+import models.gql.Fetchers.{
+  diseasesFetcher,
+  drugsFetcher,
+  goFetcher,
+  soTermsFetcher,
+  targetsFetcher
+}
 import models.gql.Objects
 import models.gql.Objects.{diseaseImp, drugImp, geneOntologyTermImp, targetImp}
 import play.api.libs.json._
-import sangria.schema.{Field, FloatType, ListType, LongType, ObjectType, OptionType, StringType, fields}
+import sangria.schema.{
+  Field,
+  FloatType,
+  ListType,
+  LongType,
+  ObjectType,
+  OptionType,
+  StringType,
+  fields
+}
 
 object Evidence {
   val pathwayTermImp = ObjectType(
@@ -13,7 +28,7 @@ object Evidence {
     "Pathway entry",
     fields[Backend, JsValue](
       Field("id",
-        StringType,
+            StringType,
             description = Some("Pathway ID"),
             resolve = js => (js.value \ "id").as[String]),
       Field("name",
@@ -97,28 +112,43 @@ object Evidence {
     fields[Backend, JsValue](
       Field("url", StringType, description = None, resolve = js => (js.value \ "url").as[String]),
       Field("niceName",
-        StringType,
-        description = None,
-        resolve = js => (js.value \ "niceName").as[String])
+            StringType,
+            description = None,
+            resolve = js => (js.value \ "niceName").as[String])
     )
   )
 
   val biomarkerGeneExpressionImp = ObjectType(
     "geneExpression",
     fields[Backend, JsValue](
-      Field("name", OptionType(StringType), description = None, resolve = js => (js.value \ "name").asOpt[String]),
-      Field("id", OptionType(geneOntologyTermImp), description = None, resolve = js => {
-        val goId = (js.value \ "id").asOpt[String].map(_.replace('_', ':'))
-        goFetcher.deferOpt(goId)
-      })
+      Field("name",
+            OptionType(StringType),
+            description = None,
+            resolve = js => (js.value \ "name").asOpt[String]),
+      Field(
+        "id",
+        OptionType(geneOntologyTermImp),
+        description = None,
+        resolve = js => {
+          val goId = (js.value \ "id").asOpt[String].map(_.replace('_', ':'))
+          goFetcher.deferOpt(goId)
+        }
+      )
     )
   )
   val biomarkerVariantImp = ObjectType(
     "variant",
     fields[Backend, JsValue](
-      Field("id", OptionType(StringType), description = None, resolve = js => (js.value \ "id").asOpt[String]),
-      Field("name", OptionType(StringType), description = None, resolve = js => (js.value \ "name").asOpt[String]),
-      Field("functionalConsequenceId",
+      Field("id",
+            OptionType(StringType),
+            description = None,
+            resolve = js => (js.value \ "id").asOpt[String]),
+      Field("name",
+            OptionType(StringType),
+            description = None,
+            resolve = js => (js.value \ "name").asOpt[String]),
+      Field(
+        "functionalConsequenceId",
         OptionType(sequenceOntologyTermImp),
         description = None,
         resolve = js => {
@@ -126,7 +156,8 @@ object Evidence {
           soTermsFetcher.deferOpt(soId)
         }
       )
-    ))
+    )
+  )
   val biomarkersImp: ObjectType[Backend, JsValue] = ObjectType(
     "biomarkers",
     fields[Backend, JsValue](
@@ -136,11 +167,10 @@ object Evidence {
         description = None,
         resolve = js => (js.value \ "geneExpression").asOpt[Seq[JsValue]]
       ),
-      Field(
-        "variant",
-        OptionType(ListType(biomarkerVariantImp)),
-        description = None,
-        resolve = js => (js.value \ "variant").asOpt[Seq[JsValue]])
+      Field("variant",
+            OptionType(ListType(biomarkerVariantImp)),
+            description = None,
+            resolve = js => (js.value \ "variant").asOpt[Seq[JsValue]])
     )
   )
 
@@ -149,13 +179,13 @@ object Evidence {
     "Evidence for a Target-Disease pair",
     fields[Backend, JsValue](
       Field("id",
-        StringType,
-        description = Some("Evidence identifier"),
-        resolve = js => (js.value \ "id").as[String]),
+            StringType,
+            description = Some("Evidence identifier"),
+            resolve = js => (js.value \ "id").as[String]),
       Field("score",
             FloatType,
-        description = Some("Evidence score"),
-        resolve = js => (js.value \ "score").as[Double]),
+            description = Some("Evidence score"),
+            resolve = js => (js.value \ "score").as[Double]),
       Field("target", targetImp, description = Some("Target evidence"), resolve = js => {
         val tId = (js.value \ "targetId").as[String]
         targetsFetcher.defer(tId)
@@ -165,25 +195,23 @@ object Evidence {
         diseasesFetcher.defer(dId)
       }),
       Field("biomarkerName",
-        OptionType(StringType),
-        description = None,
-        resolve = js => (js.value \ "biomarkerName").asOpt[String]
-      ),
+            OptionType(StringType),
+            description = None,
+            resolve = js => (js.value \ "biomarkerName").asOpt[String]),
       Field("biomarkers",
-        OptionType(biomarkersImp),
-        description = None,
-        resolve = js => (js.value \ "biomarkers").asOpt[JsValue]
-      ),
+            OptionType(biomarkersImp),
+            description = None,
+            resolve = js => (js.value \ "biomarkers").asOpt[JsValue]),
       Field("diseaseCellLines",
-        OptionType(ListType(StringType)),
-        description = None,
-        resolve = js => (js.value \ "diseaseCellLines").asOpt[Seq[String]]),
+            OptionType(ListType(StringType)),
+            description = None,
+            resolve = js => (js.value \ "diseaseCellLines").asOpt[Seq[String]]),
       Field("cohortPhenotypes",
-        OptionType(ListType(StringType)),
-        description = None,
-        resolve = js => (js.value \ "cohortPhenotypes").asOpt[Seq[String]]),
+            OptionType(ListType(StringType)),
+            description = None,
+            resolve = js => (js.value \ "cohortPhenotypes").asOpt[Seq[String]]),
       Field("targetInModel",
-        OptionType(StringType),
+            OptionType(StringType),
             description = None,
             resolve = js => (js.value \ "targetInModel").asOpt[String]),
       Field("reactionId",
@@ -223,9 +251,9 @@ object Evidence {
         resolve = js => (js.value \ "variantAminoacidDescriptions").asOpt[Seq[String]]
       ),
       Field("mutatedSamples",
-        OptionType(ListType(evidenceVariationImp)),
-        description = None,
-        resolve = js => (js.value \ "mutatedSamples").asOpt[Seq[JsValue]]),
+            OptionType(ListType(evidenceVariationImp)),
+            description = None,
+            resolve = js => (js.value \ "mutatedSamples").asOpt[Seq[JsValue]]),
       Field("drug", OptionType(drugImp), description = None, resolve = js => {
         val drugId = (js.value \ "drugId").asOpt[String]
         drugsFetcher.deferOpt(drugId)
@@ -246,9 +274,9 @@ object Evidence {
         }
       ),
       Field("cohortShortName",
-        OptionType(StringType),
-        description = None,
-        resolve = js => (js.value \ "cohortShortName").asOpt[String]),
+            OptionType(StringType),
+            description = None,
+            resolve = js => (js.value \ "cohortShortName").asOpt[String]),
       Field(
         "diseaseModelAssociatedModelPhenotypes",
         OptionType(ListType(labelledElementImp)),
@@ -461,8 +489,39 @@ object Evidence {
       Field("statisticalTestTail",
             OptionType(StringType),
             description = None,
-            resolve = js => (js.value \ "statisticalTestTail").asOpt[String])
+            resolve = js => (js.value \ "statisticalTestTail").asOpt[String]),
+      Field("interactingTargetFromSourceId",
+            OptionType(StringType),
+            description = None,
+            resolve = js => (js.value \ "interactingTargetFromSourceId").asOpt[String]),
+      Field("geneticInteractionMethod",
+            OptionType(StringType),
+            description = None,
+            resolve = js => (js.value \ "geneticInteractionMethod").asOpt[String]),
+      Field("phenotypicConsequenceLogFoldChange",
+            FloatType,
+            description = None,
+            resolve = js => (js.value \ "phenotypicConsequenceLogFoldChange").as[Double]),
+      Field("phenotypicConsequenceFDR",
+            FloatType,
+            description = None,
+            resolve = js => (js.value \ "phenotypicConsequenceFDR").as[Double]),
+      Field("phenotypicConsequencePValue",
+            FloatType,
+            description = None,
+            resolve = js => (js.value \ "phenotypicConsequencePValue").as[Double]),
+      Field("geneticInteractionScore",
+            FloatType,
+            description = None,
+            resolve = js => (js.value \ "geneticInteractionScore").as[Double]),
+      Field("geneticInteractionPValue",
+            FloatType,
+            description = None,
+            resolve = js => (js.value \ "geneticInteractionPValue").as[Double]),
+      Field("geneticInteractionFDR",
+            FloatType,
+            description = None,
+            resolve = js => (js.value \ "geneticInteractionFDR").as[Double]),
     )
   )
 }
-
