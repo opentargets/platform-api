@@ -562,9 +562,7 @@ class Backend @Inject()(
     val indirectIDs = if (indirect) {
       val interactions = Interactions.find(target.id, None, pagination = Some(Pagination(0, 10000))) map {
         case Some(ints) =>
-          ints.rows
-            .withFilter(_("targetB").as[String].startsWith("ENSG"))
-            .map(_("targetB").as[String])
+          ints.rows.flatMap(int => (int \ ("targetB")).asOpt[String].filter(_.startsWith("ENSG")))
             .toSet + target.id
         case None => Set.empty + target.id
       }
