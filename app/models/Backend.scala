@@ -332,8 +332,7 @@ class Backend @Inject()(
                       page.size)
 
     logger.debug(s"get disease id ${disease.name}")
-    val dIDs = disease.descendants.toSet + disease.id
-    val indirectIDs = if (indirect) dIDs else Set.empty[String]
+    val indirectIDs = if (indirect) disease.descendants.toSet + disease.id else Set.empty[String]
     val simpleQ = aotfQ(indirectIDs, targetSet).simpleQuery(0, 100000)
 
     val evidencesIndexName = defaultESSettings.entities
@@ -341,18 +340,12 @@ class Backend @Inject()(
       .map(_.index)
       .getOrElse("evidences_aotf")
 
+    val tractabilityMappings = List("SmallMolecule", "Antibody", "Protac", "OtherModalities").map(t => {
+      s"tractability$t" -> AggregationMapping(s"facet_tractability_${t.toLowerCase}", IndexedSeq.empty, nested = false)
+    })
     val mappings = Map(
       "dataTypes" -> AggregationMapping("datatype_id",
         IndexedSeq("datatype_id", "datasource_id"),
-        false),
-      "tractabilitySmallMolecule" -> AggregationMapping("facet_tractability_smallmolecule",
-        IndexedSeq.empty,
-        false),
-      "tractabilityAntibody" -> AggregationMapping("facet_tractability_antibody",
-        IndexedSeq.empty,
-        false),
-      "tractabilityProtac" -> AggregationMapping("facet_tractability_protac",
-        IndexedSeq.empty,
         false),
       "pathwayTypes" -> AggregationMapping("facet_reactome", IndexedSeq("l1", "l2"), true),
       "targetClasses" -> AggregationMapping("facet_classes", IndexedSeq("l1", "l2"), true)
@@ -391,45 +384,6 @@ class Backend @Inject()(
                                ))
             )
           )
-        )
-      ),
-      FilterAggregation(
-        "tractabilitySmallMolecule",
-        filtersMap("tractabilitySmallMolecule"),
-        subaggs = Seq(
-          uniqueTargetsAgg,
-          TermsAggregation("aggs",
-                           Some("facet_tractability_smallmolecule.keyword"),
-                           size = Some(100),
-                           subaggs = Seq(
-                             uniqueTargetsAgg
-                           ))
-        )
-      ),
-      FilterAggregation(
-        "tractabilityAntibody",
-        filtersMap("tractabilityAntibody"),
-        subaggs = Seq(
-          uniqueTargetsAgg,
-          TermsAggregation("aggs",
-            Some("facet_tractability_antibody.keyword"),
-            size = Some(100),
-            subaggs = Seq(
-              uniqueTargetsAgg
-            ))
-        )
-      ),
-      FilterAggregation(
-        "tractabilityProtac",
-        filtersMap("tractabilityProtac"),
-        subaggs = Seq(
-          uniqueTargetsAgg,
-          TermsAggregation("aggs",
-            Some("facet_tractability_protac.keyword"),
-            size = Some(100),
-            subaggs = Seq(
-              uniqueTargetsAgg
-            ))
         )
       ),
       FilterAggregation(
@@ -474,8 +428,8 @@ class Backend @Inject()(
                 subaggs = Seq(
                   TermsAggregation("aggs",
                                    Some("facet_classes.l2.keyword"),
-                                   size = Some(100),
-                                   subaggs = Seq(reverseTargetsAgg)),
+                    size = Some(100),
+                    subaggs = Seq(reverseTargetsAgg)),
                   reverseTargetsAgg
                 )
               ),
@@ -484,7 +438,21 @@ class Backend @Inject()(
           )
         )
       )
-    )
+    ) ++ tractabilityMappings.map(kv => {
+      FilterAggregation(
+        kv._1,
+        ElasticRetriever.aggregationFilterProducer(aggregationFilters, Map(kv))._1,
+        subaggs = Seq(
+          uniqueTargetsAgg,
+          TermsAggregation("aggs",
+            Some(s"${kv._2.key}.keyword"),
+            size = Some(100),
+            subaggs = Seq(
+              uniqueTargetsAgg
+            ))
+        )
+      )
+    })
 
     val esQ = esRetriever.getAggregationsByQuery(
       evidencesIndexName,
@@ -609,7 +577,6 @@ class Backend @Inject()(
             Some("datatype_id.keyword"),
             size = Some(100),
             subaggs = Seq(
-              uniqueDiseasesAgg,
               TermsAggregation("aggs",
                                Some("datasource_id.keyword"),
                                size = Some(100),
