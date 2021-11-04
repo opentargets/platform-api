@@ -55,6 +55,7 @@ case class SafetyLiability(
                             event: Option[String],
                             eventId: Option[String],
                             literature: Option[String],
+                            url: Option[String],
                             study: Option[Seq[SafetyStudy]],
                           )
 
