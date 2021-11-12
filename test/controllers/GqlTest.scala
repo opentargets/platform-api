@@ -376,12 +376,6 @@ class GqlTest
     }
   }
 
-  "OT projects queries" must {
-    "return valid responses" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(Disease("OTProjects_OTProjectsQuery"))
-    }
-  }
-
   "Orphanet queries" must {
     "return valid responses" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("Orphanet_OrphanetQuery"))
