@@ -577,6 +577,7 @@ class Backend @Inject()(
             Some("datatype_id.keyword"),
             size = Some(100),
             subaggs = Seq(
+              uniqueDiseasesAgg,
               TermsAggregation("aggs",
                                Some("datasource_id.keyword"),
                                size = Some(100),
