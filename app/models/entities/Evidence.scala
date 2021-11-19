@@ -67,6 +67,15 @@ object Evidence {
       Field("text", StringType, description = None, resolve = js => (js.value \ "text").as[String])
     )
   )
+  val evidenceDiseaseCellLineImp = ObjectType(
+    "DiseaseCellLine",
+    fields[Backend, JsValue](
+      Field("id", StringType, description = None, resolve = js => (js.value \ "id").as[String]),
+      Field("name", StringType, description = None, resolve = js => (js.value \ "name").as[String]),
+      Field("tissue", StringType, description = None, resolve = js => (js.value \ "tissue").as[String]),
+      Field("tissueId", StringType, description = None, resolve = js => (js.value \ "tissueId").as[String]),
+    )
+  )
 
   val evidenceVariationImp = ObjectType(
     "EvidenceVariation",
@@ -203,9 +212,9 @@ object Evidence {
             description = None,
             resolve = js => (js.value \ "biomarkers").asOpt[JsValue]),
       Field("diseaseCellLines",
-            OptionType(ListType(StringType)),
+            OptionType(ListType(evidenceDiseaseCellLineImp)),
             description = None,
-            resolve = js => (js.value \ "diseaseCellLines").asOpt[Seq[String]]),
+            resolve = js => (js.value \ "diseaseCellLines").asOpt[Seq[JsValue]]),
       Field("cohortPhenotypes",
             OptionType(ListType(StringType)),
             description = None,
