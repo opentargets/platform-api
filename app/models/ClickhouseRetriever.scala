@@ -5,7 +5,7 @@ import esecuele.Column._
 import esecuele.{Query => Q, _}
 import models.db.{QAOTF, Queryable}
 import models.entities.Associations._
-import models.entities.Configuration.{DatasourceSettings, LUTableSettings, OTSettings}
+import models.entities.Configuration.{DatasourceSettings, OTSettings}
 import models.entities._
 import play.api.Logging
 import slick.basic.DatabaseConfig
@@ -20,7 +20,7 @@ class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: O
   import dbConfig.profile.api._
 
   implicit private def toSQL(q: Q): SQLActionBuilder = sql"""#${q.rep}"""
-  implicit private def toSQL(q: Queryable): SQLActionBuilder = sql"""#${q.query.rep}"""
+
 
   val db = dbConfig.db
   val chSettings = config.clickhouse

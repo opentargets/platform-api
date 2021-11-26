@@ -2,7 +2,6 @@ package controllers.api.v4.graphql
 
 import javax.inject._
 import models.entities.TooComplexQueryError
-import models.entities.Violations._
 import models.{Backend, GQLSchema}
 import play.api.libs.json._
 import play.api.mvc._

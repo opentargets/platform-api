@@ -1,7 +1,5 @@
 package models.entities
 
-import com.sksamuel.elastic4s.ElasticDsl.boolQuery
-import com.sksamuel.elastic4s.requests.searches.aggs.TermsAggregation
 import models.{Backend, ElasticRetriever}
 import models.Helpers.fromJsValue
 import models.entities.Configuration.ElasticsearchSettings

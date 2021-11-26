@@ -83,16 +83,6 @@ trait ClickHouseProfile extends JdbcProfile {
     override protected val supportsLiteralGroupBy = true
     override protected val quotedJdbcFns = Some(Nil)
 
-    override protected def buildFetchOffsetClause(fetch: Option[Node],
-                                                  offset: Option[Node]): Unit = {
-      (fetch, offset) match {
-        case (Some(t), Some(d)) => b"\nlimit $d , $t"
-        case (Some(t), None)    => b"\nlimit $t"
-        case (None, Some(d))    =>
-        case _                  =>
-      }
-    }
-
     override def expr(c: Node, skipParens: Boolean = false): Unit = c match {
       case Library.UCase(ch)  => b"upper($ch)"
       case Library.LCase(ch)  => b"lower($ch)"

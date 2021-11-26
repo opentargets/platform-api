@@ -1,10 +1,8 @@
 package models.entities
 
 import models.Backend
-import models.gql.Fetchers.{diseasesFetcher, drugsFetcher, soTermsFetcher, targetsFetcher}
-import models.gql.Objects.{diseaseImp, drugImp, targetImp}
 import play.api.libs.json._
-import sangria.schema.{Field, FloatType, ListType, LongType, ObjectType, OptionType, StringType, fields}
+import sangria.schema.{Field, ListType, LongType, ObjectType, OptionType, StringType, fields}
 import slick.jdbc.GetResult
 
 case class Publication(pmid: String, pmcid: Option[String], date: String, sentences: Option[JsValue])

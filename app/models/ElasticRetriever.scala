@@ -98,7 +98,6 @@ class ElasticRetriever @Inject()(client: ElasticClient,
         val result = Json.parse(results.body.get)
 
         logger.trace(Json.prettyPrint(result))
-        val hits = (result \ "hits" \ "hits").get.as[JsArray].value
         val aggs = (result \ "aggregations").getOrElse(JsNull)
         aggs
     }

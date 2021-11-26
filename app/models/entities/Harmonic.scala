@@ -1,6 +1,4 @@
 package models.entities
-import clickhouse.rep.SeqRep._
-import clickhouse.rep.SeqRep.Implicits._
 
 import scala.math.pow
 import esecuele._
@@ -8,8 +6,6 @@ import esecuele.Column._
 import esecuele.Functions._
 import esecuele.{Functions => F}
 import models.entities.Configuration.{DatasourceSettings, LUTableSettings}
-import play.api.libs.json.Json
-import slick.jdbc.GetResult
 
 object Harmonic {
 

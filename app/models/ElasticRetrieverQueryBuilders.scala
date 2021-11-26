@@ -1,6 +1,5 @@
 package models
 
-import java.util
 
 import com.sksamuel.elastic4s.ElasticDsl.search
 import com.sksamuel.elastic4s.requests.searches.aggs.AbstractAggregation

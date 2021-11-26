@@ -1,7 +1,5 @@
 package models.entities
 
-import models.Helpers.logger
-import play.api.Logger
 import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._

@@ -9,7 +9,6 @@ import models.entities._
 import models.gql.Arguments._
 import models.gql.Fetchers._
 import play.api.Logging
-import sangria.execution.deferred.FetcherDeferredOpt
 import sangria.macros.derive.{DocumentField, _}
 import sangria.schema._
 

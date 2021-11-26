@@ -14,7 +14,7 @@ class CacheController @Inject()(implicit ec: ExecutionContext,
     with Logging {
 
   def clearCache(): Action[AnyContent] =
-    restHelpers.checkCredentials(Action.async { implicit request =>
+    restHelpers.checkCredentials(Action.async { _ =>
       Future {
         logger.info("Received request to clear cache.")
         Fetchers.resetCache()

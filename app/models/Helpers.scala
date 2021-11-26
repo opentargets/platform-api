@@ -1,6 +1,5 @@
 package models
 
-import better.files._
 import com.typesafe.config.{ConfigObject, ConfigRenderOptions}
 import play.api.libs.json._
 import play.api._
@@ -36,24 +35,6 @@ object Helpers extends Logging {
   object Base64Engine extends Logging {
     def encode(msg: String): String = java.util.Base64.getEncoder.encode(msg.getBytes).map(_.toChar).mkString
     def decode(msg: String): String = java.util.Base64.getDecoder.decode(msg.getBytes).map(_.toChar).mkString
-  }
-
-
-  /** Given a `filename`, the function fully loads the content into an option and
-    * maps it with `Json.parse`
-    * @param filename fully filename of a resource file
-    * @return A wrapped Json object from the given filename with an Option
-    */
-  def loadJSONFromFilename(filename: String): JsValue =
-    Json.parse(filename.toFile.contentAsString)
-
-  def loadJSONLinesIntoMap[A, B](filename: String)(f: JsValue => (A, B)): Map[A, B] = {
-    val parsedLines = filename.toFile.lines.map(Json.parse)
-
-    val pairs = for (l <- parsedLines)
-      yield f(l)
-
-    pairs.toMap
   }
 
   def loadConfigurationObject[T](key: String, config: Configuration)(

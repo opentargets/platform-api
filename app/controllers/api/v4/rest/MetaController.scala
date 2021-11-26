@@ -9,7 +9,6 @@ import play.api.libs.json._
 import play.api.mvc._
 import sangria.macros._
 import sangria.execution.{ErrorWithResolver, Executor, QueryAnalysisError, QueryReducer}
-import sangria.execution.deferred.FetcherContext
 import sangria.marshalling.playJson._
 import sangria.marshalling.InputUnmarshaller
 
