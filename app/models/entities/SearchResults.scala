@@ -29,15 +29,15 @@ case class SearchResults(hits: Seq[SearchResult],
                          total: Long)
 
 object SearchResults {
-  val empty = SearchResults(Seq.empty, None, 0)
-  implicit val searchResultAggsCategoryImpW = Json.writes[models.entities.SearchResultAggCategory]
-  implicit val searchResultAggsEntityImpW = Json.writes[models.entities.SearchResultAggEntity]
-  implicit val searchResultAggsImpW = Json.writes[models.entities.SearchResultAggs]
+  val empty: SearchResults = SearchResults(Seq.empty, None, 0)
+  implicit val searchResultAggsCategoryImpW: OWrites[SearchResultAggCategory] = Json.writes[models.entities.SearchResultAggCategory]
+  implicit val searchResultAggsEntityImpW: OWrites[SearchResultAggEntity] = Json.writes[models.entities.SearchResultAggEntity]
+  implicit val searchResultAggsImpW: OWrites[SearchResultAggs] = Json.writes[models.entities.SearchResultAggs]
 
   implicit val searchResultAggCategoryImpR: Reads[models.entities.SearchResultAggCategory] = (
     (__ \ "key").read[String] and
       (__ \ "doc_count").read[Long]
-  )(SearchResultAggCategory.apply _)
+    ) (SearchResultAggCategory.apply _)
 
   implicit val searchResultAggEntityImpR: Reads[models.entities.SearchResultAggEntity] = (
     (__ \ "key").read[String] and
@@ -50,7 +50,7 @@ object SearchResults {
       (__ \ "entities" \ "buckets")
         .read[Seq[models.entities.SearchResultAggEntity]])(models.entities.SearchResultAggs.apply _)
 
-  implicit val searchResultImpW = Json.writes[models.entities.SearchResult]
+  implicit val searchResultImpW: OWrites[SearchResult] = Json.writes[models.entities.SearchResult]
 
   implicit val searchResultImpR: Reads[models.entities.SearchResult] =
     ((__ \ "_source" \ "id").read[String] and
@@ -71,5 +71,5 @@ object SearchResults {
         case None => Seq.empty[String]
       })(SearchResult.apply _)
 
-  implicit val msearchResultsImpW = Json.format[models.entities.SearchResults]
+  implicit val msearchResultsImpW: OFormat[SearchResults] = Json.format[models.entities.SearchResults]
 }

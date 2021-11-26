@@ -21,33 +21,33 @@ object Interaction extends Logging {
                  intBBiologicalRole: String,
                  sourceDatabase: String)
 
-  implicit val interactionKeyJSON = Json.format[Key]
+  implicit val interactionKeyJSON: OFormat[Key] = Json.format[Key]
 
-  val interactionEvidencePDM = ObjectType(
+  val interactionEvidencePDM: ObjectType[Backend, JsValue] = ObjectType(
     "InteractionEvidencePDM",
     fields[Backend, JsValue](
       Field("miIdentifier",
-            OptionType(StringType),
-            description = None,
-            resolve = js => (js.value \ "miIdentifier").asOpt[String]),
+        OptionType(StringType),
+        description = None,
+        resolve = js => (js.value \ "miIdentifier").asOpt[String]),
       Field("shortName",
-            OptionType(StringType),
-            description = None,
-            resolve = js => (js.value \ "shortName").asOpt[String])
+        OptionType(StringType),
+        description = None,
+        resolve = js => (js.value \ "shortName").asOpt[String])
     )
   )
 
-  val interactionSpecies = ObjectType(
+  val interactionSpecies: ObjectType[Backend, JsValue] = ObjectType(
     "InteractionSpecies",
     fields[Backend, JsValue](
       Field("mnemonic",
-            OptionType(StringType),
-            description = None,
-            resolve = js => (js.value \ "mnemonic").asOpt[String]),
+        OptionType(StringType),
+        description = None,
+        resolve = js => (js.value \ "mnemonic").asOpt[String]),
       Field("scientificName",
-            OptionType(StringType),
-            description = None,
-            resolve = js => (js.value \ "scientific_name").asOpt[String]),
+        OptionType(StringType),
+        description = None,
+        resolve = js => (js.value \ "scientific_name").asOpt[String]),
       Field("taxonId",
             OptionType(LongType),
             description = None,
@@ -55,31 +55,31 @@ object Interaction extends Logging {
     )
   )
 
-  val interactionResources = ObjectType(
+  val interactionResources: ObjectType[Backend, JsValue] = ObjectType(
     "InteractionResources",
     fields[Backend, JsValue](
       Field("databaseVersion",
-            StringType,
-            description = None,
-            resolve = js => (js.value \ "databaseVersion").as[String]),
+        StringType,
+        description = None,
+        resolve = js => (js.value \ "databaseVersion").as[String]),
       Field("sourceDatabase",
-            StringType,
-            description = None,
-            resolve = js => (js.value \ "sourceDatabase").as[String])
+        StringType,
+        description = None,
+        resolve = js => (js.value \ "sourceDatabase").as[String])
     )
   )
 
-  val interactionEvidence = ObjectType(
+  val interactionEvidence: ObjectType[Backend, JsValue] = ObjectType(
     "InteractionEvidence",
     fields[Backend, JsValue](
       Field("evidenceScore",
-            OptionType(FloatType),
-            description = None,
-            resolve = js => (js.value \ "evidenceScore").asOpt[Double]),
+        OptionType(FloatType),
+        description = None,
+        resolve = js => (js.value \ "evidenceScore").asOpt[Double]),
       Field("expansionMethodMiIdentifier",
-            OptionType(StringType),
-            description = None,
-            resolve = js => (js.value \ "expansionMethodMiIdentifier").asOpt[String]),
+        OptionType(StringType),
+        description = None,
+        resolve = js => (js.value \ "expansionMethodMiIdentifier").asOpt[String]),
       Field("expansionMethodShortName",
             OptionType(StringType),
             description = None,
@@ -139,7 +139,7 @@ object Interaction extends Logging {
     )
   )
 
-  val interaction = ObjectType(
+  val interaction: ObjectType[Backend, JsValue] = ObjectType(
     "Interaction",
     fields[Backend, JsValue](
       Field("intA", StringType, description = None, resolve = js => (js.value \ "intA").as[String]),

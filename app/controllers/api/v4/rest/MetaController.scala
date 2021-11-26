@@ -13,6 +13,7 @@ import sangria.marshalling.playJson._
 import sangria.marshalling.InputUnmarshaller
 
 import scala.concurrent.ExecutionContext
+import sangria.ast.Document
 
 @Singleton
 class MetaController @Inject()(implicit ec: ExecutionContext,
@@ -21,7 +22,7 @@ class MetaController @Inject()(implicit ec: ExecutionContext,
     extends AbstractController(cc)
     with Logging {
 
-  val metaGQLQ =
+  val metaGQLQ: Document =
     gql"""
         query metaQuery {
           meta {
@@ -63,11 +64,11 @@ class MetaController @Inject()(implicit ec: ExecutionContext,
   }
 
   // example from here https://github.com/nemoo/play-slick3-example/blob/master/app/controllers/Application.scala
-  def meta = Action.async { _ =>
+  def meta: Action[AnyContent] = Action.async { _ =>
     queryMeta
   }
 
-  def healthcheck() = Action { _ =>
+  def healthcheck(): Action[AnyContent] = Action { _ =>
     Ok(Json.toJson(backend.getStatus(true)))
   }
 }

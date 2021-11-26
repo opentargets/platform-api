@@ -26,9 +26,9 @@ case class DiseaseHPOs(count: Long, rows: Seq[DiseaseHPO])
 
 object DiseaseHPOs {
 
-  implicit val diseaseHPOEvidencesImpW = Json.writes[models.entities.DiseaseHPOEvidences]
+  implicit val diseaseHPOEvidencesImpW: OWrites[DiseaseHPOEvidences] = Json.writes[models.entities.DiseaseHPOEvidences]
   implicit val diseaseHPOEvidencesImpR: Reads[models.entities.DiseaseHPOEvidences] =
-    ( (JsPath \ "aspect").readNullable[String] and
+    ((JsPath \ "aspect").readNullable[String] and
       (JsPath \ "bioCuration").readNullable[String] and
       (JsPath \ "diseaseFromSourceId").read[String] and
       (JsPath \ "diseaseFromSource").read[String] and
@@ -43,13 +43,13 @@ object DiseaseHPOs {
       (JsPath \ "resource").read[String]
     )(DiseaseHPOEvidences.apply _)
 
-  implicit val diseaseHPOImpW = Json.writes[models.entities.DiseaseHPO]
+  implicit val diseaseHPOImpW: OWrites[DiseaseHPO] = Json.writes[models.entities.DiseaseHPO]
   implicit val diseaseHPOImpR: Reads[models.entities.DiseaseHPO] =
     ((JsPath \ "phenotype").read[String] and
       (JsPath \ "disease").read[String] and
-      (JsPath \ "evidence").readWithDefault[Seq[DiseaseHPOEvidences]](Seq.empty))(
+      (JsPath \ "evidence").readWithDefault[Seq[DiseaseHPOEvidences]](Seq.empty)) (
       DiseaseHPO.apply _
     )
 
-  implicit val diseaseHPOsImpF = Json.format[models.entities.DiseaseHPOs]
+  implicit val diseaseHPOsImpF: OFormat[DiseaseHPOs] = Json.format[models.entities.DiseaseHPOs]
 }

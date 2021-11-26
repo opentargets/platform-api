@@ -4,6 +4,7 @@ import play.api.Logging
 import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
+import scala.util.matching.Regex
 
 case class URL(url: String, name: String)
 case class KnownDrugReference(source: String, ids: Seq[String], urls: Seq[String])
@@ -32,17 +33,17 @@ case class KnownDrugs(uniqueDrugs: Long,
                       rows: Seq[KnownDrug])
 
 object KnownDrug extends Logging {
-  val ctPattern = "NCT(\\d{8})".r
+  val ctPattern: Regex = "NCT(\\d{8})".r
 
-  implicit val KnownDrugReferenceImpJSONF = Json.format[KnownDrugReference]
-  implicit val URLImpW = Json.writes[URL]
+  implicit val KnownDrugReferenceImpJSONF: OFormat[KnownDrugReference] = Json.format[KnownDrugReference]
+  implicit val URLImpW: OWrites[URL] = Json.writes[URL]
   implicit val URLImpR: Reads[URL] = (
     (__ \ "url").read[String] and
       (__ \ "niceName").read[String]
-  )(URL.apply _)
+    ) (URL.apply _)
 
   // approvedSymbol: String, label: String, prefName: String,
-  implicit val knownDrugImpW = Json.writes[KnownDrug]
+  implicit val knownDrugImpW: OWrites[KnownDrug] = Json.writes[KnownDrug]
   implicit val knownDrugImpR: Reads[KnownDrug] = (
     (__ \ "approvedSymbol").read[String] and
       (__ \ "approvedName").read[String] and
@@ -65,5 +66,5 @@ object KnownDrug extends Logging {
       (__ \ "urls").read[Seq[URL]]
   )(KnownDrug.apply _)
 
-  implicit val knownDrugsImpF = Json.format[KnownDrugs]
+  implicit val knownDrugsImpF: OFormat[KnownDrugs] = Json.format[KnownDrugs]
 }

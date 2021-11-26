@@ -31,9 +31,9 @@ case class MousePhenotype(
 
 object MousePhenotypes extends Logging {
 
-  implicit val biologicalModelsF = Json.format[BiologicalModels]
-  implicit val modelPhenotypeClassesF = Json.format[ModelPhenotypeClasses]
-  implicit val mousePhenotypeW = Json.writes[MousePhenotype]
+  implicit val biologicalModelsF: OFormat[BiologicalModels] = Json.format[BiologicalModels]
+  implicit val modelPhenotypeClassesF: OFormat[ModelPhenotypeClasses] = Json.format[ModelPhenotypeClasses]
+  implicit val mousePhenotypeW: OWrites[MousePhenotype] = Json.writes[MousePhenotype]
 
   implicit val mousePhenotypeR: Reads[MousePhenotype] = (
     (__ \ "biologicalModels").read[Seq[BiologicalModels]] and

@@ -13,7 +13,7 @@ object Publication {
 
   implicit val similarityImp: OFormat[Publication] = Json.format[Publication]
 
-  val matchImp = ObjectType(
+  val matchImp: ObjectType[Backend, JsValue] = ObjectType(
     "Match",
     fields[Backend, JsValue](
       Field("mappedId",
@@ -47,7 +47,7 @@ object Publication {
     )
   )
 
-  val sentenceImp = ObjectType(
+  val sentenceImp: ObjectType[Backend, JsValue] = ObjectType(
     "Sentence",
     fields[Backend, JsValue](
       Field("section",
@@ -61,13 +61,13 @@ object Publication {
     )
   )
 
-  val publicationImp = ObjectType(
+  val publicationImp: ObjectType[Backend, JsValue] = ObjectType(
     "Publication",
     fields[Backend, JsValue](
       Field("pmid",
-            StringType,
-            description = None,
-            resolve = js => (js.value \ "pmid").as[String]),
+        StringType,
+        description = None,
+        resolve = js => (js.value \ "pmid").as[String]),
       Field("pmcid",
         OptionType(StringType),
         description = None,

@@ -1,6 +1,7 @@
 package models.entities
 
 import play.api.libs.json.Json
+import play.api.libs.json.OFormat
 
 object Configuration {
   val batchSize = 100
@@ -51,28 +52,28 @@ object Configuration {
                                 literatureIndex: LiteratureIndexSettings)
 
   /** main Open Targets configuration object. It keeps track of meta, elasticsearch and clickhouse
-    * configuration.
-    * */
+   * configuration.
+   * */
   case class OTSettings(meta: Meta,
                         elasticsearch: ElasticsearchSettings,
                         clickhouse: ClickhouseSettings)
 
-  implicit val metaDataVersionJSONImp = Json.format[DataVersion]
-  implicit val metaAPIVersionJSONImp = Json.format[APIVersion]
-  implicit val metaJSONImp = Json.format[Meta]
+  implicit val metaDataVersionJSONImp: OFormat[DataVersion] = Json.format[DataVersion]
+  implicit val metaAPIVersionJSONImp: OFormat[APIVersion] = Json.format[APIVersion]
+  implicit val metaJSONImp: OFormat[Meta] = Json.format[Meta]
 
-  implicit val esEntitiesJSONImp = Json.format[ElasticsearchEntity]
-  implicit val esSettingsJSONImp = Json.format[ElasticsearchSettings]
+  implicit val esEntitiesJSONImp: OFormat[ElasticsearchEntity] = Json.format[ElasticsearchEntity]
+  implicit val esSettingsJSONImp: OFormat[ElasticsearchSettings] = Json.format[ElasticsearchSettings]
 
-  implicit val luTableJSONImp = Json.format[LUTableSettings]
-  implicit val literatureSettingsJSONImp = Json.format[LiteratureSettings]
-  implicit val literatureIndexSettingsJSONImp = Json.format[LiteratureIndexSettings]
-  implicit val associationSettingsJSONImp = Json.format[AssociationSettings]
-  implicit val datasourceSettingsJSONImp = Json.format[DatasourceSettings]
-  implicit val harmonicSettingsJSONImp = Json.format[HarmonicSettings]
-  implicit val targetSettingsJSONImp = Json.format[TargetSettings]
-  implicit val diseaseSettingsJSONImp = Json.format[DiseaseSettings]
-  implicit val clickhouseSettingsJSONImp = Json.format[ClickhouseSettings]
+  implicit val luTableJSONImp: OFormat[LUTableSettings] = Json.format[LUTableSettings]
+  implicit val literatureSettingsJSONImp: OFormat[LiteratureSettings] = Json.format[LiteratureSettings]
+  implicit val literatureIndexSettingsJSONImp: OFormat[LiteratureIndexSettings] = Json.format[LiteratureIndexSettings]
+  implicit val associationSettingsJSONImp: OFormat[AssociationSettings] = Json.format[AssociationSettings]
+  implicit val datasourceSettingsJSONImp: OFormat[DatasourceSettings] = Json.format[DatasourceSettings]
+  implicit val harmonicSettingsJSONImp: OFormat[HarmonicSettings] = Json.format[HarmonicSettings]
+  implicit val targetSettingsJSONImp: OFormat[TargetSettings] = Json.format[TargetSettings]
+  implicit val diseaseSettingsJSONImp: OFormat[DiseaseSettings] = Json.format[DiseaseSettings]
+  implicit val clickhouseSettingsJSONImp: OFormat[ClickhouseSettings] = Json.format[ClickhouseSettings]
 
-  implicit val otSettingsJSONImp = Json.format[OTSettings]
+  implicit val otSettingsJSONImp: OFormat[OTSettings] = Json.format[OTSettings]
 }

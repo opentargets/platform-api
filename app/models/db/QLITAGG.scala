@@ -42,13 +42,13 @@ case class QLITAGG(tableName: String,
     PreWhere(F.in(pmid, pmidsQ(pmid :: Nil).toColumn(None)))
   )
 
-  val total = {
+  val total: Q = {
     val countQ = Q(
       Select(literal(1) :: Nil),
       From(TIdx),
       PreWhere(F.in(key, F.set(ids.map(literal).toSeq))),
       GroupBy(pmid.name :: Nil),
-      Having(F.greaterOrEquals(F.count(pmid.name),literal(ids.size)))
+      Having(F.greaterOrEquals(F.count(pmid.name), literal(ids.size)))
     )
 
     val q = Q(
@@ -61,10 +61,10 @@ case class QLITAGG(tableName: String,
     q
   }
 
-  override val query = {
+  override val query: Q = {
     val q = Q(
       Select(pmid :: pmcid :: date :: sentences :: Nil),
-      From(pmidsQ(pmid :: Nil).toColumn(None) , Some("L")),
+      From(pmidsQ(pmid :: Nil).toColumn(None), Some("L")),
       Join(litQ.toColumn(None), Some("left"), Some("any"), global = false, Some("L"), pmid :: Nil)
     )
 

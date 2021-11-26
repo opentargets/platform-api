@@ -14,7 +14,7 @@ import models.gql.Fetchers._
 trait GQLEntities extends Logging {}
 
 object GQLSchema {
-  val resolvers = DeferredResolver.fetchers(
+  val resolvers: DeferredResolver[Backend] = DeferredResolver.fetchers(
     targetsFetcher,
     drugsFetcher,
     diseasesFetcher,
@@ -27,17 +27,17 @@ object GQLSchema {
     goFetcher
   )
 
-  val query = ObjectType(
+  val query: ObjectType[Backend, Unit] = ObjectType(
     "Query",
     fields[Backend, Unit](
       Field("meta",
-            metaImp,
-            description = Some("Return Open Targets API metadata information"),
-            arguments = Nil,
-            resolve = ctx => ctx.ctx.getMeta),
+        metaImp,
+        description = Some("Return Open Targets API metadata information"),
+        arguments = Nil,
+        resolve = ctx => ctx.ctx.getMeta),
       Field("target",
-            OptionType(targetImp),
-            description = Some("Return a Target"),
+        OptionType(targetImp),
+        description = Some("Return a Target"),
             arguments = ensemblId :: Nil,
             resolve = ctx => targetsFetcher.deferOpt(ctx.arg(ensemblId))),
       Field(
@@ -102,5 +102,5 @@ object GQLSchema {
     )
   )
 
-  val schema = Schema(query)
+  val schema: Schema[Backend, Unit] = Schema(query)
 }

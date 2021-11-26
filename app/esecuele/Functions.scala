@@ -143,6 +143,6 @@ object Functions {
   def ifThenElse(expr: Column, ifThen: Column, ifElse: Column): Column =
     f("if", expr, ifThen, ifElse)
 
-  def ngramSearchCaseInsensitive(col1: Column, col2: Column) =
+  def ngramSearchCaseInsensitive(col1: Column, col2: Column): Column =
     f("ngramSearchCaseInsensitive", col1, col2)
 }

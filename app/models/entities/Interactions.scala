@@ -18,7 +18,7 @@ import scala.concurrent.{ExecutionContext, Future}
 case class Interactions(count: Long, rows: IndexedSeq[JsValue])
 
 object Interactions extends Logging {
-  val interactions = ObjectType(
+  val interactions: ObjectType[Backend, Interactions] = ObjectType(
     "Interactions",
     fields[Backend, Interactions](
       Field("count", LongType, description = None, resolve = o => o.value.count),

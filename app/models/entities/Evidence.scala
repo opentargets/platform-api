@@ -23,37 +23,37 @@ import sangria.schema.{
 }
 
 object Evidence {
-  val pathwayTermImp = ObjectType(
+  val pathwayTermImp: ObjectType[Backend, JsValue] = ObjectType(
     "Pathway",
     "Pathway entry",
     fields[Backend, JsValue](
       Field("id",
-            StringType,
-            description = Some("Pathway ID"),
-            resolve = js => (js.value \ "id").as[String]),
+        StringType,
+        description = Some("Pathway ID"),
+        resolve = js => (js.value \ "id").as[String]),
       Field("name",
-            StringType,
-            description = Some("Pathway Name"),
+        StringType,
+        description = Some("Pathway Name"),
             resolve = js => (js.value \ "name").as[String])
     )
   )
 
-  val sequenceOntologyTermImp = ObjectType(
+  val sequenceOntologyTermImp: ObjectType[Backend, JsValue] = ObjectType(
     "SequenceOntologyTerm",
     "Sequence Ontology Term",
     fields[Backend, JsValue](
       Field("id",
-            StringType,
-            description = Some("Sequence Ontology ID"),
-            resolve = js => (js.value \ "id").as[String]),
+        StringType,
+        description = Some("Sequence Ontology ID"),
+        resolve = js => (js.value \ "id").as[String]),
       Field("label",
-            StringType,
-            description = Some("Sequence Ontology Label"),
+        StringType,
+        description = Some("Sequence Ontology Label"),
             resolve = js => (js.value \ "label").as[String])
     )
   )
 
-  val evidenceTextMiningSentenceImp = ObjectType(
+  val evidenceTextMiningSentenceImp: ObjectType[Backend, JsValue] = ObjectType(
     "EvidenceTextMiningSentence",
     fields[Backend, JsValue](
       Field("dEnd", LongType, description = None, resolve = js => (js.value \ "dEnd").as[Long]),
@@ -61,13 +61,13 @@ object Evidence {
       Field("dStart", LongType, description = None, resolve = js => (js.value \ "dStart").as[Long]),
       Field("tStart", LongType, description = None, resolve = js => (js.value \ "tStart").as[Long]),
       Field("section",
-            StringType,
-            description = None,
-            resolve = js => (js.value \ "section").as[String]),
+        StringType,
+        description = None,
+        resolve = js => (js.value \ "section").as[String]),
       Field("text", StringType, description = None, resolve = js => (js.value \ "text").as[String])
     )
   )
-  val evidenceDiseaseCellLineImp = ObjectType(
+  val evidenceDiseaseCellLineImp: ObjectType[Backend, JsValue] = ObjectType(
     "DiseaseCellLine",
     fields[Backend, JsValue](
       Field("id", StringType, description = None, resolve = js => (js.value \ "id").as[String]),
@@ -77,7 +77,7 @@ object Evidence {
     )
   )
 
-  val evidenceVariationImp = ObjectType(
+  val evidenceVariationImp: ObjectType[Backend, JsValue] = ObjectType(
     "EvidenceVariation",
     "Sequence Ontology Term",
     fields[Backend, JsValue](
@@ -105,35 +105,35 @@ object Evidence {
     )
   )
 
-  val labelledElementImp = ObjectType(
+  val labelledElementImp: ObjectType[Backend, JsValue] = ObjectType(
     "LabelledElement",
     fields[Backend, JsValue](
       Field("id", StringType, description = None, resolve = js => (js.value \ "id").as[String]),
       Field("label",
-            StringType,
-            description = None,
-            resolve = js => (js.value \ "label").as[String])
+        StringType,
+        description = None,
+        resolve = js => (js.value \ "label").as[String])
     )
   )
 
-  val labelledUriImp = ObjectType(
+  val labelledUriImp: ObjectType[Backend, JsValue] = ObjectType(
     "LabelledUri",
     fields[Backend, JsValue](
       Field("url", StringType, description = None, resolve = js => (js.value \ "url").as[String]),
       Field("niceName",
-            StringType,
-            description = None,
-            resolve = js => (js.value \ "niceName").as[String])
+        StringType,
+        description = None,
+        resolve = js => (js.value \ "niceName").as[String])
     )
   )
 
-  val biomarkerGeneExpressionImp = ObjectType(
+  val biomarkerGeneExpressionImp: ObjectType[Backend, JsValue] = ObjectType(
     "geneExpression",
     fields[Backend, JsValue](
       Field("name",
-            OptionType(StringType),
-            description = None,
-            resolve = js => (js.value \ "name").asOpt[String]),
+        OptionType(StringType),
+        description = None,
+        resolve = js => (js.value \ "name").asOpt[String]),
       Field(
         "id",
         OptionType(geneOntologyTermImp),
@@ -145,17 +145,17 @@ object Evidence {
       )
     )
   )
-  val biomarkerVariantImp = ObjectType(
+  val biomarkerVariantImp: ObjectType[Backend, JsValue] = ObjectType(
     "variant",
     fields[Backend, JsValue](
       Field("id",
-            OptionType(StringType),
-            description = None,
-            resolve = js => (js.value \ "id").asOpt[String]),
+        OptionType(StringType),
+        description = None,
+        resolve = js => (js.value \ "id").asOpt[String]),
       Field("name",
-            OptionType(StringType),
-            description = None,
-            resolve = js => (js.value \ "name").asOpt[String]),
+        OptionType(StringType),
+        description = None,
+        resolve = js => (js.value \ "name").asOpt[String]),
       Field(
         "functionalConsequenceId",
         OptionType(sequenceOntologyTermImp),
@@ -183,17 +183,17 @@ object Evidence {
     )
   )
 
-  val evidenceImp = ObjectType(
+  val evidenceImp: ObjectType[Backend, JsValue] = ObjectType(
     "Evidence",
     "Evidence for a Target-Disease pair",
     fields[Backend, JsValue](
       Field("id",
-            StringType,
-            description = Some("Evidence identifier"),
-            resolve = js => (js.value \ "id").as[String]),
+        StringType,
+        description = Some("Evidence identifier"),
+        resolve = js => (js.value \ "id").as[String]),
       Field("score",
-            FloatType,
-            description = Some("Evidence score"),
+        FloatType,
+        description = Some("Evidence score"),
             resolve = js => (js.value \ "score").as[Double]),
       Field("target", targetImp, description = Some("Target evidence"), resolve = js => {
         val tId = (js.value \ "targetId").as[String]

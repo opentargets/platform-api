@@ -19,22 +19,22 @@ class GraphQLController @Inject()(implicit ec: ExecutionContext,
                                   cc: ControllerComponents)
     extends AbstractController(cc) {
 
-  def options = Action {
+  def options: Action[AnyContent] = Action {
     NoContent
   }
 
-  def gql(query: String, variables: Option[String], operation: Option[String]) = Action.async {
+  def gql(query: String, variables: Option[String], operation: Option[String]): Action[AnyContent] = Action.async {
     executeQuery(query, variables map parseVariables, operation)
   }
 
-  def gqlBody() = Action.async(parse.json) { request =>
+  def gqlBody(): Action[JsValue] = Action.async(parse.json) { request =>
     val query = (request.body \ "query").as[String]
     val operation = (request.body \ "operationName").asOpt[String]
 
     val variables = (request.body \ "variables").toOption.flatMap {
       case JsString(vars) => Some(parseVariables(vars))
-      case obj: JsObject  => Some(obj)
-      case _              => None
+      case obj: JsObject => Some(obj)
+      case _ => None
     }
 
     executeQuery(query, variables, operation)

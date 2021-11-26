@@ -10,15 +10,15 @@ case class OtarProject(otarCode: String, status: String, projectName: String, re
 case class OtarProjects(efoId: String, rows: Seq[OtarProject])
 
 object OtarProjects {
-  implicit val otarProjectImpW = Json.writes[OtarProject]
+  implicit val otarProjectImpW: OWrites[OtarProject] = Json.writes[OtarProject]
 
-  implicit val config = JsonConfiguration(SnakeCase)
-  implicit val otarProjectImpR = Json.reads[OtarProject]
+  implicit val config: JsonConfiguration.Aux[Json.MacroOptions] = JsonConfiguration(SnakeCase)
+  implicit val otarProjectImpR: Reads[OtarProject] = Json.reads[OtarProject]
 
-  implicit val otarProjectsImpW = Json.writes[OtarProjects]
+  implicit val otarProjectsImpW: OWrites[OtarProjects] = Json.writes[OtarProjects]
   implicit val otarProjectsImpR: Reads[OtarProjects] =
     (
       (__ \ "efo_id").read[String] and
         (__ \ "projects").readWithDefault[Seq[OtarProject]](Seq.empty)
-    )(OtarProjects.apply _)
+      ) (OtarProjects.apply _)
 }

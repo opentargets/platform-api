@@ -22,7 +22,7 @@ object CHLibrary {
 }
 
 trait CHColumnExtensionMethods[B1, P1] extends Any with ExtensionMethods[B1, P1] {
-  def uniq = CHLibrary.Uniq.column[Long](n)
+  def uniq: Rep[Long] = CHLibrary.Uniq.column[Long](n)
 }
 
 final class BaseCHColumnExtensionMethods[P1](val c: Rep[P1])
@@ -39,8 +39,10 @@ final class OptionCHColumnExtensionMethods[B1](val c: Rep[Option[B1]])
 final class CHSingleColumnQueryExtensionMethods[B1, P1, C[_]](val q: Query[Rep[P1], _, C])
     extends AnyVal {
   type OptionTM = TypedType[Option[B1]]
-  def uniq(implicit tm: OptionTM) = CHLibrary.Uniq.column[Option[Long]](q.toNode)
-  def any(implicit tm: OptionTM) = CHLibrary.Any.column[Option[B1]](q.toNode)
+
+  def uniq(implicit tm: OptionTM): Rep[Option[Long]] = CHLibrary.Uniq.column[Option[Long]](q.toNode)
+
+  def any(implicit tm: OptionTM): Rep[Option[B1]] = CHLibrary.Any.column[Option[B1]](q.toNode)
 }
 
 trait ClickHouseProfile extends JdbcProfile {
@@ -81,7 +83,7 @@ trait ClickHouseProfile extends JdbcProfile {
     // override protected val concatOperator = Some("||")
     override protected val alwaysAliasSubqueries = false
     override protected val supportsLiteralGroupBy = true
-    override protected val quotedJdbcFns = Some(Nil)
+    override protected val quotedJdbcFns: Some[Nil.type] = Some(Nil)
 
     override def expr(c: Node, skipParens: Boolean = false): Unit = c match {
       case Library.UCase(ch)  => b"upper($ch)"

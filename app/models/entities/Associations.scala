@@ -4,6 +4,7 @@ import clickhouse.rep.SeqRep._
 import models.entities.Configuration._
 import play.api.libs.json.Json
 import slick.jdbc.GetResult
+import play.api.libs.json.OFormat
 
 case class ScoredComponent(id: String, score: Double)
 
@@ -26,7 +27,7 @@ case class Associations(datasources: Seq[DatasourceSettings],
 case class EvidenceSource(datasource: String, datatype: String)
 
 object Associations {
-  val empty = Associations(Seq.empty, None, 0, Vector.empty)
+  val empty: Associations = Associations(Seq.empty, None, 0, Vector.empty)
 
   implicit val getAssociationOTFRowFromDB: GetResult[Association] = {
 
@@ -58,7 +59,7 @@ object Associations {
   implicit val getEvidenceSourceFromDB: GetResult[EvidenceSource] =
     GetResult(r => EvidenceSource(r.<<, r.<<))
 
-  implicit val scoredDataTypeImp = Json.format[ScoredComponent]
-  implicit val AssociationOTFImp = Json.format[Association]
+  implicit val scoredDataTypeImp: OFormat[ScoredComponent] = Json.format[ScoredComponent]
+  implicit val AssociationOTFImp: OFormat[Association] = Json.format[Association]
 
 }

@@ -20,6 +20,7 @@ import play.api.libs.json._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Try
+import com.sksamuel.elastic4s.requests.searches.sort.FieldSort
 
 class ElasticRetriever @Inject()(client: ElasticClient,
                                  hlFields: Seq[String],
@@ -530,11 +531,11 @@ class ElasticRetriever @Inject()(client: ElasticClient,
 object ElasticRetriever extends Logging {
 
   /** aggregationFilterProducer returns a tuple where the first element is the overall list
-    * of filters and the second is a map with the cartesian product of each aggregation with
-    * the complementary list of filters
-    */
+   * of filters and the second is a map with the cartesian product of each aggregation with
+   * the complementary list of filters
+   */
   def aggregationFilterProducer(filters: Seq[AggregationFilter],
-                                mappings: Map[String, AggregationMapping]) = {
+                                mappings: Map[String, AggregationMapping]): (BoolQuery, Map[String, BoolQuery]) = {
     val filtersByName = filters
       .groupBy(_.name)
       .filterKeys(mappings.contains)
@@ -584,14 +585,14 @@ object ElasticRetriever extends Logging {
   }
 
   /** *
-    * SortBy case class use the `fieldName` to sort by and asc if `desc` is false
-    * otherwise desc
-    */
-  def sortByAsc(fieldName: String) = Some(sort.FieldSort(fieldName).asc())
+   * SortBy case class use the `fieldName` to sort by and asc if `desc` is false
+   * otherwise desc
+   */
+  def sortByAsc(fieldName: String): Some[FieldSort] = Some(sort.FieldSort(fieldName).asc())
 
-  def sortByDesc(fieldName: String) = Some(sort.FieldSort(fieldName).desc())
+  def sortByDesc(fieldName: String): Some[FieldSort] = Some(sort.FieldSort(fieldName).desc())
 
-  def sortBy(fieldName: String, order: sort.SortOrder) =
+  def sortBy(fieldName: String, order: sort.SortOrder): Some[FieldSort] =
     Some(sort.FieldSort(field = fieldName, order = order))
 
 }

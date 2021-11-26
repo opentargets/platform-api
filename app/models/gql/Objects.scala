@@ -16,9 +16,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
 
 object Objects extends Logging {
-  implicit val metaDataVersionImp = deriveObjectType[Backend, DataVersion]()
-  implicit val metaAPIVersionImp = deriveObjectType[Backend, APIVersion]()
-  implicit val metaImp = deriveObjectType[Backend, Meta]()
+  implicit val metaDataVersionImp: ObjectType[Backend, DataVersion] = deriveObjectType[Backend, DataVersion]()
+  implicit val metaAPIVersionImp: ObjectType[Backend, APIVersion] = deriveObjectType[Backend, APIVersion]()
+  implicit val metaImp: ObjectType[Backend, Meta] = deriveObjectType[Backend, Meta]()
 
   implicit lazy val targetImp: ObjectType[Backend, Target] = deriveObjectType(
     ObjectTypeDescription("Target entity"),
@@ -159,12 +159,12 @@ object Objects extends Logging {
     )
   )
 
-  implicit lazy val chemicalProbeUrlImp = deriveObjectType[Backend, ChemicalProbeUrl]()
-  implicit lazy val chemicalProbeImp = deriveObjectType[Backend, ChemicalProbe]()
+  implicit lazy val chemicalProbeUrlImp: ObjectType[Backend, ChemicalProbeUrl] = deriveObjectType[Backend, ChemicalProbeUrl]()
+  implicit lazy val chemicalProbeImp: ObjectType[Backend, ChemicalProbe] = deriveObjectType[Backend, ChemicalProbe]()
 
-  implicit lazy val reactomePathwayImp = deriveObjectType[Backend, ReactomePathway]()
+  implicit lazy val reactomePathwayImp: ObjectType[Backend, ReactomePathway] = deriveObjectType[Backend, ReactomePathway]()
   // disease
-  implicit lazy val diseaseSynonymsImp = deriveObjectType[Backend, DiseaseSynonyms]()
+  implicit lazy val diseaseSynonymsImp: ObjectType[Backend, DiseaseSynonyms] = deriveObjectType[Backend, DiseaseSynonyms]()
 
   implicit lazy val diseaseImp: ObjectType[Backend, Disease] = deriveObjectType(
     ObjectTypeDescription("Disease or phenotype entity"),
@@ -319,11 +319,11 @@ object Objects extends Logging {
     )
   )
 
-  implicit val tractabilityImp = deriveObjectType[Backend, Tractability]()
+  implicit val tractabilityImp: ObjectType[Backend, Tractability] = deriveObjectType[Backend, Tractability]()
 
-  implicit val scoredDataTypeImp = deriveObjectType[Backend, ScoredComponent]()
+  implicit val scoredDataTypeImp: ObjectType[Backend, ScoredComponent] = deriveObjectType[Backend, ScoredComponent]()
 
-  implicit val associatedOTFTargetImp = deriveObjectType[Backend, Association](
+  implicit val associatedOTFTargetImp: ObjectType[Backend, Association] = deriveObjectType[Backend, Association](
     ObjectTypeName("AssociatedTarget"),
     ObjectTypeDescription("Associated Target Entity"),
     ReplaceField(
@@ -331,14 +331,14 @@ object Objects extends Logging {
       Field("target", targetImp, Some("Target"), resolve = r => targetsFetcher.defer(r.value.id)))
   )
 
-  implicit val associatedOTFDiseaseImp = deriveObjectType[Backend, Association](
+  implicit val associatedOTFDiseaseImp: ObjectType[Backend, Association] = deriveObjectType[Backend, Association](
     ObjectTypeName("AssociatedDisease"),
     ObjectTypeDescription("Associated Disease Entity"),
     ReplaceField("id",
-                 Field("disease",
-                       diseaseImp,
-                       Some("Disease"),
-                       resolve = r => diseasesFetcher.defer(r.value.id)))
+      Field("disease",
+        diseaseImp,
+        Some("Disease"),
+        resolve = r => diseasesFetcher.defer(r.value.id)))
   )
 
   implicit lazy val reactomeImp: ObjectType[Backend, Reactome] =
@@ -363,25 +363,25 @@ object Objects extends Logging {
                    Field("ancestors",
                          ListType(reactomeImp),
                          Some("Reactome Nodes"),
-                         resolve = r => reactomeFetcher.deferSeqOpt(r.value.ancestors)))
+                     resolve = r => reactomeFetcher.deferSeqOpt(r.value.ancestors)))
     )
 
-  implicit val tissueImp = deriveObjectType[Backend, Tissue](
+  implicit val tissueImp: ObjectType[Backend, Tissue] = deriveObjectType[Backend, Tissue](
     ObjectTypeDescription("Tissue, organ and anatomical system"),
     DocumentField("id", "UBERON id"),
     DocumentField("label", "UBERON tissue label"),
     DocumentField("anatomicalSystems", "Anatomical systems membership"),
     DocumentField("organs", "Organs membership"),
   )
-  implicit val rnaExpressionImp = deriveObjectType[Backend, RNAExpression]()
-  implicit val cellTypeImp = deriveObjectType[Backend, CellType]()
-  implicit val proteinExpressionImp = deriveObjectType[Backend, ProteinExpression]()
-  implicit val expressionImp = deriveObjectType[Backend, Expression]()
-  implicit val expressionsImp = deriveObjectType[Backend, Expressions](
+  implicit val rnaExpressionImp: ObjectType[Backend, RNAExpression] = deriveObjectType[Backend, RNAExpression]()
+  implicit val cellTypeImp: ObjectType[Backend, CellType] = deriveObjectType[Backend, CellType]()
+  implicit val proteinExpressionImp: ObjectType[Backend, ProteinExpression] = deriveObjectType[Backend, ProteinExpression]()
+  implicit val expressionImp: ObjectType[Backend, Expression] = deriveObjectType[Backend, Expression]()
+  implicit val expressionsImp: ObjectType[Backend, Expressions] = deriveObjectType[Backend, Expressions](
     ExcludeFields("id")
   )
 
-  implicit val adverseEventImp = deriveObjectType[Backend, AdverseEvent](
+  implicit val adverseEventImp: ObjectType[Backend, AdverseEvent] = deriveObjectType[Backend, AdverseEvent](
     ObjectTypeDescription("Significant adverse event entries"),
     DocumentField("name", "Meddra term on adverse event"),
     DocumentField("meddraCode", "8 digit unique meddra identification number"),
@@ -390,15 +390,15 @@ object Objects extends Logging {
     ExcludeFields("criticalValue")
   )
 
-  implicit val adverseEventsImp = deriveObjectType[Backend, AdverseEvents](
+  implicit val adverseEventsImp: ObjectType[Backend, AdverseEvents] = deriveObjectType[Backend, AdverseEvents](
     ObjectTypeDescription("Significant adverse events inferred from FAERS reports"),
     DocumentField("count", "Total significant adverse events"),
     DocumentField("criticalValue", "LLR critical value to define significance"),
     DocumentField("rows", "Significant adverse event entries")
   )
 
-  implicit val otarProjectImp = deriveObjectType[Backend, OtarProject]()
-  implicit val otarProjectsImp = deriveObjectType[Backend, OtarProjects]()
+  implicit val otarProjectImp: ObjectType[Backend, OtarProject] = deriveObjectType[Backend, OtarProject]()
+  implicit val otarProjectsImp: ObjectType[Backend, OtarProjects] = deriveObjectType[Backend, OtarProjects]()
 
   // howto doc https://sangria-graphql.org/learn/#macro-based-graphql-type-derivation
   implicit val geneOntologyImp: ObjectType[Backend, GeneOntology] = deriveObjectType[Backend, GeneOntology](
@@ -416,34 +416,34 @@ object Objects extends Logging {
         }))
   )
 
-  implicit val cancerHallmarkImp = deriveObjectType[Backend, CancerHallmark]()
-  implicit val hallmarksAttributeImp = deriveObjectType[Backend, HallmarkAttribute]()
-  implicit val hallmarksImp = deriveObjectType[Backend, Hallmarks]()
+  implicit val cancerHallmarkImp: ObjectType[Backend, CancerHallmark] = deriveObjectType[Backend, CancerHallmark]()
+  implicit val hallmarksAttributeImp: ObjectType[Backend, HallmarkAttribute] = deriveObjectType[Backend, HallmarkAttribute]()
+  implicit val hallmarksImp: ObjectType[Backend, Hallmarks] = deriveObjectType[Backend, Hallmarks]()
 
-  implicit val mousePhenotypeBiologicalModel = deriveObjectType[Backend, BiologicalModels]()
-  implicit val mousePhenotypeModelPhenotypeClasses = deriveObjectType[Backend, ModelPhenotypeClasses]()
+  implicit val mousePhenotypeBiologicalModel: ObjectType[Backend, BiologicalModels] = deriveObjectType[Backend, BiologicalModels]()
+  implicit val mousePhenotypeModelPhenotypeClasses: ObjectType[Backend, ModelPhenotypeClasses] = deriveObjectType[Backend, ModelPhenotypeClasses]()
 
-  implicit val mousePhenotypeImp = deriveObjectType[Backend, MousePhenotype](
+  implicit val mousePhenotypeImp: ObjectType[Backend, MousePhenotype] = deriveObjectType[Backend, MousePhenotype](
     ExcludeFields("targetFromSourceId")
   )
 
-  implicit val tepImp = deriveObjectType[Backend, Tep](
+  implicit val tepImp: ObjectType[Backend, Tep] = deriveObjectType[Backend, Tep](
     ObjectTypeDescription("Target Enabling Package (TEP)"),
     RenameField("targetFromSourceId", "name"),
     RenameField("url", "uri")
   )
 
-  implicit val idAndSourceImp = deriveObjectType[Backend, IdAndSource]()
-  implicit val locationAndSourceImp = deriveObjectType[Backend, LocationAndSource]()
-  implicit val labelAndSourceImp = deriveObjectType[Backend, LabelAndSource]()
-  implicit val genomicLocationImp = deriveObjectType[Backend, GenomicLocation]()
-  implicit val targetClassImp = deriveObjectType[Backend, TargetClass]()
-  implicit val doseTypeImp = deriveObjectType[Backend, SafetyEffects]()
-  implicit val constraintImp = deriveObjectType[Backend, Constraint]()
-  implicit val homologueImp = deriveObjectType[Backend, Homologue]()
-  implicit val targetBiosampleImp = deriveObjectType[Backend, SafetyBiosample]()
-  implicit val targetSafetyStudyImp = deriveObjectType[Backend, SafetyStudy]()
-  implicit val safetyLiabilityImp = deriveObjectType[Backend, SafetyLiability]()
+  implicit val idAndSourceImp: ObjectType[Backend, IdAndSource] = deriveObjectType[Backend, IdAndSource]()
+  implicit val locationAndSourceImp: ObjectType[Backend, LocationAndSource] = deriveObjectType[Backend, LocationAndSource]()
+  implicit val labelAndSourceImp: ObjectType[Backend, LabelAndSource] = deriveObjectType[Backend, LabelAndSource]()
+  implicit val genomicLocationImp: ObjectType[Backend, GenomicLocation] = deriveObjectType[Backend, GenomicLocation]()
+  implicit val targetClassImp: ObjectType[Backend, TargetClass] = deriveObjectType[Backend, TargetClass]()
+  implicit val doseTypeImp: ObjectType[Backend, SafetyEffects] = deriveObjectType[Backend, SafetyEffects]()
+  implicit val constraintImp: ObjectType[Backend, Constraint] = deriveObjectType[Backend, Constraint]()
+  implicit val homologueImp: ObjectType[Backend, Homologue] = deriveObjectType[Backend, Homologue]()
+  implicit val targetBiosampleImp: ObjectType[Backend, SafetyBiosample] = deriveObjectType[Backend, SafetyBiosample]()
+  implicit val targetSafetyStudyImp: ObjectType[Backend, SafetyStudy] = deriveObjectType[Backend, SafetyStudy]()
+  implicit val safetyLiabilityImp: ObjectType[Backend, SafetyLiability] = deriveObjectType[Backend, SafetyLiability]()
 
   // hpo
   implicit lazy val hpoImp: ObjectType[Backend, HPO] = deriveObjectType(
@@ -456,7 +456,7 @@ object Objects extends Logging {
 
   // DiseaseHPO
   // More details here: https://hpo.jax.org/app/help/annotations
-  implicit val diseaseHPOEvidencesImp = deriveObjectType[Backend, DiseaseHPOEvidences](
+  implicit val diseaseHPOEvidencesImp: ObjectType[Backend, DiseaseHPOEvidences] = deriveObjectType[Backend, DiseaseHPOEvidences](
     ObjectTypeDescription(
       "the HPO project provides a large set of phenotype annotations. Source: Phenotype.hpoa"),
     DocumentField(
@@ -466,7 +466,7 @@ object Objects extends Logging {
       "bioCuration",
       "This refers to the center or user making the annotation and the date on which the annotation was made"),
     DocumentField("diseaseFromSourceId",
-                  "This field refers to the database and database identifier. EG. OMIM"),
+      "This field refers to the database and database identifier. EG. OMIM"),
     DocumentField("diseaseFromSource", "Related name from the field diseaseFromSourceId"),
     ExcludeFields("diseaseName"),
     DocumentField("evidenceType",
@@ -508,13 +508,13 @@ object Objects extends Logging {
     )
   )
 
-  implicit val diseaseHPOImp = deriveObjectType[Backend, DiseaseHPO](
+  implicit val diseaseHPOImp: ObjectType[Backend, DiseaseHPO] = deriveObjectType[Backend, DiseaseHPO](
     ObjectTypeDescription("Disease and phenotypes annotations"),
     ReplaceField("phenotype",
-                 Field("phenotypeHPO",
-                       OptionType(hpoImp),
-                       Some("Phenotype entity"),
-                       resolve = r => hposFetcher.deferOpt(r.value.phenotype))),
+      Field("phenotypeHPO",
+        OptionType(hpoImp),
+        Some("Phenotype entity"),
+        resolve = r => hposFetcher.deferOpt(r.value.phenotype))),
     AddFields(
       Field(
         "phenotypeEFO",
@@ -529,31 +529,31 @@ object Objects extends Logging {
     DocumentField("evidence", "List of phenotype annotations.")
   )
 
-  implicit val diseaseHPOsImp = deriveObjectType[Backend, DiseaseHPOs](
+  implicit val diseaseHPOsImp: ObjectType[Backend, DiseaseHPOs] = deriveObjectType[Backend, DiseaseHPOs](
     ObjectTypeDescription("List of Phenotypes associated with the disease"),
     DocumentField("count", "Number of entries"),
     DocumentField("rows", "List of Disease and phenotypes annotations")
   )
 
   // howto doc https://sangria-graphql.org/learn/#macro-based-graphql-type-derivation
-  implicit lazy val linkedDiseasesImp = deriveObjectType[Backend, LinkedIds](
+  implicit lazy val linkedDiseasesImp: ObjectType[Backend, LinkedIds] = deriveObjectType[Backend, LinkedIds](
     ObjectTypeName("LinkedDiseases"),
     ObjectTypeDescription("Linked Disease Entities"),
     ReplaceField("rows",
-                 Field("rows",
-                       ListType(diseaseImp),
-                       Some("Disease List"),
-                       resolve = r => diseasesFetcher.deferSeqOpt(r.value.rows)))
+      Field("rows",
+        ListType(diseaseImp),
+        Some("Disease List"),
+        resolve = r => diseasesFetcher.deferSeqOpt(r.value.rows)))
   )
 
-  implicit lazy val linkedTargetsImp = deriveObjectType[Backend, LinkedIds](
+  implicit lazy val linkedTargetsImp: ObjectType[Backend, LinkedIds] = deriveObjectType[Backend, LinkedIds](
     ObjectTypeName("LinkedTargets"),
     ObjectTypeDescription("Linked Target Entities"),
     ReplaceField("rows",
-                 Field("rows",
-                       ListType(targetImp),
-                       Some("Target List"),
-                       resolve = r => targetsFetcher.deferSeqOpt(r.value.rows)))
+      Field("rows",
+        ListType(targetImp),
+        Some("Target List"),
+        resolve = r => targetsFetcher.deferSeqOpt(r.value.rows)))
   )
 
   implicit lazy val drugReferenceImp: ObjectType[Backend, Reference] =
@@ -572,26 +572,26 @@ object Objects extends Logging {
                            r => targetsFetcher.deferSeqOpt(r.value.targets.getOrElse(Seq.empty))))
     )
 
-  implicit lazy val indicationRowImp = deriveObjectType[Backend, IndicationRow](
+  implicit lazy val indicationRowImp: ObjectType[Backend, IndicationRow] = deriveObjectType[Backend, IndicationRow](
     ReplaceField("disease",
-                 Field("disease",
-                       diseaseImp,
-                       Some("Disease"),
-                       resolve = r => diseasesFetcher.defer(r.value.disease)))
+      Field("disease",
+        diseaseImp,
+        Some("Disease"),
+        resolve = r => diseasesFetcher.defer(r.value.disease)))
   )
 
-  implicit lazy val indicationsImp = deriveObjectType[Backend, Indications](
+  implicit lazy val indicationsImp: ObjectType[Backend, Indications] = deriveObjectType[Backend, Indications](
     ExcludeFields("id"),
     RenameField("indications", "rows"),
     RenameField("indicationCount", "count"),
   )
 
-  implicit lazy val mechanismOfActionImp = deriveObjectType[Backend, MechanismsOfAction]()
+  implicit lazy val mechanismOfActionImp: ObjectType[Backend, MechanismsOfAction] = deriveObjectType[Backend, MechanismsOfAction]()
 
-  implicit lazy val drugCrossReferenceImp = deriveObjectType[Backend, DrugReferences]()
-  implicit lazy val drugWarningReferenceImp = deriveObjectType[Backend, DrugWarningReference]()
+  implicit lazy val drugCrossReferenceImp: ObjectType[Backend, DrugReferences] = deriveObjectType[Backend, DrugReferences]()
+  implicit lazy val drugWarningReferenceImp: ObjectType[Backend, DrugWarningReference] = deriveObjectType[Backend, DrugWarningReference]()
 
-  implicit lazy val drugWarningsImp = deriveObjectType[Backend, DrugWarning](
+  implicit lazy val drugWarningsImp: ObjectType[Backend, DrugWarning] = deriveObjectType[Backend, DrugWarning](
     ObjectTypeDescription("Drug warnings as calculated by ChEMBL"),
     DocumentField("toxicityClass", "High level toxicity category by Meddra System Organ Class"),
     DocumentField("country", "Country issuing warning"),
@@ -743,15 +743,15 @@ object Objects extends Logging {
     )
   )
 
-  implicit val datasourceSettingsImp = deriveObjectType[Backend, DatasourceSettings]()
-  implicit val interactionSettingsImp = deriveObjectType[Backend, LUTableSettings]()
-  implicit val associationSettingsImp = deriveObjectType[Backend, AssociationSettings]()
-  implicit val targetSettingsImp = deriveObjectType[Backend, TargetSettings]()
-  implicit val diseaseSettingsImp = deriveObjectType[Backend, DiseaseSettings]()
-  implicit val harmonicSettingsImp = deriveObjectType[Backend, HarmonicSettings]()
-  implicit val literatureSettingsImp = deriveObjectType[Backend, LiteratureSettings]()
-  implicit val literatureIndexSettingsImp = deriveObjectType[Backend, LiteratureIndexSettings]()
-  implicit val clickhouseSettingsImp = deriveObjectType[Backend, ClickhouseSettings]()
+  implicit val datasourceSettingsImp: ObjectType[Backend, DatasourceSettings] = deriveObjectType[Backend, DatasourceSettings]()
+  implicit val interactionSettingsImp: ObjectType[Backend, LUTableSettings] = deriveObjectType[Backend, LUTableSettings]()
+  implicit val associationSettingsImp: ObjectType[Backend, AssociationSettings] = deriveObjectType[Backend, AssociationSettings]()
+  implicit val targetSettingsImp: ObjectType[Backend, TargetSettings] = deriveObjectType[Backend, TargetSettings]()
+  implicit val diseaseSettingsImp: ObjectType[Backend, DiseaseSettings] = deriveObjectType[Backend, DiseaseSettings]()
+  implicit val harmonicSettingsImp: ObjectType[Backend, HarmonicSettings] = deriveObjectType[Backend, HarmonicSettings]()
+  implicit val literatureSettingsImp: ObjectType[Backend, LiteratureSettings] = deriveObjectType[Backend, LiteratureSettings]()
+  implicit val literatureIndexSettingsImp: ObjectType[Backend, LiteratureIndexSettings] = deriveObjectType[Backend, LiteratureIndexSettings]()
+  implicit val clickhouseSettingsImp: ObjectType[Backend, ClickhouseSettings] = deriveObjectType[Backend, ClickhouseSettings]()
 
   implicit lazy val aggregationImp: ObjectType[Backend, Aggregation] =
     deriveObjectType[Backend, Aggregation]()
@@ -759,17 +759,17 @@ object Objects extends Logging {
     deriveObjectType[Backend, NamedAggregation]()
   implicit lazy val aggregationsImp: ObjectType[Backend, Aggregations] =
     deriveObjectType[Backend, Aggregations]()
-  implicit val evidenceSourceImp = deriveObjectType[Backend, EvidenceSource]()
-  implicit val associatedOTFTargetsImp = deriveObjectType[Backend, Associations](
+  implicit val evidenceSourceImp: ObjectType[Backend, EvidenceSource] = deriveObjectType[Backend, EvidenceSource]()
+  implicit val associatedOTFTargetsImp: ObjectType[Backend, Associations] = deriveObjectType[Backend, Associations](
     ObjectTypeName("AssociatedTargets"),
     ReplaceField("rows",
-                 Field("rows",
-                       ListType(associatedOTFTargetImp),
-                       Some("Associated Targets using (On the fly method)"),
-                       resolve = r => r.value.rows))
+      Field("rows",
+        ListType(associatedOTFTargetImp),
+        Some("Associated Targets using (On the fly method)"),
+        resolve = r => r.value.rows))
   )
 
-  implicit val associatedOTFDiseasesImp = deriveObjectType[Backend, Associations](
+  implicit val associatedOTFDiseasesImp: ObjectType[Backend, Associations] = deriveObjectType[Backend, Associations](
     ObjectTypeName("AssociatedDiseases"),
     ReplaceField("rows",
       Field("rows",
@@ -777,8 +777,8 @@ object Objects extends Logging {
         Some("Associated Targets using (On the fly method)"),
         resolve = r => r.value.rows))
   )
-  implicit val geneOntologyTermImp = deriveObjectType[Backend, GeneOntologyTerm]()
-  implicit val knownDrugReferenceImp = deriveObjectType[Backend, KnownDrugReference]()
+  implicit val geneOntologyTermImp: ObjectType[Backend, GeneOntologyTerm] = deriveObjectType[Backend, GeneOntologyTerm]()
+  implicit val knownDrugReferenceImp: ObjectType[Backend, KnownDrugReference] = deriveObjectType[Backend, KnownDrugReference]()
 
   implicit val URLImp: ObjectType[Backend, URL] = deriveObjectType[Backend, URL](
     ObjectTypeDescription("Source URL for clinical trials, FDA and package inserts"),
@@ -836,15 +836,15 @@ object Objects extends Logging {
       DocumentField("rows", "Clinical precedence entries with known mechanism of action")
     )
 
-  lazy val mUnionType =
+  lazy val mUnionType: UnionType[Backend] =
     UnionType("EntityUnionType", types = List(targetImp, drugImp, diseaseImp))
 
-  implicit val searchResultAggsCategoryImp =
+  implicit val searchResultAggsCategoryImp: ObjectType[Backend, SearchResultAggCategory] =
     deriveObjectType[Backend, models.entities.SearchResultAggCategory]()
-  implicit val searchResultAggsEntityImp =
+  implicit val searchResultAggsEntityImp: ObjectType[Backend, SearchResultAggEntity] =
     deriveObjectType[Backend, models.entities.SearchResultAggEntity]()
-  implicit val searchResultAggsImp = deriveObjectType[Backend, models.entities.SearchResultAggs]()
-  implicit val searchResultImp = deriveObjectType[Backend, models.entities.SearchResult](
+  implicit val searchResultAggsImp: ObjectType[Backend, SearchResultAggs] = deriveObjectType[Backend, models.entities.SearchResultAggs]()
+  implicit val searchResultImp: ObjectType[Backend, SearchResult] = deriveObjectType[Backend, models.entities.SearchResult](
     AddFields(
       Field(
         "object",
@@ -852,15 +852,15 @@ object Objects extends Logging {
         description = Some("Associations for a fixed target"),
         resolve = ctx => {
           ctx.value.entity match {
-            case "target"  => targetsFetcher.deferOpt(ctx.value.id)
+            case "target" => targetsFetcher.deferOpt(ctx.value.id)
             case "disease" => diseasesFetcher.deferOpt(ctx.value.id)
-            case _         => drugsFetcher.deferOpt(ctx.value.id)
+            case _ => drugsFetcher.deferOpt(ctx.value.id)
           }
         }
       ))
   )
 
-  implicit val similarityGQLImp = deriveObjectType[Backend, models.entities.Similarity](
+  implicit val similarityGQLImp: ObjectType[Backend, Similarity] = deriveObjectType[Backend, models.entities.Similarity](
     AddFields(
       Field(
         "object",
@@ -868,27 +868,27 @@ object Objects extends Logging {
         description = Some("Similarity label optionally resolved into an entity"),
         resolve = ctx => {
           ctx.value.category match {
-            case "target"  => targetsFetcher.deferOpt(ctx.value.id)
+            case "target" => targetsFetcher.deferOpt(ctx.value.id)
             case "disease" => diseasesFetcher.deferOpt(ctx.value.id)
-            case _         => drugsFetcher.deferOpt(ctx.value.id)
+            case _ => drugsFetcher.deferOpt(ctx.value.id)
           }
         }
       ))
   )
 
-  implicit val searchResultsImp = deriveObjectType[Backend, models.entities.SearchResults]()
+  implicit val searchResultsImp: ObjectType[Backend, SearchResults] = deriveObjectType[Backend, models.entities.SearchResults]()
 
-  val searchResultsGQLImp = ObjectType(
+  val searchResultsGQLImp: ObjectType[Backend, SearchResults] = ObjectType(
     "SearchResults",
     "Search results",
     fields[Backend, SearchResults](
       Field("aggregations",
-            OptionType(searchResultAggsImp),
-            description = Some("Aggregations"),
-            resolve = _.value.aggregations),
+        OptionType(searchResultAggsImp),
+        description = Some("Aggregations"),
+        resolve = _.value.aggregations),
       Field("hits",
-            ListType(searchResultImp),
-            description = Some("Return combined"),
+        ListType(searchResultImp),
+        description = Some("Return combined"),
             resolve = _.value.hits),
       Field("total",
             LongType,

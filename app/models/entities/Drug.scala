@@ -61,38 +61,38 @@ case class Drug(id: String,
                 description: Option[String])
 
 object Drug {
-  implicit val linkedIdsImpW = Json.format[models.entities.LinkedIds]
-//  implicit val drugWarningRefenceImpW = Json.format[models.entities.DrugWarningReference]
+  implicit val linkedIdsImpW: OFormat[LinkedIds] = Json.format[models.entities.LinkedIds]
+  //  implicit val drugWarningRefenceImpW = Json.format[models.entities.DrugWarningReference]
   implicit val drugWarningsReferenceImpR: Reads[models.entities.DrugWarningReference] = (
     (JsPath \ "ref_id").read[String] and
       (JsPath \ "ref_type").read[String] and
       (JsPath \ "ref_url").read[String]
-    )(DrugWarningReference.apply _)
+    ) (DrugWarningReference.apply _)
   implicit val drugWarningReferenceImpW: OWrites[DrugWarningReference] = Json.writes[DrugWarningReference]
-  implicit val drugWarningImpW = Json.format[models.entities.DrugWarning]
-  implicit val referenceImpW = Json.format[models.entities.Reference]
-  implicit val mechanismOfActionRowImpW = Json.format[models.entities.MechanismOfActionRow]
-  implicit val mechanismOfActionImpW = Json.format[models.entities.MechanismsOfAction]
-  implicit val indicationReferenceImpW = Json.format[models.entities.IndicationReference]
-  implicit val indicationRowImpW = Json.format[models.entities.IndicationRow]
-  implicit val indicationsImpW = Json.format[models.entities.Indications]
-  implicit val mechanismOfActionRaw = Json.format[models.entities.MechanismOfActionRaw]
+  implicit val drugWarningImpW: OFormat[DrugWarning] = Json.format[models.entities.DrugWarning]
+  implicit val referenceImpW: OFormat[Reference] = Json.format[models.entities.Reference]
+  implicit val mechanismOfActionRowImpW: OFormat[MechanismOfActionRow] = Json.format[models.entities.MechanismOfActionRow]
+  implicit val mechanismOfActionImpW: OFormat[MechanismsOfAction] = Json.format[models.entities.MechanismsOfAction]
+  implicit val indicationReferenceImpW: OFormat[IndicationReference] = Json.format[models.entities.IndicationReference]
+  implicit val indicationRowImpW: OFormat[IndicationRow] = Json.format[models.entities.IndicationRow]
+  implicit val indicationsImpW: OFormat[Indications] = Json.format[models.entities.Indications]
+  implicit val mechanismOfActionRaw: OFormat[MechanismOfActionRaw] = Json.format[models.entities.MechanismOfActionRaw]
 
   def mechanismOfActionRaw2MechanismOfAction(raw: Seq[MechanismOfActionRaw]): MechanismsOfAction = {
     val rows =
       raw.map(
         r =>
           MechanismOfActionRow(r.mechanismOfAction,
-                               r.actionType,
-                               r.targetName,
-                               r.targets,
-                               r.references))
+            r.actionType,
+            r.targetName,
+            r.targets,
+            r.references))
     val utt = raw.flatMap(_.targetType).distinct
     val uat = raw.flatMap(_.actionType).distinct
     MechanismsOfAction(rows, uat, utt)
   }
 
-  implicit val DrugXRefImpF = Json.format[models.entities.DrugReferences]
+  implicit val DrugXRefImpF: OFormat[DrugReferences] = Json.format[models.entities.DrugReferences]
 
   private val drugTransformerXRef: Reads[JsObject] = __.json.update(
     /*

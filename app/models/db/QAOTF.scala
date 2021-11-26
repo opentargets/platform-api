@@ -39,19 +39,19 @@ case class QAOTF(tableName: String,
                  size: Int)
     extends Queryable
     with Logging {
-  val A = column("A")
-  val B = column("B")
-  val DS = column("datasource_id")
-  val DT = column("datatype_id")
-  val AData = column("A_search")
-  val BData = column("B_search")
-  val T = column(tableName)
-  val RowID = column("row_id")
-  val RowScore = column("row_score")
-  val maxHS = literal(Harmonic.maxValue(100000, pExponentDefault, 1.0))
+  val A: Column = column("A")
+  val B: Column = column("B")
+  val DS: Column = column("datasource_id")
+  val DT: Column = column("datatype_id")
+  val AData: Column = column("A_search")
+  val BData: Column = column("B_search")
+  val T: Column = column(tableName)
+  val RowID: Column = column("row_id")
+  val RowScore: Column = column("row_score")
+  val maxHS: Column = literal(Harmonic.maxValue(100000, pExponentDefault, 1.0))
     .as(Some("max_hs_score"))
 
-  val BFilterQ = BFilter flatMap {
+  val BFilterQ: Option[Column] = BFilter flatMap {
     case matchStr =>
       val tokens = matchStr
         .split(" ")
@@ -61,13 +61,13 @@ case class QAOTF(tableName: String,
         .toList
 
       tokens match {
-        case h :: Nil         => Some(h)
+        case h :: Nil => Some(h)
         case h1 :: h2 :: rest => Some(F.and(h1, h2, rest: _*))
         case _                => None
       }
   }
 
-  val DSScore = F
+  val DSScore: Column = F
     .arraySum(
       None,
       F.arrayMap(
@@ -78,9 +78,9 @@ case class QAOTF(tableName: String,
     )
     .as(Some("score_datasource"))
 
-  val DSW = F.ifNull(F.any(column("weight")), literal(1.0)).as(Some("datasource_weight"))
+  val DSW: Column = F.ifNull(F.any(column("weight")), literal(1.0)).as(Some("datasource_weight"))
 
-  val queryGroupByDS = {
+  val queryGroupByDS: Query = {
     val WC = F
       .arrayJoin(F.array(datasourceWeights.map(s => F.tuple(literal(s._1), literal(s._2)))))
       .as(Some("weightPair"))
@@ -140,7 +140,7 @@ case class QAOTF(tableName: String,
     )
   }
 
-  def simpleQuery(offset: Int, size: Int) = {
+  def simpleQuery(offset: Int, size: Int): Query = {
     val leftIdsC = F.set((AIDs + AId).map(literal).toSeq)
 
     val nonPP = F.set(nonPropagatedDatasources.map(literal).toSeq)
@@ -197,16 +197,16 @@ case class QAOTF(tableName: String,
     rootQ
   }
 
-  override val query = {
+  override val query: Query = {
     val collectedDS = F
       .arrayReverseSort(Some("x -> x.2"),
-                        F.groupArray(
-                          F.tuple(
-                            F.divide(DSScore.name, maxHS.name),
-                            F.divide(F.multiply(DSScore.name, DSW.name), maxHS.name),
-                            DS,
-                            DT
-                          )))
+        F.groupArray(
+          F.tuple(
+            F.divide(DSScore.name, maxHS.name),
+            F.divide(F.multiply(DSScore.name, DSW.name), maxHS.name),
+            DS,
+            DT
+          )))
       .as(Some("scores_vector"))
 
     val collectedDScored = F

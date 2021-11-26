@@ -35,25 +35,25 @@ class Backend @Inject()(
                          cache: AsyncCacheApi)
     extends Logging {
 
-  implicit val defaultOTSettings = loadConfigurationObject[OTSettings]("ot", config)
-  implicit val defaultESSettings = defaultOTSettings.elasticsearch
+  implicit val defaultOTSettings: OTSettings = loadConfigurationObject[OTSettings]("ot", config)
+  implicit val defaultESSettings: ElasticsearchSettings = defaultOTSettings.elasticsearch
 
   /** return meta information loaded from ot.meta settings */
   lazy val getMeta: Meta = defaultOTSettings.meta
-  lazy val getESClient = ElasticClient(
+  lazy val getESClient: ElasticClient = ElasticClient(
     JavaClient(ElasticProperties(s"http://${defaultESSettings.host}:${defaultESSettings.port}")))
-  val allSearchableIndices = defaultESSettings.entities
+  val allSearchableIndices: Seq[String] = defaultESSettings.entities
     .withFilter(_.searchIndex.isDefined)
     .map(_.searchIndex.get)
 
-  implicit lazy val dbRetriever =
+  implicit lazy val dbRetriever: ClickhouseRetriever =
     new ClickhouseRetriever(dbConfigProvider.get[ClickHouseProfile], defaultOTSettings)
 
   def getStatus(isOk: Boolean): HealthCheck =
     if (isOk) HealthCheck(true, "All good!")
     else HealthCheck(false, "Hmm, something wrong is going on here!")
 
-  implicit lazy val esRetriever =
+  implicit lazy val esRetriever: ElasticRetriever =
     new ElasticRetriever(getESClient, defaultESSettings.highlightFields, allSearchableIndices)
 
   // we must import the dsl
@@ -314,17 +314,17 @@ class Backend @Inject()(
                                   targetSet: Set[String],
                                   filter: Option[String],
                                   orderBy: Option[(String, String)],
-                                  pagination: Option[Pagination]) = {
+                                  pagination: Option[Pagination]): Future[Associations] = {
     val page = pagination.getOrElse(Pagination.mkDefault)
     val dss = datasources.getOrElse(defaultOTSettings.clickhouse.harmonic.datasources)
 
     val weights = dss.map(s => (s.id, s.weight))
     val dontPropagate = dss.withFilter(!_.propagate).map(_.id).toSet
     val aotfQ = QAOTF(defaultOTSettings.clickhouse.disease.associations.name,
-                      disease.id,
-                      _,
-                      _,
-                      filter,
+      disease.id,
+      _,
+      _,
+      filter,
                       orderBy,
                       weights,
                       dontPropagate,

@@ -3,7 +3,7 @@ package models
 import clickhouse.ClickHouseProfile
 import esecuele.Column._
 import esecuele.{Query => Q, _}
-import models.db.{QAOTF, Queryable}
+import models.db.QAOTF
 import models.entities.Associations._
 import models.entities.Configuration.{DatasourceSettings, OTSettings}
 import models.entities._
@@ -49,7 +49,7 @@ class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: O
     }
   }
 
-  def executeQuery[A, B <: Q](q: B)(implicit rconv: GetResult[A]) = {
+  def executeQuery[A, B <: Q](q: B)(implicit rconv: GetResult[A]): Future[Vector[A]] = {
     logger.debug(s"execute query from eselecu Q ${q.toString}")
     val qq = q.as[A]
 
@@ -68,17 +68,17 @@ class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: O
                          BIDs: Set[String],
                          BFilter: Option[String],
                          datasourceSettings: Seq[DatasourceSettings],
-                         pagination: Pagination) = {
+                         pagination: Pagination): Future[Vector[Association]] = {
     val weights = datasourceSettings.map(s => (s.id, s.weight))
     val dontPropagate = datasourceSettings.withFilter(!_.propagate).map(_.id).toSet
     val aotfQ = QAOTF(tableName,
-                      AId,
-                      AIDs,
-                      BIDs,
-                      BFilter,
-                      None,
-                      weights,
-                      dontPropagate,
+      AId,
+      AIDs,
+      BIDs,
+      BFilter,
+      None,
+      weights,
+      dontPropagate,
                       pagination.offset,
                       pagination.size).query.as[Association]
 

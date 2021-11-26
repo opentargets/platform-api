@@ -8,9 +8,9 @@ import sangria.schema.{Field, ListType, LongType, ObjectType, OptionType, String
 case class Publications(count: Long, cursor: Option[String], rows: IndexedSeq[JsValue])
 
 object Publications {
-  def empty(withTotal: Long = 0) = Publications(withTotal, None, IndexedSeq.empty)
+  def empty(withTotal: Long = 0): Publications = Publications(withTotal, None, IndexedSeq.empty)
 
-  val publicationsImp = ObjectType(
+  val publicationsImp: ObjectType[Backend, Publications] = ObjectType(
     "Publications",
     "Publication list",
     fields[Backend, Publications](

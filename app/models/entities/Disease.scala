@@ -25,8 +25,8 @@ case class Disease(id: String,
 
 object Disease extends Logging {
 
-  implicit val DiseaseOntologyImpF = Json.format[models.entities.DiseaseOntology]
-  implicit val DiseaseSynonymsImpF = Json.format[models.entities.DiseaseSynonyms]
+  implicit val DiseaseOntologyImpF: OFormat[DiseaseOntology] = Json.format[models.entities.DiseaseOntology]
+  implicit val DiseaseSynonymsImpF: OFormat[DiseaseSynonyms] = Json.format[models.entities.DiseaseSynonyms]
 
   private val diseaseTransformerSynonyms: Reads[JsObject] = __.json.update(
     /*
@@ -35,8 +35,7 @@ object Disease extends Logging {
     See: https://www.playframework.com/documentation/2.6.x/ScalaJsonTransformers
      */
     __.read[JsObject]
-      .map { o =>
-        {
+      .map { o => {
           if (o.fields.map(_._1).contains("synonyms")) {
             val cr: Seq[(String, JsValue)] = o.value("synonyms").as[JsObject].fields
             val newJsonObjects: Seq[JsObject] =
