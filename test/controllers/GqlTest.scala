@@ -145,9 +145,16 @@ class GqlTest
     "return a valid response" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("CancerGeneCensus_sectionQuery"))
     }
-
+    "return a valid fragment response" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("CancerBiomarkers_CancerBiomarkersEvidenceFragment"))
+    }
   }
 
+  "Cancer biomarker queries" must {
+    "return a valid response" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetDiseaseSize("CancerBiomarkers_CancerBiomarkersEvidence"))
+    }
+  }
   "Cancer hallmarks queries" must {
     "return a valid response for summary fragment" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetFragment("CancerHallmarks_HallmarksSummaryFragment"))
