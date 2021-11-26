@@ -25,6 +25,7 @@ import play.api.libs.json._
 import play.api.{Configuration, Environment, Logging}
 import play.db.NamedDatabase
 
+import scala.collection.immutable.ArraySeq
 import scala.concurrent._
 
 class Backend @Inject()(
@@ -470,11 +471,11 @@ class Backend @Inject()(
 
         val ids = (obj \ "uniques" \ "ids" \ "buckets" \\ "key").map(_.as[String]).toSet
         val uniques = (obj \ "uniques" \\ "value").head.as[Long]
-        val restAggs = (obj - "uniques").fields map { pair =>
+        val restAggs: Seq[NamedAggregation] = ((obj - "uniques").fields map { pair =>
           NamedAggregation(pair._1,
-                           (pair._2 \ "uniques" \\ "value").headOption.map(jv => jv.as[Long]),
-                           (pair._2 \\ "buckets").head.as[Array[entities.Aggregation]])
-        }
+            (pair._2 \ "uniques" \\ "value").headOption.map(jv => jv.as[Long]),
+            ArraySeq.unsafeWrapArray((pair._2 \\ "buckets").head.as[Array[entities.Aggregation]]))
+        }).to(Seq)
 
         Some((Aggregations(uniques, restAggs), ids))
 
@@ -621,11 +622,11 @@ class Backend @Inject()(
         val uniques = (obj \ "uniques" \\ "value").head.as[Long]
         val restAggs = (obj - "uniques").fields map { pair =>
           NamedAggregation(pair._1,
-                           (pair._2 \ "uniques" \\ "value").headOption.map(jv => jv.as[Long]),
-                           (pair._2 \\ "buckets").head.as[Array[entities.Aggregation]])
+            (pair._2 \ "uniques" \\ "value").headOption.map(jv => jv.as[Long]),
+            ArraySeq.unsafeWrapArray((pair._2 \\ "buckets").head.as[Array[entities.Aggregation]]))
         }
 
-        Some((Aggregations(uniques, restAggs), ids))
+        Some((Aggregations(uniques, restAggs.to(Seq)), ids))
 
       case _ => None
     }

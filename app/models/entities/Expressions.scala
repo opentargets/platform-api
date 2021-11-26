@@ -18,14 +18,14 @@ case class Expression(tissue: Tissue, rna: RNAExpression, protein: ProteinExpres
 case class Expressions(id: String, rows: Seq[Expression])
 
 object Expressions {
+  implicit val config = JsonConfiguration(SnakeCase)
+
   implicit val tissueW: OWrites[Tissue] = Json.writes[Tissue]
   implicit val rnaExpressionW: OWrites[RNAExpression] = Json.writes[RNAExpression]
   implicit val cellTypeW: OWrites[CellType] = Json.writes[CellType]
   implicit val proteinExpressionW: OWrites[ProteinExpression] = Json.writes[ProteinExpression]
   implicit val expressionW: OWrites[Expression] = Json.writes[Expression]
   implicit val expressionsW: OWrites[Expressions] = Json.writes[Expressions]
-
-  implicit val config: JsonConfiguration.Aux[Json.MacroOptions] = JsonConfiguration(SnakeCase)
 
   implicit val tissueR: Reads[Tissue] = (
     (__ \ "efo_code").read[String] and

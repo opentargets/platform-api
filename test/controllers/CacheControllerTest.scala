@@ -52,7 +52,7 @@ class CacheControllerTest
       val request = FakeRequest(POST, "/graphql")
         .withHeaders(("Content-Type", "application/json"))
         .withBody(query)
-      Await.result(gqlController.gqlBody.apply(request), 10.second)
+      Await.result(gqlController.gqlBody().apply(request), 10.second)
       // check there is something in the cache
       assert(drugCache.get("CHEMBL221959").isDefined)
 
@@ -68,13 +68,13 @@ class CacheControllerTest
       // given
       val request = FakeRequest(GET, "/cache/clear").withHeaders(("apiKey", apiKey))
       // when
-      val result: Result = Await.result(controller.clearCache.apply(request), 2.second)
+      val result: Result = Await.result(controller.clearCache().apply(request), 2.second)
       // then
       result.header.status mustEqual 200
     }
     "without an apiKey will result in a 403 error code" in {
       // when
-      val result: Result = Await.result(controller.clearCache.apply(request), 2.second)
+      val result: Result = Await.result(controller.clearCache().apply(request), 2.second)
       // then
       result.header.status mustEqual Forbidden.header.status
     }
@@ -82,7 +82,7 @@ class CacheControllerTest
       // given
       val requestWithHeader = FakeRequest(GET, "/cache/clear").withHeaders(("apiKey", "luckyGuess"))
       // when
-      val result: Result = Await.result(controller.clearCache.apply(requestWithHeader), 2.second)
+      val result: Result = Await.result(controller.clearCache().apply(requestWithHeader), 2.second)
       // then
       result.header.status mustEqual Forbidden.header.status
 

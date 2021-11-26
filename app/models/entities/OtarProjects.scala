@@ -10,9 +10,9 @@ case class OtarProject(otarCode: String, status: String, projectName: String, re
 case class OtarProjects(efoId: String, rows: Seq[OtarProject])
 
 object OtarProjects {
+  implicit val config: JsonConfiguration.Aux[Json.MacroOptions] = JsonConfiguration(SnakeCase)
   implicit val otarProjectImpW: OWrites[OtarProject] = Json.writes[OtarProject]
 
-  implicit val config: JsonConfiguration.Aux[Json.MacroOptions] = JsonConfiguration(SnakeCase)
   implicit val otarProjectImpR: Reads[OtarProject] = Json.reads[OtarProject]
 
   implicit val otarProjectsImpW: OWrites[OtarProjects] = Json.writes[OtarProjects]

@@ -34,7 +34,7 @@ class GraphQLControllerTest
         val request = FakeRequest(POST, "/graphql")
           .withHeaders(("Content-Type", "application/json"))
           .withBody(q)
-        contentAsString(controller.gqlBody.apply(request))
+        contentAsString(controller.gqlBody().apply(request))
       }
       }
       val results = responses.zip(chemblIds).filter(s => s._1.contains("errors"))
@@ -56,7 +56,7 @@ class GraphQLControllerTest
           .withBody(q)
         logger.info(s"Test $i of $tests")
         i = i + 1
-        contentAsString(controller.gqlBody.apply(request))
+        contentAsString(controller.gqlBody().apply(request))
       }
       }
       val results = responses.zip(chemblIds).filter(s => s._1.contains("errors"))
@@ -85,9 +85,9 @@ class GraphQLControllerTest
         val request: FakeRequest[JsValue] = FakeRequest(POST, "/graphql")
           .withHeaders(("Content-Type", "application/json"))
           .withBody(parentChildMoAQuery(p, c))
-        val jsObject = Json.parse(contentAsString(controller.gqlBody.apply(request)))
+        val jsObject = Json.parse(contentAsString(controller.gqlBody().apply(request)))
         val drugs: Seq[ParentChildMoAReturn] =
-          (jsObject \ "data" \ "drugs").as[JsArray].value.map(_.as[ParentChildMoAReturn])
+          (jsObject \ "data" \ "drugs").as[JsArray].value.map(_.as[ParentChildMoAReturn]).to(Seq)
         val (parent, child) = (drugs.head, drugs.tail.head)
         assertResult(true, "Parent and child have the same unique targets")(parent.mechanismsOfAction.get.uniqueTargetTypes.sorted sameElements child.mechanismsOfAction.get.uniqueTargetTypes.sorted)
         assertResult(true, "Parent and child have the same unique action types")(parent.mechanismsOfAction.get.uniqueActionTypes.sorted sameElements child.mechanismsOfAction.get.uniqueActionTypes.sorted)
@@ -102,7 +102,7 @@ class GraphQLControllerTest
         val request: FakeRequest[JsValue] = FakeRequest(POST, "/graphql")
           .withHeaders(("Content-Type", "application/json"))
           .withBody(parentChildLinkedTargetQuery(p, c))
-        val jsObject = Json.parse(contentAsString(controller.gqlBody.apply(request)))
+        val jsObject = Json.parse(contentAsString(controller.gqlBody().apply(request)))
         val drugs =
           (jsObject \ "data" \ "drugs").as[JsArray].value.map(_.as[ParentChildLinkedTargets])
         val (d1, d2) = (drugs.head, drugs.tail.head)
@@ -119,7 +119,7 @@ class GraphQLControllerTest
         val request = FakeRequest(POST, "/graphql")
           .withHeaders(("Content-Type", "application/json"))
           .withBody(q)
-        contentAsString(controller.gqlBody.apply(request))
+        contentAsString(controller.gqlBody().apply(request))
       }
       }
       val results = responses.zip(chemblIds).filter(s => s._1.contains("errors"))
@@ -143,7 +143,7 @@ class GraphQLControllerTest
         val request = FakeRequest(POST, "/graphql")
           .withHeaders(("Content-Type", "application/json"))
           .withBody(q)
-        contentAsString(controller.gqlBody.apply(request))
+        contentAsString(controller.gqlBody().apply(request))
       }
       }
       val results = responses.zip(chemblIds).filter(s => s._1.contains("errors"))
@@ -164,7 +164,7 @@ class GraphQLControllerTest
         val request = FakeRequest(POST, "/graphql")
           .withHeaders(("Content-Type", "application/json"))
           .withBody(q)
-        contentAsString(controller.gqlBody.apply(request))
+        contentAsString(controller.gqlBody().apply(request))
       }
       }
       sForAll(responses) { r =>

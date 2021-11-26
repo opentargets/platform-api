@@ -26,7 +26,7 @@ object GqlTest {
    * Retrieves filename from target resources and returns query as string with quotes escaped.
    */
   def getQueryFromFile(filename: String): String = {
-    File(this.getClass.getResource(s"/gqlQueries/$filename.gql").getPath).lines
+    File(this.getClass.getResource(s"/gqlQueries/$filename.gql").getPath).lines()
       .withFilter(_.nonEmpty)
       .map(str =>
         str.flatMap {

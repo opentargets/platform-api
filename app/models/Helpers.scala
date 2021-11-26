@@ -64,7 +64,7 @@ object Helpers extends Logging {
   }
 
   def fromJsValue[A](jObj: JsValue)(implicit reader: Reads[A]): Option[A] = {
-    val source = (__ \ '_source).json.pick
+    val source = (__ \ Symbol("_source")).json.pick
     jObj
       .transform(source)
       .asOpt

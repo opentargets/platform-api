@@ -2,13 +2,14 @@ package models
 
 import com.google.inject.Inject
 import com.sksamuel.elastic4s._
+import com.sksamuel.elastic4s.api.QueryApi
 import com.sksamuel.elastic4s.requests.common.Operator
 import com.sksamuel.elastic4s.requests.searches._
 import com.sksamuel.elastic4s.requests.searches.aggs.AbstractAggregation
+import com.sksamuel.elastic4s.requests.searches.queries.NestedQuery
+import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
 import com.sksamuel.elastic4s.requests.searches.queries.funcscorer._
 import com.sksamuel.elastic4s.requests.searches.queries.matches.MultiMatchQueryBuilderType
-import com.sksamuel.elastic4s.requests.searches.queries.term.TermQuery
-import com.sksamuel.elastic4s.requests.searches.queries.{BoolQuery, NestedQuery}
 import models.entities.Configuration.ElasticsearchEntity
 import models.entities.SearchResults._
 import models.entities._
@@ -21,6 +22,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Try
 import com.sksamuel.elastic4s.requests.searches.sort.FieldSort
+import com.sksamuel.elastic4s.requests.searches.term.TermQuery
 
 class ElasticRetriever @Inject()(client: ElasticClient,
                                  hlFields: Seq[String],
@@ -33,7 +35,7 @@ class ElasticRetriever @Inject()(client: ElasticClient,
 
   import com.sksamuel.elastic4s.ElasticDsl._
 
-  private def decodeSearchAfter(searchAfter: Option[String]): Seq[Any] =
+  private def decodeSearchAfter(searchAfter: Option[String]): collection.Seq[Any] =
     searchAfter
       .map(sa => {
         val vv =
@@ -180,7 +182,7 @@ class ElasticRetriever @Inject()(client: ElasticClient,
             buildF(jObj)
           })
           .withFilter(_.isDefined)
-          .map(_.get)
+          .map(_.get).to(IndexedSeq)
         (mappedHits, aggs)
     }
 
@@ -193,7 +195,7 @@ class ElasticRetriever @Inject()(client: ElasticClient,
               excludedFields: Seq[String] = Seq.empty,
               searchAfter: Option[String] = None): Future[(IndexedSeq[A], Long, Option[String])] = {
 
-    val sa = decodeSearchAfter(searchAfter)
+    val sa: Seq[Any] = decodeSearchAfter(searchAfter).toSeq
     val q = search(esIndex)
       .bool(boolQ)
       .size(pageSize)
@@ -231,7 +233,7 @@ class ElasticRetriever @Inject()(client: ElasticClient,
             buildF(jObj)
           })
           .withFilter(_.isDefined)
-          .map(_.get)
+          .map(_.get).to(IndexedSeq)
 
         val hasNext = !(hits.size < pageSize) && pageSize > 0
 
@@ -258,7 +260,7 @@ class ElasticRetriever @Inject()(client: ElasticClient,
 
     val mustTerms = kv.toSeq.map(p => termsQuery(p._1, p._2))
 
-    val sa = decodeSearchAfter(searchAfter)
+    val sa = decodeSearchAfter(searchAfter).toSeq
     val q = search(esIndex)
       .bool {
         must(mustTerms)
@@ -298,7 +300,7 @@ class ElasticRetriever @Inject()(client: ElasticClient,
             buildF(jObj)
           })
           .withFilter(_.isDefined)
-          .map(_.get)
+          .map(_.get).to(IndexedSeq)
 
         val hasNext = !(hits.size < pageSize) && pageSize > 0
 
@@ -336,7 +338,7 @@ class ElasticRetriever @Inject()(client: ElasticClient,
         .fields("*")
     )
 
-    val searchAfterEntries: Seq[Any] = decodeSearchAfter(searchAfter)
+    val searchAfterEntries: Seq[Any] = decodeSearchAfter(searchAfter).toSeq
 
     val q =
       search(esIndex)
@@ -382,7 +384,7 @@ class ElasticRetriever @Inject()(client: ElasticClient,
             buildF(jObj)
           })
           .withFilter(_.isDefined)
-          .map(_.get)
+          .map(_.get).to(IndexedSeq)
 
         val hasNext = !(hits.size < limitClause._2)
 
@@ -431,7 +433,7 @@ class ElasticRetriever @Inject()(client: ElasticClient,
               .withFilter(_.isDefined)
               .map(_.get)
 
-            mappedHits
+            mappedHits.to(IndexedSeq)
         }
     }
   }
@@ -472,9 +474,9 @@ class ElasticRetriever @Inject()(client: ElasticClient,
       cardinalityAgg("total", "id.raw")
     )
 
-    val filterQueries = boolQuery.must() :: Nil
-    val fnQueries = boolQuery.should(keywordQueryFn, stringQueryFn) :: Nil
-    val mainQuery = boolQuery.must(fnQueries ::: filterQueries)
+    val filterQueries = boolQuery().must() :: Nil
+    val fnQueries = boolQuery().should(keywordQueryFn, stringQueryFn) :: Nil
+    val mainQuery = boolQuery().must(fnQueries ::: filterQueries)
 
     if (qString.nonEmpty) {
       client
@@ -499,7 +501,7 @@ class ElasticRetriever @Inject()(client: ElasticClient,
         }
         .map {
           case (aggregations, hits) =>
-            val aggsJ = Json.parse(aggregations.result.aggregationsAsString)
+            val aggsJ: JsValue = ??? //Json.parse(aggregations.result.aggregationsAsString)
             val aggs = aggsJ.validateOpt[SearchResultAggs] match {
               case JsSuccess(value, _) => value
               case JsError(errors) =>
@@ -538,7 +540,7 @@ object ElasticRetriever extends Logging {
                                 mappings: Map[String, AggregationMapping]): (BoolQuery, Map[String, BoolQuery]) = {
     val filtersByName = filters
       .groupBy(_.name)
-      .filterKeys(mappings.contains)
+      .view.filterKeys(mappings.contains).toMap
       .map {
         case (facet, filters) =>
           val mappedFacet = mappings(facet)
@@ -569,9 +571,9 @@ object ElasticRetriever extends Logging {
         mappings.map(p => p._1 -> filtersByName(p._1)).toList.combinations(namesR.size - 1).toList
 
       val cartesianProd = (namesR zip mappedMappgings).toMap
-        .mapValues(_.foldLeft(BoolQuery()) { (b, q) =>
-          b.withMust(q._2)
-        })
+        .view.mapValues(_.foldLeft(BoolQuery()) { (b, q) =>
+        b.withMust(q._2)
+      }).toMap
 
       logger.debug(s"overall filters $overallFilters")
       cartesianProd foreach { el =>

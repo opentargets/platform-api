@@ -7,10 +7,10 @@ import scala.reflect.io.File
 
 trait GqlItTestInputs {
 
-  lazy val geneInputs = File(this.getClass.getResource(s"/gqlInputs/genes.txt").getPath).lines.toList
-  lazy val diseaseInputs = File(this.getClass.getResource(s"/gqlInputs/efos.txt").getPath).lines.toList
-  lazy val drugInputs = File(this.getClass.getResource(s"/gqlInputs/drugs.txt").getPath).lines.toList
-  lazy val goInputs = File(this.getClass.getResource(s"/gqlInputs/goIds.txt").getPath).lines.toList
+  lazy val geneInputs = File(this.getClass.getResource(s"/gqlInputs/genes.txt").getPath).lines().toList
+  lazy val diseaseInputs = File(this.getClass.getResource(s"/gqlInputs/efos.txt").getPath).lines().toList
+  lazy val drugInputs = File(this.getClass.getResource(s"/gqlInputs/drugs.txt").getPath).lines().toList
+  lazy val goInputs = File(this.getClass.getResource(s"/gqlInputs/goIds.txt").getPath).lines().toList
 
   val aggregationFilterMap: Map[String, Seq[String]] = Map(
     "pathwayTypes" -> Seq(
@@ -79,7 +79,7 @@ trait GqlItTestInputs {
     for {
       name <- Gen.oneOf(aggregationFilterMap.keySet)
       paths <- Gen.someOf(aggregationFilterMap(name))
-    } yield AggregationFilter(name, paths)
+    } yield AggregationFilter(name, paths.to(Seq))
   }
 
   val geneGenerator: Gen[String] = Gen.oneOf(geneInputs)

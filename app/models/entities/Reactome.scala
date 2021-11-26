@@ -13,8 +13,7 @@ case class Reactome(id: String,
 }
 
 object Reactome {
-  implicit val reactomeNodeImpW: OWrites[Reactome] = Json.writes[Reactome]
-
   implicit val config: JsonConfiguration.Aux[Json.MacroOptions] = JsonConfiguration(SnakeCase)
+  implicit val reactomeNodeImpW: OWrites[Reactome] = Json.writes[Reactome]
   implicit val reactomeNodeImpR: Reads[Reactome] = Json.reads[Reactome]
 }
