@@ -1,6 +1,8 @@
 import com.typesafe.sbt.packager.MappingsHelper._
+import scala.language.postfixOps
 import scala.sys.process._
 import sbt._
+
 
 
 name := """ot-platform-api-beta"""
@@ -18,9 +20,14 @@ javacOptions ++= Seq("-encoding", "UTF-8")
 scalacOptions in ThisBuild ++= Seq(
   "-language:_",
   "-Ypartial-unification",
-  "-Xfatal-warnings"
+  "-Xfatal-warnings",
+  "-Ywarn-unused"
 )
 
+// scalafix
+ThisBuild / scalafixDependencies += "org.scala-lang.modules" %% "scala-collection-migrations" % "2.6.0"
+addCompilerPlugin(scalafixSemanticdb)
+scalacOptions ++= List("-Yrangepos", "-P:semanticdb:synthetics:on")
 
 // include resources into the unversal zipped package
 mappings in Universal ++= directory(baseDirectory.value / "resources")
@@ -28,7 +35,6 @@ mappings in Universal ++= directory(baseDirectory.value / "resources")
 resolvers += Resolver.sonatypeRepo("releases")
 
 libraryDependencies ++= Seq(guice, caffeine)
-libraryDependencies += "com.github.pathikrit" %% "better-files" % "3.9.1"
 libraryDependencies += "com.typesafe.slick" %% "slick" % "3.3.3"
 libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test
 libraryDependencies += "org.scalatestplus" %% "scalacheck-1-15" % "3.2.8.0" % Test
@@ -54,13 +60,6 @@ lazy val cats = Seq(
   "org.typelevel" %% "cats-kernel-laws" % catsVersion
 )
 libraryDependencies ++= cats
-
-lazy val monocleVersion = "2.1.0"
-lazy val monocle = Seq(
-  "com.github.julien-truffaut" %% "monocle-core" % monocleVersion,
-  "com.github.julien-truffaut" %% "monocle-macro" % monocleVersion
-)
-libraryDependencies++= monocle
 
 val s4sVersion = "7.9.2"
 libraryDependencies ++= Seq(
