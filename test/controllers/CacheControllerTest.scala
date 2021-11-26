@@ -5,7 +5,6 @@ import java.util.concurrent.TimeUnit
 import akka.util.Timeout
 import controllers.api.v4.graphql.GraphQLController
 import controllers.api.v4.rest.CacheController
-import inputs.DrugInputs
 import models.gql.Fetchers
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatestplus.play.PlaySpec
@@ -27,7 +26,6 @@ class CacheControllerTest
     with GuiceOneAppPerSuite
     with Injecting
     with Logging
-    with DrugInputs
     with ScalaFutures {
 
   lazy val controller: CacheController = inject[CacheController]
