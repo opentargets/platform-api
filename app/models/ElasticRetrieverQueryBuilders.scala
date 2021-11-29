@@ -1,11 +1,9 @@
 package models
 
 import com.sksamuel.elastic4s.ElasticDsl.search
-import com.sksamuel.elastic4s.api.QueryApi
 import com.sksamuel.elastic4s.requests.searches.aggs.AbstractAggregation
-import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
-import com.sksamuel.elastic4s.requests.searches.queries.Query
-import com.sksamuel.elastic4s.requests.searches.SearchRequest
+import com.sksamuel.elastic4s.requests.searches.queries.{BoolQuery, Query}
+import com.sksamuel.elastic4s.requests.searches.{QueryApi, SearchRequest}
 import models.entities.Pagination
 import play.api.Logging
 

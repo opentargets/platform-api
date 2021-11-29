@@ -2,14 +2,13 @@ package models
 
 import com.google.inject.Inject
 import com.sksamuel.elastic4s._
-import com.sksamuel.elastic4s.api.QueryApi
 import com.sksamuel.elastic4s.requests.common.Operator
 import com.sksamuel.elastic4s.requests.searches._
 import com.sksamuel.elastic4s.requests.searches.aggs.AbstractAggregation
-import com.sksamuel.elastic4s.requests.searches.queries.NestedQuery
-import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
+import com.sksamuel.elastic4s.requests.searches.queries.{BoolQuery, NestedQuery}
 import com.sksamuel.elastic4s.requests.searches.queries.funcscorer._
 import com.sksamuel.elastic4s.requests.searches.queries.matches.MultiMatchQueryBuilderType
+import com.sksamuel.elastic4s.requests.searches.queries.term.TermQuery
 import models.entities.Configuration.ElasticsearchEntity
 import models.entities.SearchResults._
 import models.entities._
@@ -22,7 +21,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Try
 import com.sksamuel.elastic4s.requests.searches.sort.FieldSort
-import com.sksamuel.elastic4s.requests.searches.term.TermQuery
 
 class ElasticRetriever @Inject()(client: ElasticClient,
                                  hlFields: Seq[String],
@@ -501,7 +499,7 @@ class ElasticRetriever @Inject()(client: ElasticClient,
         }
         .map {
           case (aggregations, hits) =>
-            val aggsJ: JsValue = ??? //Json.parse(aggregations.result.aggregationsAsString)
+            val aggsJ: JsValue = Json.parse(aggregations.result.aggregationsAsString)
             val aggs = aggsJ.validateOpt[SearchResultAggs] match {
               case JsSuccess(value, _) => value
               case JsError(errors) =>
