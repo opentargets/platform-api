@@ -23,8 +23,6 @@ scalacOptions in ThisBuild ++= Seq(
 )
 scalacOptions in Compile += "-deprecation"
 
-// scalafix
-
 // include resources into the unversal zipped package
 mappings in Universal ++= directory(baseDirectory.value / "resources")
 
