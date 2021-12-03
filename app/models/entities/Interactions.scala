@@ -27,9 +27,9 @@ object Interactions extends Logging {
   )
 
   def find(id: String, dbName: Option[String], pagination: Option[Pagination])(implicit
-      ec: ExecutionContext,
-      esSettings: ElasticsearchSettings,
-      esRetriever: ElasticRetriever
+                                                                               ec: ExecutionContext,
+                                                                               esSettings: ElasticsearchSettings,
+                                                                               esRetriever: ElasticRetriever
   ): Future[Option[Interactions]] = {
 
     val pag = pagination.getOrElse(Pagination.mkDefault)
@@ -68,10 +68,10 @@ object Interactions extends Logging {
   }
 
   def listResources(implicit
-      ec: ExecutionContext,
-      esSettings: ElasticsearchSettings,
-      esRetriever: ElasticRetriever
-  ): Future[Seq[JsValue]] = {
+                    ec: ExecutionContext,
+                    esSettings: ElasticsearchSettings,
+                    esRetriever: ElasticRetriever
+                   ): Future[Seq[JsValue]] = {
 
     val cbIndex = esSettings.entities
       .find(_.name == "interaction_evidence")

@@ -17,6 +17,7 @@ import scala.util.{Failure, Success}
 
 class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: OTSettings)
     extends Logging {
+
   import dbConfig.profile.api._
 
   implicit private def toSQL(q: Q): SQLActionBuilder = sql"""#${q.rep}"""
@@ -25,13 +26,13 @@ class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: O
   val chSettings = config.clickhouse
 
   def getUniqList[A](of: Seq[String], from: String)(implicit
-      rconv: GetResult[A]
+                                                    rconv: GetResult[A]
   ): Future[Vector[A]] = {
     getUniqList[A](of, Column(from))(rconv)
   }
 
   def getUniqList[A](of: Seq[String], from: Column)(implicit
-      rconv: GetResult[A]
+                                                    rconv: GetResult[A]
   ): Future[Vector[A]] = {
     val s = Select(of.map(column))
     val f = From(from)
@@ -64,14 +65,14 @@ class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: O
   }
 
   def getAssociationsOTF(
-      tableName: String,
-      AId: String,
-      AIDs: Set[String],
-      BIDs: Set[String],
-      BFilter: Option[String],
-      datasourceSettings: Seq[DatasourceSettings],
-      pagination: Pagination
-  ): Future[Vector[Association]] = {
+                          tableName: String,
+                          AId: String,
+                          AIDs: Set[String],
+                          BIDs: Set[String],
+                          BFilter: Option[String],
+                          datasourceSettings: Seq[DatasourceSettings],
+                          pagination: Pagination
+                        ): Future[Vector[Association]] = {
     val weights = datasourceSettings.map(s => (s.id, s.weight))
     val dontPropagate = datasourceSettings.withFilter(!_.propagate).map(_.id).toSet
     val aotfQ = QAOTF(

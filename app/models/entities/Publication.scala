@@ -6,11 +6,11 @@ import sangria.schema.{Field, ListType, LongType, ObjectType, OptionType, String
 import slick.jdbc.GetResult
 
 case class Publication(
-    pmid: String,
-    pmcid: Option[String],
-    date: String,
-    sentences: Option[JsValue]
-)
+                        pmid: String,
+                        pmcid: Option[String],
+                        date: String,
+                        sentences: Option[JsValue]
+                      )
 
 object Publication {
   implicit val getSimilarityRowFromDB: GetResult[Publication] =

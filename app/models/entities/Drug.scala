@@ -4,78 +4,80 @@ import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json._
 
 case class DrugWarningReference(id: String, source: String, url: String)
+
 case class DrugWarning(
-    toxicityClass: Option[String],
-    country: Option[String],
-    description: Option[String],
-    references: Option[Seq[DrugWarningReference]],
-    warningType: String,
-    year: Option[Int],
-    meddraSocCode: Option[Int]
-)
+                        toxicityClass: Option[String],
+                        country: Option[String],
+                        description: Option[String],
+                        references: Option[Seq[DrugWarningReference]],
+                        warningType: String,
+                        year: Option[Int],
+                        meddraSocCode: Option[Int]
+                      )
 
 case class Reference(ids: Option[Seq[String]], source: String, urls: Option[Seq[String]])
 
 case class IndicationReference(ids: Option[Seq[String]], source: String)
 
 case class MechanismOfActionRow(
-    mechanismOfAction: String,
-    actionType: Option[String],
-    targetName: Option[String],
-    targets: Option[Seq[String]],
-    references: Option[Seq[Reference]]
-)
+                                 mechanismOfAction: String,
+                                 actionType: Option[String],
+                                 targetName: Option[String],
+                                 targets: Option[Seq[String]],
+                                 references: Option[Seq[Reference]]
+                               )
 
 case class IndicationRow(
-    maxPhaseForIndication: Long,
-    disease: String,
-    references: Option[Seq[IndicationReference]]
-)
+                          maxPhaseForIndication: Long,
+                          disease: String,
+                          references: Option[Seq[IndicationReference]]
+                        )
 
 case class LinkedIds(count: Int, rows: Seq[String])
 
 case class Indications(
-    id: String,
-    indications: Seq[IndicationRow],
-    indicationCount: Long,
-    approvedIndications: Option[Seq[String]]
-)
+                        id: String,
+                        indications: Seq[IndicationRow],
+                        indicationCount: Long,
+                        approvedIndications: Option[Seq[String]]
+                      )
 
 case class MechanismsOfAction(
-    rows: Seq[MechanismOfActionRow],
-    uniqueActionTypes: Seq[String],
-    uniqueTargetTypes: Seq[String]
-)
+                               rows: Seq[MechanismOfActionRow],
+                               uniqueActionTypes: Seq[String],
+                               uniqueTargetTypes: Seq[String]
+                             )
 
 case class MechanismOfActionRaw(
-    chemblIds: Seq[String],
-    targets: Option[Seq[String]],
-    mechanismOfAction: String,
-    actionType: Option[String],
-    targetType: Option[String],
-    targetName: Option[String],
-    references: Option[Seq[Reference]]
-)
+                                 chemblIds: Seq[String],
+                                 targets: Option[Seq[String]],
+                                 mechanismOfAction: String,
+                                 actionType: Option[String],
+                                 targetType: Option[String],
+                                 targetName: Option[String],
+                                 references: Option[Seq[Reference]]
+                               )
+
 case class DrugReferences(source: String, reference: Seq[String])
 
 case class Drug(
-    id: String,
-    name: String,
-    synonyms: Seq[String],
-    tradeNames: Seq[String],
-    childChemblIds: Option[Seq[String]],
-    yearOfFirstApproval: Option[Int],
-    drugType: String,
-    isApproved: Option[Boolean],
-    crossReferences: Option[Seq[DrugReferences]],
-    parentId: Option[String],
-    maximumClinicalTrialPhase: Option[Int],
-    hasBeenWithdrawn: Boolean,
-    linkedDiseases: Option[LinkedIds],
-    linkedTargets: Option[LinkedIds],
-    blackBoxWarning: Boolean,
-    description: Option[String]
-)
+                 id: String,
+                 name: String,
+                 synonyms: Seq[String],
+                 tradeNames: Seq[String],
+                 childChemblIds: Option[Seq[String]],
+                 yearOfFirstApproval: Option[Int],
+                 drugType: String,
+                 isApproved: Option[Boolean],
+                 crossReferences: Option[Seq[DrugReferences]],
+                 parentId: Option[String],
+                 maximumClinicalTrialPhase: Option[Int],
+                 hasBeenWithdrawn: Boolean,
+                 linkedDiseases: Option[LinkedIds],
+                 linkedTargets: Option[LinkedIds],
+                 blackBoxWarning: Boolean,
+                 description: Option[String]
+               )
 
 object Drug {
   implicit val linkedIdsImpW: OFormat[LinkedIds] = Json.format[models.entities.LinkedIds]
@@ -84,7 +86,7 @@ object Drug {
     (JsPath \ "ref_id").read[String] and
       (JsPath \ "ref_type").read[String] and
       (JsPath \ "ref_url").read[String]
-  )(DrugWarningReference.apply _)
+    ) (DrugWarningReference.apply _)
   implicit val drugWarningReferenceImpW: OWrites[DrugWarningReference] =
     Json.writes[DrugWarningReference]
   implicit val drugWarningImpW: OFormat[DrugWarning] = Json.format[models.entities.DrugWarning]

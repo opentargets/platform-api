@@ -16,10 +16,10 @@ object Harmonic {
     (0 until vSize).foldLeft(0d)((acc: Double, n: Int) => acc + (maxScore / pow(1d + n, pExponent)))
 
   private def mkHSColumn(
-      col: Column,
-      maxHS: Column,
-      propagateCondition: Option[Column]
-  ): Seq[Column] = {
+                          col: Column,
+                          maxHS: Column,
+                          propagateCondition: Option[Column]
+                        ): Seq[Column] = {
     val colName = Some(col.name.toString.replaceAll("\\.", "__") + "_v")
 
     /*
@@ -46,22 +46,23 @@ object Harmonic {
   }
 
   /** Harmonic CH SQL dsl to compute associations on the fly
-    * @param fixedCol if your `queryColname` is target_id it needs to be disease_id
-    * @param queryColName the other entity you are returning from `fixedCol` so target_id
-    * @param table the table name used for the computation
-    * @param datasources the configuration of datasources that are used to compute all harmonics
-    * @param expansionTable it is used if Some
-    * @param pagination page and size to return
-    */
+   *
+   * @param fixedCol       if your `queryColname` is target_id it needs to be disease_id
+   * @param queryColName   the other entity you are returning from `fixedCol` so target_id
+   * @param table          the table name used for the computation
+   * @param datasources    the configuration of datasources that are used to compute all harmonics
+   * @param expansionTable it is used if Some
+   * @param pagination     page and size to return
+   */
   def apply(
-      fixedCol: String,
-      queryColName: String,
-      queryColValue: String,
-      table: String,
-      datasources: Seq[DatasourceSettings],
-      expansionTable: Option[LUTableSettings],
-      pagination: Pagination
-  ): Query = {
+             fixedCol: String,
+             queryColName: String,
+             queryColValue: String,
+             table: String,
+             datasources: Seq[DatasourceSettings],
+             expansionTable: Option[LUTableSettings],
+             pagination: Pagination
+           ): Query = {
     val idCol = Column(fixedCol)
     val qColValueCol = literal(queryColValue)
     val qCol = Column(queryColName)

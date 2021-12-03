@@ -23,10 +23,10 @@ import scala.concurrent.duration.DurationInt
 
 class CacheControllerTest
     extends PlaySpec
-    with GuiceOneAppPerSuite
-    with Injecting
-    with Logging
-    with ScalaFutures {
+      with GuiceOneAppPerSuite
+      with Injecting
+      with Logging
+      with ScalaFutures {
 
   lazy val controller: CacheController = inject[CacheController]
   lazy val gqlController: GraphQLController = inject[GraphQLController]

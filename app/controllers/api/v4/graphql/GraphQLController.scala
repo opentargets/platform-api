@@ -14,11 +14,11 @@ import scala.util.{Failure, Success}
 import models.entities.TooComplexQueryError._
 
 @Singleton
-class GraphQLController @Inject() (implicit
-    ec: ExecutionContext,
-    dbTables: Backend,
-    cc: ControllerComponents
-) extends AbstractController(cc) {
+class GraphQLController @Inject()(implicit
+                                  ec: ExecutionContext,
+                                  dbTables: Backend,
+                                  cc: ControllerComponents
+                                 ) extends AbstractController(cc) {
 
   def options: Action[AnyContent] = Action {
     NoContent
@@ -35,8 +35,8 @@ class GraphQLController @Inject() (implicit
 
     val variables = (request.body \ "variables").toOption.flatMap {
       case JsString(vars) => Some(parseVariables(vars))
-      case obj: JsObject  => Some(obj)
-      case _              => None
+      case obj: JsObject => Some(obj)
+      case _ => None
     }
 
     executeQuery(query, variables, operation)

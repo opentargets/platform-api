@@ -19,14 +19,14 @@ object Configuration {
   case class ElasticsearchEntity(name: String, index: String, searchIndex: Option[String])
 
   /** elasticsearch settings class set capture its configuration and the entities are
-    * stored there
-    */
+   * stored there
+   */
   case class ElasticsearchSettings(
-      host: String,
-      port: Int,
-      entities: Seq[ElasticsearchEntity],
-      highlightFields: Seq[String]
-  )
+                                    host: String,
+                                    port: Int,
+                                    entities: Seq[ElasticsearchEntity],
+                                    highlightFields: Seq[String]
+                                  )
 
   case class LUTableSettings(label: String, name: String, key: String, field: Option[String])
 
@@ -44,26 +44,26 @@ object Configuration {
   case class HarmonicSettings(pExponent: Int, datasources: Seq[DatasourceSettings])
 
   /** ClickHouse settings stores the configuration for the entities it handles.
-    * Target Disease and Harmonic settings used to compute associations on the fly
-    * and LUTs for interaction expansions
-    */
+   * Target Disease and Harmonic settings used to compute associations on the fly
+   * and LUTs for interaction expansions
+   */
   case class ClickhouseSettings(
-      target: TargetSettings,
-      disease: DiseaseSettings,
-      similarities: AssociationSettings,
-      harmonic: HarmonicSettings,
-      literature: LiteratureSettings,
-      literatureIndex: LiteratureIndexSettings
-  )
+                                 target: TargetSettings,
+                                 disease: DiseaseSettings,
+                                 similarities: AssociationSettings,
+                                 harmonic: HarmonicSettings,
+                                 literature: LiteratureSettings,
+                                 literatureIndex: LiteratureIndexSettings
+                               )
 
   /** main Open Targets configuration object. It keeps track of meta, elasticsearch and clickhouse
-    * configuration.
-    */
+   * configuration.
+   */
   case class OTSettings(
-      meta: Meta,
-      elasticsearch: ElasticsearchSettings,
-      clickhouse: ClickhouseSettings
-  )
+                         meta: Meta,
+                         elasticsearch: ElasticsearchSettings,
+                         clickhouse: ClickhouseSettings
+                       )
 
   implicit val metaDataVersionJSONImp: OFormat[DataVersion] = Json.format[DataVersion]
   implicit val metaAPIVersionJSONImp: OFormat[APIVersion] = Json.format[APIVersion]

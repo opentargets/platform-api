@@ -62,7 +62,7 @@ trait ClickHouseProfile extends JdbcProfile {
       - JdbcCapabilities.supportsByte)
 
   class ModelBuilder(mTables: Seq[MTable], ignoreInvalidDefaults: Boolean)(implicit
-      ec: ExecutionContext
+                                                                           ec: ExecutionContext
   ) extends JdbcModelBuilder(mTables, ignoreInvalidDefaults)
 
   override val columnTypes = new JdbcTypes
@@ -82,8 +82,8 @@ trait ClickHouseProfile extends JdbcProfile {
     new ColumnDDLBuilderCH(column)
 
   override def createInsertActionExtensionMethods[T](
-      compiled: CompiledInsert
-  ): InsertActionExtensionMethods[T] =
+                                                      compiled: CompiledInsert
+                                                    ): InsertActionExtensionMethods[T] =
     new CountingInsertActionComposerImplCH[T](compiled)
 
   class QueryBuilderCH(tree: Node, state: CompilerState) extends super.QueryBuilder(tree, state) {
@@ -93,11 +93,11 @@ trait ClickHouseProfile extends JdbcProfile {
     override protected val quotedJdbcFns: Some[Nil.type] = Some(Nil)
 
     override def expr(c: Node, skipParens: Boolean = false): Unit = c match {
-      case Library.UCase(ch)  => b"upper($ch)"
-      case Library.LCase(ch)  => b"lower($ch)"
-      case Library.User()     => b"''"
+      case Library.UCase(ch) => b"upper($ch)"
+      case Library.LCase(ch) => b"lower($ch)"
+      case Library.User() => b"''"
       case Library.Database() => b"currentDatabase()"
-      case _                  => super.expr(c, skipParens)
+      case _ => super.expr(c, skipParens)
     }
   }
 
@@ -110,26 +110,28 @@ trait ClickHouseProfile extends JdbcProfile {
   class ColumnDDLBuilderCH(column: FieldSymbol) extends super.ColumnDDLBuilder(column)
 
   class CountingInsertActionComposerImplCH[U](compiled: CompiledInsert)
-      extends super.CountingInsertActionComposerImpl[U](compiled)
+    extends super.CountingInsertActionComposerImpl[U](compiled)
 
   trait ClickHouseAPI extends API {
     // nice page to read about extending profile apis
     // https://virtuslab.com/blog/smooth-operator-with-slick-3/
 
     implicit def chSingleColumnQueryExtensionMethods[B1: BaseTypedType, C[_]](
-        q: Query[Rep[B1], _, C]
-    ): CHSingleColumnQueryExtensionMethods[B1, B1, C] =
+                                                                               q: Query[Rep[B1], _, C]
+                                                                             ): CHSingleColumnQueryExtensionMethods[B1, B1, C] =
       new CHSingleColumnQueryExtensionMethods[B1, B1, C](q)
 
     implicit def chSingleOptionColumnQueryExtensionMethods[B1: BaseTypedType, C[_]](
-        q: Query[Rep[Option[B1]], _, C]
-    ): CHSingleColumnQueryExtensionMethods[B1, Option[B1], C] =
+                                                                                     q: Query[Rep[Option[B1]], _, C]
+                                                                                   ): CHSingleColumnQueryExtensionMethods[B1, Option[B1], C] =
       new CHSingleColumnQueryExtensionMethods[B1, Option[B1], C](q)
+
     implicit def chColumnExtensionMethods[B1](c: Rep[B1])(implicit
-        tm: BaseTypedType[B1] /* with NumericTypedType*/
+                                                          tm: BaseTypedType[B1] /* with NumericTypedType*/
     ): BaseCHColumnExtensionMethods[B1] = new BaseCHColumnExtensionMethods[B1](c)
+
     implicit def chOptionColumnExtensionMethods[B1](c: Rep[Option[B1]])(implicit
-        tm: BaseTypedType[B1] /* with NumericTypedType*/
+                                                                        tm: BaseTypedType[B1] /* with NumericTypedType*/
     ): OptionCHColumnExtensionMethods[B1] = new OptionCHColumnExtensionMethods[B1](c)
   }
 

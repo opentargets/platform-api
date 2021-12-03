@@ -163,8 +163,8 @@ object Objects extends Logging {
             ctx arg BFilterString,
             (ctx arg scoreSorting) map (_.split(" ").take(2).toList match {
               case a :: b :: Nil => (a, b)
-              case a :: Nil      => (a, "desc")
-              case _             => ("score", "desc")
+              case a :: Nil => (a, "desc")
+              case _ => ("score", "desc")
             }),
             ctx arg pageArg
           )
@@ -341,8 +341,8 @@ object Objects extends Logging {
             ctx arg BFilterString,
             (ctx arg scoreSorting) map (_.split(" ").take(2).toList match {
               case a :: b :: Nil => (a, b)
-              case a :: Nil      => (a, "desc")
-              case _             => ("score", "desc")
+              case a :: Nil => (a, "desc")
+              case _ => ("score", "desc")
             }),
             ctx arg pageArg
           )
@@ -539,71 +539,71 @@ object Objects extends Logging {
   // DiseaseHPO
   // More details here: https://hpo.jax.org/app/help/annotations
   implicit val diseaseHPOEvidencesImp: ObjectType[Backend, DiseaseHPOEvidences] =
-    deriveObjectType[Backend, DiseaseHPOEvidences](
-      ObjectTypeDescription(
-        "the HPO project provides a large set of phenotype annotations. Source: Phenotype.hpoa"
-      ),
-      DocumentField(
-        "aspect",
-        "One of P (Phenotypic abnormality), I (inheritance), C (onset and clinical course). Might be null (MONDO)"
-      ),
-      DocumentField(
-        "bioCuration",
-        "This refers to the center or user making the annotation and the date on which the annotation was made"
-      ),
-      DocumentField(
-        "diseaseFromSourceId",
-        "This field refers to the database and database identifier. EG. OMIM"
-      ),
-      DocumentField("diseaseFromSource", "Related name from the field diseaseFromSourceId"),
-      ExcludeFields("diseaseName"),
-      DocumentField(
-        "evidenceType",
-        "This field indicates the level of evidence supporting the annotation."
-      ),
-      DocumentField("frequency", "A term-id from the HPO-sub-ontology"),
-      ReplaceField(
+  deriveObjectType[Backend, DiseaseHPOEvidences](
+    ObjectTypeDescription(
+      "the HPO project provides a large set of phenotype annotations. Source: Phenotype.hpoa"
+    ),
+    DocumentField(
+      "aspect",
+      "One of P (Phenotypic abnormality), I (inheritance), C (onset and clinical course). Might be null (MONDO)"
+    ),
+    DocumentField(
+      "bioCuration",
+      "This refers to the center or user making the annotation and the date on which the annotation was made"
+    ),
+    DocumentField(
+      "diseaseFromSourceId",
+      "This field refers to the database and database identifier. EG. OMIM"
+    ),
+    DocumentField("diseaseFromSource", "Related name from the field diseaseFromSourceId"),
+    ExcludeFields("diseaseName"),
+    DocumentField(
+      "evidenceType",
+      "This field indicates the level of evidence supporting the annotation."
+    ),
+    DocumentField("frequency", "A term-id from the HPO-sub-ontology"),
+    ReplaceField(
+      "modifiers",
+      Field(
         "modifiers",
-        Field(
-          "modifiers",
-          ListType(hpoImp),
-          Some("HP terms from the Clinical modifier subontology"),
-          resolve = r => hposFetcher.deferSeqOpt(r.value.modifiers)
-        )
-      ),
-      ReplaceField(
+        ListType(hpoImp),
+        Some("HP terms from the Clinical modifier subontology"),
+        resolve = r => hposFetcher.deferSeqOpt(r.value.modifiers)
+      )
+    ),
+    ReplaceField(
+      "onset",
+      Field(
         "onset",
-        Field(
-          "onset",
-          ListType(hpoImp),
-          Some("A term-id from the HPO-sub-ontology below the term Age of onset."),
-          resolve = r => hposFetcher.deferSeqOpt(r.value.onset)
-        )
-      ),
-      DocumentField(
-        "qualifierNot",
-        "This optional field can be used to qualify the annotation. Values: [True or False]"
-      ),
-      DocumentField(
-        "references",
-        "This field indicates the source of the information used for the annotation (phenotype.hpoa)"
-      ),
-      DocumentField(
-        "sex",
-        "This field contains the strings MALE or FEMALE if the annotation in question is limited to males or females."
-      ),
-      DocumentField("resource", "Possible source mapping: HPO or MONDO"),
-      AddFields(
-        Field(
-          "frequencyHPO",
-          OptionType(hpoImp),
-          Some("HPO Entity"),
-          resolve = r => {
-            hposFetcher.deferOpt(r.value.frequency)
-          }
-        )
+        ListType(hpoImp),
+        Some("A term-id from the HPO-sub-ontology below the term Age of onset."),
+        resolve = r => hposFetcher.deferSeqOpt(r.value.onset)
+      )
+    ),
+    DocumentField(
+      "qualifierNot",
+      "This optional field can be used to qualify the annotation. Values: [True or False]"
+    ),
+    DocumentField(
+      "references",
+      "This field indicates the source of the information used for the annotation (phenotype.hpoa)"
+    ),
+    DocumentField(
+      "sex",
+      "This field contains the strings MALE or FEMALE if the annotation in question is limited to males or females."
+    ),
+    DocumentField("resource", "Possible source mapping: HPO or MONDO"),
+    AddFields(
+      Field(
+        "frequencyHPO",
+        OptionType(hpoImp),
+        Some("HPO Entity"),
+        resolve = r => {
+          hposFetcher.deferOpt(r.value.frequency)
+        }
       )
     )
+  )
 
   implicit val diseaseHPOImp: ObjectType[Backend, DiseaseHPO] =
     deriveObjectType[Backend, DiseaseHPO](
@@ -1024,9 +1024,9 @@ object Objects extends Logging {
           description = Some("Associations for a fixed target"),
           resolve = ctx => {
             ctx.value.entity match {
-              case "target"  => targetsFetcher.deferOpt(ctx.value.id)
+              case "target" => targetsFetcher.deferOpt(ctx.value.id)
               case "disease" => diseasesFetcher.deferOpt(ctx.value.id)
-              case _         => drugsFetcher.deferOpt(ctx.value.id)
+              case _ => drugsFetcher.deferOpt(ctx.value.id)
             }
           }
         )
@@ -1042,9 +1042,9 @@ object Objects extends Logging {
           description = Some("Similarity label optionally resolved into an entity"),
           resolve = ctx => {
             ctx.value.category match {
-              case "target"  => targetsFetcher.deferOpt(ctx.value.id)
+              case "target" => targetsFetcher.deferOpt(ctx.value.id)
               case "disease" => diseasesFetcher.deferOpt(ctx.value.id)
-              case _         => drugsFetcher.deferOpt(ctx.value.id)
+              case _ => drugsFetcher.deferOpt(ctx.value.id)
             }
           }
         )

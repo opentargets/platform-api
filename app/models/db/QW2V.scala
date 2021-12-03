@@ -7,13 +7,13 @@ import esecuele.{Query => Q}
 import play.api.Logging
 
 case class QW2V(
-    tableName: String,
-    categories: List[String],
-    labels: Set[String],
-    threshold: Double,
-    size: Int
-) extends Queryable
-    with Logging {
+                 tableName: String,
+                 categories: List[String],
+                 labels: Set[String],
+                 threshold: Double,
+                 size: Int
+               ) extends Queryable
+  with Logging {
 
   require(labels.nonEmpty)
 

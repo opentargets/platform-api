@@ -14,14 +14,14 @@ import scala.concurrent.{ExecutionContext, Future}
 object Interaction extends Logging {
 
   case class Key(
-      intA: String,
-      intB: String,
-      targetA: String,
-      targetB: Option[String],
-      intABiologicalRole: String,
-      intBBiologicalRole: String,
-      sourceDatabase: String
-  )
+                  intA: String,
+                  intB: String,
+                  targetA: String,
+                  targetB: Option[String],
+                  intABiologicalRole: String,
+                  intBBiologicalRole: String,
+                  sourceDatabase: String
+                )
 
   implicit val interactionKeyJSON: OFormat[Key] = Json.format[Key]
 
@@ -257,9 +257,9 @@ object Interaction extends Logging {
   )
 
   def findEvidences(interaction: Key)(implicit
-      ec: ExecutionContext,
-      esSettings: ElasticsearchSettings,
-      esRetriever: ElasticRetriever
+                                      ec: ExecutionContext,
+                                      esSettings: ElasticsearchSettings,
+                                      esRetriever: ElasticRetriever
   ): Future[IndexedSeq[JsValue]] = {
 
     val pag = Pagination(0, 10000)

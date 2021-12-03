@@ -39,12 +39,13 @@ object Helpers extends Logging {
   object Base64Engine extends Logging {
     def encode(msg: String): String =
       java.util.Base64.getEncoder.encode(msg.getBytes).map(_.toChar).mkString
+
     def decode(msg: String): String =
       java.util.Base64.getDecoder.decode(msg.getBytes).map(_.toChar).mkString
   }
 
   def loadConfigurationObject[T](key: String, config: Configuration)(implicit
-      tReader: Reads[T]
+                                                                     tReader: Reads[T]
   ): T = {
     val defaultHarmonicOptions = Json
       .parse(
@@ -58,7 +59,7 @@ object Helpers extends Logging {
   }
 
   def loadConfigurationObjectList[T](key: String, config: Configuration)(implicit
-      tReader: Reads[T]
+                                                                         tReader: Reads[T]
   ): Seq[T] = {
     val defaultHarmonicDatasourceOptions = config.underlying
       .getObjectList(key)
