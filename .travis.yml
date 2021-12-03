@@ -21,6 +21,7 @@ before_cache:
   - find $HOME/.sbt        -name "*.lock"               -print -delete
 script:
   - sbt ++$TRAVIS_SCALA_VERSION clean compile
+  - if [ "$TRAVIS_PULL_REQUEST" = "true" ]; then sbt ++${TRAVIS_SCALA_VERSION} scalafmtCheck; fi
   - sbt ++$TRAVIS_SCALA_VERSION coverage "testOnly * -- -l test_configuration.IntegrationTestTag" coverageReport
   - sbt ++$TRAVIS_SCALA_VERSION dist
 deploy:
