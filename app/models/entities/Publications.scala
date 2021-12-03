@@ -15,10 +15,7 @@ object Publications {
     "Publication list",
     fields[Backend, Publications](
       Field("count", LongType, description = None, resolve = _.value.count),
-      Field("cursor",
-        OptionType(StringType),
-        description = None,
-        resolve = _.value.cursor),
+      Field("cursor", OptionType(StringType), description = None, resolve = _.value.cursor),
       Field("rows", ListType(publicationImp), description = None, resolve = _.value.rows)
     )
   )

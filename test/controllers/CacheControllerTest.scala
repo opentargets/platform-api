@@ -22,7 +22,7 @@ import scala.concurrent.Await
 import scala.concurrent.duration.DurationInt
 
 class CacheControllerTest
-  extends PlaySpec
+    extends PlaySpec
     with GuiceOneAppPerSuite
     with Injecting
     with Logging
@@ -46,7 +46,8 @@ class CacheControllerTest
       val drugCache = Fetchers.drugsFetcherCache
 
       val query = Json.parse(
-        """{ "query": "query { drugs(chemblIds: [\"CHEMBL221959\", \"CHEMBL2103743\"]) { id } }"}""")
+        """{ "query": "query { drugs(chemblIds: [\"CHEMBL221959\", \"CHEMBL2103743\"]) { id } }"}"""
+      )
       val request = FakeRequest(POST, "/graphql")
         .withHeaders(("Content-Type", "application/json"))
         .withBody(query)

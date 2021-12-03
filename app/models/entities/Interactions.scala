@@ -26,10 +26,11 @@ object Interactions extends Logging {
     )
   )
 
-  def find(id: String, dbName: Option[String], pagination: Option[Pagination])(
-      implicit ec: ExecutionContext,
+  def find(id: String, dbName: Option[String], pagination: Option[Pagination])(implicit
+      ec: ExecutionContext,
       esSettings: ElasticsearchSettings,
-      esRetriever: ElasticRetriever): Future[Option[Interactions]] = {
+      esRetriever: ElasticRetriever
+  ): Future[Option[Interactions]] = {
 
     val pag = pagination.getOrElse(Pagination.mkDefault)
 
@@ -48,12 +49,14 @@ object Interactions extends Logging {
     )
 
     esRetriever
-      .getByIndexedQueryMust(cbIndex,
-                         kv,
-                         pag,
-                         fromJsValue[JsValue],
-                         aggs,
-                         Some(sort.FieldSort("scoring", order = SortOrder.DESC)))
+      .getByIndexedQueryMust(
+        cbIndex,
+        kv,
+        pag,
+        fromJsValue[JsValue],
+        aggs,
+        Some(sort.FieldSort("scoring", order = SortOrder.DESC))
+      )
       .map {
         case (Seq(), _) => None
         case (seq, agg) =>
@@ -64,9 +67,11 @@ object Interactions extends Logging {
       }
   }
 
-  def listResources(implicit ec: ExecutionContext,
-                    esSettings: ElasticsearchSettings,
-                    esRetriever: ElasticRetriever): Future[Seq[JsValue]] = {
+  def listResources(implicit
+      ec: ExecutionContext,
+      esSettings: ElasticsearchSettings,
+      esRetriever: ElasticRetriever
+  ): Future[Seq[JsValue]] = {
 
     val cbIndex = esSettings.entities
       .find(_.name == "interaction_evidence")
@@ -79,9 +84,11 @@ object Interactions extends Logging {
         Some("interactionResources.sourceDatabase.keyword"),
         size = Some(100),
         subaggs = Seq(
-          TermsAggregation("aggs",
-                           Some("interactionResources.databaseVersion.keyword"),
-                           size = Some(100))
+          TermsAggregation(
+            "aggs",
+            Some("interactionResources.databaseVersion.keyword"),
+            size = Some(100)
+          )
         )
       )
     )

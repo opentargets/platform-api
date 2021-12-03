@@ -30,16 +30,20 @@ object GQLSchema {
   val query: ObjectType[Backend, Unit] = ObjectType(
     "Query",
     fields[Backend, Unit](
-      Field("meta",
+      Field(
+        "meta",
         metaImp,
         description = Some("Return Open Targets API metadata information"),
         arguments = Nil,
-        resolve = ctx => ctx.ctx.getMeta),
-      Field("target",
+        resolve = ctx => ctx.ctx.getMeta
+      ),
+      Field(
+        "target",
         OptionType(targetImp),
         description = Some("Return a Target"),
-            arguments = ensemblId :: Nil,
-            resolve = ctx => targetsFetcher.deferOpt(ctx.arg(ensemblId))),
+        arguments = ensemblId :: Nil,
+        resolve = ctx => targetsFetcher.deferOpt(ctx.arg(ensemblId))
+      ),
       Field(
         "targets",
         ListType(targetImp),
@@ -47,26 +51,34 @@ object GQLSchema {
         arguments = ensemblIds :: Nil,
         resolve = ctx => targetsFetcher.deferSeqOpt(ctx.arg(ensemblIds))
       ),
-      Field("disease",
-            OptionType(diseaseImp),
-            description = Some("Return a Disease"),
-            arguments = efoId :: Nil,
-            resolve = ctx => diseasesFetcher.deferOpt(ctx.arg(efoId))),
-      Field("diseases",
-            ListType(diseaseImp),
-            description = Some("Return Diseases"),
-            arguments = efoIds :: Nil,
-            resolve = ctx => diseasesFetcher.deferSeqOpt(ctx.arg(efoIds))),
-      Field("drug",
-            OptionType(drugImp),
-            description = Some("Return a drug"),
-            arguments = chemblId :: Nil,
-            resolve = ctx => drugsFetcher.deferOpt(ctx.arg(chemblId))),
-      Field("drugs",
-            ListType(drugImp),
-            description = Some("Return drugs"),
-            arguments = chemblIds :: Nil,
-            resolve = ctx => drugsFetcher.deferSeqOpt(ctx.arg(chemblIds))),
+      Field(
+        "disease",
+        OptionType(diseaseImp),
+        description = Some("Return a Disease"),
+        arguments = efoId :: Nil,
+        resolve = ctx => diseasesFetcher.deferOpt(ctx.arg(efoId))
+      ),
+      Field(
+        "diseases",
+        ListType(diseaseImp),
+        description = Some("Return Diseases"),
+        arguments = efoIds :: Nil,
+        resolve = ctx => diseasesFetcher.deferSeqOpt(ctx.arg(efoIds))
+      ),
+      Field(
+        "drug",
+        OptionType(drugImp),
+        description = Some("Return a drug"),
+        arguments = chemblId :: Nil,
+        resolve = ctx => drugsFetcher.deferOpt(ctx.arg(chemblId))
+      ),
+      Field(
+        "drugs",
+        ListType(drugImp),
+        description = Some("Return drugs"),
+        arguments = chemblIds :: Nil,
+        resolve = ctx => drugsFetcher.deferSeqOpt(ctx.arg(chemblIds))
+      ),
       Field(
         "search",
         searchResultsGQLImp,

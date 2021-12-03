@@ -28,13 +28,13 @@ import play.db.NamedDatabase
 import scala.collection.immutable.ArraySeq
 import scala.concurrent._
 
-class Backend @Inject()(
-                         implicit ec: ExecutionContext,
-                         @NamedDatabase("default") protected val dbConfigProvider: DatabaseConfigProvider,
-                         config: Configuration,
-                         env: Environment,
-                         cache: AsyncCacheApi)
-    extends Logging {
+class Backend @Inject() (implicit
+    ec: ExecutionContext,
+    @NamedDatabase("default") protected val dbConfigProvider: DatabaseConfigProvider,
+    config: Configuration,
+    env: Environment,
+    cache: AsyncCacheApi
+) extends Logging {
 
   implicit val defaultOTSettings: OTSettings = loadConfigurationObject[OTSettings]("ot", config)
   implicit val defaultESSettings: ElasticsearchSettings = defaultOTSettings.elasticsearch
@@ -42,7 +42,8 @@ class Backend @Inject()(
   /** return meta information loaded from ot.meta settings */
   lazy val getMeta: Meta = defaultOTSettings.meta
   lazy val getESClient: ElasticClient = ElasticClient(
-    JavaClient(ElasticProperties(s"http://${defaultESSettings.host}:${defaultESSettings.port}")))
+    JavaClient(ElasticProperties(s"http://${defaultESSettings.host}:${defaultESSettings.port}"))
+  )
   val allSearchableIndices: Seq[String] = defaultESSettings.entities
     .withFilter(_.searchIndex.isDefined)
     .map(_.searchIndex.get)
@@ -61,8 +62,10 @@ class Backend @Inject()(
 
   import com.sksamuel.elastic4s.ElasticDsl._
 
-  def getAdverseEvents(id: String,
-                       pagination: Option[Pagination]): Future[Option[AdverseEvents]] = {
+  def getAdverseEvents(
+      id: String,
+      pagination: Option[Pagination]
+  ): Future[Option[AdverseEvents]] = {
 
     val pag = pagination.getOrElse(Pagination.mkDefault)
 
@@ -75,12 +78,14 @@ class Backend @Inject()(
     )
 
     esRetriever
-      .getByIndexedQueryMust(indexName,
-                             kv,
-                             pag,
-                             fromJsValue[AdverseEvent],
-                             aggs,
-                             ElasticRetriever.sortByDesc("llr"))
+      .getByIndexedQueryMust(
+        indexName,
+        kv,
+        pag,
+        fromJsValue[AdverseEvent],
+        aggs,
+        ElasticRetriever.sortByDesc("llr")
+      )
       .map {
         case (Seq(), _) => {
           logger.debug(s"No adverse event found for ${kv.toString}")
@@ -93,8 +98,7 @@ class Backend @Inject()(
       }
   }
 
-  def getDiseaseHPOs(id: String,
-                     pagination: Option[Pagination]): Future[Option[DiseaseHPOs]] = {
+  def getDiseaseHPOs(id: String, pagination: Option[Pagination]): Future[Option[DiseaseHPOs]] = {
 
     val pag = pagination.getOrElse(Pagination.mkDefault)
 
@@ -121,10 +125,12 @@ class Backend @Inject()(
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[GeneOntologyTerm])
   }
 
-  def getKnownDrugs(queryString: String,
-                    kv: Map[String, String],
-                    sizeLimit: Option[Int],
-                    cursor: Option[String]): Future[Option[KnownDrugs]] = {
+  def getKnownDrugs(
+      queryString: String,
+      kv: Map[String, String],
+      sizeLimit: Option[Int],
+      cursor: Option[String]
+  ): Future[Option[KnownDrugs]] = {
 
     val pag = Pagination(0, sizeLimit.getOrElse(Pagination.sizeDefault))
     val sortByField = sort.FieldSort(field = "phase").desc()
@@ -138,15 +144,17 @@ class Backend @Inject()(
     )
 
     esRetriever
-      .getByFreeQuery(cbIndex,
-                      queryString,
-                      kv,
-                      pag,
-                      fromJsValue[KnownDrug],
-                      aggs,
-                      Some(sortByField),
-                      Seq("ancestors", "descendants"),
-                      cursor)
+      .getByFreeQuery(
+        cbIndex,
+        queryString,
+        kv,
+        pag,
+        fromJsValue[KnownDrug],
+        aggs,
+        Some(sortByField),
+        Seq("ancestors", "descendants"),
+        cursor
+      )
       .map {
         case (Seq(), _, _) => None
         case (seq, agg, nextCursor) =>
@@ -161,12 +169,14 @@ class Backend @Inject()(
 
   // TODO CHECK RESULTS ARE SIZE 0 OR OPTIMISE FIELDS TO BRING BACK
   /** get evidences by multiple parameters */
-  def getEvidences(datasourceIds: Option[Seq[String]],
-                   targetIds: Seq[String],
-                   diseaseIds: Seq[String],
-                   orderBy: Option[(String, String)],
-                   sizeLimit: Option[Int],
-                   cursor: Option[String]): Future[Evidences] = {
+  def getEvidences(
+      datasourceIds: Option[Seq[String]],
+      targetIds: Seq[String],
+      diseaseIds: Seq[String],
+      orderBy: Option[(String, String)],
+      sizeLimit: Option[Int],
+      cursor: Option[String]
+  ): Future[Evidences] = {
 
     val pag = sizeLimit.getOrElse(Pagination.sizeDefault)
     val sortByField = orderBy.flatMap { p =>
@@ -185,14 +195,16 @@ class Backend @Inject()(
     )
 
     esRetriever
-      .getByMustWithSearch(cbIndex,
-                           kv,
-                           pag,
-                           fromJsValue[JsValue],
-                           Seq.empty,
-                           sortByField,
-                           Seq.empty,
-                           cursor)
+      .getByMustWithSearch(
+        cbIndex,
+        kv,
+        pag,
+        fromJsValue[JsValue],
+        Seq.empty,
+        sortByField,
+        Seq.empty,
+        cursor
+      )
       .map {
         case (Seq(), n, _) => Evidences.empty(withTotal = n)
         case (seq, n, nextCursor) =>
@@ -213,7 +225,14 @@ class Backend @Inject()(
 
     // The entry with the highest number of MP is ENSG00000157404 with 1828. Pagination max size is 5000, so we have plenty
     // of headroom for now.
-    esRetriever.getByIndexedQueryMust(indexName, queryTerm, Pagination(0, Pagination.sizeMax), fromJsValue[MousePhenotype]).map(_._1)
+    esRetriever
+      .getByIndexedQueryMust(
+        indexName,
+        queryTerm,
+        Pagination(0, Pagination.sizeMax),
+        fromJsValue[MousePhenotype]
+      )
+      .map(_._1)
   }
 
   def getOtarProjects(ids: Seq[String]): Future[IndexedSeq[OtarProjects]] = {
@@ -244,7 +263,9 @@ class Backend @Inject()(
     logger.debug(s"Querying drugs: $ids")
     val drugIndexName = getIndexOrDefault("drug")
     val queryTerm = Map("id.keyword" -> ids)
-    esRetriever.getByIndexedQueryShould(drugIndexName, queryTerm, Pagination(0, ids.size), fromJsValue[Drug]).map(_._1)
+    esRetriever
+      .getByIndexedQueryShould(drugIndexName, queryTerm, Pagination(0, ids.size), fromJsValue[Drug])
+      .map(_._1)
   }
 
   def getMechanismsOfAction(id: String): Future[MechanismsOfAction] = {
@@ -253,10 +274,12 @@ class Backend @Inject()(
     val index = getIndexOrDefault("drugMoA")
     val queryTerms = Map("chemblIds.keyword" -> id)
     val mechanismsOfActionRaw: Future[(IndexedSeq[MechanismOfActionRaw], JsValue)] =
-      esRetriever.getByIndexedQueryShould(index,
+      esRetriever.getByIndexedQueryShould(
+        index,
         queryTerms,
         Pagination.mkDefault,
-        fromJsValue[MechanismOfActionRaw])
+        fromJsValue[MechanismOfActionRaw]
+      )
     mechanismsOfActionRaw.map(i => Drug.mechanismOfActionRaw2MechanismOfAction(i._1))
   }
 
@@ -265,27 +288,33 @@ class Backend @Inject()(
     val index = getIndexOrDefault("drugIndications")
     val queryTerm = Map("id.keyword" -> ids)
 
-    esRetriever.getByIndexedQueryShould(index, queryTerm, Pagination.mkDefault, fromJsValue[Indications]).map(_._1)
+    esRetriever
+      .getByIndexedQueryShould(index, queryTerm, Pagination.mkDefault, fromJsValue[Indications])
+      .map(_._1)
   }
 
   def getDrugWarnings(id: String): Future[IndexedSeq[DrugWarning]] = {
     logger.debug(s"Querying drug warnings for $id")
     val indexName = getIndexOrDefault("drugWarnings")
     val queryTerm = Map("chemblIds.keyword" -> id)
-    esRetriever.getByIndexedQueryShould(indexName, queryTerm, Pagination.mkDefault, fromJsValue[DrugWarning]).map(results => {
-      /*
+    esRetriever
+      .getByIndexedQueryShould(indexName, queryTerm, Pagination.mkDefault, fromJsValue[DrugWarning])
+      .map(results => {
+        /*
       Group references by warning type and toxicity class to replicate ChEMBL web interface.
       This work around relates to ticket opentargets/platform#1506
-       */
-      val drugWarnings = results._1.foldLeft(Map.empty[(String, Option[String]), DrugWarning])((dwMap, dw) => {
-        if (dwMap.contains((dw.warningType, dw.toxicityClass))) {
-          val old = dwMap((dw.warningType, dw.toxicityClass))
-          val newDW = old.copy(references = Some((old.references ++ dw.references).flatten.toSeq))
-          dwMap.updated((dw.warningType, dw.toxicityClass), newDW)
-        } else dwMap + ((dw.warningType, dw.toxicityClass) -> dw)
+         */
+        val drugWarnings =
+          results._1.foldLeft(Map.empty[(String, Option[String]), DrugWarning])((dwMap, dw) => {
+            if (dwMap.contains((dw.warningType, dw.toxicityClass))) {
+              val old = dwMap((dw.warningType, dw.toxicityClass))
+              val newDW =
+                old.copy(references = Some((old.references ++ dw.references).flatten.toSeq))
+              dwMap.updated((dw.warningType, dw.toxicityClass), newDW)
+            } else dwMap + ((dw.warningType, dw.toxicityClass) -> dw)
+          })
+        drugWarnings.values.toIndexedSeq
       })
-      drugWarnings.values.toIndexedSeq
-    })
   }
 
   def getDiseases(ids: Seq[String]): Future[IndexedSeq[Disease]] = {
@@ -293,9 +322,11 @@ class Backend @Inject()(
     esRetriever.getByIds(diseaseIndexName, ids, fromJsValue[Disease])
   }
 
-  def search(qString: String,
-             pagination: Option[Pagination],
-             entityNames: Seq[String]): Future[SearchResults] = {
+  def search(
+      qString: String,
+      pagination: Option[Pagination],
+      entityNames: Seq[String]
+  ): Future[SearchResults] = {
     val entities = for {
       e <- defaultESSettings.entities
       if (entityNames.contains(e.name) && e.searchIndex.isDefined)
@@ -305,32 +336,38 @@ class Backend @Inject()(
   }
 
   def getAssociationDatasources: Future[Vector[EvidenceSource]] =
-    dbRetriever.getUniqList[EvidenceSource](Seq("datasource_id", "datatype_id"),
-                                            defaultOTSettings.clickhouse.disease.associations.name)
+    dbRetriever.getUniqList[EvidenceSource](
+      Seq("datasource_id", "datatype_id"),
+      defaultOTSettings.clickhouse.disease.associations.name
+    )
 
-  def getAssociationsDiseaseFixed(disease: Disease,
-                                  datasources: Option[Seq[DatasourceSettings]],
-                                  indirect: Boolean,
-                                  aggregationFilters: Seq[AggregationFilter],
-                                  targetSet: Set[String],
-                                  filter: Option[String],
-                                  orderBy: Option[(String, String)],
-                                  pagination: Option[Pagination]): Future[Associations] = {
+  def getAssociationsDiseaseFixed(
+      disease: Disease,
+      datasources: Option[Seq[DatasourceSettings]],
+      indirect: Boolean,
+      aggregationFilters: Seq[AggregationFilter],
+      targetSet: Set[String],
+      filter: Option[String],
+      orderBy: Option[(String, String)],
+      pagination: Option[Pagination]
+  ): Future[Associations] = {
     val page = pagination.getOrElse(Pagination.mkDefault)
     val dss = datasources.getOrElse(defaultOTSettings.clickhouse.harmonic.datasources)
 
     val weights = dss.map(s => (s.id, s.weight))
     val dontPropagate = dss.withFilter(!_.propagate).map(_.id).toSet
-    val aotfQ = QAOTF(defaultOTSettings.clickhouse.disease.associations.name,
+    val aotfQ = QAOTF(
+      defaultOTSettings.clickhouse.disease.associations.name,
       disease.id,
       _,
       _,
       filter,
-                      orderBy,
-                      weights,
-                      dontPropagate,
-                      page.offset,
-                      page.size)
+      orderBy,
+      weights,
+      dontPropagate,
+      page.offset,
+      page.size
+    )
 
     logger.debug(s"get disease id ${disease.name}")
     val indirectIDs = if (indirect) disease.descendants.toSet + disease.id else Set.empty[String]
@@ -341,13 +378,20 @@ class Backend @Inject()(
       .map(_.index)
       .getOrElse("evidences_aotf")
 
-    val tractabilityMappings = List("SmallMolecule", "Antibody", "Protac", "OtherModalities").map(t => {
-      s"tractability$t" -> AggregationMapping(s"facet_tractability_${t.toLowerCase}", IndexedSeq.empty, nested = false)
-    })
+    val tractabilityMappings =
+      List("SmallMolecule", "Antibody", "Protac", "OtherModalities").map(t => {
+        s"tractability$t" -> AggregationMapping(
+          s"facet_tractability_${t.toLowerCase}",
+          IndexedSeq.empty,
+          nested = false
+        )
+      })
     val mappings = Map(
-      "dataTypes" -> AggregationMapping("datatype_id",
+      "dataTypes" -> AggregationMapping(
+        "datatype_id",
         IndexedSeq("datatype_id", "datasource_id"),
-        false),
+        false
+      ),
       "pathwayTypes" -> AggregationMapping("facet_reactome", IndexedSeq("l1", "l2"), true),
       "targetClasses" -> AggregationMapping("facet_classes", IndexedSeq("l1", "l2"), true)
     )
@@ -363,9 +407,11 @@ class Backend @Inject()(
       FilterAggregation(
         "uniques",
         queries._1,
-        subaggs =
-          Seq(uniqueTargetsAgg,
-              TermsAggregation("ids", field = Some("target_id.keyword"), size = Some(40000)))),
+        subaggs = Seq(
+          uniqueTargetsAgg,
+          TermsAggregation("ids", field = Some("target_id.keyword"), size = Some(40000))
+        )
+      ),
       FilterAggregation(
         "dataTypes",
         filtersMap("dataTypes"),
@@ -377,12 +423,14 @@ class Backend @Inject()(
             size = Some(100),
             subaggs = Seq(
               uniqueTargetsAgg,
-              TermsAggregation("aggs",
-                               Some("datasource_id.keyword"),
-                               size = Some(100),
-                               subaggs = Seq(
-                                 uniqueTargetsAgg
-                               ))
+              TermsAggregation(
+                "aggs",
+                Some("datasource_id.keyword"),
+                size = Some(100),
+                subaggs = Seq(
+                  uniqueTargetsAgg
+                )
+              )
             )
           )
         )
@@ -401,10 +449,12 @@ class Backend @Inject()(
                 Some("facet_reactome.l1.keyword"),
                 size = Some(100),
                 subaggs = Seq(
-                  TermsAggregation("aggs",
-                                   Some("facet_reactome.l2.keyword"),
-                                   size = Some(100),
-                                   subaggs = Seq(reverseTargetsAgg)),
+                  TermsAggregation(
+                    "aggs",
+                    Some("facet_reactome.l2.keyword"),
+                    size = Some(100),
+                    subaggs = Seq(reverseTargetsAgg)
+                  ),
                   reverseTargetsAgg
                 )
               ),
@@ -427,10 +477,12 @@ class Backend @Inject()(
                 Some("facet_classes.l1.keyword"),
                 size = Some(100),
                 subaggs = Seq(
-                  TermsAggregation("aggs",
-                                   Some("facet_classes.l2.keyword"),
+                  TermsAggregation(
+                    "aggs",
+                    Some("facet_classes.l2.keyword"),
                     size = Some(100),
-                    subaggs = Seq(reverseTargetsAgg)),
+                    subaggs = Seq(reverseTargetsAgg)
+                  ),
                   reverseTargetsAgg
                 )
               ),
@@ -445,12 +497,14 @@ class Backend @Inject()(
         ElasticRetriever.aggregationFilterProducer(aggregationFilters, Map(kv))._1,
         subaggs = Seq(
           uniqueTargetsAgg,
-          TermsAggregation("aggs",
+          TermsAggregation(
+            "aggs",
             Some(s"${kv._2.key}.keyword"),
             size = Some(100),
             subaggs = Seq(
               uniqueTargetsAgg
-            ))
+            )
+          )
         )
       )
     })
@@ -461,9 +515,12 @@ class Backend @Inject()(
         .withShould(
           boolQuery()
             .withMust(termsQuery("disease_id.keyword", indirectIDs))
-            .withMust(not(termsQuery("datasource_id.keyword", dontPropagate))))
-        .withShould(boolQuery()
-          .withMust(termQuery("disease_id.keyword", disease.id))),
+            .withMust(not(termsQuery("datasource_id.keyword", dontPropagate)))
+        )
+        .withShould(
+          boolQuery()
+            .withMust(termQuery("disease_id.keyword", disease.id))
+        ),
       queryAggs
     ) map {
       case obj: JsObject =>
@@ -472,9 +529,11 @@ class Backend @Inject()(
         val ids = (obj \ "uniques" \ "ids" \ "buckets" \\ "key").map(_.as[String]).toSet
         val uniques = (obj \ "uniques" \\ "value").head.as[Long]
         val restAggs: Seq[NamedAggregation] = ((obj - "uniques").fields map { pair =>
-          NamedAggregation(pair._1,
+          NamedAggregation(
+            pair._1,
             (pair._2 \ "uniques" \\ "value").headOption.map(jv => jv.as[Long]),
-            ArraySeq.unsafeWrapArray((pair._2 \\ "buckets").head.as[Array[entities.Aggregation]]))
+            ArraySeq.unsafeWrapArray((pair._2 \\ "buckets").head.as[Array[entities.Aggregation]])
+          )
         }).to(Seq)
 
         Some((Aggregations(uniques, restAggs), ids))
@@ -483,58 +542,64 @@ class Backend @Inject()(
     }
 
     // TODO use option to enable or disable the computation of each of the sides
-    (dbRetriever.executeQuery[String, Query](simpleQ) zip esQ) flatMap {
-      case (tIDs, esR) =>
-        val tids = esR.map(_._2 intersect tIDs.toSet).getOrElse(tIDs.toSet)
-        val fullQ = aotfQ(indirectIDs, tids).query
+    (dbRetriever.executeQuery[String, Query](simpleQ) zip esQ) flatMap { case (tIDs, esR) =>
+      val tids = esR.map(_._2 intersect tIDs.toSet).getOrElse(tIDs.toSet)
+      val fullQ = aotfQ(indirectIDs, tids).query
 
-        logger.debug(
-          s"disease fixed get simpleQ n ${tIDs.size} " +
-            s"agg n ${esR.map(_._2.size).getOrElse(-1)} " +
-            s"inter n ${tids.size}")
+      logger.debug(
+        s"disease fixed get simpleQ n ${tIDs.size} " +
+          s"agg n ${esR.map(_._2.size).getOrElse(-1)} " +
+          s"inter n ${tids.size}"
+      )
 
-        if (tids.nonEmpty) {
-          dbRetriever.executeQuery[Association, Query](fullQ) map {
-            case assocs => Associations(dss, esR.map(_._1), tids.size, assocs)
-          }
-        } else {
-          Future.successful(Associations(dss, esR.map(_._1), tids.size, Vector.empty))
+      if (tids.nonEmpty) {
+        dbRetriever.executeQuery[Association, Query](fullQ) map { case assocs =>
+          Associations(dss, esR.map(_._1), tids.size, assocs)
         }
+      } else {
+        Future.successful(Associations(dss, esR.map(_._1), tids.size, Vector.empty))
+      }
     }
   }
 
-  def getAssociationsTargetFixed(target: Target,
-                                 datasources: Option[Seq[DatasourceSettings]],
-                                 indirect: Boolean,
-                                 aggregationFilters: Seq[AggregationFilter],
-                                 diseaseSet: Set[String],
-                                 filter: Option[String],
-                                 orderBy: Option[(String, String)],
-                                 pagination: Option[Pagination]): Future[Associations] = {
+  def getAssociationsTargetFixed(
+      target: Target,
+      datasources: Option[Seq[DatasourceSettings]],
+      indirect: Boolean,
+      aggregationFilters: Seq[AggregationFilter],
+      diseaseSet: Set[String],
+      filter: Option[String],
+      orderBy: Option[(String, String)],
+      pagination: Option[Pagination]
+  ): Future[Associations] = {
     val page = pagination.getOrElse(Pagination.mkDefault)
     val dss = datasources.getOrElse(defaultOTSettings.clickhouse.harmonic.datasources)
 
     val weights = dss.map(s => (s.id, s.weight))
     val dontPropagate = dss.withFilter(!_.propagate).map(_.id).toSet
-    val aotfQ = QAOTF(defaultOTSettings.clickhouse.target.associations.name,
-                      target.id,
-                      _,
-                      _,
-                      filter,
-                      orderBy,
-                      weights,
-                      dontPropagate,
-                      page.offset,
-                      page.size)
+    val aotfQ = QAOTF(
+      defaultOTSettings.clickhouse.target.associations.name,
+      target.id,
+      _,
+      _,
+      filter,
+      orderBy,
+      weights,
+      dontPropagate,
+      page.offset,
+      page.size
+    )
 
     logger.debug(s"get target id ${target.approvedSymbol} ACTUALLY DISABLED!")
     val indirectIDs = if (indirect) {
-      val interactions = Interactions.find(target.id, None, pagination = Some(Pagination(0, 10000))) map {
-        case Some(ints) =>
-          ints.rows.flatMap(int => (int \ ("targetB")).asOpt[String].filter(_.startsWith("ENSG")))
-            .toSet + target.id
-        case None => Set.empty + target.id
-      }
+      val interactions =
+        Interactions.find(target.id, None, pagination = Some(Pagination(0, 10000))) map {
+          case Some(ints) =>
+            ints.rows
+              .flatMap(int => (int \ ("targetB")).asOpt[String].filter(_.startsWith("ENSG")))
+              .toSet + target.id
+          case None => Set.empty + target.id
+        }
 
       interactions.await
 
@@ -548,26 +613,32 @@ class Backend @Inject()(
       .getOrElse("evidences_aotf")
 
     val mappings = Map(
-      "dataTypes" -> AggregationMapping("datatype_id",
-                                        IndexedSeq("datatype_id", "datasource_id"),
-                                        false),
+      "dataTypes" -> AggregationMapping(
+        "datatype_id",
+        IndexedSeq("datatype_id", "datasource_id"),
+        false
+      ),
       "therapeuticAreas" -> AggregationMapping("facet_therapeuticAreas", IndexedSeq.empty, false)
     )
 
     val queries = ElasticRetriever.aggregationFilterProducer(aggregationFilters, mappings)
     val filtersMap = queries._2
 
-    val uniqueDiseasesAgg = CardinalityAggregation("uniques",
-                                                   Some("disease_id.keyword"),
-                                                   precisionThreshold = Some(40000))
+    val uniqueDiseasesAgg = CardinalityAggregation(
+      "uniques",
+      Some("disease_id.keyword"),
+      precisionThreshold = Some(40000)
+    )
 
     val queryAggs = Seq(
       FilterAggregation(
         "uniques",
         queries._1,
-        subaggs =
-          Seq(uniqueDiseasesAgg,
-              TermsAggregation("ids", field = Some("disease_id.keyword"), size = Some(40000)))),
+        subaggs = Seq(
+          uniqueDiseasesAgg,
+          TermsAggregation("ids", field = Some("disease_id.keyword"), size = Some(40000))
+        )
+      ),
       FilterAggregation(
         "dataTypes",
         filtersMap("dataTypes"),
@@ -579,12 +650,14 @@ class Backend @Inject()(
             size = Some(100),
             subaggs = Seq(
               uniqueDiseasesAgg,
-              TermsAggregation("aggs",
-                               Some("datasource_id.keyword"),
-                               size = Some(100),
-                               subaggs = Seq(
-                                 uniqueDiseasesAgg
-                               ))
+              TermsAggregation(
+                "aggs",
+                Some("datasource_id.keyword"),
+                size = Some(100),
+                subaggs = Seq(
+                  uniqueDiseasesAgg
+                )
+              )
             )
           )
         )
@@ -594,12 +667,14 @@ class Backend @Inject()(
         filtersMap("therapeuticAreas"),
         subaggs = Seq(
           uniqueDiseasesAgg,
-          TermsAggregation("aggs",
-                           Some("facet_therapeuticAreas.keyword"),
-                           size = Some(100),
-                           subaggs = Seq(
-                             uniqueDiseasesAgg
-                           ))
+          TermsAggregation(
+            "aggs",
+            Some("facet_therapeuticAreas.keyword"),
+            size = Some(100),
+            subaggs = Seq(
+              uniqueDiseasesAgg
+            )
+          )
         )
       )
     )
@@ -610,9 +685,12 @@ class Backend @Inject()(
         .withShould(
           boolQuery()
             .withMust(termsQuery("target_id.keyword", indirectIDs))
-            .withMust(not(termsQuery("datasource_id.keyword", dontPropagate))))
-        .withShould(boolQuery()
-          .withMust(termQuery("target_id.keyword", target.id))),
+            .withMust(not(termsQuery("datasource_id.keyword", dontPropagate)))
+        )
+        .withShould(
+          boolQuery()
+            .withMust(termQuery("target_id.keyword", target.id))
+        ),
       queryAggs
     ) map {
       case obj: JsObject =>
@@ -621,9 +699,11 @@ class Backend @Inject()(
         val ids = (obj \ "uniques" \ "ids" \ "buckets" \\ "key").map(_.as[String]).toSet
         val uniques = (obj \ "uniques" \\ "value").head.as[Long]
         val restAggs = (obj - "uniques").fields map { pair =>
-          NamedAggregation(pair._1,
+          NamedAggregation(
+            pair._1,
             (pair._2 \ "uniques" \\ "value").headOption.map(jv => jv.as[Long]),
-            ArraySeq.unsafeWrapArray((pair._2 \\ "buckets").head.as[Array[entities.Aggregation]]))
+            ArraySeq.unsafeWrapArray((pair._2 \\ "buckets").head.as[Array[entities.Aggregation]])
+          )
         }
 
         Some((Aggregations(uniques, restAggs.to(Seq)), ids))
@@ -631,27 +711,33 @@ class Backend @Inject()(
       case _ => None
     }
 
-    (dbRetriever.executeQuery[String, Query](simpleQ) zip esQ) flatMap {
-      case (dIDs, esR) =>
-        val dids = esR.map(_._2 intersect dIDs.toSet).getOrElse(dIDs.toSet)
-        val fullQ = aotfQ(indirectIDs, dids).query
+    (dbRetriever.executeQuery[String, Query](simpleQ) zip esQ) flatMap { case (dIDs, esR) =>
+      val dids = esR.map(_._2 intersect dIDs.toSet).getOrElse(dIDs.toSet)
+      val fullQ = aotfQ(indirectIDs, dids).query
 
-        logger.debug(
-          s"target fixed get simpleQ n ${dIDs.size} " +
-            s"agg n ${esR.map(_._2.size).getOrElse(-1)} " +
-            s"inter n ${dids.size}")
+      logger.debug(
+        s"target fixed get simpleQ n ${dIDs.size} " +
+          s"agg n ${esR.map(_._2.size).getOrElse(-1)} " +
+          s"inter n ${dids.size}"
+      )
 
-        if (dids.nonEmpty) {
-          dbRetriever.executeQuery[Association, Query](fullQ) map {
-            case assocs => Associations(dss, esR.map(_._1), dids.size, assocs)
-          }
-        } else {
-          Future.successful(Associations(dss, esR.map(_._1), dids.size, Vector.empty))
+      if (dids.nonEmpty) {
+        dbRetriever.executeQuery[Association, Query](fullQ) map { case assocs =>
+          Associations(dss, esR.map(_._1), dids.size, assocs)
         }
+      } else {
+        Future.successful(Associations(dss, esR.map(_._1), dids.size, Vector.empty))
+      }
     }
   }
 
-  def getSimilarW2VEntities(label: String, labels: Set[String], categories: List[String], threshold: Double, size: Int): Future[Vector[Similarity]] = {
+  def getSimilarW2VEntities(
+      label: String,
+      labels: Set[String],
+      categories: List[String],
+      threshold: Double,
+      size: Int
+  ): Future[Vector[Similarity]] = {
     val table = defaultOTSettings.clickhouse.similarities
     logger.info(s"query similarities in table ${table.name}")
 
@@ -660,8 +746,10 @@ class Backend @Inject()(
     dbRetriever.executeQuery[Long, Query](simQ.existsLabel(label)).flatMap {
       case Vector(1) => dbRetriever.executeQuery[Similarity, Query](simQ.query)
       case _ =>
-        logger.info(s"This case where the label asked ${label} to the model Word2Vec does not exist" +
-          s" is ok but nice to capture though")
+        logger.info(
+          s"This case where the label asked ${label} to the model Word2Vec does not exist" +
+            s" is ok but nice to capture though"
+        )
         Future.successful(Vector.empty)
     }
   }
@@ -679,15 +767,15 @@ class Backend @Inject()(
     dbRetriever.executeQuery[Long, Query](simQ.total).flatMap {
       case Vector(total) if total > 0 =>
         logger.debug(s"total number of publication occurrences $total")
-        dbRetriever.executeQuery[Publication, Query](simQ.query).map {
-          v => val pubs = v.map(pub => Json.toJson(pub))
-            val nCursor = if (v.size < pag.size) {
-              None
-            } else {
-              val npag = pag.next
-              Helpers.Cursor.from(Some(Json.toJson(npag)))
-            }
-            Publications(total, nCursor, pubs)
+        dbRetriever.executeQuery[Publication, Query](simQ.query).map { v =>
+          val pubs = v.map(pub => Json.toJson(pub))
+          val nCursor = if (v.size < pag.size) {
+            None
+          } else {
+            val npag = pag.next
+            Helpers.Cursor.from(Some(Json.toJson(npag)))
+          }
+          Publications(total, nCursor, pubs)
         }
       case _ =>
         logger.info(s"there is no publications with this set of ids $ids")
@@ -695,11 +783,10 @@ class Backend @Inject()(
     }
   }
 
-  /**
-   * @param index   key of index (name field) in application.conf
-   * @param default fallback index name
-   * @return elasticsearch index name resolved from application.conf or default.
-   */
+  /** @param index   key of index (name field) in application.conf
+    * @param default fallback index name
+    * @return elasticsearch index name resolved from application.conf or default.
+    */
   private def getIndexOrDefault(index: String, default: Option[String] = None): String =
     defaultESSettings.entities
       .find(_.name == index)

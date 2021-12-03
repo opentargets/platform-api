@@ -21,17 +21,18 @@ class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: O
 
   implicit private def toSQL(q: Q): SQLActionBuilder = sql"""#${q.rep}"""
 
-
   val db = dbConfig.db
   val chSettings = config.clickhouse
 
-  def getUniqList[A](of: Seq[String], from: String)(
-      implicit rconv: GetResult[A]): Future[Vector[A]] = {
+  def getUniqList[A](of: Seq[String], from: String)(implicit
+      rconv: GetResult[A]
+  ): Future[Vector[A]] = {
     getUniqList[A](of, Column(from))(rconv)
   }
 
-  def getUniqList[A](of: Seq[String], from: Column)(
-      implicit rconv: GetResult[A]): Future[Vector[A]] = {
+  def getUniqList[A](of: Seq[String], from: Column)(implicit
+      rconv: GetResult[A]
+  ): Future[Vector[A]] = {
     val s = Select(of.map(column))
     val f = From(from)
     val g = GroupBy(of.map(column))
@@ -62,16 +63,19 @@ class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: O
     }
   }
 
-  def getAssociationsOTF(tableName: String,
-                         AId: String,
-                         AIDs: Set[String],
-                         BIDs: Set[String],
-                         BFilter: Option[String],
-                         datasourceSettings: Seq[DatasourceSettings],
-                         pagination: Pagination): Future[Vector[Association]] = {
+  def getAssociationsOTF(
+      tableName: String,
+      AId: String,
+      AIDs: Set[String],
+      BIDs: Set[String],
+      BFilter: Option[String],
+      datasourceSettings: Seq[DatasourceSettings],
+      pagination: Pagination
+  ): Future[Vector[Association]] = {
     val weights = datasourceSettings.map(s => (s.id, s.weight))
     val dontPropagate = datasourceSettings.withFilter(!_.propagate).map(_.id).toSet
-    val aotfQ = QAOTF(tableName,
+    val aotfQ = QAOTF(
+      tableName,
       AId,
       AIDs,
       BIDs,
@@ -79,8 +83,9 @@ class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: O
       None,
       weights,
       dontPropagate,
-                      pagination.offset,
-                      pagination.size).query.as[Association]
+      pagination.offset,
+      pagination.size
+    ).query.as[Association]
 
     logger.debug(aotfQ.statements.mkString("\n"))
 
@@ -90,7 +95,8 @@ class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: O
         logger.error(ex.toString)
         logger.error(
           "harmonic associations query failed " +
-            s"with query: ${aotfQ.statements.mkString(" ")}")
+            s"with query: ${aotfQ.statements.mkString(" ")}"
+        )
         Vector.empty
     }
   }

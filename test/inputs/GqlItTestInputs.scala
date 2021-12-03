@@ -7,10 +7,14 @@ import scala.reflect.io.File
 
 trait GqlItTestInputs {
 
-  lazy val geneInputs = File(this.getClass.getResource(s"/gqlInputs/genes.txt").getPath).lines().toList
-  lazy val diseaseInputs = File(this.getClass.getResource(s"/gqlInputs/efos.txt").getPath).lines().toList
-  lazy val drugInputs = File(this.getClass.getResource(s"/gqlInputs/drugs.txt").getPath).lines().toList
-  lazy val goInputs = File(this.getClass.getResource(s"/gqlInputs/goIds.txt").getPath).lines().toList
+  lazy val geneInputs =
+    File(this.getClass.getResource(s"/gqlInputs/genes.txt").getPath).lines().toList
+  lazy val diseaseInputs =
+    File(this.getClass.getResource(s"/gqlInputs/efos.txt").getPath).lines().toList
+  lazy val drugInputs =
+    File(this.getClass.getResource(s"/gqlInputs/drugs.txt").getPath).lines().toList
+  lazy val goInputs =
+    File(this.getClass.getResource(s"/gqlInputs/goIds.txt").getPath).lines().toList
 
   val aggregationFilterMap: Map[String, Seq[String]] = Map(
     "pathwayTypes" -> Seq(
@@ -60,18 +64,24 @@ trait GqlItTestInputs {
       "Unclassified protein",
       "Structural protein"
     ),
-    "dataTypes" -> Seq("Genetic associations",
+    "dataTypes" -> Seq(
+      "Genetic associations",
       "Drugs",
       "Text mining",
       "RNA expression",
       "Animal models",
-      "Somatic mutations"),
-    "tractabilityAntibody" -> Seq("Clinical precedence",
+      "Somatic mutations"
+    ),
+    "tractabilityAntibody" -> Seq(
+      "Clinical precedence",
       "Predicted tractable high confidence",
-      "Predicted tractable med low confidence"),
-    "tractabilitySmallMolecule" -> Seq("Clinical precedence",
+      "Predicted tractable med low confidence"
+    ),
+    "tractabilitySmallMolecule" -> Seq(
+      "Clinical precedence",
       "Discovery precedence",
-      "Predicted tractable")
+      "Predicted tractable"
+    )
   )
 
   // Generators

@@ -7,10 +7,11 @@ import play.api.mvc._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class CacheController @Inject()(implicit ec: ExecutionContext,
-                                cc: ControllerComponents,
-                                restHelpers: RestHelpers)
-    extends AbstractController(cc)
+class CacheController @Inject() (implicit
+    ec: ExecutionContext,
+    cc: ControllerComponents,
+    restHelpers: RestHelpers
+) extends AbstractController(cc)
     with Logging {
 
   def clearCache(): Action[AnyContent] =

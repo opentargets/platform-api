@@ -13,11 +13,13 @@ object Harmonic {
   val pExponentDefault: Int = 2
 
   def maxValue(vSize: Int, pExponent: Int, maxScore: Double): Double =
-    (0 until vSize).foldLeft(0D)((acc: Double, n: Int) => acc + (maxScore / pow(1D + n, pExponent)))
+    (0 until vSize).foldLeft(0d)((acc: Double, n: Int) => acc + (maxScore / pow(1d + n, pExponent)))
 
-  private def mkHSColumn(col: Column,
-                         maxHS: Column,
-                         propagateCondition: Option[Column]): Seq[Column] = {
+  private def mkHSColumn(
+      col: Column,
+      maxHS: Column,
+      propagateCondition: Option[Column]
+  ): Seq[Column] = {
     val colName = Some(col.name.toString.replaceAll("\\.", "__") + "_v")
 
     /*
@@ -34,8 +36,10 @@ object Harmonic {
       .as(colName)
 
     val dsVHS =
-      divide(arraySum(Some("(a, b) -> a / pow((b + 1),2)"), dsV.name, range(length(dsV.name))),
-             maxHS)
+      divide(
+        arraySum(Some("(a, b) -> a / pow((b + 1),2)"), dsV.name, range(length(dsV.name))),
+        maxHS
+      )
         .as(colName.map(_ + "_hs"))
 
     Vector(dsV, dsVHS)
@@ -48,14 +52,16 @@ object Harmonic {
     * @param datasources the configuration of datasources that are used to compute all harmonics
     * @param expansionTable it is used if Some
     * @param pagination page and size to return
-    * */
-  def apply(fixedCol: String,
-            queryColName: String,
-            queryColValue: String,
-            table: String,
-            datasources: Seq[DatasourceSettings],
-            expansionTable: Option[LUTableSettings],
-            pagination: Pagination): Query = {
+    */
+  def apply(
+      fixedCol: String,
+      queryColName: String,
+      queryColValue: String,
+      table: String,
+      datasources: Seq[DatasourceSettings],
+      expansionTable: Option[LUTableSettings],
+      pagination: Pagination
+  ): Query = {
     val idCol = Column(fixedCol)
     val qColValueCol = literal(queryColValue)
     val qCol = Column(queryColName)
@@ -80,10 +86,14 @@ object Harmonic {
     val dsVWeighted =
       arrayReverseSort(None, arrayMap("(a, b) -> a * b", dsV, dsWeightV)).as(Some("wds_v"))
     val overallHS = F
-      .divide(arraySum(Some("(a, b) -> a / pow((b + 1), 2)"),
-                       dsVWeighted.name,
-                       range(length(dsVWeighted.name))),
-              hsMaxValueCol.name)
+      .divide(
+        arraySum(
+          Some("(a, b) -> a / pow((b + 1), 2)"),
+          dsVWeighted.name,
+          range(length(dsVWeighted.name))
+        ),
+        hsMaxValueCol.name
+      )
       .as(Some("overall_hs"))
 
     val idsV = groupArray(qCol).as(Some("ids_v"))
@@ -97,9 +107,11 @@ object Harmonic {
       val expCol = F.joinGet(lut.name, lut.field.get, qColValueCol).as(lut.field)
       val neighbourCol = expCol.name.as(Some("neighbour"))
       val innerSel = Query(Select(expCol +: Nil))
-      val sel = Query(Select(neighbourCol.name +: Nil),
-                      From(innerSel.toColumn(None)),
-                      ArrayJoin(neighbourCol)).toColumn(None)
+      val sel = Query(
+        Select(neighbourCol.name +: Nil),
+        From(innerSel.toColumn(None)),
+        ArrayJoin(neighbourCol)
+      ).toColumn(None)
       val inn = F.in(qCol, sel)
       F.or(F.equals(qCol, qColValueCol), inn)
     })

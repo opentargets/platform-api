@@ -15,7 +15,7 @@ case class DiseaseHPOEvidences(
     modifiers: Seq[String],
     onset: Seq[String],
     qualifierNot: Boolean,
-    references:  Seq[String],
+    references: Seq[String],
     sex: Option[String],
     resource: String
 )
@@ -26,7 +26,8 @@ case class DiseaseHPOs(count: Long, rows: Seq[DiseaseHPO])
 
 object DiseaseHPOs {
 
-  implicit val diseaseHPOEvidencesImpW: OWrites[DiseaseHPOEvidences] = Json.writes[models.entities.DiseaseHPOEvidences]
+  implicit val diseaseHPOEvidencesImpW: OWrites[DiseaseHPOEvidences] =
+    Json.writes[models.entities.DiseaseHPOEvidences]
   implicit val diseaseHPOEvidencesImpR: Reads[models.entities.DiseaseHPOEvidences] =
     ((JsPath \ "aspect").readNullable[String] and
       (JsPath \ "bioCuration").readNullable[String] and
@@ -40,14 +41,13 @@ object DiseaseHPOs {
       (JsPath \ "qualifierNot").read[Boolean] and
       (JsPath \ "references").readWithDefault[Seq[String]](Seq.empty) and
       (JsPath \ "sex").readNullable[String] and
-      (JsPath \ "resource").read[String]
-    )(DiseaseHPOEvidences.apply _)
+      (JsPath \ "resource").read[String])(DiseaseHPOEvidences.apply _)
 
   implicit val diseaseHPOImpW: OWrites[DiseaseHPO] = Json.writes[models.entities.DiseaseHPO]
   implicit val diseaseHPOImpR: Reads[models.entities.DiseaseHPO] =
     ((JsPath \ "phenotype").read[String] and
       (JsPath \ "disease").read[String] and
-      (JsPath \ "evidence").readWithDefault[Seq[DiseaseHPOEvidences]](Seq.empty)) (
+      (JsPath \ "evidence").readWithDefault[Seq[DiseaseHPOEvidences]](Seq.empty))(
       DiseaseHPO.apply _
     )
 

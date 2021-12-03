@@ -23,10 +23,11 @@ object Aggregations extends Logging {
     ((__ \ "key").read[String] and
       (__ \ "uniques" \\ "value").readWithDefault[Long](0) and
       (__ \ "aggs" \\ "buckets")
-        .lazyReadNullable(Reads.seq[Aggregation](aggregationImpReads))) (Aggregation.apply _)
+        .lazyReadNullable(Reads.seq[Aggregation](aggregationImpReads)))(Aggregation.apply _)
 
   implicit val namedAggregationImpFormat: OFormat[NamedAggregation] = Json.format[NamedAggregation]
   implicit val aggregationsImpFormat: OWrites[Aggregations] = Json.writes[Aggregations]
 
-  implicit val aggregationFilterImpFormat: OFormat[AggregationFilter] = Json.format[AggregationFilter]
+  implicit val aggregationFilterImpFormat: OFormat[AggregationFilter] =
+    Json.format[AggregationFilter]
 }

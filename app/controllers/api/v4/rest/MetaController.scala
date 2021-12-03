@@ -16,10 +16,11 @@ import scala.concurrent.ExecutionContext
 import sangria.ast.Document
 
 @Singleton
-class MetaController @Inject()(implicit ec: ExecutionContext,
-                               backend: Backend,
-                               cc: ControllerComponents)
-    extends AbstractController(cc)
+class MetaController @Inject() (implicit
+    ec: ExecutionContext,
+    backend: Backend,
+    cc: ControllerComponents
+) extends AbstractController(cc)
     with Logging {
 
   val metaGQLQ: Document =
@@ -52,9 +53,10 @@ class MetaController @Inject()(implicit ec: ExecutionContext,
         variables = InputUnmarshaller.mapVars(Map.empty[String, Any]),
         deferredResolver = GQLSchema.resolvers,
         exceptionHandler = exceptionHandler,
-        queryReducers =
-          List(QueryReducer.rejectMaxDepth[Backend](15),
-               QueryReducer.rejectComplexQueries[Backend](4000, (_, _) => TooComplexQueryError))
+        queryReducers = List(
+          QueryReducer.rejectMaxDepth[Backend](15),
+          QueryReducer.rejectComplexQueries[Backend](4000, (_, _) => TooComplexQueryError)
+        )
       )
       .map(Ok(_))
       .recover {

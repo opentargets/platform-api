@@ -12,8 +12,7 @@ abstract class Queryable {
   def query: Query
 }
 
-/**
-  * QAOTF stands for Query for Associations on the fly computations
+/** QAOTF stands for Query for Associations on the fly computations
   *
   * @param tableName table name to use for the associations on the fly query build
   * @param AId the left ID will be fixed and it is required. It is required as no
@@ -27,17 +26,18 @@ abstract class Queryable {
   * @param offset where to start the chunk of rows to return
   * @param size how many rows to return in a chunk
   */
-case class QAOTF(tableName: String,
-                 AId: String,
-                 AIDs: Set[String],
-                 BIDs: Set[String],
-                 BFilter: Option[String],
-                 orderScoreBy: Option[(String, String)],
-                 datasourceWeights: Seq[(String, Double)],
-                 nonPropagatedDatasources: Set[String],
-                 offset: Int,
-                 size: Int)
-    extends Queryable
+case class QAOTF(
+    tableName: String,
+    AId: String,
+    AIDs: Set[String],
+    BIDs: Set[String],
+    BFilter: Option[String],
+    orderScoreBy: Option[(String, String)],
+    datasourceWeights: Seq[(String, Double)],
+    nonPropagatedDatasources: Set[String],
+    offset: Int,
+    size: Int
+) extends Queryable
     with Logging {
   val A: Column = column("A")
   val B: Column = column("B")
@@ -51,20 +51,19 @@ case class QAOTF(tableName: String,
   val maxHS: Column = literal(Harmonic.maxValue(100000, pExponentDefault, 1.0))
     .as(Some("max_hs_score"))
 
-  val BFilterQ: Option[Column] = BFilter flatMap {
-    case matchStr =>
-      val tokens = matchStr
-        .split(" ")
-        .map(s => {
-          F.like(BData.name, F.lower(literal(s"%${s.toLowerCase.trim}%")))
-        })
-        .toList
+  val BFilterQ: Option[Column] = BFilter flatMap { case matchStr =>
+    val tokens = matchStr
+      .split(" ")
+      .map(s => {
+        F.like(BData.name, F.lower(literal(s"%${s.toLowerCase.trim}%")))
+      })
+      .toList
 
-      tokens match {
-        case h :: Nil => Some(h)
-        case h1 :: h2 :: rest => Some(F.and(h1, h2, rest: _*))
-        case _                => None
-      }
+    tokens match {
+      case h :: Nil         => Some(h)
+      case h1 :: h2 :: rest => Some(F.and(h1, h2, rest: _*))
+      case _                => None
+    }
   }
 
   val DSScore: Column = F
@@ -160,7 +159,7 @@ case class QAOTF(tableName: String,
       val rightIdsC = F.set(BIDs.map(literal).toSeq)
       F.and(
         expressionLeft,
-        F.in(B, rightIdsC),
+        F.in(B, rightIdsC)
       )
     } else {
       expressionLeft
@@ -199,20 +198,25 @@ case class QAOTF(tableName: String,
 
   override val query: Query = {
     val collectedDS = F
-      .arrayReverseSort(Some("x -> x.2"),
+      .arrayReverseSort(
+        Some("x -> x.2"),
         F.groupArray(
           F.tuple(
             F.divide(DSScore.name, maxHS.name),
             F.divide(F.multiply(DSScore.name, DSW.name), maxHS.name),
             DS,
             DT
-          )))
+          )
+        )
+      )
       .as(Some("scores_vector"))
 
     val collectedDScored = F
-      .arrayMap(s"(i, j) -> (i.1, (i.2) / pow(j, 2), i.3, i.4)",
-                collectedDS.name,
-                F.arrayEnumerate(collectedDS.name))
+      .arrayMap(
+        s"(i, j) -> (i.1, (i.2) / pow(j, 2), i.3, i.4)",
+        collectedDS.name,
+        F.arrayEnumerate(collectedDS.name)
+      )
       .as(Some("datasource_scores"))
 
     val scoreOverall = F
@@ -227,13 +231,15 @@ case class QAOTF(tableName: String,
     val mappedDTs = F
       .arrayMap(
         s"x -> (x, arrayReverseSort(arrayMap(b -> b.2, arrayFilter(a -> a.1 = x,${scoreDTs.name.rep}))))",
-        uniqDTs.name)
+        uniqDTs.name
+      )
       .as(Some("mapped_dts"))
     val scoredDTs = F
       .arrayMap(
         "x -> (x.1, arraySum((i, j) -> i / pow(j,2), x.2, arrayEnumerate(x.2)) / " +
           "arraySum(arrayMap((x, y) -> x / pow(y, 2),replicate(1.0, x.2),arrayEnumerate(x.2))) )",
-        mappedDTs.name)
+        mappedDTs.name
+      )
       .as(Some("score_datatypes"))
 
     val orderColumn = orderScoreBy.getOrElse((scoreOverall.name.rep, "desc"))
@@ -242,40 +248,50 @@ case class QAOTF(tableName: String,
       .ifThenElse(
         F.notEquals(
           F.indexOf(F.tupleElement(jointColumns.name, literal(1)), literal(orderColumn._1)),
-          literal(0)),
-        F.tupleElement(F.arrayElement(jointColumns.name,
-                                      F.indexOf(F.tupleElement(jointColumns.name, literal(1)),
-                                                literal(orderColumn._1))),
-                       literal(2)),
+          literal(0)
+        ),
+        F.tupleElement(
+          F.arrayElement(
+            jointColumns.name,
+            F.indexOf(F.tupleElement(jointColumns.name, literal(1)), literal(orderColumn._1))
+          ),
+          literal(2)
+        ),
         literal(0.0)
       )
       .as(Some("score_indexed"))
 
     val withScores = With(
-      Seq(maxHS,
-          collectedDS,
-          collectedDScored,
-          scoreDSs,
-          scoreDTs,
-          uniqDTs,
-          mappedDTs,
-          scoredDTs,
-          scoreOverall,
-          jointColumns,
-          orderByC)
+      Seq(
+        maxHS,
+        collectedDS,
+        collectedDScored,
+        scoreDSs,
+        scoreDTs,
+        uniqDTs,
+        mappedDTs,
+        scoredDTs,
+        scoreOverall,
+        jointColumns,
+        orderByC
+      )
     )
-    val selectScores = Select(B :: scoreOverall.name :: scoredDTs.name :: scoreDSs.name :: Nil) // :: scoreDTs.name :: collectedDScored :: Nil)
+    val selectScores = Select(
+      B :: scoreOverall.name :: scoredDTs.name :: scoreDSs.name :: Nil
+    ) // :: scoreDTs.name :: collectedDScored :: Nil)
     val fromAgg = From(queryGroupByDS.toColumn(None))
     val groupByB = GroupBy(B :: Nil)
     val orderBySome = orderColumn match {
       case ("score", order) =>
         OrderBy(
           (if (order == "desc") scoreOverall.name.desc
-           else scoreOverall.name.asc) :: Nil)
+           else scoreOverall.name.asc) :: Nil
+        )
       case (_, order) =>
         OrderBy(
           (if (order == "desc") orderByC.name.desc
-           else orderByC.name.asc) :: Nil)
+           else orderByC.name.asc) :: Nil
+        )
     }
 
     val limitC = Limit(offset, size)

@@ -1,7 +1,17 @@
 package models.gql
 
 import models.Helpers.fromJsValue
-import models.entities.{Disease, Drug, Expressions, GeneOntologyTerm, HPO, Indications, OtarProjects, Reactome, Target}
+import models.entities.{
+  Disease,
+  Drug,
+  Expressions,
+  GeneOntologyTerm,
+  HPO,
+  Indications,
+  OtarProjects,
+  Reactome,
+  Target
+}
 import models.{Backend, entities}
 import play.api.Logging
 import play.api.libs.json.JsValue
@@ -70,8 +80,7 @@ object Fetchers extends Logging {
 
   val hpoFetcherCache = FetcherCache.simple
   val hposFetcher: Fetcher[Backend, HPO, HPO, String] = Fetcher(
-    config =
-      FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(hpoFetcherCache),
+    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(hpoFetcherCache),
     fetch = (ctx: Backend, ids: Seq[String]) => {
       ctx.getHPOs(ids)
     }
@@ -82,18 +91,20 @@ object Fetchers extends Logging {
 
   val drugsFetcherCache = FetcherCache.simple
   val drugsFetcher: Fetcher[Backend, Drug, Drug, String] = Fetcher(
-    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(drugsFetcherCache),
+    config =
+      FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(drugsFetcherCache),
     fetch = (ctx: Backend, ids: Seq[String]) => {
       ctx.getDrugs(ids)
     }
   )
 
   implicit val indicationHasId: HasId[Indications, String] = HasId[Indications, String](_.id)
-  val indicationFetcher: Fetcher[Backend, Indications, Indications, String] = Fetcher(config =
-    FetcherConfig.maxBatchSize(entities.Configuration.batchSize),
+  val indicationFetcher: Fetcher[Backend, Indications, Indications, String] = Fetcher(
+    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize),
     fetch = (ctx: Backend, ids: Seq[String]) => {
       ctx.getIndications(ids)
-    })
+    }
+  )
 
   implicit val goFetcherId: HasId[GeneOntologyTerm, String] = HasId[GeneOntologyTerm, String](_.id)
   val goFetcherCache = FetcherCache.simple

@@ -167,8 +167,9 @@ This is a fragment on disease which takes a gene as an argument. Used on the FE 
 summary information.
  */
 case class DiseaseSummaryFragment(file: String) extends GqlFragment[(String, String)] {
-  def generateFragmentQuery: String = s"$fragmentQuery query DiseaseFragment(xyz: String!, ensgId: String) { disease(efoId: xyz) { ...$fragmentName } }"
-    .replace("xyz", "$efoId")
+  def generateFragmentQuery: String =
+    s"$fragmentQuery query DiseaseFragment(xyz: String!, ensgId: String) { disease(efoId: xyz) { ...$fragmentName } }"
+      .replace("xyz", "$efoId")
 
   val inputGenerator = targetDiseaseGenerator
 

@@ -6,33 +6,33 @@ import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 
 case class BiologicalModels(
-                             allelicComposition: String,
-                             geneticBackground: String,
-                             id: Option[String],
-                             literature: Option[Seq[String]]
-                           )
+    allelicComposition: String,
+    geneticBackground: String,
+    id: Option[String],
+    literature: Option[Seq[String]]
+)
 
 case class ModelPhenotypeClasses(
-                                  id: String,
-                                  label: String
-                                )
+    id: String,
+    label: String
+)
 
 case class MousePhenotype(
-                           biologicalModels: Seq[BiologicalModels],
-                           modelPhenotypeClasses: Seq[ModelPhenotypeClasses],
-                           modelPhenotypeId: String,
-                           modelPhenotypeLabel: String,
-                           targetFromSourceId: String,
-                           targetInModel: String,
-                           targetInModelEnsemblId: Option[String],
-                           targetInModelMgiId: String
-                         )
-
+    biologicalModels: Seq[BiologicalModels],
+    modelPhenotypeClasses: Seq[ModelPhenotypeClasses],
+    modelPhenotypeId: String,
+    modelPhenotypeLabel: String,
+    targetFromSourceId: String,
+    targetInModel: String,
+    targetInModelEnsemblId: Option[String],
+    targetInModelMgiId: String
+)
 
 object MousePhenotypes extends Logging {
 
   implicit val biologicalModelsF: OFormat[BiologicalModels] = Json.format[BiologicalModels]
-  implicit val modelPhenotypeClassesF: OFormat[ModelPhenotypeClasses] = Json.format[ModelPhenotypeClasses]
+  implicit val modelPhenotypeClassesF: OFormat[ModelPhenotypeClasses] =
+    Json.format[ModelPhenotypeClasses]
   implicit val mousePhenotypeW: OWrites[MousePhenotype] = Json.writes[MousePhenotype]
 
   implicit val mousePhenotypeR: Reads[MousePhenotype] = (
@@ -44,6 +44,6 @@ object MousePhenotypes extends Logging {
       (__ \ "targetInModel").read[String] and
       (__ \ "targetInModelEnsemblId").readNullable[String] and
       (__ \ "targetInModelMgiId").read[String]
-    )(MousePhenotype.apply _)
+  )(MousePhenotype.apply _)
 
 }

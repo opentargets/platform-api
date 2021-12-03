@@ -6,38 +6,47 @@ import play.api.libs.functional.syntax._
 
 case class SearchResultAggCategory(name: String, total: Long)
 
-case class SearchResultAggEntity(name: String,
-                                 total: Long,
-                                 categories: Seq[SearchResultAggCategory])
+case class SearchResultAggEntity(
+    name: String,
+    total: Long,
+    categories: Seq[SearchResultAggCategory]
+)
 
 case class SearchResultAggs(total: Long, entities: Seq[SearchResultAggEntity])
 
-case class SearchResult(id: String,
-                        entity: String,
-                        category: Seq[String],
-                        name: String,
-                        description: Option[String],
-                        keywords: Option[Seq[String]],
-                        multiplier: Double,
-                        prefixes: Option[Seq[String]],
-                        ngrams: Option[Seq[String]],
-                        score: Double,
-                        highlights: Seq[String])
+case class SearchResult(
+    id: String,
+    entity: String,
+    category: Seq[String],
+    name: String,
+    description: Option[String],
+    keywords: Option[Seq[String]],
+    multiplier: Double,
+    prefixes: Option[Seq[String]],
+    ngrams: Option[Seq[String]],
+    score: Double,
+    highlights: Seq[String]
+)
 
-case class SearchResults(hits: Seq[SearchResult],
-                         aggregations: Option[SearchResultAggs],
-                         total: Long)
+case class SearchResults(
+    hits: Seq[SearchResult],
+    aggregations: Option[SearchResultAggs],
+    total: Long
+)
 
 object SearchResults {
   val empty: SearchResults = SearchResults(Seq.empty, None, 0)
-  implicit val searchResultAggsCategoryImpW: OWrites[SearchResultAggCategory] = Json.writes[models.entities.SearchResultAggCategory]
-  implicit val searchResultAggsEntityImpW: OWrites[SearchResultAggEntity] = Json.writes[models.entities.SearchResultAggEntity]
-  implicit val searchResultAggsImpW: OWrites[SearchResultAggs] = Json.writes[models.entities.SearchResultAggs]
+  implicit val searchResultAggsCategoryImpW: OWrites[SearchResultAggCategory] =
+    Json.writes[models.entities.SearchResultAggCategory]
+  implicit val searchResultAggsEntityImpW: OWrites[SearchResultAggEntity] =
+    Json.writes[models.entities.SearchResultAggEntity]
+  implicit val searchResultAggsImpW: OWrites[SearchResultAggs] =
+    Json.writes[models.entities.SearchResultAggs]
 
   implicit val searchResultAggCategoryImpR: Reads[models.entities.SearchResultAggCategory] = (
     (__ \ "key").read[String] and
       (__ \ "doc_count").read[Long]
-    ) (SearchResultAggCategory.apply _)
+  )(SearchResultAggCategory.apply _)
 
   implicit val searchResultAggEntityImpR: Reads[models.entities.SearchResultAggEntity] = (
     (__ \ "key").read[String] and
@@ -71,5 +80,6 @@ object SearchResults {
         case None => Seq.empty[String]
       })(SearchResult.apply _)
 
-  implicit val msearchResultsImpW: OFormat[SearchResults] = Json.format[models.entities.SearchResults]
+  implicit val msearchResultsImpW: OFormat[SearchResults] =
+    Json.format[models.entities.SearchResults]
 }

@@ -32,7 +32,7 @@ object Expressions {
       (__ \ "label").read[String] and
       (__ \ "anatomical_systems").read[Seq[String]] and
       (__ \ "organs").read[Seq[String]]
-    ) (Tissue)
+  )(Tissue)
 
   implicit val rnaExpressionR: Reads[RNAExpression] = Json.reads[RNAExpression]
   implicit val cellTypeR: Reads[CellType] = Json.reads[CellType]
@@ -42,7 +42,7 @@ object Expressions {
     __.read[Tissue] and
       (__ \ "rna").read[RNAExpression] and
       (__ \ "protein").read[ProteinExpression]
-    ) (Expression.apply _)
+  )(Expression.apply _)
 
   implicit val expressionsR: Reads[Expressions] =
     (
