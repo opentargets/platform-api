@@ -9,7 +9,7 @@ services:
   - docker
 env:
   global:
-    - QUAY_REPO="quay.io/opentargets/platform-api-beta"
+    - QUAY_REPO="quay.io/opentargets/platform-api"
 cache:
   directories:
     - $HOME/.cache/coursier
