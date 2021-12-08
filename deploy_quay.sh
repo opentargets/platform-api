@@ -1,6 +1,6 @@
 #!/bin/bash
 set -ev
-if [ "${TRAVIS_PULL_REQUEST}" = "false" ] && [ "${TRAVIS_TAG}" != "" ]; then
+if [ "${TRAVIS_PULL_REQUEST}" = "true" ] || [ "${TRAVIS_TAG}" != "" ]; then
   docker pull "${QUAY_REPO}:${TRAVIS_BRANCH}" || true
   docker build --pull --cache-from "${QUAY_REPO}:${TRAVIS_BRANCH}" --tag "${QUAY_REPO}" . || docker build .
   docker login -u="${QUAY_USER}" -p="${QUAY_PASSWORD}" quay.io
