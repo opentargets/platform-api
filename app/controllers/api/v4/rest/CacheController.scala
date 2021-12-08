@@ -7,14 +7,15 @@ import play.api.mvc._
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class CacheController @Inject()(implicit ec: ExecutionContext,
+class CacheController @Inject()(implicit
+                                ec: ExecutionContext,
                                 cc: ControllerComponents,
-                                restHelpers: RestHelpers)
-    extends AbstractController(cc)
-    with Logging {
+                                restHelpers: RestHelpers
+                               ) extends AbstractController(cc)
+  with Logging {
 
   def clearCache(): Action[AnyContent] =
-    restHelpers.checkCredentials(Action.async { implicit request =>
+    restHelpers.checkCredentials(Action.async { _ =>
       Future {
         logger.info("Received request to clear cache.")
         Fetchers.resetCache()

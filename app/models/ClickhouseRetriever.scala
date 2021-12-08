@@ -3,9 +3,9 @@ package models
 import clickhouse.ClickHouseProfile
 import esecuele.Column._
 import esecuele.{Query => Q, _}
-import models.db.{QAOTF, Queryable}
+import models.db.QAOTF
 import models.entities.Associations._
-import models.entities.Configuration.{DatasourceSettings, LUTableSettings, OTSettings}
+import models.entities.Configuration.{DatasourceSettings, OTSettings}
 import models.entities._
 import play.api.Logging
 import slick.basic.DatabaseConfig
@@ -17,21 +17,23 @@ import scala.util.{Failure, Success}
 
 class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: OTSettings)
     extends Logging {
+
   import dbConfig.profile.api._
 
   implicit private def toSQL(q: Q): SQLActionBuilder = sql"""#${q.rep}"""
-  implicit private def toSQL(q: Queryable): SQLActionBuilder = sql"""#${q.query.rep}"""
 
   val db = dbConfig.db
   val chSettings = config.clickhouse
 
-  def getUniqList[A](of: Seq[String], from: String)(
-      implicit rconv: GetResult[A]): Future[Vector[A]] = {
+  def getUniqList[A](of: Seq[String], from: String)(implicit
+                                                    rconv: GetResult[A]
+  ): Future[Vector[A]] = {
     getUniqList[A](of, Column(from))(rconv)
   }
 
-  def getUniqList[A](of: Seq[String], from: Column)(
-      implicit rconv: GetResult[A]): Future[Vector[A]] = {
+  def getUniqList[A](of: Seq[String], from: Column)(implicit
+                                                    rconv: GetResult[A]
+  ): Future[Vector[A]] = {
     val s = Select(of.map(column))
     val f = From(from)
     val g = GroupBy(of.map(column))
@@ -49,7 +51,7 @@ class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: O
     }
   }
 
-  def executeQuery[A, B <: Q](q: B)(implicit rconv: GetResult[A]) = {
+  def executeQuery[A, B <: Q](q: B)(implicit rconv: GetResult[A]): Future[Vector[A]] = {
     logger.debug(s"execute query from eselecu Q ${q.toString}")
     val qq = q.as[A]
 
@@ -62,25 +64,29 @@ class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: O
     }
   }
 
-  def getAssociationsOTF(tableName: String,
-                         AId: String,
-                         AIDs: Set[String],
-                         BIDs: Set[String],
-                         BFilter: Option[String],
-                         datasourceSettings: Seq[DatasourceSettings],
-                         pagination: Pagination) = {
+  def getAssociationsOTF(
+                          tableName: String,
+                          AId: String,
+                          AIDs: Set[String],
+                          BIDs: Set[String],
+                          BFilter: Option[String],
+                          datasourceSettings: Seq[DatasourceSettings],
+                          pagination: Pagination
+                        ): Future[Vector[Association]] = {
     val weights = datasourceSettings.map(s => (s.id, s.weight))
     val dontPropagate = datasourceSettings.withFilter(!_.propagate).map(_.id).toSet
-    val aotfQ = QAOTF(tableName,
-                      AId,
-                      AIDs,
-                      BIDs,
-                      BFilter,
-                      None,
-                      weights,
-                      dontPropagate,
-                      pagination.offset,
-                      pagination.size).query.as[Association]
+    val aotfQ = QAOTF(
+      tableName,
+      AId,
+      AIDs,
+      BIDs,
+      BFilter,
+      None,
+      weights,
+      dontPropagate,
+      pagination.offset,
+      pagination.size
+    ).query.as[Association]
 
     logger.debug(aotfQ.statements.mkString("\n"))
 
@@ -90,7 +96,8 @@ class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: O
         logger.error(ex.toString)
         logger.error(
           "harmonic associations query failed " +
-            s"with query: ${aotfQ.statements.mkString(" ")}")
+            s"with query: ${aotfQ.statements.mkString(" ")}"
+        )
         Vector.empty
     }
   }

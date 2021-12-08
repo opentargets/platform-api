@@ -16,17 +16,18 @@ case class NamedAggregation(name: String, uniques: Option[Long], rows: Seq[Aggre
 case class Aggregations(uniques: Long, aggs: Seq[NamedAggregation])
 
 object Aggregations extends Logging {
-  val empty = Aggregations(0, Seq.empty)
+  val empty: Aggregations = Aggregations(0, Seq.empty)
 
-  implicit val aggregationImpWrites = Json.writes[Aggregation]
+  implicit val aggregationImpWrites: OWrites[Aggregation] = Json.writes[Aggregation]
   implicit val aggregationImpReads: Reads[Aggregation] =
     ((__ \ "key").read[String] and
       (__ \ "uniques" \\ "value").readWithDefault[Long](0) and
       (__ \ "aggs" \\ "buckets")
-        .lazyReadNullable(Reads.seq[Aggregation](aggregationImpReads)))(Aggregation.apply _)
+        .lazyReadNullable(Reads.seq[Aggregation](aggregationImpReads))) (Aggregation.apply _)
 
-  implicit val namedAggregationImpFormat = Json.format[NamedAggregation]
-  implicit val aggregationsImpFormat = Json.writes[Aggregations]
+  implicit val namedAggregationImpFormat: OFormat[NamedAggregation] = Json.format[NamedAggregation]
+  implicit val aggregationsImpFormat: OWrites[Aggregations] = Json.writes[Aggregations]
 
-  implicit val aggregationFilterImpFormat = Json.format[AggregationFilter]
+  implicit val aggregationFilterImpFormat: OFormat[AggregationFilter] =
+    Json.format[AggregationFilter]
 }

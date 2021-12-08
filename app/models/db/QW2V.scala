@@ -6,13 +6,14 @@ import esecuele.Column._
 import esecuele.{Query => Q}
 import play.api.Logging
 
-case class QW2V(tableName: String,
-                categories: List[String],
-                labels: Set[String],
-                threshold: Double,
-                size: Int)
-    extends Queryable
-    with Logging {
+case class QW2V(
+                 tableName: String,
+                 categories: List[String],
+                 labels: Set[String],
+                 threshold: Double,
+                 size: Int
+               ) extends Queryable
+  with Logging {
 
   require(labels.nonEmpty)
 
@@ -30,13 +31,16 @@ case class QW2V(tableName: String,
 
   val vvNorm: Column = F.sqrt(F.arraySum(Some("x -> x*x"), vv)).as(Some("vvnorm"))
 
-  val sim: Column = F.ifThenElse(
-    F.and(F.notEquals(vvNorm.name, literal(0d)), F.notEquals(norm, literal(0d))),
-    F.divide(
-      F.arraySum(Some("x -> x.1 * x.2"), F.arrayZip(vv.name, v)),
-      F.multiply(norm, vvNorm.name)),
-    literal(0d)
-  ).as(Some("similarity"))
+  val sim: Column = F
+    .ifThenElse(
+      F.and(F.notEquals(vvNorm.name, literal(0d)), F.notEquals(norm, literal(0d))),
+      F.divide(
+        F.arraySum(Some("x -> x.1 * x.2"), F.arrayZip(vv.name, v)),
+        F.multiply(norm, vvNorm.name)
+      ),
+      literal(0d)
+    )
+    .as(Some("similarity"))
 
   val wQ: Option[QuerySection] = Some(With(vv :: vvNorm :: sim :: Nil))
   val sQ: Option[QuerySection] = Some(Select(cat :: label :: sim.name :: Nil))
@@ -53,7 +57,8 @@ case class QW2V(tableName: String,
   val limitQ: Option[QuerySection] = Some(Limit(0, size))
 
   def existsLabel(id: String): Query = {
-    val qElements =  Select(F.count(star) :: Nil) :: fromQ.get :: PreWhere(F.equals(label, literal(id))) :: Nil
+    val qElements =
+      Select(F.count(star) :: Nil) :: fromQ.get :: PreWhere(F.equals(label, literal(id))) :: Nil
     val mainQ: Query = Q(qElements)
     logger.debug(mainQ.toString)
 

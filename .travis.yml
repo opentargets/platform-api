@@ -1,7 +1,7 @@
 sudo: required
 language: scala
 scala:
-  - 2.12.12
+  - 2.13.7
 dist: xenial
 jdk:
   - openjdk11
@@ -9,9 +9,19 @@ services:
   - docker
 env:
   global:
-  - QUAY_REPO="quay.io/opentargets/platform-api-beta"
+    - QUAY_REPO="quay.io/opentargets/platform-api-beta"
+cache:
+  directories:
+    - $HOME/.cache/coursier
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt
+before_cache:
+  - rm -fv $HOME/.ivy2/.sbt.ivy.lock
+  - find $HOME/.ivy2/cache -name "ivydata-*.properties" -print -delete
+  - find $HOME/.sbt        -name "*.lock"               -print -delete
 script:
   - sbt ++$TRAVIS_SCALA_VERSION clean compile
+  - if [ "$TRAVIS_PULL_REQUEST" = "true" ]; then sbt ++${TRAVIS_SCALA_VERSION} scalafmtCheck; fi
   - sbt ++$TRAVIS_SCALA_VERSION coverage "testOnly * -- -l test_configuration.IntegrationTestTag" coverageReport
   - sbt ++$TRAVIS_SCALA_VERSION dist
 deploy:
@@ -31,19 +41,4 @@ notifications:
     on_success: never
     on_failure: always
 after_success:
-#  - bash <(curl -s https://codecov.io/bash)
-  - docker pull "${QUAY_REPO}:${TRAVIS_BRANCH}" || true
-  - docker build --pull --cache-from "${QUAY_REPO}:${TRAVIS_BRANCH}" --tag "${QUAY_REPO}" . || docker build .
-  - docker login -u="${QUAY_USER}" -p="${QUAY_PASSWORD}" quay.io
-  - git_sha="${TRAVIS_COMMIT}"
-  - docker tag "${QUAY_REPO}" "${QUAY_REPO}:${TRAVIS_BRANCH}"
-  - docker tag "${QUAY_REPO}" "${QUAY_REPO}:${git_sha}-${TRAVIS_BRANCH}"
-  #only push non-PRs
-  - |
-    if [ "${TRAVIS_PULL_REQUEST}" = "false" ]; then
-      docker push "${QUAY_REPO}:${TRAVIS_BRANCH}" && docker push "${QUAY_REPO}:${git_sha}-${TRAVIS_BRANCH}"
-      if [ "${TRAVIS_BRANCH}" = "master" ]; then
-        docker tag "${QUAY_REPO}:${TRAVIS_BRANCH}" "${QUAY_REPO}:latest"
-        docker push "${QUAY_REPO}:latest"
-      fi
-    fi
+  - ./deploy_quay.sh

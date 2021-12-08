@@ -13,7 +13,8 @@ object Violations {
   case class InputParameterCheckError(violations: Vector[Violation])
       extends Exception(
         s"Error during input parameter check. " +
-          s"Violations:\n\n${violations map (_.errorMessage) mkString "\n\n"}")
+          s"Violations:\n\n${violations map (_.errorMessage) mkString "\n\n"}"
+      )
       with WithViolations
       with UserFacingError
 }

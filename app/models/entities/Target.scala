@@ -30,7 +30,12 @@ case class SafetyEffects(
                           dosing: Option[String]
                         )
 
-case class LocationAndSource(location: String, source: String, termSL: Option[String], labelSL: Option[String])
+case class LocationAndSource(
+                              location: String,
+                              source: String,
+                              termSL: Option[String],
+                              labelSL: Option[String]
+                            )
 
 case class TargetClass(id: Long, label: String, level: String)
 
@@ -56,7 +61,7 @@ case class SafetyLiability(
                             eventId: Option[String],
                             literature: Option[String],
                             url: Option[String],
-                            study: Option[Seq[SafetyStudy]],
+                            study: Option[Seq[SafetyStudy]]
                           )
 
 case class CancerHallmark(description: String, impact: Option[String], label: String, pmid: Long)
@@ -78,15 +83,22 @@ case class Homologue(
 
 case class GenomicLocation(chromosome: String, start: Long, end: Long, strand: Int)
 
-case class GeneOntology(id: String,
-                        aspect: String,
-                        evidence: String,
-                        geneProduct: String,
-                        source: String)
+case class GeneOntology(
+                         id: String,
+                         aspect: String,
+                         evidence: String,
+                         geneProduct: String,
+                         source: String
+                       )
 
 case class GeneOntologyLookup(id: String, name: String)
 
-case class Tep(targetFromSourceId: String, url: String, therapeuticArea: String, description: String)
+case class Tep(
+                targetFromSourceId: String,
+                url: String,
+                therapeuticArea: String,
+                description: String
+              )
 
 case class IdAndSource(id: String, source: String)
 
@@ -105,85 +117,91 @@ case class Constraint(
 
 case class ReactomePathway(pathway: String, pathwayId: String, topLevelTerm: String)
 
-case class TH1(id: String,
-                    alternativeGenes: Seq[String],
-                    approvedSymbol: String,
-                    approvedName: String,
-                    biotype: String,
-                    chemicalProbes: Seq[ChemicalProbe],
-                    dbXrefs: Seq[IdAndSource],
-                    functionDescriptions: Seq[String],
-                    geneticConstraint: Seq[Constraint],
-                    genomicLocation: GenomicLocation,
-                    geneOntology: Seq[GeneOntology],
-                    hallmarks: Option[Hallmarks])
+case class TH1(
+                id: String,
+                alternativeGenes: Seq[String],
+                approvedSymbol: String,
+                approvedName: String,
+                biotype: String,
+                chemicalProbes: Seq[ChemicalProbe],
+                dbXrefs: Seq[IdAndSource],
+                functionDescriptions: Seq[String],
+                geneticConstraint: Seq[Constraint],
+                genomicLocation: GenomicLocation,
+                geneOntology: Seq[GeneOntology],
+                hallmarks: Option[Hallmarks]
+              )
 
-case class TH2(homologues: Seq[Homologue],
-               pathways: Seq[ReactomePathway],
-               proteinIds: Seq[IdAndSource],
-               safetyLiabilities: Seq[SafetyLiability],
-               subcellularLocations: Seq[LocationAndSource],
-               synonyms: Seq[LabelAndSource],
-               symbolSynonyms: Seq[LabelAndSource],
-               nameSynonyms: Seq[LabelAndSource],
-               obsoleteSymbols: Seq[LabelAndSource],
-               obsoleteNames: Seq[LabelAndSource],
-               targetClass: Seq[TargetClass],
-               tep: Option[Tep],
-               tractability: Seq[Tractability],
-               transcriptIds: Seq[String])
+case class TH2(
+                homologues: Seq[Homologue],
+                pathways: Seq[ReactomePathway],
+                proteinIds: Seq[IdAndSource],
+                safetyLiabilities: Seq[SafetyLiability],
+                subcellularLocations: Seq[LocationAndSource],
+                synonyms: Seq[LabelAndSource],
+                symbolSynonyms: Seq[LabelAndSource],
+                nameSynonyms: Seq[LabelAndSource],
+                obsoleteSymbols: Seq[LabelAndSource],
+                obsoleteNames: Seq[LabelAndSource],
+                targetClass: Seq[TargetClass],
+                tep: Option[Tep],
+                tractability: Seq[Tractability],
+                transcriptIds: Seq[String]
+              )
 
-case class Target(id: String,
-                  alternativeGenes: Seq[String],
-                  approvedSymbol: String,
-                  approvedName: String,
-                  biotype: String,
-                  chemicalProbes: Seq[ChemicalProbe],
-                  dbXrefs: Seq[IdAndSource],
-                  functionDescriptions: Seq[String],
-                  geneticConstraint: Seq[Constraint],
-                  genomicLocation: GenomicLocation,
-                  geneOntology: Seq[GeneOntology],
-                  hallmarks: Option[Hallmarks],
-                  homologues: Seq[Homologue],
-                  pathways: Seq[ReactomePathway],
-                  proteinIds: Seq[IdAndSource],
-                  safetyLiabilities: Seq[SafetyLiability],
-                  subcellularLocations: Seq[LocationAndSource],
-                  synonyms: Seq[LabelAndSource], // double check, this is name and symbol
-                  symbolSynonyms: Seq[LabelAndSource],
-                  nameSynonyms: Seq[LabelAndSource],
-                  obsoleteSymbols: Seq[LabelAndSource],
-                  obsoleteNames: Seq[LabelAndSource],
-                  targetClass: Seq[TargetClass],
-                  tep: Option[Tep],
-                  tractability: Seq[Tractability],
-                  transcriptIds: Seq[String])
+case class Target(
+                   id: String,
+                   alternativeGenes: Seq[String],
+                   approvedSymbol: String,
+                   approvedName: String,
+                   biotype: String,
+                   chemicalProbes: Seq[ChemicalProbe],
+                   dbXrefs: Seq[IdAndSource],
+                   functionDescriptions: Seq[String],
+                   geneticConstraint: Seq[Constraint],
+                   genomicLocation: GenomicLocation,
+                   geneOntology: Seq[GeneOntology],
+                   hallmarks: Option[Hallmarks],
+                   homologues: Seq[Homologue],
+                   pathways: Seq[ReactomePathway],
+                   proteinIds: Seq[IdAndSource],
+                   safetyLiabilities: Seq[SafetyLiability],
+                   subcellularLocations: Seq[LocationAndSource],
+                   synonyms: Seq[LabelAndSource], // double check, this is name and symbol
+                   symbolSynonyms: Seq[LabelAndSource],
+                   nameSynonyms: Seq[LabelAndSource],
+                   obsoleteSymbols: Seq[LabelAndSource],
+                   obsoleteNames: Seq[LabelAndSource],
+                   targetClass: Seq[TargetClass],
+                   tep: Option[Tep],
+                   tractability: Seq[Tractability],
+                   transcriptIds: Seq[String]
+                 )
 
 object Target extends Logging {
 
-  implicit val cancerHallmarkImpW = Json.writes[CancerHallmark]
+  implicit val cancerHallmarkImpW: OWrites[CancerHallmark] = Json.writes[CancerHallmark]
   implicit val cancerHallmarkImpR: Reads[CancerHallmark] =
     ((__ \ "description").read[String] and
       (__ \ "impact").readNullable[String] and
       (__ \ "label").read[String] and
       (__ \ "pmid").read[Long]) (CancerHallmark.apply _)
 
-  implicit val chemicalProbeUrlImp = Json.format[ChemicalProbeUrl]
-  implicit val chemicalProbeImp = Json.format[ChemicalProbe]
+  implicit val chemicalProbeUrlImp: OFormat[ChemicalProbeUrl] = Json.format[ChemicalProbeUrl]
+  implicit val chemicalProbeImp: OFormat[ChemicalProbe] = Json.format[ChemicalProbe]
 
-  implicit val hallmarkAttributeImpW = Json.writes[HallmarkAttribute]
+  implicit val hallmarkAttributeImpW: OWrites[HallmarkAttribute] = Json.writes[HallmarkAttribute]
   implicit val hallmarkAttributeImpR: Reads[HallmarkAttribute] =
     ((__ \ "attribute_name").read[String] and
       (__ \ "description").read[String] and
       (__ \ "pmid").readNullable[Long]) (HallmarkAttribute.apply _)
 
-  implicit val hallmarksImpW = Json.writes[Hallmarks]
+  implicit val hallmarksImpW: OWrites[Hallmarks] = Json.writes[Hallmarks]
   implicit val hallmarksImpR: Reads[Hallmarks] =
     ((__ \ "cancerHallmarks").readWithDefault[Seq[CancerHallmark]](Seq.empty) and
       (__ \ "attributes").readWithDefault[Seq[HallmarkAttribute]](Seq.empty)) (Hallmarks.apply _)
 
-  implicit val geneOntologyImpW = Json.writes[models.entities.GeneOntology]
+  implicit val geneOntologyImpW: OWrites[GeneOntology] = Json.writes[models.entities.GeneOntology]
   implicit val geneOntologyImpR: Reads[models.entities.GeneOntology] =
     ((__ \ "id").read[String] and
       (__ \ "aspect").read[String] and
@@ -191,20 +209,22 @@ object Target extends Logging {
       (__ \ "geneProduct").read[String] and
       (__ \ "source").read[String]) (GeneOntology.apply _)
 
-  implicit val tepImpF = Json.format[Tep]
-  implicit val idAndSourceImpF = Json.format[IdAndSource]
-  implicit val labelAndSourceImpF = Json.format[LabelAndSource]
-  implicit val locationAndSourceImpF = Json.format[LocationAndSource]
-  implicit val targetClassImpF = Json.format[TargetClass]
-  implicit val tractabilityImpF = Json.format[Tractability]
-  implicit val constraintImpF = Json.format[Constraint]
-  implicit val homologueImpF = Json.format[Homologue]
-  implicit val doseAndTypeImpF = Json.format[SafetyEffects]
-  implicit val tissueImpF = Json.format[SafetyBiosample]
-  implicit val safetyStudyImpF = Json.format[SafetyStudy]
-  implicit val safetyLiabilityImpF = Json.format[SafetyLiability]
-  implicit val genomicLocationImpW = Json.format[models.entities.GenomicLocation]
-  implicit val reactomePathwayImpF = Json.format[models.entities.ReactomePathway]
+  implicit val tepImpF: OFormat[Tep] = Json.format[Tep]
+  implicit val idAndSourceImpF: OFormat[IdAndSource] = Json.format[IdAndSource]
+  implicit val labelAndSourceImpF: OFormat[LabelAndSource] = Json.format[LabelAndSource]
+  implicit val locationAndSourceImpF: OFormat[LocationAndSource] = Json.format[LocationAndSource]
+  implicit val targetClassImpF: OFormat[TargetClass] = Json.format[TargetClass]
+  implicit val tractabilityImpF: OFormat[Tractability] = Json.format[Tractability]
+  implicit val constraintImpF: OFormat[Constraint] = Json.format[Constraint]
+  implicit val homologueImpF: OFormat[Homologue] = Json.format[Homologue]
+  implicit val doseAndTypeImpF: OFormat[SafetyEffects] = Json.format[SafetyEffects]
+  implicit val tissueImpF: OFormat[SafetyBiosample] = Json.format[SafetyBiosample]
+  implicit val safetyStudyImpF: OFormat[SafetyStudy] = Json.format[SafetyStudy]
+  implicit val safetyLiabilityImpF: OFormat[SafetyLiability] = Json.format[SafetyLiability]
+  implicit val genomicLocationImpW: OFormat[GenomicLocation] =
+    Json.format[models.entities.GenomicLocation]
+  implicit val reactomePathwayImpF: OFormat[ReactomePathway] =
+    Json.format[models.entities.ReactomePathway]
 
   implicit val targetH1R: Reads[TH1] = (
     (JsPath \ "id").read[String] and
@@ -219,7 +239,7 @@ object Target extends Logging {
       (JsPath \ "genomicLocation").read[GenomicLocation] and
       (JsPath \ "go").readWithDefault[Seq[GeneOntology]](Seq.empty) and
       (JsPath \ "hallmarks").readNullable[Hallmarks]
-    )(TH1.apply _)
+    ) (TH1.apply _)
 
   implicit val targetH1W: OWrites[TH1] = Json.writes[TH1]
 
@@ -238,22 +258,21 @@ object Target extends Logging {
       (JsPath \ "tep").readNullable[Tep] and
       (JsPath \ "tractability").readWithDefault[Seq[Tractability]](Seq.empty) and
       (JsPath \ "transcriptIds").readWithDefault[Seq[String]](Seq.empty)
-    )(TH2.apply _)
+    ) (TH2.apply _)
 
   implicit val targetH2W: OWrites[TH2] = Json.writes[TH2]
 
-  implicit val targetImpR = (targetH1R and targetH2R) {
-    (t1, t2) => {
-      val tGen = Generic[Target]
-      val t1Gen = Generic[TH1]
-      val t2Gen = Generic[TH2]
+  implicit val targetImpR: Reads[Target] = (targetH1R and targetH2R) { (t1, t2) => {
+    val tGen = Generic[Target]
+    val t1Gen = Generic[TH1]
+    val t2Gen = Generic[TH2]
 
-      val ht1 = t1Gen.to(t1)
-      val ht2 = t2Gen.to(t2)
-      val ht = ht1 ::: ht2
+    val ht1 = t1Gen.to(t1)
+    val ht2 = t2Gen.to(t2)
+    val ht = ht1 ::: ht2
 
-      val c = tGen.from(ht)
-      c
-    }
+    val c = tGen.from(ht)
+    c
+  }
   }
 }

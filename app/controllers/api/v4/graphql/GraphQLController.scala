@@ -2,7 +2,6 @@ package controllers.api.v4.graphql
 
 import javax.inject._
 import models.entities.TooComplexQueryError
-import models.entities.Violations._
 import models.{Backend, GQLSchema}
 import play.api.libs.json._
 import play.api.mvc._
@@ -15,27 +14,29 @@ import scala.util.{Failure, Success}
 import models.entities.TooComplexQueryError._
 
 @Singleton
-class GraphQLController @Inject()(implicit ec: ExecutionContext,
+class GraphQLController @Inject()(implicit
+                                  ec: ExecutionContext,
                                   dbTables: Backend,
-                                  cc: ControllerComponents)
-    extends AbstractController(cc) {
+                                  cc: ControllerComponents
+                                 ) extends AbstractController(cc) {
 
-  def options = Action {
+  def options: Action[AnyContent] = Action {
     NoContent
   }
 
-  def gql(query: String, variables: Option[String], operation: Option[String]) = Action.async {
-    executeQuery(query, variables map parseVariables, operation)
-  }
+  def gql(query: String, variables: Option[String], operation: Option[String]): Action[AnyContent] =
+    Action.async {
+      executeQuery(query, variables map parseVariables, operation)
+    }
 
-  def gqlBody() = Action.async(parse.json) { request =>
+  def gqlBody(): Action[JsValue] = Action.async(parse.json) { request =>
     val query = (request.body \ "query").as[String]
     val operation = (request.body \ "operationName").asOpt[String]
 
     val variables = (request.body \ "variables").toOption.flatMap {
       case JsString(vars) => Some(parseVariables(vars))
-      case obj: JsObject  => Some(obj)
-      case _              => None
+      case obj: JsObject => Some(obj)
+      case _ => None
     }
 
     executeQuery(query, variables, operation)
@@ -59,9 +60,10 @@ class GraphQLController @Inject()(implicit ec: ExecutionContext,
             variables = variables getOrElse Json.obj(),
             deferredResolver = GQLSchema.resolvers,
             exceptionHandler = exceptionHandler,
-            queryReducers =
-              List(QueryReducer.rejectMaxDepth[Backend](15),
-                   QueryReducer.rejectComplexQueries[Backend](4000, (_, _) => TooComplexQueryError))
+            queryReducers = List(
+              QueryReducer.rejectMaxDepth[Backend](15),
+              QueryReducer.rejectComplexQueries[Backend](4000, (_, _) => TooComplexQueryError)
+            )
           )
           .map(Ok(_))
           .recover {
@@ -75,9 +77,15 @@ class GraphQLController @Inject()(implicit ec: ExecutionContext,
           BadRequest(
             Json.obj(
               "syntaxError" -> error.getMessage,
-              "locations" -> Json.arr(Json.obj("line" -> error.originalError.position.line,
-                                               "column" -> error.originalError.position.column))
-            )))
+              "locations" -> Json.arr(
+                Json.obj(
+                  "line" -> error.originalError.position.line,
+                  "column" -> error.originalError.position.column
+                )
+              )
+            )
+          )
+        )
 
       case Failure(error) =>
         throw error
