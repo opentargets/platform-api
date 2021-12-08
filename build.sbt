@@ -5,7 +5,7 @@ import sbt._
 
 
 
-name := """ot-platform-api-beta"""
+name := """ot-platform-api"""
 organization := "io.opentargets"
 
 version := "latest"
