@@ -9,7 +9,7 @@ services:
   - docker
 env:
   global:
-  - QUAY_REPO="quay.io/opentargets/platform-api-beta"
+  - QUAY_REPO="quay.io/opentargets/platform-api"
 script:
   - sbt ++$TRAVIS_SCALA_VERSION clean compile
   - sbt ++$TRAVIS_SCALA_VERSION coverage "testOnly * -- -l test_configuration.IntegrationTestTag" coverageReport
@@ -19,9 +19,9 @@ deploy:
   api_key: $GITHUB_TOKEN
   skip_cleanup: true
   file_glob: true
-  file: "target/universal/ot-platform-api-beta-latest.zip"
+  file: "target/universal/ot-platform-api-latest.zip"
   on:
-    repo: opentargets/platform-api-beta
+    repo: opentargets/platform-api
     tags: true
     all_branches: false
 notifications:
