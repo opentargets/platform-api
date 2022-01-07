@@ -1,6 +1,6 @@
 package controllers.api.v4.graphql
 
-import controllers.filters.QueryMetadataLogger.{GQL_OP_HEADER, GQL_VAR_HEADER}
+import QueryMetadataHeaders.{GQL_OP_HEADER, GQL_VAR_HEADER}
 
 import javax.inject._
 import models.entities.TooComplexQueryError
@@ -30,7 +30,7 @@ class GraphQLController @Inject()(implicit
   }
 
   def gql(query: String, variables: Option[String], operation: Option[String]): Action[AnyContent] =
-    Action.async {
+    metadataAction.async {
       executeQuery(query, variables map parseVariables, operation)
     }
 
