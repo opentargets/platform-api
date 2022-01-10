@@ -45,7 +45,7 @@ object Helpers extends Logging {
   }
 
   def loadConfigurationObject[T](key: String, config: Configuration)(implicit
-                                                                     tReader: Reads[T]
+      tReader: Reads[T]
   ): T = {
     val defaultHarmonicOptions = Json
       .parse(
@@ -59,7 +59,7 @@ object Helpers extends Logging {
   }
 
   def loadConfigurationObjectList[T](key: String, config: Configuration)(implicit
-                                                                         tReader: Reads[T]
+      tReader: Reads[T]
   ): Seq[T] = {
     val defaultHarmonicDatasourceOptions = config.underlying
       .getObjectList(key)

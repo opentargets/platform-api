@@ -10,10 +10,20 @@ import java.sql.Timestamp
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-case class GqlRequestMetadata(isOT: Boolean, date: Timestamp, duration: Long, operation: Option[String], variables: Option[String], api: APIVersion, data: DataVersion)
+case class GqlRequestMetadata(
+    isOT: Boolean,
+    date: Timestamp,
+    duration: Long,
+    operation: Option[String],
+    variables: Option[String],
+    api: APIVersion,
+    data: DataVersion
+)
 
-class MetadataAction @Inject()(parser: BodyParsers.Default)(implicit ec: ExecutionContext, config: Configuration)
-  extends ActionBuilderImpl(parser)
+class MetadataAction @Inject() (parser: BodyParsers.Default)(implicit
+    ec: ExecutionContext,
+    config: Configuration
+) extends ActionBuilderImpl(parser)
     with Logging {
 
   implicit val otSettings: OTSettings = loadConfigurationObject[OTSettings]("ot", config)
@@ -34,25 +44,26 @@ class MetadataAction @Inject()(parser: BodyParsers.Default)(implicit ec: Executi
       val responseHeaders = response.header.headers
       val opHeader = responseHeaders.get(GQL_OP_HEADER)
       val r = opHeader match {
-        case Some(operation) => if (operationFilters.contains(operation))
-          response
-        else {
-          val endTime = System.currentTimeMillis
-          val requestTime = endTime - startTime
-          val meta = GqlRequestMetadata(
-            request.headers.hasHeader(metadataLoggingConfig.otHeader),
-            new java.sql.Timestamp(System.currentTimeMillis()),
-            requestTime,
-            responseHeaders.get(GQL_OP_HEADER),
-            responseHeaders.get(GQL_VAR_HEADER),
-            apiVersion,
-            dataVersion
-          )
+        case Some(operation) =>
+          if (operationFilters.contains(operation))
+            response
+          else {
+            val endTime = System.currentTimeMillis
+            val requestTime = endTime - startTime
+            val meta = GqlRequestMetadata(
+              request.headers.hasHeader(metadataLoggingConfig.otHeader),
+              new java.sql.Timestamp(System.currentTimeMillis()),
+              requestTime,
+              responseHeaders.get(GQL_OP_HEADER),
+              responseHeaders.get(GQL_VAR_HEADER),
+              apiVersion,
+              dataVersion
+            )
 
-          logger.info(meta.toString)
+            logger.info(meta.toString)
 
-          response
-        }
+            response
+          }
         case None => response
       }
       r.discardingHeader(GQL_OP_HEADER).discardingHeader(GQL_VAR_HEADER)

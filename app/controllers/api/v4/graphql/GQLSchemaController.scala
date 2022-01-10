@@ -10,8 +10,8 @@ import play.api.mvc
 import play.api.mvc.AnyContent
 
 @Singleton
-class GQLSchemaController @Inject()(implicit ec: ExecutionContext, cc: ControllerComponents)
-  extends AbstractController(cc) {
+class GQLSchemaController @Inject() (implicit ec: ExecutionContext, cc: ControllerComponents)
+    extends AbstractController(cc) {
 
   def renderSchema: mvc.Action[AnyContent] = Action {
     Ok(SchemaRenderer.renderSchema(GQLSchema.schema))

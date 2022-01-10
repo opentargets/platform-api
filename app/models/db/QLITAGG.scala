@@ -5,13 +5,13 @@ import esecuele.{Functions => F, Query => Q, _}
 import play.api.Logging
 
 case class QLITAGG(
-                    tableName: String,
-                    indexTableName: String,
-                    ids: Set[String],
-                    size: Int,
-                    offset: Int
-                  ) extends Queryable
-  with Logging {
+    tableName: String,
+    indexTableName: String,
+    ids: Set[String],
+    size: Int,
+    offset: Int
+) extends Queryable
+    with Logging {
 
   require(ids.nonEmpty)
 

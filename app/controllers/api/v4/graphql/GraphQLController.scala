@@ -16,14 +16,14 @@ import models.entities.TooComplexQueryError._
 import play.api.Logging
 import play.api.mvc._
 
-
 @Singleton
-class GraphQLController @Inject()(implicit
-                                  ec: ExecutionContext,
-                                  dbTables: Backend,
-                                  cc: ControllerComponents,
-                                  metadataAction: MetadataAction
-                                 ) extends AbstractController(cc) with Logging {
+class GraphQLController @Inject() (implicit
+    ec: ExecutionContext,
+    dbTables: Backend,
+    cc: ControllerComponents,
+    metadataAction: MetadataAction
+) extends AbstractController(cc)
+    with Logging {
 
   def options: Action[AnyContent] = Action {
     NoContent
@@ -40,8 +40,8 @@ class GraphQLController @Inject()(implicit
 
     val variables = (request.body \ "variables").toOption.flatMap {
       case JsString(vars) => Some(parseVariables(vars))
-      case obj: JsObject => Some(obj)
-      case _ => None
+      case obj: JsObject  => Some(obj)
+      case _              => None
     }
 
     executeQuery(query, variables, operation)
@@ -51,7 +51,11 @@ class GraphQLController @Inject()(implicit
     if (variables.trim == "" || variables.trim == "null") Json.obj()
     else Json.parse(variables).as[JsObject]
 
-  private def executeQuery(query: String, variables: Option[JsObject], operation: Option[String]): Future[Result] =
+  private def executeQuery(
+      query: String,
+      variables: Option[JsObject],
+      operation: Option[String]
+  ): Future[Result] =
     QueryParser.parse(query) match {
 
       // query parsed successfully, time to execute it!
@@ -70,11 +74,13 @@ class GraphQLController @Inject()(implicit
               QueryReducer.rejectComplexQueries[Backend](4000, (_, _) => TooComplexQueryError)
             )
           )
-          .map(Ok(_)
-            .withHeaders(
-              (GQL_OP_HEADER, queryAst.operation().get.name.getOrElse("Unknown")),
-              (GQL_VAR_HEADER, variables.getOrElse(Json.obj()).toString())
-            ))
+          .map(
+            Ok(_)
+              .withHeaders(
+                (GQL_OP_HEADER, queryAst.operation().get.name.getOrElse("Unknown")),
+                (GQL_VAR_HEADER, variables.getOrElse(Json.obj()).toString())
+              )
+          )
           .recover {
             case error: QueryAnalysisError => BadRequest(error.resolveError)
             case error: ErrorWithResolver => {

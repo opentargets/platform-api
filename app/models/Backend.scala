@@ -28,13 +28,13 @@ import play.db.NamedDatabase
 import scala.collection.immutable.ArraySeq
 import scala.concurrent._
 
-class Backend @Inject()(implicit
-                        ec: ExecutionContext,
-                        @NamedDatabase("default") protected val dbConfigProvider: DatabaseConfigProvider,
-                        config: Configuration,
-                        env: Environment,
-                        cache: AsyncCacheApi
-                       ) extends Logging {
+class Backend @Inject() (implicit
+    ec: ExecutionContext,
+    @NamedDatabase("default") protected val dbConfigProvider: DatabaseConfigProvider,
+    config: Configuration,
+    env: Environment,
+    cache: AsyncCacheApi
+) extends Logging {
 
   implicit val defaultOTSettings: OTSettings = loadConfigurationObject[OTSettings]("ot", config)
   implicit val defaultESSettings: ElasticsearchSettings = defaultOTSettings.elasticsearch
@@ -63,9 +63,9 @@ class Backend @Inject()(implicit
   import com.sksamuel.elastic4s.ElasticDsl._
 
   def getAdverseEvents(
-                        id: String,
-                        pagination: Option[Pagination]
-                      ): Future[Option[AdverseEvents]] = {
+      id: String,
+      pagination: Option[Pagination]
+  ): Future[Option[AdverseEvents]] = {
 
     val pag = pagination.getOrElse(Pagination.mkDefault)
 
@@ -126,11 +126,11 @@ class Backend @Inject()(implicit
   }
 
   def getKnownDrugs(
-                     queryString: String,
-                     kv: Map[String, String],
-                     sizeLimit: Option[Int],
-                     cursor: Option[String]
-                   ): Future[Option[KnownDrugs]] = {
+      queryString: String,
+      kv: Map[String, String],
+      sizeLimit: Option[Int],
+      cursor: Option[String]
+  ): Future[Option[KnownDrugs]] = {
 
     val pag = Pagination(0, sizeLimit.getOrElse(Pagination.sizeDefault))
     val sortByField = sort.FieldSort(field = "phase").desc()
@@ -171,13 +171,13 @@ class Backend @Inject()(implicit
 
   /** get evidences by multiple parameters */
   def getEvidences(
-                    datasourceIds: Option[Seq[String]],
-                    targetIds: Seq[String],
-                    diseaseIds: Seq[String],
-                    orderBy: Option[(String, String)],
-                    sizeLimit: Option[Int],
-                    cursor: Option[String]
-                  ): Future[Evidences] = {
+      datasourceIds: Option[Seq[String]],
+      targetIds: Seq[String],
+      diseaseIds: Seq[String],
+      orderBy: Option[(String, String)],
+      sizeLimit: Option[Int],
+      cursor: Option[String]
+  ): Future[Evidences] = {
 
     val pag = sizeLimit.getOrElse(Pagination.sizeDefault)
     val sortByField = orderBy.flatMap { p =>
@@ -324,10 +324,10 @@ class Backend @Inject()(implicit
   }
 
   def search(
-              qString: String,
-              pagination: Option[Pagination],
-              entityNames: Seq[String]
-            ): Future[SearchResults] = {
+      qString: String,
+      pagination: Option[Pagination],
+      entityNames: Seq[String]
+  ): Future[SearchResults] = {
     val entities = for {
       e <- defaultESSettings.entities
       if (entityNames.contains(e.name) && e.searchIndex.isDefined)
@@ -343,15 +343,15 @@ class Backend @Inject()(implicit
     )
 
   def getAssociationsDiseaseFixed(
-                                   disease: Disease,
-                                   datasources: Option[Seq[DatasourceSettings]],
-                                   indirect: Boolean,
-                                   aggregationFilters: Seq[AggregationFilter],
-                                   targetSet: Set[String],
-                                   filter: Option[String],
-                                   orderBy: Option[(String, String)],
-                                   pagination: Option[Pagination]
-                                 ): Future[Associations] = {
+      disease: Disease,
+      datasources: Option[Seq[DatasourceSettings]],
+      indirect: Boolean,
+      aggregationFilters: Seq[AggregationFilter],
+      targetSet: Set[String],
+      filter: Option[String],
+      orderBy: Option[(String, String)],
+      pagination: Option[Pagination]
+  ): Future[Associations] = {
     val page = pagination.getOrElse(Pagination.mkDefault)
     val dss = datasources.getOrElse(defaultOTSettings.clickhouse.harmonic.datasources)
 
@@ -564,15 +564,15 @@ class Backend @Inject()(implicit
   }
 
   def getAssociationsTargetFixed(
-                                  target: Target,
-                                  datasources: Option[Seq[DatasourceSettings]],
-                                  indirect: Boolean,
-                                  aggregationFilters: Seq[AggregationFilter],
-                                  diseaseSet: Set[String],
-                                  filter: Option[String],
-                                  orderBy: Option[(String, String)],
-                                  pagination: Option[Pagination]
-                                ): Future[Associations] = {
+      target: Target,
+      datasources: Option[Seq[DatasourceSettings]],
+      indirect: Boolean,
+      aggregationFilters: Seq[AggregationFilter],
+      diseaseSet: Set[String],
+      filter: Option[String],
+      orderBy: Option[(String, String)],
+      pagination: Option[Pagination]
+  ): Future[Associations] = {
     val page = pagination.getOrElse(Pagination.mkDefault)
     val dss = datasources.getOrElse(defaultOTSettings.clickhouse.harmonic.datasources)
 
@@ -733,12 +733,12 @@ class Backend @Inject()(implicit
   }
 
   def getSimilarW2VEntities(
-                             label: String,
-                             labels: Set[String],
-                             categories: List[String],
-                             threshold: Double,
-                             size: Int
-                           ): Future[Vector[Similarity]] = {
+      label: String,
+      labels: Set[String],
+      categories: List[String],
+      threshold: Double,
+      size: Int
+  ): Future[Vector[Similarity]] = {
     val table = defaultOTSettings.clickhouse.similarities
     logger.info(s"query similarities in table ${table.name}")
 
@@ -785,9 +785,9 @@ class Backend @Inject()(implicit
   }
 
   /** @param index  key of index (name field) in application.conf
-   * @param default fallback index name
-   * @return elasticsearch index name resolved from application.conf or default.
-   */
+    * @param default fallback index name
+    * @return elasticsearch index name resolved from application.conf or default.
+    */
   private def getIndexOrDefault(index: String, default: Option[String] = None): String =
     defaultESSettings.entities
       .find(_.name == index)
