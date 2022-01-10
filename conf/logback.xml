@@ -26,7 +26,7 @@
     <logger name="application" level="DEBUG"/>
     <logger name="org.apache" level="WARN"/>
     <logger name="httpclient" level="WARN"/>
-    <logger name="models" level="DEBUG"/>
+    <logger name="models" level="INFO"/>
     <logger name="controllers" level="DEBUG"/>
 
     <!-- Off these ones as they are annoying, and anyway we manage configuration ourselves -->
@@ -42,9 +42,10 @@
     <!-- Set a specific actor to DEBUG -->
     <!--logger name="actors.MyActor" level="DEBUG" /-->
 
-    <root level="WARN">
+    <root level="INFO">
         <appender-ref ref="ASYNCSTDOUT" />
         <appender-ref ref="FILEOUT" />
+        <appender-ref ref="STDOUT" />
     </root>
 
     <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook"/>

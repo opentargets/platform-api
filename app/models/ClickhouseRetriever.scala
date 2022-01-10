@@ -26,14 +26,12 @@ class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: O
   val chSettings = config.clickhouse
 
   def getUniqList[A](of: Seq[String], from: String)(implicit
-                                                    rconv: GetResult[A]
-  ): Future[Vector[A]] = {
+                                                    rconv: GetResult[A]): Future[Vector[A]] = {
     getUniqList[A](of, Column(from))(rconv)
   }
 
   def getUniqList[A](of: Seq[String], from: Column)(implicit
-                                                    rconv: GetResult[A]
-  ): Future[Vector[A]] = {
+                                                    rconv: GetResult[A]): Future[Vector[A]] = {
     val s = Select(of.map(column))
     val f = From(from)
     val g = GroupBy(of.map(column))
@@ -65,14 +63,14 @@ class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: O
   }
 
   def getAssociationsOTF(
-                          tableName: String,
-                          AId: String,
-                          AIDs: Set[String],
-                          BIDs: Set[String],
-                          BFilter: Option[String],
-                          datasourceSettings: Seq[DatasourceSettings],
-                          pagination: Pagination
-                        ): Future[Vector[Association]] = {
+      tableName: String,
+      AId: String,
+      AIDs: Set[String],
+      BIDs: Set[String],
+      BFilter: Option[String],
+      datasourceSettings: Seq[DatasourceSettings],
+      pagination: Pagination
+  ): Future[Vector[Association]] = {
     val weights = datasourceSettings.map(s => (s.id, s.weight))
     val dontPropagate = datasourceSettings.withFilter(!_.propagate).map(_.id).toSet
     val aotfQ = QAOTF(
@@ -88,7 +86,7 @@ class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: O
       pagination.size
     ).query.as[Association]
 
-    logger.debug(aotfQ.statements.mkString("\n"))
+    logger.debug(aotfQ.statements.mkString(" "))
 
     db.run(aotfQ.asTry).map {
       case Success(v) => v

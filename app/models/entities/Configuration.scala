@@ -6,6 +6,8 @@ import play.api.libs.json.OFormat
 object Configuration {
   val batchSize = 100
 
+  case class Logging(otHeader: String, ignoredQueries: Seq[String])
+
   case class DataVersion(year: Int, month: Int, iteration: Int)
 
   case class APIVersion(x: Int, y: Int, z: Int)
@@ -62,9 +64,11 @@ object Configuration {
   case class OTSettings(
                          meta: Meta,
                          elasticsearch: ElasticsearchSettings,
-                         clickhouse: ClickhouseSettings
+                         clickhouse: ClickhouseSettings,
+                         logging: Logging
                        )
 
+  implicit val loggingJsonImp: OFormat[Logging] = Json.format[Logging]
   implicit val metaDataVersionJSONImp: OFormat[DataVersion] = Json.format[DataVersion]
   implicit val metaAPIVersionJSONImp: OFormat[APIVersion] = Json.format[APIVersion]
   implicit val metaJSONImp: OFormat[Meta] = Json.format[Meta]
