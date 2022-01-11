@@ -1,62 +1,87 @@
 package controllers.api.v4.graphql
 
-import QueryMetadataHeaders.{GQL_OP_HEADER, GQL_VAR_HEADER}
-
-import javax.inject._
+import controllers.api.v4.graphql.QueryMetadataHeaders.{GQL_OP_HEADER, GQL_VAR_HEADER}
 import models.entities.TooComplexQueryError
+import models.entities.TooComplexQueryError._
 import models.{Backend, GQLSchema}
+import org.apache.http.HttpStatus
+import play.api.Logging
+import play.api.cache.AsyncCacheApi
 import play.api.libs.json._
+import play.api.mvc._
 import sangria.execution._
 import sangria.marshalling.playJson._
 import sangria.parser.{QueryParser, SyntaxError}
 
+import javax.inject._
 import scala.concurrent._
+import scala.concurrent.duration._
 import scala.util.{Failure, Success}
-import models.entities.TooComplexQueryError._
-import play.api.Logging
-import play.api.mvc._
+
+case class GqlQuery(query: String, variables: JsObject, operation: Option[String])
 
 @Singleton
-class GraphQLController @Inject() (implicit
-    ec: ExecutionContext,
-    dbTables: Backend,
-    cc: ControllerComponents,
-    metadataAction: MetadataAction
-) extends AbstractController(cc)
+class GraphQLController @Inject()(implicit
+                                  ec: ExecutionContext,
+                                  dbTables: Backend,
+                                  cache: AsyncCacheApi,
+                                  cc: ControllerComponents,
+                                  metadataAction: MetadataAction)
+    extends AbstractController(cc)
     with Logging {
 
+  private val non200CacheDuration = Duration(10, "seconds")
   def options: Action[AnyContent] = Action {
     NoContent
   }
 
   def gql(query: String, variables: Option[String], operation: Option[String]): Action[AnyContent] =
     metadataAction.async {
-      executeQuery(query, variables map parseVariables, operation)
+      cachedQuery(GqlQuery(query, (variables map parseVariables).getOrElse(Json.obj()), operation))
     }
 
   def gqlBody(): Action[JsValue] = metadataAction(parse.json).async { request =>
     val query = (request.body \ "query").as[String]
     val operation = (request.body \ "operationName").asOpt[String]
 
-    val variables = (request.body \ "variables").toOption.flatMap {
-      case JsString(vars) => Some(parseVariables(vars))
-      case obj: JsObject  => Some(obj)
-      case _              => None
-    }
+    val variables: JsObject = (request.body \ "variables").toOption.map {
+      case JsString(vars) => parseVariables(vars)
+      case obj: JsObject  => obj
+      case _              => Json.obj()
+    }.get
 
-    executeQuery(query, variables, operation)
+    cachedQuery(GqlQuery(query, variables, operation))
   }
 
   private def parseVariables(variables: String) =
     if (variables.trim == "" || variables.trim == "null") Json.obj()
     else Json.parse(variables).as[JsObject]
 
+  private def cachedQuery(gqlQuery: GqlQuery): Future[Result] = {
+    val fromCache: Future[Option[Result]] = cache.get[Result](gqlQuery.toString)
+    val cacheResult: Future[Result] = fromCache.flatMap {
+      case Some(result) => Future.successful(result)
+      case None =>
+        logger.debug(s"Cache miss on $gqlQuery")
+        val queryResult = executeQuery(gqlQuery)
+        queryResult.andThen {
+          case Success(s) =>
+            if (s.header.status == HttpStatus.SC_OK) {
+              logger.info(s"Caching 200 response on $gqlQuery")
+              cache.set(gqlQuery.toString, s)
+            } else {
+              logger.debug(s"Temporarily caching non-200 response on $gqlQuery")
+              cache.set(gqlQuery.toString, s, non200CacheDuration)
+            }
+        }
+    }
+    cacheResult
+  }
+
   private def executeQuery(
-      query: String,
-      variables: Option[JsObject],
-      operation: Option[String]
+      gqlQuery: GqlQuery
   ): Future[Result] =
-    QueryParser.parse(query) match {
+    QueryParser.parse(gqlQuery.query) match {
 
       // query parsed successfully, time to execute it!
       case Success(queryAst) =>
@@ -65,8 +90,8 @@ class GraphQLController @Inject() (implicit
             GQLSchema.schema,
             queryAst,
             dbTables,
-            operationName = operation,
-            variables = variables getOrElse Json.obj(),
+            operationName = gqlQuery.operation,
+            variables = gqlQuery.variables,
             deferredResolver = GQLSchema.resolvers,
             exceptionHandler = exceptionHandler,
             queryReducers = List(
@@ -78,15 +103,14 @@ class GraphQLController @Inject() (implicit
             Ok(_)
               .withHeaders(
                 (GQL_OP_HEADER, queryAst.operation().get.name.getOrElse("Unknown")),
-                (GQL_VAR_HEADER, variables.getOrElse(Json.obj()).toString())
+                (GQL_VAR_HEADER, gqlQuery.variables.toString())
               )
           )
           .recover {
             case error: QueryAnalysisError => BadRequest(error.resolveError)
-            case error: ErrorWithResolver => {
+            case error: ErrorWithResolver =>
               logger.error(error.getMessage)
               InternalServerError(error.resolveError)
-            }
           }
 
       // can't parse GraphQL query, return error
