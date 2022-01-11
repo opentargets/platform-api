@@ -263,17 +263,15 @@ object Target extends Logging {
   implicit val targetH2W: OWrites[TH2] = Json.writes[TH2]
 
   implicit val targetImpR: Reads[Target] = (targetH1R and targetH2R) { (t1, t2) =>
-    {
-      val tGen = Generic[Target]
-      val t1Gen = Generic[TH1]
-      val t2Gen = Generic[TH2]
+    val tGen = Generic[Target]
+    val t1Gen = Generic[TH1]
+    val t2Gen = Generic[TH2]
 
-      val ht1 = t1Gen.to(t1)
-      val ht2 = t2Gen.to(t2)
-      val ht = ht1 ::: ht2
+    val ht1 = t1Gen.to(t1)
+    val ht2 = t2Gen.to(t2)
+    val ht = ht1 ::: ht2
 
-      val c = tGen.from(ht)
-      c
-    }
+    val c = tGen.from(ht)
+    c
   }
 }

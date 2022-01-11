@@ -22,7 +22,7 @@ object SeqRep {
   sealed abstract class NumSeqRep[T](override val from: String, val f: String => T)(implicit
       val ct: ClassTag[T]
   ) extends SeqRep[T, Vector](from) {
-    override protected def parse(from: String): SeqT = {
+    override protected def parse(from: String): SeqT =
       if (from.nonEmpty) {
         from.length match {
           case n if n > minLenTokensForNum =>
@@ -31,7 +31,6 @@ object SeqRep {
         }
       } else
         Vector.empty
-    }
   }
 
   case class DSeqRep(override val from: String) extends NumSeqRep[Double](from, _.toDouble)
@@ -39,7 +38,7 @@ object SeqRep {
   case class LSeqRep(override val from: String) extends NumSeqRep[Long](from, _.toLong)
 
   case class StrSeqRep(override val from: String) extends SeqRep[String, Vector](from) {
-    override protected def parse(from: String): SeqT = {
+    override protected def parse(from: String): SeqT =
       if (from.nonEmpty) {
         from.length match {
           case n if n > minLenTokensForStr =>
@@ -48,13 +47,12 @@ object SeqRep {
         }
       } else
         Vector.empty
-    }
   }
 
   case class TupleSeqRep[T](override val from: String, val f: String => T)(implicit
       val ct: ClassTag[T]
   ) extends SeqRep[T, Vector](from) {
-    override protected def parse(from: String): SeqT = {
+    override protected def parse(from: String): SeqT =
       if (from.nonEmpty) {
         from.length match {
           case n if n > minLenTokensForStr =>
@@ -64,7 +62,6 @@ object SeqRep {
         }
       } else
         Vector.empty
-    }
   }
 
   object Implicits {

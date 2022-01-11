@@ -22,7 +22,7 @@ import scala.concurrent.Future
 import scala.util.Try
 import com.sksamuel.elastic4s.requests.searches.sort.FieldSort
 
-class ElasticRetriever @Inject() (
+class ElasticRetriever @Inject()(
     client: ElasticClient,
     hlFields: Seq[String],
     searchEntities: Seq[String]
@@ -36,7 +36,7 @@ class ElasticRetriever @Inject() (
 
   private def decodeSearchAfter(searchAfter: Option[String]): collection.Seq[Any] =
     searchAfter
-      .map(sa => {
+      .map { sa =>
         val vv =
           Try(Json.parse(Base64Engine.decode(sa)))
             .map(_.asOpt[JsArray])
@@ -66,7 +66,7 @@ class ElasticRetriever @Inject() (
         )
 
         flattenedValues
-      })
+      }
       .getOrElse({
         logger.info("No results decoded from search, returning empty collection.")
         Seq.empty
@@ -162,7 +162,7 @@ class ElasticRetriever @Inject() (
   private def executeQuery(
       searchRequest: SearchRequest,
       sortByField: Option[sort.FieldSort]
-  ): Future[Response[SearchResponse]] = {
+  ): Future[Response[SearchResponse]] =
     client.execute {
       val sortedSearchRequest = sortByField match {
         case Some(s) => searchRequest.sortBy(s)
@@ -172,7 +172,6 @@ class ElasticRetriever @Inject() (
       logger.debug(s"Elasticsearch query: ${client.show(sortedSearchRequest)}")
       sortedSearchRequest
     }
-  }
 
   private def handleSearchResponse[A](
       searchResponse: Response[SearchResponse],
@@ -193,9 +192,9 @@ class ElasticRetriever @Inject() (
         val aggs = (result \ "aggregations").getOrElse(JsNull)
 
         val mappedHits = hits
-          .map(jObj => {
+          .map { jObj =>
             buildF(jObj)
-          })
+          }
           .withFilter(_.isDefined)
           .map(_.get)
           .to(IndexedSeq)
@@ -247,9 +246,9 @@ class ElasticRetriever @Inject() (
         val totalHits = results.result.totalHits
 
         val mappedHits = hits
-          .map(jObj => {
+          .map { jObj =>
             buildF(jObj)
-          })
+          }
           .withFilter(_.isDefined)
           .map(_.get)
           .to(IndexedSeq)
@@ -316,9 +315,9 @@ class ElasticRetriever @Inject() (
         val totalHits = results.result.totalHits
 
         val mappedHits = hits
-          .map(jObj => {
+          .map { jObj =>
             buildF(jObj)
-          })
+          }
           .withFilter(_.isDefined)
           .map(_.get)
           .to(IndexedSeq)
@@ -402,9 +401,9 @@ class ElasticRetriever @Inject() (
         val aggs = (result \ "aggregations").getOrElse(JsNull)
 
         val mappedHits = hits
-          .map(jObj => {
+          .map { jObj =>
             buildF(jObj)
-          })
+          }
           .withFilter(_.isDefined)
           .map(_.get)
           .to(IndexedSeq)
@@ -427,7 +426,7 @@ class ElasticRetriever @Inject() (
       ids: Seq[String],
       buildF: JsValue => Option[A],
       excludedFields: Seq[String] = Seq.empty
-  ): Future[IndexedSeq[A]] = {
+  ): Future[IndexedSeq[A]] =
     ids match {
       case Nil => Future.successful(IndexedSeq.empty)
       case _ =>
@@ -452,16 +451,15 @@ class ElasticRetriever @Inject() (
             val hits = (result \ "hits" \ "hits").get.as[JsArray].value
 
             val mappedHits = hits
-              .map(jObj => {
+              .map { jObj =>
                 buildF(jObj)
-              })
+              }
               .withFilter(_.isDefined)
               .map(_.get)
 
             mappedHits.to(IndexedSeq)
         }
     }
-  }
 
   def getSearchResultSet(
       entities: Seq[ElasticsearchEntity],
@@ -528,29 +526,30 @@ class ElasticRetriever @Inject() (
             mhits
           }
         }
-        .map { case (aggregations, hits) =>
-          val aggsJ: JsValue = Json.parse(aggregations.result.aggregationsAsString)
-          val aggs = aggsJ.validateOpt[SearchResultAggs] match {
-            case JsSuccess(value, _) => value
-            case JsError(errors) =>
-              logger.error(errors.mkString("", " | ", ""))
-              None
-          }
-
-          if (logger.isTraceEnabled) {
-            val jsHits = Json.parse(hits.body.get)
-            logger.trace(Json.prettyPrint(jsHits))
-          }
-
-          val sresults =
-            (Json.parse(hits.body.get) \ "hits" \ "hits").validate[Seq[SearchResult]] match {
+        .map {
+          case (aggregations, hits) =>
+            val aggsJ: JsValue = Json.parse(aggregations.result.aggregationsAsString)
+            val aggs = aggsJ.validateOpt[SearchResultAggs] match {
               case JsSuccess(value, _) => value
               case JsError(errors) =>
                 logger.error(errors.mkString("", " | ", ""))
-                Seq.empty
+                None
             }
 
-          SearchResults(sresults, aggs, hits.result.totalHits)
+            if (logger.isTraceEnabled) {
+              val jsHits = Json.parse(hits.body.get)
+              logger.trace(Json.prettyPrint(jsHits))
+            }
+
+            val sresults =
+              (Json.parse(hits.body.get) \ "hits" \ "hits").validate[Seq[SearchResult]] match {
+                case JsSuccess(value, _) => value
+                case JsError(errors) =>
+                  logger.error(errors.mkString("", " | ", ""))
+                  Seq.empty
+              }
+
+            SearchResults(sresults, aggs, hits.result.totalHits)
         }
     } else {
       Future.successful(SearchResults.empty)
@@ -573,27 +572,29 @@ object ElasticRetriever extends Logging {
       .view
       .filterKeys(mappings.contains)
       .toMap
-      .map { case (facet, filters) =>
-        val mappedFacet = mappings(facet)
-        val ff = filters.foldLeft(BoolQuery()) { (b, filter) =>
-          val termKey = filter.path.zipWithIndex.last
-          val termLevel = mappedFacet.pathKeys.lift
-          val termPrefix = if (mappedFacet.nested) s"${mappedFacet.key}." else ""
-          val keyName = termPrefix + s"${termLevel(termKey._2).getOrElse(mappedFacet.key)}.keyword"
-          b.withShould(TermQuery(keyName, termKey._1))
-        }
+      .map {
+        case (facet, filters) =>
+          val mappedFacet = mappings(facet)
+          val ff = filters.foldLeft(BoolQuery()) { (b, filter) =>
+            val termKey = filter.path.zipWithIndex.last
+            val termLevel = mappedFacet.pathKeys.lift
+            val termPrefix = if (mappedFacet.nested) s"${mappedFacet.key}." else ""
+            val keyName = termPrefix + s"${termLevel(termKey._2).getOrElse(mappedFacet.key)}.keyword"
+            b.withShould(TermQuery(keyName, termKey._1))
+          }
 
-        if (mappedFacet.nested) {
-          facet -> NestedQuery(mappedFacet.key, ff)
-        } else {
-          facet -> ff
-        }
+          if (mappedFacet.nested) {
+            facet -> NestedQuery(mappedFacet.key, ff)
+          } else {
+            facet -> ff
+          }
 
       }
       .withDefaultValue(BoolQuery())
 
-    val overallFilters = filtersByName.foldLeft(BoolQuery()) { case (b, f) =>
-      b.withMust(f._2)
+    val overallFilters = filtersByName.foldLeft(BoolQuery()) {
+      case (b, f) =>
+        b.withMust(f._2)
     }
 
     val namesR = mappings.keys.toList.reverse

@@ -43,10 +43,9 @@ object Column {
 
   def column(name: String): Column = Column(name)
 
-  def literal[T](v: T): Column = {
+  def literal[T](v: T): Column =
     v match {
       case e: String => Column(RawExpression(s"'$e'"))
       case _         => Column(RawExpression(v.toString))
     }
-  }
 }

@@ -40,15 +40,13 @@ object Disease extends Logging {
      */
     __.read[JsObject]
       .map { o =>
-        {
-          if (o.fields.map(_._1).contains("synonyms")) {
-            val cr: Seq[(String, JsValue)] = o.value("synonyms").as[JsObject].fields.to(Seq)
-            val newJsonObjects: Seq[JsObject] =
-              cr.map(xref => JsObject(Seq("relation" -> JsString(xref._1), "terms" -> xref._2)))
-            (o - "synonyms") ++ Json.obj("synonyms" -> newJsonObjects)
-          } else {
-            o
-          }
+        if (o.fields.map(_._1).contains("synonyms")) {
+          val cr: Seq[(String, JsValue)] = o.value("synonyms").as[JsObject].fields.to(Seq)
+          val newJsonObjects: Seq[JsObject] =
+            cr.map(xref => JsObject(Seq("relation" -> JsString(xref._1), "terms" -> xref._2)))
+          (o - "synonyms") ++ Json.obj("synonyms" -> newJsonObjects)
+        } else {
+          o
         }
       }
   )

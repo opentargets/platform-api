@@ -40,7 +40,7 @@ class MetadataAction @Inject() (parser: BodyParsers.Default)(implicit
     val startTime = System.currentTimeMillis()
     val result: Future[Result] = block(request)
 
-    result.map(response => {
+    result.map { response =>
       val responseHeaders = response.header.headers
       val opHeader = responseHeaders.get(GQL_OP_HEADER)
       val r = opHeader match {
@@ -67,6 +67,6 @@ class MetadataAction @Inject() (parser: BodyParsers.Default)(implicit
         case None => response
       }
       r.discardingHeader(GQL_OP_HEADER).discardingHeader(GQL_VAR_HEADER)
-    })
+    }
   }
 }

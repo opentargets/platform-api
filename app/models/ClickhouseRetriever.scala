@@ -26,14 +26,11 @@ class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: O
   val chSettings = config.clickhouse
 
   def getUniqList[A](of: Seq[String], from: String)(implicit
-      rconv: GetResult[A]
-  ): Future[Vector[A]] = {
+                                                    rconv: GetResult[A]): Future[Vector[A]] =
     getUniqList[A](of, Column(from))(rconv)
-  }
 
   def getUniqList[A](of: Seq[String], from: Column)(implicit
-      rconv: GetResult[A]
-  ): Future[Vector[A]] = {
+                                                    rconv: GetResult[A]): Future[Vector[A]] = {
     val s = Select(of.map(column))
     val f = From(from)
     val g = GroupBy(of.map(column))
