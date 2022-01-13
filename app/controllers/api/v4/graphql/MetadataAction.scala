@@ -14,16 +14,16 @@ case class GqlRequestMetadata(
     isOT: Boolean,
     date: Timestamp,
     duration: Long,
-    operation: Option[String],
-    variables: Option[String],
+    operation: String,
+    variables: String,
     api: APIVersion,
     data: DataVersion
 )
 
-class MetadataAction @Inject() (parser: BodyParsers.Default)(implicit
-    ec: ExecutionContext,
-    config: Configuration
-) extends ActionBuilderImpl(parser)
+class MetadataAction @Inject()(parser: BodyParsers.Default)(implicit
+                                                            ec: ExecutionContext,
+                                                            config: Configuration)
+    extends ActionBuilderImpl(parser)
     with Logging {
 
   implicit val otSettings: OTSettings = loadConfigurationObject[OTSettings]("ot", config)
@@ -54,8 +54,8 @@ class MetadataAction @Inject() (parser: BodyParsers.Default)(implicit
               request.headers.hasHeader(metadataLoggingConfig.otHeader),
               new java.sql.Timestamp(System.currentTimeMillis()),
               requestTime,
-              responseHeaders.get(GQL_OP_HEADER),
-              responseHeaders.get(GQL_VAR_HEADER),
+              responseHeaders.getOrElse(GQL_OP_HEADER, ""),
+              responseHeaders.getOrElse(GQL_VAR_HEADER, ""),
               apiVersion,
               dataVersion
             )
