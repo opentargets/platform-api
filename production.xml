@@ -1,5 +1,4 @@
 <configuration>
-
     <conversionRule conversionWord="coloredLevel" converterClass="play.api.libs.logback.ColoredLevel" />
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
@@ -9,10 +8,18 @@
     </appender>
 
     <appender name="ASYNCSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
+        <!-- increases the default queue size -->
+        <queueSize>512</queueSize>
+        <!-- don't discard messages -->
+        <discardingThreshold>0</discardingThreshold>
+        <!-- block when queue is full -->
+        <neverBlock>false</neverBlock>
         <appender-ref ref="STDOUT"/>
     </appender>
 
-    <logger name="play" level="WARN"/>
+    <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook"/>
+
+    <logger name="play" level="INFO"/>
     <logger name="application" level="WARN"/>
     <logger name="org.apache" level="WARN"/>
     <logger name="httpclient" level="WARN"/>
