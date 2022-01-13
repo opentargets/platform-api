@@ -132,7 +132,8 @@ class GraphQLController @Inject()(implicit
           .map(
             Ok(_)
               .withHeaders(
-                (GQL_OP_HEADER, queryAst.operation().get.name.getOrElse("Unknown")),
+                (GQL_OP_HEADER,
+                 queryAst.operation().map(op => op.name).getOrElse("Unknown").toString),
                 (GQL_VAR_HEADER, gqlQuery.variables.toString())
               )
           )
