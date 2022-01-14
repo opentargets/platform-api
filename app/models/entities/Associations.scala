@@ -32,9 +32,8 @@ case class EvidenceSource(datasource: String, datatype: String)
 object Associations {
   val empty: Associations = Associations(Seq.empty, None, 0, Vector.empty)
 
-  implicit val getAssociationOTFRowFromDB: GetResult[Association] = {
-
-    GetResult(r => {
+  implicit val getAssociationOTFRowFromDB: GetResult[Association] =
+    GetResult { r =>
       val id: String = r.<<
       val score: Double = r.<<
       val tuples1: String = r.<<
@@ -62,8 +61,7 @@ object Associations {
           }
         ).rep
       )
-    })
-  }
+    }
 
   implicit val getEvidenceSourceFromDB: GetResult[EvidenceSource] =
     GetResult(r => EvidenceSource(r.<<, r.<<))

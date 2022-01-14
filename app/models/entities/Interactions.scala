@@ -99,11 +99,11 @@ object Interactions extends Logging {
 
         val keys = ((obj \ "aggs" \ "buckets")
           .as[Seq[JsValue]])
-          .map(el => {
+          .map { el =>
             val k = (el \ "key").as[String]
             val v = (el \ "aggs" \ "buckets" \\ "key").take(1).head.as[String]
             JsObject(List("sourceDatabase" -> JsString(k), "databaseVersion" -> JsString(v)))
-          })
+          }
 
         keys
       case _ => Seq.empty

@@ -10,7 +10,7 @@ object Helpers extends Logging {
   object Cursor extends Logging {
     def to(searchAfter: Option[String]): Option[JsValue] =
       searchAfter
-        .flatMap(sa => {
+        .flatMap { sa =>
           val vv =
             Try(Json.parse(Base64Engine.decode(sa)))
               .map(_.asOpt[JsValue])
@@ -30,7 +30,7 @@ object Helpers extends Logging {
           }
 
           vv
-        })
+        }
 
     def from(obj: Option[JsValue]): Option[String] =
       obj.map(jsv => Base64Engine.encode(Json.stringify(jsv))).map(new String(_))
@@ -65,10 +65,10 @@ object Helpers extends Logging {
       .getObjectList(key)
       .toArray
       .toSeq
-      .map(el => {
+      .map { el =>
         val co = el.asInstanceOf[ConfigObject]
         Json.parse(co.render(ConfigRenderOptions.concise())).as[T]
-      })
+      }
 
     defaultHarmonicDatasourceOptions
   }
@@ -78,9 +78,9 @@ object Helpers extends Logging {
     jObj
       .transform(source)
       .asOpt
-      .map(obj => {
+      .map { obj =>
         logger.trace(Json.prettyPrint(obj))
         obj.as[A]
-      })
+      }
   }
 }

@@ -54,9 +54,9 @@ case class QAOTF(
   val BFilterQ: Option[Column] = BFilter flatMap { case matchStr =>
     val tokens = matchStr
       .split(" ")
-      .map(s => {
+      .map { s =>
         F.like(BData.name, F.lower(literal(s"%${s.toLowerCase.trim}%")))
-      })
+      }
       .toList
 
     tokens match {

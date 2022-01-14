@@ -53,9 +53,8 @@ object Arguments {
   val ensemblIds: Argument[Seq[String with tag.Tagged[FromInput.CoercedScalaResult]]] =
     Argument("ensemblIds", ListInputType(StringType), description = "List of Ensembl IDs")
   val chemblId: Argument[String] = Argument("chemblId", StringType, description = "Chembl ID")
-  val chemblIds: Argument[Seq[String with tag.Tagged[FromInput.CoercedScalaResult]]] = {
+  val chemblIds: Argument[Seq[String with tag.Tagged[FromInput.CoercedScalaResult]]] =
     Argument("chemblIds", ListInputType(StringType), description = "List of Chembl IDs")
-  }
   val goIds: Argument[Seq[String with tag.Tagged[FromInput.CoercedScalaResult]]] =
     Argument("goIds", ListInputType(StringType), description = "List of GO IDs, eg. GO:0005515")
   val indirectEvidences: Argument[Option[Boolean]] = Argument(

@@ -15,9 +15,8 @@ trait ElasticRetrieverQueryBuilders extends QueryApi with Logging {
       pagination: Pagination,
       aggs: Iterable[AbstractAggregation] = Iterable.empty,
       excludedFields: Seq[String] = Seq.empty
-  ): SearchRequest = {
+  ): SearchRequest =
     getByIndexQueryBuilder(esIndex, kv, pagination, aggs, excludedFields, must)
-  }
 
   def IndexQueryShould[A](
       esIndex: String,
@@ -25,9 +24,8 @@ trait ElasticRetrieverQueryBuilders extends QueryApi with Logging {
       pagination: Pagination,
       aggs: Iterable[AbstractAggregation] = Iterable.empty,
       excludedFields: Seq[String] = Seq.empty
-  ): SearchRequest = {
+  ): SearchRequest =
     getByIndexQueryBuilder(esIndex, kv, pagination, aggs, excludedFields, should)
-  }
 
   def getByIndexQueryBuilder[A, V](
       esIndex: String,

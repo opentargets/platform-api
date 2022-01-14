@@ -129,15 +129,13 @@ object Drug {
      */
     __.read[JsObject]
       .map { o =>
-        {
-          if (o.keys.contains("crossReferences")) {
-            val cr: Seq[(String, JsValue)] = o.value("crossReferences").as[JsObject].fields.to(Seq)
-            val newJsonObjects: Seq[JsObject] =
-              cr.map(xref => JsObject(Seq("source" -> JsString(xref._1), "reference" -> xref._2)))
-            (o - "crossReferences") ++ Json.obj("crossReferences" -> newJsonObjects)
-          } else {
-            o
-          }
+        if (o.keys.contains("crossReferences")) {
+          val cr: Seq[(String, JsValue)] = o.value("crossReferences").as[JsObject].fields.to(Seq)
+          val newJsonObjects: Seq[JsObject] =
+            cr.map(xref => JsObject(Seq("source" -> JsString(xref._1), "reference" -> xref._2)))
+          (o - "crossReferences") ++ Json.obj("crossReferences" -> newJsonObjects)
+        } else {
+          o
         }
       }
   )

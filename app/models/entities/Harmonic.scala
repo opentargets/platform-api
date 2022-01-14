@@ -73,12 +73,12 @@ object Harmonic {
       .as(Some("max_hs_score"))
 
     // WARN! the propagation hack strikes again about expression atlas
-    val dsHSCols = datasources.flatMap(c => {
+    val dsHSCols = datasources.flatMap { c =>
       if (c.id == "expression_atlas")
         Harmonic.mkHSColumn(Column(c.id), hsMaxValueCol, booleanCondition)
       else
         Harmonic.mkHSColumn(Column(c.id), hsMaxValueCol, None)
-    })
+    }
 
     val dsWeightV = array(datasources.map(c => literal(c.weight))).as(Some("ds_scores_v"))
     val dsV = array(dsHSCols.withFilter(_.name.rep.endsWith("_v_hs")).map(_.name))
@@ -104,7 +104,7 @@ object Harmonic {
     val s = Select(idCol.name +: overallHS.name +: dsV.name +: Nil)
     val f = From(Column(table))
 
-    val expansionQuery = expansionTable.map(lut => {
+    val expansionQuery = expansionTable.map { lut =>
       val expCol = F.joinGet(lut.name, lut.field.get, qColValueCol).as(lut.field)
       val neighbourCol = expCol.name.as(Some("neighbour"))
       val innerSel = Query(Select(expCol +: Nil))
@@ -115,7 +115,7 @@ object Harmonic {
       ).toColumn(None)
       val inn = F.in(qCol, sel)
       F.or(F.equals(qCol, qColValueCol), inn)
-    })
+    }
 
     val pw = PreWhere(expansionQuery.getOrElse(F.equals(qCol, qColValueCol)))
     val g = GroupBy(idCol +: Nil)

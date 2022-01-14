@@ -87,10 +87,9 @@ class Backend @Inject() (implicit
         ElasticRetriever.sortByDesc("llr")
       )
       .map {
-        case (Seq(), _) => {
+        case (Seq(), _) =>
           logger.debug(s"No adverse event found for ${kv.toString}")
           None
-        }
         case (seq, agg) =>
           logger.trace(Json.prettyPrint(agg))
           val counts = (agg \ "eventCount" \ "value").as[Long]
@@ -300,22 +299,22 @@ class Backend @Inject() (implicit
     val queryTerm = Map("chemblIds.keyword" -> id)
     esRetriever
       .getByIndexedQueryShould(indexName, queryTerm, Pagination.mkDefault, fromJsValue[DrugWarning])
-      .map(results => {
+      .map { results =>
         /*
       Group references by warning type and toxicity class to replicate ChEMBL web interface.
       This work around relates to ticket opentargets/platform#1506
          */
         val drugWarnings =
-          results._1.foldLeft(Map.empty[(String, Option[String]), DrugWarning])((dwMap, dw) => {
+          results._1.foldLeft(Map.empty[(String, Option[String]), DrugWarning]) { (dwMap, dw) =>
             if (dwMap.contains((dw.warningType, dw.toxicityClass))) {
               val old = dwMap((dw.warningType, dw.toxicityClass))
               val newDW =
                 old.copy(references = Some((old.references ++ dw.references).flatten.toSeq))
               dwMap.updated((dw.warningType, dw.toxicityClass), newDW)
             } else dwMap + ((dw.warningType, dw.toxicityClass) -> dw)
-          })
+          }
         drugWarnings.values.toIndexedSeq
-      })
+      }
   }
 
   def getDiseases(ids: Seq[String]): Future[IndexedSeq[Disease]] = {
@@ -380,13 +379,13 @@ class Backend @Inject() (implicit
       .getOrElse("evidences_aotf")
 
     val tractabilityMappings =
-      List("SmallMolecule", "Antibody", "Protac", "OtherModalities").map(t => {
+      List("SmallMolecule", "Antibody", "Protac", "OtherModalities").map { t =>
         s"tractability$t" -> AggregationMapping(
           s"facet_tractability_${t.toLowerCase}",
           IndexedSeq.empty,
           nested = false
         )
-      })
+      }
     val mappings = Map(
       "dataTypes" -> AggregationMapping(
         "datatype_id",
@@ -492,7 +491,7 @@ class Backend @Inject() (implicit
           )
         )
       )
-    ) ++ tractabilityMappings.map(kv => {
+    ) ++ tractabilityMappings.map { kv =>
       FilterAggregation(
         kv._1,
         ElasticRetriever.aggregationFilterProducer(aggregationFilters, Map(kv))._1,
@@ -508,7 +507,7 @@ class Backend @Inject() (implicit
           )
         )
       )
-    })
+    }
 
     val esQ = esRetriever.getAggregationsByQuery(
       evidencesIndexName,

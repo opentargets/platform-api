@@ -24,7 +24,7 @@ object GqlTest {
 
   /** Retrieves filename from target resources and returns query as string with quotes escaped.
     */
-  def getQueryFromFile(filename: String): String = {
+  def getQueryFromFile(filename: String): String =
     File(this.getClass.getResource(s"/gqlQueries/$filename.gql").getPath)
       .lines()
       .withFilter(_.nonEmpty)
@@ -32,19 +32,16 @@ object GqlTest {
         str.flatMap {
           case '"' => "\\\""
           case ch  => s"$ch"
-        }
-      )
+      })
       .mkString("\\n")
-  }
 
   def generateQueryString(query: String, variables: String): JsValue =
     Json.parse(s"""{"query": "$query" , $variables }""")
 
-  def createRequest(query: JsValue): Request[JsValue] = {
+  def createRequest(query: JsValue): Request[JsValue] =
     FakeRequest(POST, "/graphql")
       .withHeaders(("Content-Type", "application/json"))
       .withBody(query)
-  }
 }
 
 class GqlTest
@@ -126,13 +123,11 @@ class GqlTest
   "Bibliography queries" must {
     "return valid response for BibliographyQuery" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
       testQueryAgainstGqlEndpoint(Target("Bibliography_BibliographyQuery"))(t =>
-        t.replace("ensgId", "id")
-      )
+        t.replace("ensgId", "id"))
     }
     "return valid response for BibliographySimilarEntities" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
       testQueryAgainstGqlEndpoint(Target("Bibliography_SimilarEntities"))(t =>
-        t.replace("ensgId", "id")
-      )
+        t.replace("ensgId", "id"))
     }
     "return valid response for Bibliography summary fragment" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
       testQueryAgainstGqlEndpoint(DiseaseFragment("Bibliography_BibliographySummaryFragment"))
@@ -356,8 +351,7 @@ class GqlTest
   "Evidence page queries" must {
     "return valid responses " taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDisease("EvidencePage_EvidencePageQuery"))(q =>
-        q.replace("ensemblId", "ensgId")
-      )
+        q.replace("ensemblId", "ensgId"))
     }
   }
 
