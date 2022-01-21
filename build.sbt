@@ -3,8 +3,6 @@ import scala.language.postfixOps
 import scala.sys.process._
 import sbt._
 
-
-
 name := """ot-platform-api"""
 organization := "io.opentargets"
 
@@ -19,7 +17,7 @@ javacOptions ++= Seq("-encoding", "UTF-8")
 
 scalacOptions in ThisBuild ++= Seq(
   "-language:_",
-  "-Xfatal-warnings",
+  "-Xfatal-warnings"
 )
 scalacOptions in Compile += "-deprecation"
 
@@ -28,10 +26,13 @@ mappings in Universal ++= directory(baseDirectory.value / "resources")
 
 resolvers += Resolver.sonatypeRepo("releases")
 
-libraryDependencies ++= Seq(guice, caffeine)
-libraryDependencies += "com.typesafe.slick" %% "slick" % "3.3.3"
-libraryDependencies += "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test
-libraryDependencies += "org.scalatestplus" %% "scalacheck-1-15" % "3.2.8.0" % Test
+libraryDependencies ++= Seq(
+  guice,
+  caffeine,
+  "com.typesafe.slick" %% "slick" % "3.3.3",
+  "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test,
+  "org.scalatestplus" %% "scalacheck-1-15" % "3.2.8.0" % Test
+)
 
 val playVersion = "2.8.9"
 libraryDependencies += "com.typesafe.play" %% "play" % playVersion
@@ -63,7 +64,6 @@ libraryDependencies ++= Seq(
   "com.sksamuel.elastic4s" %% "elastic4s-json-play" % s4sVersion
 )
 
-
 lazy val frontendRepository = settingKey[String]("Git repository with open targets front end.")
 lazy val gqlFileDir = settingKey[File]("Location to save test input queries")
 lazy val getGqlFiles = taskKey[Unit]("Add *.gql files from frontendRepository to test resources")
@@ -73,27 +73,28 @@ frontendRepository := "https://github.com/opentargets/platform-app.git"
 gqlFileDir := (Test / resourceDirectory).value / "gqlQueries"
 
 getGqlFiles := {
-  sbt.IO.withTemporaryDirectory(td => {
+  sbt.IO.withTemporaryDirectory { td =>
     // copy files
     Process(s"git clone ${frontendRepository.value} ${td.getAbsolutePath}") !
     // filter files of interest
     val gqlFiles: Seq[File] = (td ** "*.gql").get
 
     // delete files in current gql test resources so we can identify when the FE deletes a file
-    val filesToDelete: Seq[File] = sbt.IO.listFiles(gqlFileDir.value, NameFilter.fnToNameFilter(!_.contains("full")))
+    val filesToDelete: Seq[File] =
+      sbt.IO.listFiles(gqlFileDir.value, NameFilter.fnToNameFilter(!_.contains("full")))
     sbt.IO.delete(filesToDelete)
     // move files to test resources
     sbt.IO.copy(gqlFiles.map(f => (f, gqlFileDir.value / s"${f.getParentFile.name}_${f.name}")))
-  })
+  }
 }
 
 updateGqlFiles := {
   // trigger update
   val a: Unit = getGqlFiles.value
 
-  def gitStatusOpt(option: String): Seq[String] = Process(s"git status -$option ${gqlFileDir.value.getAbsolutePath}")
-    .lineStream
-    .filter(_.contains((Test / resourceDirectory).value.getName))
+  def gitStatusOpt(option: String): Seq[String] =
+    Process(s"git status -$option ${gqlFileDir.value.getAbsolutePath}").lineStream
+      .filter(_.contains((Test / resourceDirectory).value.getName))
 
   val newFiles = gitStatusOpt("u")
   val updatedFiles = gitStatusOpt("uno")
@@ -113,4 +114,3 @@ updateGqlFiles := {
   }
 
 }
-
