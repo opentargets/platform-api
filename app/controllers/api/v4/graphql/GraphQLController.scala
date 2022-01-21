@@ -47,11 +47,13 @@ class GraphQLController @Inject()(implicit
     val query = (request.body \ "query").as[String]
     val operation = (request.body \ "operationName").asOpt[String]
 
-    val variables: JsObject = (request.body \ "variables").toOption.map {
-      case JsString(vars) => parseVariables(vars)
-      case obj: JsObject  => obj
-      case _              => Json.obj()
-    }.get
+    val variables: JsObject = (request.body \ "variables").toOption
+      .map {
+        case JsString(vars) => parseVariables(vars)
+        case obj: JsObject  => obj
+        case _              => Json.obj()
+      }
+      .getOrElse(Json.obj())
 
     cachedQuery(GqlQuery(query, variables, operation))
   }
