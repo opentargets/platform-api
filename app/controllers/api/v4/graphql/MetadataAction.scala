@@ -20,10 +20,10 @@ case class GqlRequestMetadata(
     data: DataVersion
 )
 
-class MetadataAction @Inject()(parser: BodyParsers.Default)(implicit
-                                                            ec: ExecutionContext,
-                                                            config: Configuration)
-    extends ActionBuilderImpl(parser)
+class MetadataAction @Inject() (parser: BodyParsers.Default)(implicit
+    ec: ExecutionContext,
+    config: Configuration
+) extends ActionBuilderImpl(parser)
     with Logging {
 
   implicit val otSettings: OTSettings = loadConfigurationObject[OTSettings]("ot", config)
