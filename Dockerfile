@@ -19,3 +19,4 @@ ENTRYPOINT ot-platform-api-latest/bin/ot-platform-api \
     -Dcom.sun.management.jmxremote.port=31238 \
     -Dcom.sun.management.jmxremote.ssl=false \
     -Dcom.sun.management.jmxremote.authenticate=false \
+    -Dpidfile.path=/dev/null
