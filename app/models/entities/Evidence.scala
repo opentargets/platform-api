@@ -639,6 +639,13 @@ object Evidence {
         resolve = js => (js.value \ "studyStopReason").asOpt[String]
       ),
       Field(
+        "studyStopReasonCategories",
+        OptionType(ListType(StringType)),
+        description =
+          Some("Predicted reason(s) why the study has been stopped based on studyStopReason"),
+        resolve = js => (js.value \ "studyStopReasonCategories").asOpt[Seq[String]]
+      ),
+      Field(
         "targetFromSource",
         OptionType(StringType),
         description = None,
