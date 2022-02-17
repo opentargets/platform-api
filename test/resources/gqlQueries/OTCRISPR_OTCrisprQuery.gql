@@ -16,7 +16,6 @@ query CrisprQuery($ensemblId: String!, $efoId: String!, $size: Int!) {
         contrast
         studyOverview
         cellType
-        cellLineBackground
         crisprScreenLibrary
         statisticalTestTail
         resourceScore
