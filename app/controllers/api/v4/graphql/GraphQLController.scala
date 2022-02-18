@@ -1,6 +1,6 @@
 package controllers.api.v4.graphql
 
-import akka.stream.{ActorMaterializer, Materializer}
+import akka.stream.{Materializer}
 import controllers.api.v4.graphql.QueryMetadataHeaders.{GQL_OP_HEADER, GQL_VAR_HEADER}
 import models.entities.TooComplexQueryError
 import models.entities.TooComplexQueryError._
@@ -134,7 +134,10 @@ class GraphQLController @Inject() (implicit
             Ok(_)
               .withHeaders(
                 (GQL_OP_HEADER,
-                 queryAst.operation().map(op => op.name).getOrElse("Unknown").toString
+                 queryAst
+                   .operation()
+                   .map(op => op.name.getOrElse("Unknown operation"))
+                   .getOrElse("Unknown operation")
                 ),
                 (GQL_VAR_HEADER, gqlQuery.variables.toString())
               )

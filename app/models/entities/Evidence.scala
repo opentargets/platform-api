@@ -23,6 +23,18 @@ import sangria.schema.{
 }
 
 object Evidence {
+
+  import sangria.macros.derive._
+
+  case class NameAndDescription(name: String, description: String)
+
+  implicit val nameAndDescriptionJsonFormatImp: OFormat[NameAndDescription] =
+    Json.format[NameAndDescription]
+
+  val nameAndDescriptionImp: ObjectType[Backend, NameAndDescription] =
+    deriveObjectType[Backend, NameAndDescription](
+      ObjectTypeName("NameDescription")
+    )
   val pathwayTermImp: ObjectType[Backend, JsValue] = ObjectType(
     "Pathway",
     "Pathway entry",
@@ -670,12 +682,6 @@ object Evidence {
         resolve = js => (js.value \ "cellType").asOpt[String]
       ),
       Field(
-        "cellLineBackground",
-        OptionType(StringType),
-        description = None,
-        resolve = js => (js.value \ "cellLineBackground").asOpt[String]
-      ),
-      Field(
         "statisticalTestTail",
         OptionType(StringType),
         description = None,
@@ -728,6 +734,48 @@ object Evidence {
         OptionType(FloatType),
         description = None,
         resolve = js => (js.value \ "geneticInteractionFDR").asOpt[Double]
+      ),
+      Field(
+        "biomarkerList",
+        OptionType(ListType(nameAndDescriptionImp)),
+        description = None,
+        resolve = js => (js.value \ "biomarkerList").asOpt[Seq[NameAndDescription]]
+      ),
+      Field(
+        "expectedConfidence",
+        OptionType(StringType),
+        description = None,
+        resolve = js => (js.value \ "expectedConfidence").asOpt[String]
+      ),
+      Field(
+        "projectDescription",
+        OptionType(StringType),
+        description = None,
+        resolve = js => (js.value \ "projectDescription").asOpt[String]
+      ),
+      Field(
+        "validationHypotheses",
+        OptionType(ListType(nameAndDescriptionImp)),
+        description = None,
+        resolve = js => (js.value \ "validationHypotheses").asOpt[Seq[NameAndDescription]]
+      ),
+      Field(
+        "geneInteractionType",
+        OptionType(StringType),
+        description = None,
+        resolve = js => (js.value \ "geneInteractionType").asOpt[String]
+      ),
+      Field(
+        "targetRole",
+        OptionType(StringType),
+        description = None,
+        resolve = js => (js.value \ "targetRole").asOpt[String]
+      ),
+      Field(
+        "interactingTargetRole",
+        OptionType(StringType),
+        description = None,
+        resolve = js => (js.value \ "interactingTargetRole").asOpt[String]
       )
     )
   )
