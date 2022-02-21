@@ -103,11 +103,13 @@ object Evidence {
       Field("id",
             OptionType(StringType),
             description = None,
-            resolve = js => (js.value \ "id").asOpt[String]),
+            resolve = js => (js.value \ "id").asOpt[String]
+      ),
       Field("name",
             OptionType(StringType),
             description = None,
-            resolve = js => (js.value \ "name").asOpt[String]),
+            resolve = js => (js.value \ "name").asOpt[String]
+      ),
       Field(
         "tissue",
         OptionType(StringType),
