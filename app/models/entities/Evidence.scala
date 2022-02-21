@@ -28,12 +28,20 @@ object Evidence {
 
   case class NameAndDescription(name: String, description: String)
 
+  case class ValidationHypothesis(name: String, description: String, status: String)
+
   implicit val nameAndDescriptionJsonFormatImp: OFormat[NameAndDescription] =
     Json.format[NameAndDescription]
+  implicit val validationHypothesisJsonFormatImp: OFormat[ValidationHypothesis] =
+    Json.format[ValidationHypothesis]
 
   val nameAndDescriptionImp: ObjectType[Backend, NameAndDescription] =
     deriveObjectType[Backend, NameAndDescription](
       ObjectTypeName("NameDescription")
+    )
+  val validationHypothesisImp: ObjectType[Backend, ValidationHypothesis] =
+    deriveObjectType[Backend, ValidationHypothesis](
+      ObjectTypeName("ValidationHypothesis")
     )
   val pathwayTermImp: ObjectType[Backend, JsValue] = ObjectType(
     "Pathway",
@@ -92,19 +100,27 @@ object Evidence {
   val evidenceDiseaseCellLineImp: ObjectType[Backend, JsValue] = ObjectType(
     "DiseaseCellLine",
     fields[Backend, JsValue](
-      Field("id", StringType, description = None, resolve = js => (js.value \ "id").as[String]),
-      Field("name", StringType, description = None, resolve = js => (js.value \ "name").as[String]),
+      Field("id",
+            OptionType(StringType),
+            description = None,
+            resolve = js => (js.value \ "id").asOpt[String]
+      ),
+      Field("name",
+            OptionType(StringType),
+            description = None,
+            resolve = js => (js.value \ "name").asOpt[String]
+      ),
       Field(
         "tissue",
-        StringType,
+        OptionType(StringType),
         description = None,
-        resolve = js => (js.value \ "tissue").as[String]
+        resolve = js => (js.value \ "tissue").asOpt[String]
       ),
       Field(
         "tissueId",
-        StringType,
+        OptionType(StringType),
         description = None,
-        resolve = js => (js.value \ "tissueId").as[String]
+        resolve = js => (js.value \ "tissueId").asOpt[String]
       )
     )
   )
@@ -664,6 +680,12 @@ object Evidence {
         resolve = js => (js.value \ "targetFromSource").asOpt[String]
       ),
       Field(
+        "cellLineBackground",
+        OptionType(StringType),
+        description = None,
+        resolve = js => (js.value \ "cellLineBackground").asOpt[String]
+      ),
+      Field(
         "contrast",
         OptionType(StringType),
         description = None,
@@ -755,9 +777,9 @@ object Evidence {
       ),
       Field(
         "validationHypotheses",
-        OptionType(ListType(nameAndDescriptionImp)),
+        OptionType(ListType(validationHypothesisImp)),
         description = None,
-        resolve = js => (js.value \ "validationHypotheses").asOpt[Seq[NameAndDescription]]
+        resolve = js => (js.value \ "validationHypotheses").asOpt[Seq[ValidationHypothesis]]
       ),
       Field(
         "geneInteractionType",
