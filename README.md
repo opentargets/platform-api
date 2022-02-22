@@ -45,22 +45,22 @@ To create a local distribution run the following command:
 
 ```sbt dist```
 
-Create locally the app adding a specific version name 
-otherwise if you do not specify a version, one will be generated for you.
-Eg. hpo-1-0
+Create locally the app adding a specific version name otherwise if you do not specify a version, one will be generated
+for you. Eg. hpo-1-0
 
 ```
 gcloud --project=open-targets-eu-dev app deploy \
     --no-promote \
     -v hpo-1-0
-
 ```
+
+Update the environment variables in the `app.yaml` file to point towards the deployed Clickhouse and Elasticsearch
+images.
 
 ## Sangria caches
 
-This application uses Sangria as a GraphQL wrapper and uses deferred resolver
-caches to improve query times. In cases where the data is updated in Elasticsearch
-it will not be available on the front-end if it has previously been cached.
+This application uses Sangria as a GraphQL wrapper and uses deferred resolver caches to improve query times. In cases
+where the data is updated in Elasticsearch it will not be available on the front-end if it has previously been cached.
 
 To reset the cache following a data update use the following request:
 

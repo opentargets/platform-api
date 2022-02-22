@@ -28,4 +28,8 @@ readiness_check:
   failure_threshold: 10
   success_threshold: 1
   app_start_timeout_sec: 120
+env_variables:
+  SLICK_CLICKHOUSE_URL: 'jdbc:clickhouse://platform22-02-3-220222-144622-ch-vm.europe-west1-d.c.open-targets-genetics-dev.internal:8123/ot'
+  ELASTICSEARCH_HOST: 'platform22-02-3-220222-144622-es-vm.europe-west1-d.c.open-targets-genetics-dev.internal'
+
 
