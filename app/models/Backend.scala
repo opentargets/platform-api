@@ -385,7 +385,7 @@ class Backend @Inject() (implicit
           IndexedSeq.empty,
           nested = false
         )
-      }
+      }.toMap
     val mappings = Map(
       "dataTypes" -> AggregationMapping(
         "datatype_id",
@@ -394,7 +394,7 @@ class Backend @Inject() (implicit
       ),
       "pathwayTypes" -> AggregationMapping("facet_reactome", IndexedSeq("l1", "l2"), true),
       "targetClasses" -> AggregationMapping("facet_classes", IndexedSeq("l1", "l2"), true)
-    )
+    ) ++ tractabilityMappings
 
     val queries = ElasticRetriever.aggregationFilterProducer(aggregationFilters, mappings)
     val filtersMap = queries._2
