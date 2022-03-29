@@ -12,7 +12,6 @@ Eg. localhost:9200  (tunnelling or locally installed)
 
 
 ## How to use
-
 ## How to deploy to Google AppEngine 
 
 Promote the deployed version to receive all traffic or deploy an AppEngine specific version.
