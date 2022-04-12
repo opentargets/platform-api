@@ -827,7 +827,9 @@ object Evidence {
       Field(
         "studyCasesWithQualifyingVariants",
         OptionType(StringType),
-        description = Some("Number of cases in a case-control study that carry at least one allele of the qualifying variant"),
+        description = Some(
+          "Number of cases in a case-control study that carry at least one allele of the qualifying variant"
+        ),
         resolve = js => (js.value \ "targetRole").asOpt[String]
       )
     )
