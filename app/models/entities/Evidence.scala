@@ -799,30 +799,29 @@ object Evidence {
         description = None,
         resolve = js => (js.value \ "interactingTargetRole").asOpt[String]
       ),
-      // Extension opentargets/issues#2546
       Field(
         "ancestry",
         OptionType(StringType),
         description = Some("Genetic origin of a population"),
-        resolve = js => (js.value \ "targetRole").asOpt[String]
+        resolve = js => (js.value \ "ancestry").asOpt[String]
       ),
       Field(
         "ancestryId",
         OptionType(StringType),
         description = Some("Identifier of the ancestry in the HANCESTRO ontology"),
-        resolve = js => (js.value \ "targetRole").asOpt[String]
+        resolve = js => (js.value \ "ancestryId").asOpt[String]
       ),
       Field(
         "statisticalMethod",
         OptionType(StringType),
         description = Some("The statistical method used to calculate the association"),
-        resolve = js => (js.value \ "targetRole").asOpt[String]
+        resolve = js => (js.value \ "statisticalMethod").asOpt[String]
       ),
       Field(
         "statisticalMethodOverview",
         OptionType(StringType),
         description = Some("Overview of the statistical method used to calculate the association"),
-        resolve = js => (js.value \ "targetRole").asOpt[String]
+        resolve = js => (js.value \ "statisticalMethodOverview").asOpt[String]
       ),
       Field(
         "studyCasesWithQualifyingVariants",
@@ -830,7 +829,13 @@ object Evidence {
         description = Some(
           "Number of cases in a case-control study that carry at least one allele of the qualifying variant"
         ),
-        resolve = js => (js.value \ "targetRole").asOpt[String]
+        resolve = js => (js.value \ "studyCasesWithQualifyingVariants").asOpt[String]
+      ),
+      Field(
+        "variantHgvsId",
+        OptionType(StringType),
+        description = Some("Identifier in HGVS notation of the disease-causing variant"),
+        resolve = js => (js.value \ "variantHgvsId").asOpt[String]
       )
     )
   )
