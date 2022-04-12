@@ -33,7 +33,7 @@ deploy:
   on:
     repo: opentargets/platform-api
     tags: true
-    all_branches: false
+    all_branches: true
 notifications:
   email:
     recipients:
