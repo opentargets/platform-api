@@ -825,11 +825,11 @@ object Evidence {
       ),
       Field(
         "studyCasesWithQualifyingVariants",
-        OptionType(StringType),
+        OptionType(LongType),
         description = Some(
           "Number of cases in a case-control study that carry at least one allele of the qualifying variant"
         ),
-        resolve = js => (js.value \ "studyCasesWithQualifyingVariants").asOpt[String]
+        resolve = js => (js.value \ "studyCasesWithQualifyingVariants").asOpt[Long]
       ),
       Field(
         "variantHgvsId",
