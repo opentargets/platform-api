@@ -477,8 +477,14 @@ object Evidence {
       Field(
         "literature",
         OptionType(ListType(StringType)),
-        description = None,
+        description = Some("list of pub med publications ids"),
         resolve = js => (js.value \ "literature").asOpt[Seq[String]]
+      ),
+      Field(
+        "pubMedCentralIds",
+        OptionType(ListType(StringType)),
+        description = Some("list of central pub med publications ids"),
+        resolve = js => (js.value \ "pmcIds").asOpt[Seq[String]]
       ),
       Field(
         "studyCases",
