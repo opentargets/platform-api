@@ -1,5 +1,7 @@
 package models
 
+import akka.http.scaladsl.model.DateTime
+import cats.kernel.Comparison.GreaterThan
 import clickhouse.ClickHouseProfile
 import com.sksamuel.elastic4s._
 import com.sksamuel.elastic4s.http.JavaClient
@@ -25,6 +27,9 @@ import play.api.libs.json._
 import play.api.{Configuration, Environment, Logging}
 import play.db.NamedDatabase
 
+import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import scala.collection.immutable.ArraySeq
 import scala.concurrent._
 
@@ -754,9 +759,27 @@ class Backend @Inject() (implicit
     }
   }
 
-  def getLiteratureOcurrences(ids: Set[String], cursor: Option[String]): Future[Publications] = {
+  def getLiteratureOcurrences(ids: Set[String],
+                              cursor: Option[String]): Future[Publications] = {
     import Pagination._
 
+    getLiterature(ids, Option.empty, Option.empty, cursor)
+  }
+
+  def getLiteratureOcurrences(ids: Set[String],
+                              date: Option[Long],
+                              dateComparator: Option[ComparatorEnum.Comparator],
+                              cursor: Option[String]): Future[Publications] = {
+    import Pagination._
+
+    getLiterature(ids, date, dateComparator, cursor)
+  }
+
+  private def getLiterature(
+                             ids: Set[String],
+                             date: Option[Long],
+                             dateComparator: Option[ComparatorEnum.Comparator],
+                             cursor: Option[String]) = {
     val table = defaultOTSettings.clickhouse.literature
     val indexTable = defaultOTSettings.clickhouse.literatureIndex
     logger.info(s"query literature ocurrences in table ${table.name}")
@@ -768,7 +791,9 @@ class Backend @Inject() (implicit
       case Vector(total) if total > 0 =>
         logger.debug(s"total number of publication occurrences $total")
         dbRetriever.executeQuery[Publication, Query](simQ.query).map { v =>
-          val pubs = v.map(pub => Json.toJson(pub))
+          val pubs = v
+            .filter(pub => filterLiteratureByDate(pub, date, dateComparator))
+            .map(pub => Json.toJson(pub))
           val nCursor = if (v.size < pag.size) {
             None
           } else {
@@ -782,6 +807,29 @@ class Backend @Inject() (implicit
         Future.successful(Publications.empty())
     }
   }
+
+  def filterLiteratureByDate(
+                              pub: Publication,
+                              date: Option[Long],
+                              comparator: Option[ComparatorEnum.Comparator]) : Boolean =
+    {
+      if(date.isEmpty) true
+      else {
+        val format = new java.text.SimpleDateFormat("yyyy-MM-dd")
+        val d1: Long = format.parse(pub.date).getTime
+        val d2: Long = date.get
+        comparator match {
+          case Some(value) => {
+
+            value match {
+              case ComparatorEnum.GreaterThan => d1 >= d2
+              case ComparatorEnum.LesserThan => d1 <= d2
+            }
+          }
+          case None => d1 >= d2
+        }
+      }
+    }
 
   /** @param index  key of index (name field) in application.conf
     * @param default fallback index name

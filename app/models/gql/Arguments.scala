@@ -1,8 +1,9 @@
 package models.gql
 
+import akka.http.scaladsl.model.DateTime
 import models.entities.Configuration._
 import models.entities.Pagination._
-import models.entities._
+import models.entities.{ComparatorEnum, _}
 import sangria.macros.derive._
 import sangria.schema._
 import sangria.marshalling.playJson._
@@ -61,6 +62,27 @@ object Arguments {
     "enableIndirect",
     OptionInputType(BooleanType),
     "Use disease ontology to capture evidences from all descendants to build associations"
+  )
+
+  val ComparerEnum = EnumType(
+    "Comparer",
+    Some("Compare "),
+    List(
+      EnumValue(
+        "GREATER_THAN",
+        value = ComparatorEnum.GreaterThan,
+        description = Some("Value is greater than reference")),
+      EnumValue(
+        "LESSER_THAN",
+        value = ComparatorEnum.LesserThan,
+        description = Some("Value is greater than reference")))
+  )
+
+  val date: Argument[Option[Long]] = Argument("date", OptionInputType(LongType), description = "Date")
+  val dateComparator: Argument[Option[ComparatorEnum.Value]] = Argument(
+    "comparator",
+    OptionInputType(ComparerEnum),
+    description = "Defines if should results be either before or after specific date",
   )
 
   val BFilterString: Argument[Option[String]] = Argument("BFilter", OptionInputType(StringType))
