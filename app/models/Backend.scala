@@ -759,8 +759,7 @@ class Backend @Inject() (implicit
     }
   }
 
-  def getLiteratureOcurrences(ids: Set[String],
-                              cursor: Option[String]): Future[Publications] = {
+  def getLiteratureOcurrences(ids: Set[String], cursor: Option[String]): Future[Publications] = {
     import Pagination._
 
     getLiterature(ids, Option.empty, Option.empty, cursor)
@@ -769,17 +768,18 @@ class Backend @Inject() (implicit
   def getLiteratureOcurrences(ids: Set[String],
                               date: Option[Long],
                               dateComparator: Option[ComparatorEnum.Comparator],
-                              cursor: Option[String]): Future[Publications] = {
+                              cursor: Option[String]
+  ): Future[Publications] = {
     import Pagination._
 
     getLiterature(ids, date, dateComparator, cursor)
   }
 
-  private def getLiterature(
-                             ids: Set[String],
-                             date: Option[Long],
-                             dateComparator: Option[ComparatorEnum.Comparator],
-                             cursor: Option[String]) = {
+  private def getLiterature(ids: Set[String],
+                            date: Option[Long],
+                            dateComparator: Option[ComparatorEnum.Comparator],
+                            cursor: Option[String]
+  ) = {
     val table = defaultOTSettings.clickhouse.literature
     val indexTable = defaultOTSettings.clickhouse.literatureIndex
     logger.info(s"query literature ocurrences in table ${table.name}")
@@ -808,26 +808,22 @@ class Backend @Inject() (implicit
     }
   }
 
-  def filterLiteratureByDate(
-                              pub: Publication,
-                              date: Option[Long],
-                              comparator: Option[ComparatorEnum.Comparator]) : Boolean =
-    {
-      if(date.isEmpty) true
-      else {
-        val format = new java.text.SimpleDateFormat("yyyy-MM-dd")
-        val d1: Long = format.parse(pub.date).getTime
-        val d2: Long = date.get
-        comparator match {
-          case Some(value) => {
-
-            value match {
-              case ComparatorEnum.GreaterThan => d1 >= d2
-              case ComparatorEnum.LesserThan => d1 <= d2
-            }
+  def filterLiteratureByDate(pub: Publication,
+                             date: Option[Long],
+                             comparator: Option[ComparatorEnum.Comparator]
+  ): Boolean =
+    if (date.isEmpty) true
+    else {
+      val format = new java.text.SimpleDateFormat("yyyy-MM-dd")
+      val d1: Long = format.parse(pub.date).getTime
+      val d2: Long = date.get
+      comparator match {
+        case Some(value) =>
+          value match {
+            case ComparatorEnum.GreaterThan => d1 >= d2
+            case ComparatorEnum.LesserThan  => d1 <= d2
           }
-          case None => d1 >= d2
-        }
+        case None => d1 >= d2
       }
     }
 
