@@ -1,7 +1,5 @@
 package models
 
-import akka.http.scaladsl.model.DateTime
-import cats.kernel.Comparison.GreaterThan
 import clickhouse.ClickHouseProfile
 import com.sksamuel.elastic4s._
 import com.sksamuel.elastic4s.http.JavaClient
@@ -33,13 +31,14 @@ import java.time.format.DateTimeFormatter
 import scala.collection.immutable.ArraySeq
 import scala.concurrent._
 
-class Backend @Inject() (implicit
+class Backend @Inject()(
+    implicit
     ec: ExecutionContext,
     @NamedDatabase("default") protected val dbConfigProvider: DatabaseConfigProvider,
     config: Configuration,
     env: Environment,
-    cache: AsyncCacheApi
-) extends Logging {
+    cache: AsyncCacheApi)
+    extends Logging {
 
   implicit val defaultOTSettings: OTSettings = loadConfigurationObject[OTSettings]("ot", config)
   implicit val defaultESSettings: ElasticsearchSettings = defaultOTSettings.elasticsearch
@@ -547,23 +546,25 @@ class Backend @Inject() (implicit
     }
 
     // TODO use option to enable or disable the computation of each of the sides
-    (dbRetriever.executeQuery[String, Query](simpleQ) zip esQ) flatMap { case (tIDs, esR) =>
-      val tids = esR.map(_._2 intersect tIDs.toSet).getOrElse(tIDs.toSet)
-      val fullQ = aotfQ(indirectIDs, tids).query
+    (dbRetriever.executeQuery[String, Query](simpleQ) zip esQ) flatMap {
+      case (tIDs, esR) =>
+        val tids = esR.map(_._2 intersect tIDs.toSet).getOrElse(tIDs.toSet)
+        val fullQ = aotfQ(indirectIDs, tids).query
 
-      logger.debug(
-        s"disease fixed get simpleQ n ${tIDs.size} " +
-          s"agg n ${esR.map(_._2.size).getOrElse(-1)} " +
-          s"inter n ${tids.size}"
-      )
+        logger.debug(
+          s"disease fixed get simpleQ n ${tIDs.size} " +
+            s"agg n ${esR.map(_._2.size).getOrElse(-1)} " +
+            s"inter n ${tids.size}"
+        )
 
-      if (tids.nonEmpty) {
-        dbRetriever.executeQuery[Association, Query](fullQ) map { case assocs =>
-          Associations(dss, esR.map(_._1), tids.size, assocs)
+        if (tids.nonEmpty) {
+          dbRetriever.executeQuery[Association, Query](fullQ) map {
+            case assocs =>
+              Associations(dss, esR.map(_._1), tids.size, assocs)
+          }
+        } else {
+          Future.successful(Associations(dss, esR.map(_._1), tids.size, Vector.empty))
         }
-      } else {
-        Future.successful(Associations(dss, esR.map(_._1), tids.size, Vector.empty))
-      }
     }
   }
 
@@ -716,23 +717,25 @@ class Backend @Inject() (implicit
       case _ => None
     }
 
-    (dbRetriever.executeQuery[String, Query](simpleQ) zip esQ) flatMap { case (dIDs, esR) =>
-      val dids = esR.map(_._2 intersect dIDs.toSet).getOrElse(dIDs.toSet)
-      val fullQ = aotfQ(indirectIDs, dids).query
+    (dbRetriever.executeQuery[String, Query](simpleQ) zip esQ) flatMap {
+      case (dIDs, esR) =>
+        val dids = esR.map(_._2 intersect dIDs.toSet).getOrElse(dIDs.toSet)
+        val fullQ = aotfQ(indirectIDs, dids).query
 
-      logger.debug(
-        s"target fixed get simpleQ n ${dIDs.size} " +
-          s"agg n ${esR.map(_._2.size).getOrElse(-1)} " +
-          s"inter n ${dids.size}"
-      )
+        logger.debug(
+          s"target fixed get simpleQ n ${dIDs.size} " +
+            s"agg n ${esR.map(_._2.size).getOrElse(-1)} " +
+            s"inter n ${dids.size}"
+        )
 
-      if (dids.nonEmpty) {
-        dbRetriever.executeQuery[Association, Query](fullQ) map { case assocs =>
-          Associations(dss, esR.map(_._1), dids.size, assocs)
+        if (dids.nonEmpty) {
+          dbRetriever.executeQuery[Association, Query](fullQ) map {
+            case assocs =>
+              Associations(dss, esR.map(_._1), dids.size, assocs)
+          }
+        } else {
+          Future.successful(Associations(dss, esR.map(_._1), dids.size, Vector.empty))
         }
-      } else {
-        Future.successful(Associations(dss, esR.map(_._1), dids.size, Vector.empty))
-      }
     }
   }
 
@@ -768,8 +771,7 @@ class Backend @Inject() (implicit
   def getLiteratureOcurrences(ids: Set[String],
                               date: Option[Long],
                               dateComparator: Option[ComparatorEnum.Comparator],
-                              cursor: Option[String]
-  ): Future[Publications] = {
+                              cursor: Option[String]): Future[Publications] = {
     import Pagination._
 
     getLiterature(ids, date, dateComparator, cursor)
@@ -778,8 +780,7 @@ class Backend @Inject() (implicit
   private def getLiterature(ids: Set[String],
                             date: Option[Long],
                             dateComparator: Option[ComparatorEnum.Comparator],
-                            cursor: Option[String]
-  ) = {
+                            cursor: Option[String]) = {
     val table = defaultOTSettings.clickhouse.literature
     val indexTable = defaultOTSettings.clickhouse.literatureIndex
     logger.info(s"query literature ocurrences in table ${table.name}")
@@ -810,8 +811,7 @@ class Backend @Inject() (implicit
 
   def filterLiteratureByDate(pub: Publication,
                              date: Option[Long],
-                             comparator: Option[ComparatorEnum.Comparator]
-  ): Boolean =
+                             comparator: Option[ComparatorEnum.Comparator]): Boolean =
     if (date.isEmpty) true
     else {
       val format = new java.text.SimpleDateFormat("yyyy-MM-dd")

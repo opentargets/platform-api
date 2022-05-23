@@ -1,6 +1,5 @@
 package models.gql
 
-import akka.http.scaladsl.model.DateTime
 import models.entities.Configuration._
 import models.entities.Pagination._
 import models.entities.{ComparatorEnum, _}
@@ -70,12 +69,10 @@ object Arguments {
     List(
       EnumValue("GREATER_THAN",
                 value = ComparatorEnum.GreaterThan,
-                description = Some("Value is greater than reference")
-      ),
+                description = Some("Value is greater than reference")),
       EnumValue("LESSER_THAN",
                 value = ComparatorEnum.LesserThan,
-                description = Some("Value is greater than reference")
-      )
+                description = Some("Value is greater than reference"))
     )
   )
 
