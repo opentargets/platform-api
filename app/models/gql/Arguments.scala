@@ -69,15 +69,19 @@ object Arguments {
     List(
       EnumValue("GREATER_THAN",
                 value = ComparatorEnum.GreaterThan,
-                description = Some("Value is greater than reference")),
+                description = Some("Value is greater than reference")
+      ),
       EnumValue("LESSER_THAN",
                 value = ComparatorEnum.LesserThan,
-                description = Some("Value is greater than reference"))
+                description = Some("Value is greater than reference")
+      )
     )
   )
 
-  val date: Argument[Option[Long]] =
-    Argument("date", OptionInputType(LongType), description = "Date")
+  val year: Argument[Option[Int]] =
+    Argument("year", OptionInputType(IntType), description = "Year")
+  val month: Argument[Option[Int]] =
+    Argument("month", OptionInputType(IntType), description = "Month")
   val dateComparator: Argument[Option[ComparatorEnum.Value]] = Argument(
     "comparator",
     OptionInputType(ComparerEnum),

@@ -76,14 +76,20 @@ object Objects extends Logging {
           "Return the list of publications that mention the main entity, " +
             "alone or in combination with other entities"
         ),
-        arguments = idsArg :: date :: dateComparator :: cursor :: Nil,
+        arguments = idsArg :: year :: month :: dateComparator :: cursor :: Nil,
         resolve = c => {
           val ids = c.arg(idsArg).getOrElse(List.empty) ++ List(c.value.id)
-          val filterDate = c.arg(date)
+          val filterYear = c.arg(year)
+          val filterMonth = c.arg(month)
           val filterDateComparator = c.arg(dateComparator)
           val cur = c.arg(cursor)
 
-          c.ctx.getLiteratureOcurrences(ids.toSet, filterDate, filterDateComparator, cur)
+          c.ctx.getLiteratureOcurrences(ids.toSet,
+                                        filterYear,
+                                        filterMonth,
+                                        filterDateComparator,
+                                        cur
+          )
         }
       ),
       Field(

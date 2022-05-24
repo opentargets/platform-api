@@ -9,12 +9,16 @@ case class Publication(
     pmid: String,
     pmcid: Option[String],
     date: String,
+    year: Int,
+    month: Int,
     sentences: Option[JsValue]
 )
 
 object Publication {
   implicit val getSimilarityRowFromDB: GetResult[Publication] =
-    GetResult(r => Publication(r.<<[Long].toString, r.<<?, r.<<, r.<<?[String].map(Json.parse)))
+    GetResult(r =>
+      Publication(r.<<[Long].toString, r.<<?, r.<<, r.<<, r.<<, r.<<?[String].map(Json.parse))
+    )
 
   implicit val similarityImp: OFormat[Publication] = Json.format[Publication]
 
