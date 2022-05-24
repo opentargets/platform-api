@@ -63,19 +63,8 @@ object Arguments {
     "Use disease ontology to capture evidences from all descendants to build associations"
   )
 
-  val ComparerEnum = EnumType(
-    "Comparer",
-    Some("Compare "),
-    List(
-      EnumValue("GREATER_THAN",
-                value = ComparatorEnum.GreaterThan,
-                description = Some("Value is greater than reference")
-      ),
-      EnumValue("LESSER_THAN",
-                value = ComparatorEnum.LesserThan,
-                description = Some("Value is greater than reference")
-      )
-    )
+  val ComparerEnum = deriveEnumType[ComparatorEnum.Value](
+    IncludeValues("GreaterThan", "LesserThan")
   )
 
   val year: Argument[Option[Int]] =
