@@ -786,19 +786,19 @@ class Backend @Inject() (implicit
 
     val pag = Helpers.Cursor.to(cursor).flatMap(_.asOpt[Pagination]).getOrElse(Pagination.mkDefault)
 
-    val shouldFilter = !year.isEmpty
-
     val simQ = QLITAGG(table.name, indexTable.name, ids, pag.size, pag.offset)
 
     def getResultToMap(v: Vector[Publication]) =
-      if (shouldFilter)
-        v.filter(pub =>
-          filterLiteratureByDate(
-            pub,
-            (year.get, month.getOrElse(1), dateComparator.getOrElse(ComparatorEnum.GreaterThan))
+      year match {
+        case Some(value) =>
+          v.filter(pub =>
+            filterLiteratureByDate(
+              pub,
+              (year.get, month.getOrElse(1), dateComparator.getOrElse(ComparatorEnum.GreaterThan))
+            )
           )
-        )
-      else v
+        case None => v
+      }
 
     dbRetriever.executeQuery[Long, Query](simQ.total).flatMap {
       case Vector(total) if total > 0 =>
@@ -813,7 +813,7 @@ class Backend @Inject() (implicit
             val npag = pag.next
             Helpers.Cursor.from(Some(Json.toJson(npag)))
           }
-          Publications(total, nCursor, pubs)
+          Publications(pubs.size, nCursor, pubs)
         }
       case _ =>
         logger.info(s"there is no publications with this set of ids $ids")
@@ -826,10 +826,7 @@ class Backend @Inject() (implicit
   ): Boolean = {
     //if no year is sent no filter is applied
 
-    def compareDates(pubDate: LocalDate,
-                     reqDate: LocalDate,
-                     comparatorEnum: ComparatorEnum.Comparator
-    ): Boolean =
+    def compareDates(pubDate: LocalDate, reqDate: LocalDate): Boolean =
       dateAndComparator._3 match {
         case ComparatorEnum.GreaterThan => pubDate.compareTo(reqDate) >= 0
         case ComparatorEnum.LesserThan  => pubDate.compareTo(reqDate) <= 0
@@ -843,7 +840,7 @@ class Backend @Inject() (implicit
 
     val (pubDate: LocalDate, reqDate: LocalDate) =
       getPubDate(dateAndComparator._1, dateAndComparator._2)
-    compareDates(pubDate, reqDate, dateAndComparator._3)
+    compareDates(pubDate, reqDate)
 
   }
 
