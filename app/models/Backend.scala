@@ -25,6 +25,9 @@ import play.api.libs.json._
 import play.api.{Configuration, Environment, Logging}
 import play.db.NamedDatabase
 
+import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import scala.collection.immutable.ArraySeq
 import scala.concurrent._
 
@@ -757,6 +760,26 @@ class Backend @Inject() (implicit
   def getLiteratureOcurrences(ids: Set[String], cursor: Option[String]): Future[Publications] = {
     import Pagination._
 
+    getLiterature(ids, Option.empty, Option.empty, Option.empty, cursor)
+  }
+
+  def getLiteratureOcurrences(ids: Set[String],
+                              year: Option[Int],
+                              month: Option[Int],
+                              dateComparator: Option[ComparatorEnum.Comparator],
+                              cursor: Option[String]
+  ): Future[Publications] = {
+    import Pagination._
+
+    getLiterature(ids, year, month, dateComparator, cursor)
+  }
+
+  private def getLiterature(ids: Set[String],
+                            year: Option[Int],
+                            month: Option[Int],
+                            dateComparator: Option[ComparatorEnum.Comparator],
+                            cursor: Option[String]
+  ) = {
     val table = defaultOTSettings.clickhouse.literature
     val indexTable = defaultOTSettings.clickhouse.literatureIndex
     logger.info(s"query literature ocurrences in table ${table.name}")
@@ -764,23 +787,61 @@ class Backend @Inject() (implicit
     val pag = Helpers.Cursor.to(cursor).flatMap(_.asOpt[Pagination]).getOrElse(Pagination.mkDefault)
 
     val simQ = QLITAGG(table.name, indexTable.name, ids, pag.size, pag.offset)
+
+    def getResultToMap(v: Vector[Publication]) =
+      year match {
+        case Some(value) =>
+          v.filter(pub =>
+            filterLiteratureByDate(
+              pub,
+              (year.get, month.getOrElse(1), dateComparator.getOrElse(ComparatorEnum.GreaterThan))
+            )
+          )
+        case None => v
+      }
+
     dbRetriever.executeQuery[Long, Query](simQ.total).flatMap {
       case Vector(total) if total > 0 =>
         logger.debug(s"total number of publication occurrences $total")
         dbRetriever.executeQuery[Publication, Query](simQ.query).map { v =>
-          val pubs = v.map(pub => Json.toJson(pub))
+          val result = getResultToMap(v)
+          val pubs = result
+            .map(pub => Json.toJson(pub))
           val nCursor = if (v.size < pag.size) {
             None
           } else {
             val npag = pag.next
             Helpers.Cursor.from(Some(Json.toJson(npag)))
           }
-          Publications(total, nCursor, pubs)
+          Publications(pubs.size, nCursor, pubs)
         }
       case _ =>
         logger.info(s"there is no publications with this set of ids $ids")
         Future.successful(Publications.empty())
     }
+  }
+
+  def filterLiteratureByDate(pub: Publication,
+                             dateAndComparator: (Int, Int, ComparatorEnum.Comparator)
+  ): Boolean = {
+    //if no year is sent no filter is applied
+
+    def compareDates(pubDate: LocalDate, reqDate: LocalDate): Boolean =
+      dateAndComparator._3 match {
+        case ComparatorEnum.GreaterThan => pubDate.compareTo(reqDate) >= 0
+        case ComparatorEnum.LesserThan  => pubDate.compareTo(reqDate) <= 0
+      }
+
+    def getPubDate(year: Int, month: Int) = {
+      val pubDate = LocalDate.of(pub.year, pub.month, 1)
+      val reqDate = LocalDate.of(year, month, 1)
+      (pubDate, reqDate)
+    }
+
+    val (pubDate: LocalDate, reqDate: LocalDate) =
+      getPubDate(dateAndComparator._1, dateAndComparator._2)
+    compareDates(pubDate, reqDate)
+
   }
 
   /** @param index  key of index (name field) in application.conf

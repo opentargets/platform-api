@@ -2,7 +2,7 @@ package models.gql
 
 import models.entities.Configuration._
 import models.entities.Pagination._
-import models.entities._
+import models.entities.{ComparatorEnum, _}
 import sangria.macros.derive._
 import sangria.schema._
 import sangria.marshalling.playJson._
@@ -61,6 +61,20 @@ object Arguments {
     "enableIndirect",
     OptionInputType(BooleanType),
     "Use disease ontology to capture evidences from all descendants to build associations"
+  )
+
+  val ComparerEnum = deriveEnumType[ComparatorEnum.Value](
+    IncludeValues("GreaterThan", "LesserThan")
+  )
+
+  val year: Argument[Option[Int]] =
+    Argument("year", OptionInputType(IntType), description = "Year")
+  val month: Argument[Option[Int]] =
+    Argument("month", OptionInputType(IntType), description = "Month")
+  val dateComparator: Argument[Option[ComparatorEnum.Value]] = Argument(
+    "comparator",
+    OptionInputType(ComparerEnum),
+    description = "Defines if should results be either before or after specific date"
   )
 
   val BFilterString: Argument[Option[String]] = Argument("BFilter", OptionInputType(StringType))

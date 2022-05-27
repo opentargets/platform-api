@@ -38,7 +38,7 @@ case class QLITAGG(
   )
 
   val litQ: Q = Q(
-    Select(pmid :: pmcid :: date :: sentences :: Nil),
+    Select(pmid :: pmcid :: date :: year :: month :: sentences :: Nil),
     From(T),
     PreWhere(F.in(pmid, pmidsQ(pmid :: Nil).toColumn(None)))
   )
@@ -64,7 +64,7 @@ case class QLITAGG(
 
   override val query: Q = {
     val q = Q(
-      Select(pmid :: pmcid :: date :: sentences :: Nil),
+      Select(pmid :: pmcid :: date :: year :: month :: sentences :: Nil),
       From(pmidsQ(pmid :: Nil).toColumn(None), Some("L")),
       Join(litQ.toColumn(None), Some("left"), Some("any"), global = false, Some("L"), pmid :: Nil)
     )
