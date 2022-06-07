@@ -722,12 +722,6 @@ object Evidence {
         resolve = js => (js.value \ "interactingTargetFromSourceId").asOpt[String]
       ),
       Field(
-        "geneticInteractionMethod",
-        OptionType(StringType),
-        description = None,
-        resolve = js => (js.value \ "geneticInteractionMethod").asOpt[String]
-      ),
-      Field(
         "phenotypicConsequenceLogFoldChange",
         OptionType(FloatType),
         description = None,
@@ -842,6 +836,24 @@ object Evidence {
         OptionType(StringType),
         description = Some("Identifier in HGVS notation of the disease-causing variant"),
         resolve = js => (js.value \ "variantHgvsId").asOpt[String]
+      ),
+      Field(
+        "releaseVersion",
+        OptionType(StringType),
+        description = Some("Release version"),
+        resolve = js => (js.value \ "releaseVersion").asOpt[String]
+      ),
+      Field(
+        "releaseDate",
+        OptionType(StringType),
+        description = Some("Release date"),
+        resolve = js => (js.value \ "releaseDate").asOpt[String]
+      ),
+      Field(
+        "warningMessage",
+        OptionType(StringType),
+        description = Some("Warning message"),
+        resolve = js => (js.value \ "warningMessage").asOpt[String]
       )
     )
   )
