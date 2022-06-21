@@ -76,19 +76,22 @@ object Objects extends Logging {
           "Return the list of publications that mention the main entity, " +
             "alone or in combination with other entities"
         ),
-        arguments = idsArg :: year :: month :: dateComparator :: cursor :: Nil,
+        arguments = idsArg :: startYear :: startMonth :: endYear :: endMonth :: cursor :: Nil,
         resolve = c => {
           val ids = c.arg(idsArg).getOrElse(List.empty) ++ List(c.value.id)
-          val filterYear = c.arg(year)
-          val filterMonth = c.arg(month)
-          val filterDateComparator = c.arg(dateComparator)
+          val filterStartYear = c.arg(startYear)
+          val filterStartMonth = c.arg(startMonth)
+          val filterEndYear = c.arg(endYear)
+          val filterEndMonth = c.arg(endMonth)
           val cur = c.arg(cursor)
 
-          c.ctx.getLiteratureOcurrences(ids.toSet,
-                                        filterYear,
-                                        filterMonth,
-                                        filterDateComparator,
-                                        cur
+          c.ctx.getLiteratureOcurrences(
+            ids.toSet,
+            filterStartYear,
+            filterStartMonth,
+            filterEndYear,
+            filterEndMonth,
+            cur
           )
         }
       ),
@@ -263,12 +266,22 @@ object Objects extends Logging {
           "Return the list of publications that mention the main entity, " +
             "alone or in combination with other entities"
         ),
-        arguments = idsArg :: cursor :: Nil,
+        arguments = idsArg :: startYear :: startMonth :: endYear :: endMonth :: cursor :: Nil,
         resolve = c => {
           val ids = c.arg(idsArg).getOrElse(List.empty) ++ List(c.value.id)
+          val filterStartYear = c.arg(startYear)
+          val filterStartMonth = c.arg(startMonth)
+          val filterEndYear = c.arg(endYear)
+          val filterEndMonth = c.arg(endMonth)
           val cur = c.arg(cursor)
 
-          c.ctx.getLiteratureOcurrences(ids.toSet, cur)
+          c.ctx.getLiteratureOcurrences(ids.toSet,
+                                        filterStartYear,
+                                        filterStartMonth,
+                                        filterEndYear,
+                                        filterEndMonth,
+                                        cur
+          )
         }
       ),
       Field(
@@ -808,12 +821,22 @@ object Objects extends Logging {
           "Return the list of publications that mention the main entity, " +
             "alone or in combination with other entities"
         ),
-        arguments = idsArg :: cursor :: Nil,
+        arguments = idsArg :: startYear :: startMonth :: endYear :: endMonth :: cursor :: Nil,
         resolve = c => {
           val ids = c.arg(idsArg).getOrElse(List.empty) ++ List(c.value.id)
+          val filterStartYear = c.arg(startYear)
+          val filterStartMonth = c.arg(startMonth)
+          val filterEndYear = c.arg(endYear)
+          val filterEndMonth = c.arg(endMonth)
           val cur = c.arg(cursor)
 
-          c.ctx.getLiteratureOcurrences(ids.toSet, cur)
+          c.ctx.getLiteratureOcurrences(ids.toSet,
+                                        filterStartYear,
+                                        filterStartMonth,
+                                        filterEndYear,
+                                        filterEndMonth,
+                                        cur
+          )
         }
       ),
       Field(
