@@ -1,10 +1,10 @@
 query KnownDrugsQuery(
-  $efoId: String!
+  $ensgId: String!
   $cursor: String
   $freeTextQuery: String
   $size: Int = 10
 ) {
-  disease(efoId: $efoId) {
+  target(ensemblId: $ensgId) {
     id
     knownDrugs(cursor: $cursor, freeTextQuery: $freeTextQuery, size: $size) {
       count
@@ -32,17 +32,8 @@ query KnownDrugsQuery(
             }
           }
         }
-        urls {
-          url
-          name
-        }
         drugType
         mechanismOfAction
-        target {
-          id
-          approvedName
-          approvedSymbol
-        }
       }
     }
   }

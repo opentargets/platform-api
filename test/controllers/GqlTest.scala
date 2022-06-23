@@ -32,8 +32,7 @@ object GqlTest {
         str.flatMap {
           case '"' => "\\\""
           case ch  => s"$ch"
-        }
-      )
+      })
       .mkString("\\n")
 
   def generateQueryString(query: String, variables: String): JsValue =
@@ -124,13 +123,11 @@ class GqlTest
   "Bibliography queries" must {
     "return valid response for BibliographyQuery" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
       testQueryAgainstGqlEndpoint(Target("Bibliography_BibliographyQuery"))(t =>
-        t.replace("ensgId", "id")
-      )
+        t.replace("ensgId", "id"))
     }
     "return valid response for BibliographySimilarEntities" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
       testQueryAgainstGqlEndpoint(Target("Bibliography_SimilarEntities"))(t =>
-        t.replace("ensgId", "id")
-      )
+        t.replace("ensgId", "id"))
     }
     "return valid response for Bibliography summary fragment" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
       testQueryAgainstGqlEndpoint(DiseaseFragment("Bibliography_BibliographySummaryFragment"))
@@ -213,12 +210,6 @@ class GqlTest
     }
     "return a valid response for orphanet summary fragment" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("Orphanet_OrphanetSummaryFragment"))
-    }
-    "return a valid response for Phenodigm summary fragments" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("Phenodigm_PhenodigmSummaryFragment"))
-    }
-    "return a valid response for PheWAS Catalogue summary fragments" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("PheWASCatalog_PheWASCatalogSummaryQuery"))
     }
     "return a valid response for Progeny summary fragments" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("Progeny_ProgenySummaryFragment"))
@@ -354,8 +345,7 @@ class GqlTest
   "Evidence page queries" must {
     "return valid responses " taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDisease("EvidencePage_EvidencePageQuery"))(q =>
-        q.replace("ensemblId", "ensgId")
-      )
+        q.replace("ensemblId", "ensgId"))
     }
   }
 
@@ -413,21 +403,9 @@ class GqlTest
     }
   }
 
-  "Phenodigm_sectionQuery" must {
-    "return valid responses" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(TargetDiseaseSize("Phenodigm_sectionQuery"))
-    }
-  }
-
   "Phenotypes_query" must {
     "return valid responses" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(Disease("Phenotypes_PhenotypesQuery"))
-    }
-  }
-
-  "PheWAS queries" must {
-    "return valid responses" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(TargetDiseaseSize("PheWASCatalog_PhewasCatalogQuery"))
     }
   }
 

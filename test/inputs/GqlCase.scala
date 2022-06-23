@@ -191,12 +191,12 @@ case class GeneOntology(file: String) extends GqlCase[List[String]] {
 }
 
 case class KnownDrugs(file: String) extends GqlCase[String] {
-  val inputGenerator = diseaseGenerator
+  val inputGenerator = geneGenerator
 
-  def generateVariables(disease: String) =
+  def generateVariables(target: String) =
     s"""
       "variables": {
-      "efoId": "$disease",
+      "ensgId": "$target",
       "cursor": null,
       "freeTextQuery": null
     }
