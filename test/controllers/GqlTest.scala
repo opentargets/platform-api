@@ -297,8 +297,12 @@ class GqlTest
     }
   }
 
+  "OT Validation queries" must {
+    "return a valid response" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetDiseaseSize("OTValidation_OTValidationQuery"))
+    }
     "return a valid response for summary" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("Impc_sectionQuery"))
+      testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("OTValidation_OTValidationSummary"))
     }
   }
 
