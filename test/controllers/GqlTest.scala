@@ -32,7 +32,8 @@ object GqlTest {
         str.flatMap {
           case '"' => "\\\""
           case ch  => s"$ch"
-      })
+        }
+      )
       .mkString("\\n")
 
   def generateQueryString(query: String, variables: String): JsValue =
@@ -123,11 +124,13 @@ class GqlTest
   "Bibliography queries" must {
     "return valid response for BibliographyQuery" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
       testQueryAgainstGqlEndpoint(Target("Bibliography_BibliographyQuery"))(t =>
-        t.replace("ensgId", "id"))
+        t.replace("ensgId", "id")
+      )
     }
     "return valid response for BibliographySimilarEntities" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
       testQueryAgainstGqlEndpoint(Target("Bibliography_SimilarEntities"))(t =>
-        t.replace("ensgId", "id"))
+        t.replace("ensgId", "id")
+      )
     }
     "return valid response for Bibliography summary fragment" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
       testQueryAgainstGqlEndpoint(DiseaseFragment("Bibliography_BibliographySummaryFragment"))
@@ -276,6 +279,15 @@ class GqlTest
     }
   }
 
+  "Gene burden queries" must {
+    "return a valid response" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetDiseaseSize("GeneBurden_GeneBurdenQuery"))
+    }
+    "return a valid response for summary" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("GeneBurden_GeneBurdenSummary"))
+    }
+  }
+
   "Disease page queries" must {
     "return a valid response for disease facets" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
       testQueryAgainstGqlEndpoint(DiseaseAggregationfilter("DiseasePage_DiseaseFacets"))
@@ -345,7 +357,8 @@ class GqlTest
   "Evidence page queries" must {
     "return valid responses " taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDisease("EvidencePage_EvidencePageQuery"))(q =>
-        q.replace("ensemblId", "ensgId"))
+        q.replace("ensemblId", "ensgId")
+      )
     }
   }
 
