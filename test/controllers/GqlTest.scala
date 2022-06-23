@@ -288,6 +288,20 @@ class GqlTest
     }
   }
 
+  "Impc queries" must {
+    "return a valid response" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetDiseaseSize("Impc_sectionQuery"))
+    }
+    "return a valid response for summary" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("Impc_IMCPSummaryFragment"))
+    }
+  }
+
+    "return a valid response for summary" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("Impc_sectionQuery"))
+    }
+  }
+
   "Disease page queries" must {
     "return a valid response for disease facets" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
       testQueryAgainstGqlEndpoint(DiseaseAggregationfilter("DiseasePage_DiseaseFacets"))
