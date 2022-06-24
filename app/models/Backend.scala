@@ -813,7 +813,7 @@ class Backend @Inject() (implicit
             val npag = pag.next
             Helpers.Cursor.from(Some(Json.toJson(npag)))
           }
-          Publications(pubs.size, nCursor, pubs)
+          Publications(total, nCursor, pubs)
         }
       case _ =>
         logger.info(s"there is no publications with this set of ids $ids")
