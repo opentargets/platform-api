@@ -214,12 +214,6 @@ class GqlTest
     "return a valid response for orphanet summary fragment" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("Orphanet_OrphanetSummaryFragment"))
     }
-    "return a valid response for Phenodigm summary fragments" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("Phenodigm_PhenodigmSummaryFragment"))
-    }
-    "return a valid response for PheWAS Catalogue summary fragments" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("PheWASCatalog_PheWASCatalogSummaryQuery"))
-    }
     "return a valid response for Progeny summary fragments" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("Progeny_ProgenySummaryFragment"))
     }
@@ -282,6 +276,33 @@ class GqlTest
     }
     "return a valid response for summary" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("OTEncore_OTEncoreSummary"))
+    }
+  }
+
+  "Gene burden queries" must {
+    "return a valid response" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetDiseaseSize("GeneBurden_GeneBurdenQuery"))
+    }
+    "return a valid response for summary" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("GeneBurden_GeneBurdenSummary"))
+    }
+  }
+
+  "Impc queries" must {
+    "return a valid response" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetDiseaseSize("Impc_sectionQuery"))
+    }
+    "return a valid response for summary" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("Impc_IMCPSummaryFragment"))
+    }
+  }
+
+  "OT Validation queries" must {
+    "return a valid response" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetDiseaseSize("OTValidation_OTValidationQuery"))
+    }
+    "return a valid response for summary" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("OTValidation_OTValidationSummary"))
     }
   }
 
@@ -413,21 +434,9 @@ class GqlTest
     }
   }
 
-  "Phenodigm_sectionQuery" must {
-    "return valid responses" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(TargetDiseaseSize("Phenodigm_sectionQuery"))
-    }
-  }
-
   "Phenotypes_query" must {
     "return valid responses" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(Disease("Phenotypes_PhenotypesQuery"))
-    }
-  }
-
-  "PheWAS queries" must {
-    "return valid responses" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(TargetDiseaseSize("PheWASCatalog_PhewasCatalogQuery"))
     }
   }
 
