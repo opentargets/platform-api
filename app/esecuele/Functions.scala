@@ -118,6 +118,8 @@ object Functions {
 
   def not(col: Column): Column = f("not", col)
 
+  def min(col: Column): Column = f("min", col)
+
   def in(col1: Column, col2: Column): Column = f("in", col1, col2)
 
   def notIn(col1: Column, col2: Column): Column = f("notIn", col1, col2)

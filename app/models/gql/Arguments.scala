@@ -2,7 +2,7 @@ package models.gql
 
 import models.entities.Configuration._
 import models.entities.Pagination._
-import models.entities.{ComparatorEnum, _}
+import models.entities.{_}
 import sangria.macros.derive._
 import sangria.schema._
 import sangria.marshalling.playJson._
@@ -63,19 +63,26 @@ object Arguments {
     "Use disease ontology to capture evidences from all descendants to build associations"
   )
 
-  val ComparerEnum = deriveEnumType[ComparatorEnum.Value](
-    IncludeValues("GreaterThan", "LesserThan")
-  )
-
-  val year: Argument[Option[Int]] =
-    Argument("year", OptionInputType(IntType), description = "Year")
-  val month: Argument[Option[Int]] =
-    Argument("month", OptionInputType(IntType), description = "Month")
-  val dateComparator: Argument[Option[ComparatorEnum.Value]] = Argument(
-    "comparator",
-    OptionInputType(ComparerEnum),
-    description = "Defines if should results be either before or after specific date"
-  )
+  val startYear: Argument[Option[Int]] =
+    Argument("startYear",
+             OptionInputType(IntType),
+             description = "Year at the lower end of the filter"
+    )
+  val startMonth: Argument[Option[Int]] =
+    Argument("startMonth",
+             OptionInputType(IntType),
+             description = "Month at the lower end of the filter"
+    )
+  val endYear: Argument[Option[Int]] =
+    Argument("endYear",
+             OptionInputType(IntType),
+             description = "Year at the higher end of the filter"
+    )
+  val endMonth: Argument[Option[Int]] =
+    Argument("endMonth",
+             OptionInputType(IntType),
+             description = "Month at the higher end of the filter"
+    )
 
   val BFilterString: Argument[Option[String]] = Argument("BFilter", OptionInputType(StringType))
   val scoreSorting: Argument[Option[String]] = Argument("orderByScore", OptionInputType(StringType))

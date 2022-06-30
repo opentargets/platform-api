@@ -1,5 +1,6 @@
 package models.db
 
+import akka.http.scaladsl.model.DateTime
 import esecuele.Column._
 import esecuele.{Functions => F, Query => Q, _}
 import play.api.Logging
@@ -9,7 +10,8 @@ case class QLITAGG(
     indexTableName: String,
     ids: Set[String],
     size: Int,
-    offset: Int
+    offset: Int,
+    filterDate: Option[(Int, Int, Int, Int)]
 ) extends Queryable
     with Logging {
 
@@ -62,12 +64,58 @@ case class QLITAGG(
     q
   }
 
-  override val query: Q = {
+  val minDate: Q = {
     val q = Q(
-      Select(pmid :: pmcid :: date :: year :: month :: sentences :: Nil),
+      Select(F.min(year) :: Nil),
       From(pmidsQ(pmid :: Nil).toColumn(None), Some("L")),
       Join(litQ.toColumn(None), Some("left"), Some("any"), global = false, Some("L"), pmid :: Nil)
     )
+
+    logger.debug(q.toString)
+
+    q
+  }
+
+  override val query: Q = {
+
+    val q = filterDate match {
+      case Some(value) =>
+        Q(
+          Select(pmid :: pmcid :: date :: year :: month :: sentences :: Nil),
+          From(pmidsQ(pmid :: Nil).toColumn(None), Some("L")),
+          Join(litQ.toColumn(None),
+               Some("left"),
+               Some("any"),
+               global = false,
+               Some("L"),
+               pmid :: Nil
+          ),
+          Where(
+            F.and(
+              F.greaterOrEquals(
+                F.plus(F.multiply(year, literal(100)), month),
+                literal((value._1 * 100) + value._2)
+              ),
+              F.lessOrEquals(
+                F.plus(F.multiply(year, literal(100)), month),
+                literal((filterDate.get._3 * 100) + filterDate.get._4)
+              )
+            )
+          )
+        )
+      case _ =>
+        Q(
+          Select(pmid :: pmcid :: date :: year :: month :: sentences :: Nil),
+          From(pmidsQ(pmid :: Nil).toColumn(None), Some("L")),
+          Join(litQ.toColumn(None),
+               Some("left"),
+               Some("any"),
+               global = false,
+               Some("L"),
+               pmid :: Nil
+          )
+        )
+    }
 
     logger.debug(q.toString)
 
