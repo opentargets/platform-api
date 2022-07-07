@@ -29,19 +29,6 @@ case class QLITAGG(
   val T: Column = column(tableName)
   val TIdx: Column = column(indexTableName)
 
-  private def dateFilter(value: (Int, Int, Int, Int)): QuerySection = Where(
-    F.and(
-      F.greaterOrEquals(
-        F.plus(F.multiply(year, literal(100)), month),
-        literal((value._1 * 100) + value._2)
-      ),
-      F.lessOrEquals(
-        F.plus(F.multiply(year, literal(100)), month),
-        literal((filterDate.get._3 * 100) + filterDate.get._4)
-      )
-    )
-  )
-
   private def pmidsQ(select: Seq[Column]): Q = Q(
     Select(select),
     From(TIdx),
@@ -73,26 +60,29 @@ case class QLITAGG(
     PreWhere(F.in(pmid, pmidsQNoLimit(pmid :: Nil).toColumn(None)))
   )
 
+  private def createDateFilter(value:(Int,Int,Int,Int)) = Where(
+    F.and(
+      F.greaterOrEquals(
+        F.plus(F.multiply(year, literal(100)), month),
+        literal((value._1 * 100) + value._2)
+      ),
+      F.lessOrEquals(
+        F.plus(F.multiply(year, literal(100)), month),
+        literal((filterDate.get._3 * 100) + filterDate.get._4)
+      )
+    )
+  )
+
   val total: Q = {
 
     val countQ = filterDate match {
       case Some(value) =>
+        val where = createDateFilter(value)
         Q(
           Select(literal(1) :: Nil),
           From(TIdx),
           PreWhere(F.in(key, F.set(ids.map(literal).toSeq))),
-          Where(
-            F.and(
-              F.greaterOrEquals(
-                F.plus(F.multiply(year, literal(100)), month),
-                literal((value._1 * 100) + value._2)
-              ),
-              F.lessOrEquals(
-                F.plus(F.multiply(year, literal(100)), month),
-                literal((filterDate.get._3 * 100) + filterDate.get._4)
-              )
-            )
-          ),
+          where,
           GroupBy(pmid.name :: Nil),
           Having(F.greaterOrEquals(F.count(pmid.name), literal(ids.size)))
         )
@@ -132,6 +122,7 @@ case class QLITAGG(
 
     val q = filterDate match {
       case Some(value) =>
+        val where = createDateFilter(value)
         Q(
           Select(pmid :: pmcid :: date :: year :: month :: sentences :: Nil),
           From(pmidsQ(pmid :: Nil).toColumn(None), Some("L")),
@@ -142,18 +133,7 @@ case class QLITAGG(
                Some("L"),
                pmid :: Nil
           ),
-          Where(
-            F.and(
-              F.greaterOrEquals(
-                F.plus(F.multiply(year, literal(100)), month),
-                literal((value._1 * 100) + value._2)
-              ),
-              F.lessOrEquals(
-                F.plus(F.multiply(year, literal(100)), month),
-                literal((filterDate.get._3 * 100) + filterDate.get._4)
-              )
-            )
-          )
+          where
         )
       case _ =>
         Q(
