@@ -39,11 +39,26 @@ case class QLITAGG(
     Limit(offset, size)
   )
 
-  val litQ: Q = Q(
-    Select(pmid :: pmcid :: date :: year :: month :: sentences :: Nil),
-    From(T),
-    PreWhere(F.in(pmid, pmidsQ(pmid :: Nil).toColumn(None)))
-  )
+  val litQ: Q =
+    {
+      filterDate match {
+        case Some(value) =>
+          val where = createDateFilter(value)
+          Q(
+            Select(pmid :: pmcid :: date :: year :: month :: sentences :: Nil),
+            From(T),
+            PreWhere(F.in(pmid, pmidsQ(pmid :: Nil).toColumn(None))),
+            where
+          )
+        case _ =>
+          Q(
+            Select(pmid :: pmcid :: date :: year :: month :: sentences :: Nil),
+            From(T),
+            PreWhere(F.in(pmid, pmidsQ(pmid :: Nil).toColumn(None)))
+          )
+      }
+    }
+
 
   private def pmidsQNoLimit(select: Seq[Column]): Q = Q(
     Select(select),
@@ -120,34 +135,17 @@ case class QLITAGG(
 
   override val query: Q = {
 
-    val q = filterDate match {
-      case Some(value) =>
-        val where = createDateFilter(value)
-        Q(
-          Select(pmid :: pmcid :: date :: year :: month :: sentences :: Nil),
-          From(pmidsQ(pmid :: Nil).toColumn(None), Some("L")),
-          Join(litQ.toColumn(None),
-               Some("left"),
-               Some("any"),
-               global = false,
-               Some("L"),
-               pmid :: Nil
-          ),
-          where
-        )
-      case _ =>
-        Q(
-          Select(pmid :: pmcid :: date :: year :: month :: sentences :: Nil),
-          From(pmidsQ(pmid :: Nil).toColumn(None), Some("L")),
-          Join(litQ.toColumn(None),
-               Some("left"),
-               Some("any"),
-               global = false,
-               Some("L"),
-               pmid :: Nil
-          )
-        )
-    }
+    val q = Q(
+      Select(pmid :: pmcid :: date :: year :: month :: sentences :: Nil),
+      From(pmidsQ(pmid :: Nil).toColumn(None), Some("L")),
+      Join(litQ.toColumn(None),
+        Some("left"),
+        Some("any"),
+        global = false,
+        Some("L"),
+        pmid :: Nil
+      )
+    )
 
     logger.debug(q.toString)
 
