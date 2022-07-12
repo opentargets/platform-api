@@ -1,6 +1,5 @@
 package models.db
 
-import akka.http.scaladsl.model.DateTime
 import esecuele.Column._
 import esecuele.{Functions => F, Query => Q, _}
 import play.api.Logging
@@ -40,25 +39,22 @@ case class QLITAGG(
   )
 
   val litQ: Q =
-    {
-      filterDate match {
-        case Some(value) =>
-          val where = createDateFilter(value)
-          Q(
-            Select(pmid :: pmcid :: date :: year :: month :: sentences :: Nil),
-            From(T),
-            PreWhere(F.in(pmid, pmidsQ(pmid :: Nil).toColumn(None))),
-            where
-          )
-        case _ =>
-          Q(
-            Select(pmid :: pmcid :: date :: year :: month :: sentences :: Nil),
-            From(T),
-            PreWhere(F.in(pmid, pmidsQ(pmid :: Nil).toColumn(None)))
-          )
-      }
+    filterDate match {
+      case Some(value) =>
+        val where = createDateFilter(value)
+        Q(
+          Select(pmid :: pmcid :: date :: year :: month :: sentences :: Nil),
+          From(T),
+          PreWhere(F.in(pmid, pmidsQ(pmid :: Nil).toColumn(None))),
+          where
+        )
+      case _ =>
+        Q(
+          Select(pmid :: pmcid :: date :: year :: month :: sentences :: Nil),
+          From(T),
+          PreWhere(F.in(pmid, pmidsQ(pmid :: Nil).toColumn(None)))
+        )
     }
-
 
   private def pmidsQNoLimit(select: Seq[Column]): Q = Q(
     Select(select),
@@ -75,7 +71,7 @@ case class QLITAGG(
     PreWhere(F.in(pmid, pmidsQNoLimit(pmid :: Nil).toColumn(None)))
   )
 
-  private def createDateFilter(value:(Int,Int,Int,Int)) = Where(
+  private def createDateFilter(value: (Int, Int, Int, Int)): Where = Where(
     F.and(
       F.greaterOrEquals(
         F.plus(F.multiply(year, literal(100)), month),
@@ -88,44 +84,17 @@ case class QLITAGG(
     )
   )
 
+  /** Return the total number of publications with a selected date range, and the earliest
+    * publication year as tuple (Long, Int). If no date range is selected, a default of 1900 is
+    * used.
+    */
   val total: Q = {
 
-    val countQ = filterDate match {
-      case Some(value) =>
-        val where = createDateFilter(value)
-        Q(
-          Select(literal(1) :: Nil),
-          From(TIdx),
-          PreWhere(F.in(key, F.set(ids.map(literal).toSeq))),
-          where,
-          GroupBy(pmid.name :: Nil),
-          Having(F.greaterOrEquals(F.count(pmid.name), literal(ids.size)))
-        )
-      case _ =>
-        Q(
-          Select(literal(1) :: Nil),
-          From(TIdx),
-          PreWhere(F.in(key, F.set(ids.map(literal).toSeq))),
-          GroupBy(pmid.name :: Nil),
-          Having(F.greaterOrEquals(F.count(pmid.name), literal(ids.size)))
-        )
-    }
-
     val q = Q(
-      Select(F.count(Column.star) :: Nil),
-      From(countQ.toColumn(None))
-    )
-
-    logger.debug(q.toString)
-
-    q
-  }
-
-  val minDate: Q = {
-    val q = Q(
-      Select(F.min(year) :: Nil),
-      From(pmidsQNoLimit(pmid :: Nil).toColumn(None), Some("L")),
-      Join(litQNoLimit.toColumn(None), Some("left"), Some("any"), global = false, Some("L"), pmid :: Nil)
+      Select(F.countDistinct(pmid) :: F.min(year) :: Nil),
+      From(TIdx),
+      Some(PreWhere(F.in(key, F.set(ids.map(literal).toSeq)))),
+      filterDate.map(createDateFilter)
     )
 
     logger.debug(q.toString)
@@ -138,13 +107,7 @@ case class QLITAGG(
     val q = Q(
       Select(pmid :: pmcid :: date :: year :: month :: sentences :: Nil),
       From(pmidsQ(pmid :: Nil).toColumn(None), Some("L")),
-      Join(litQ.toColumn(None),
-        Some("left"),
-        Some("any"),
-        global = false,
-        Some("L"),
-        pmid :: Nil
-      )
+      Join(litQ.toColumn(None), Some("left"), Some("any"), global = false, Some("L"), pmid :: Nil)
     )
 
     logger.debug(q.toString)

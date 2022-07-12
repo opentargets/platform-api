@@ -769,11 +769,8 @@ class Backend @Inject() (implicit
                               endYear: Option[Int],
                               endMonth: Option[Int],
                               cursor: Option[String]
-  ): Future[Publications] = {
-    import Pagination._
-
+  ): Future[Publications] =
     getLiterature(ids, startYear, startMonth, endYear, endMonth, cursor)
-  }
 
   private def getLiterature(ids: Set[String],
                             startYear: Option[Int],
@@ -786,7 +783,8 @@ class Backend @Inject() (implicit
     val indexTable = defaultOTSettings.clickhouse.literatureIndex
     logger.info(s"query literature ocurrences in table ${table.name}")
 
-    val pag = Helpers.Cursor.to(cursor).flatMap(_.asOpt[Pagination]).getOrElse(Pagination.mkDefault)
+    val pag: Pagination =
+      Helpers.Cursor.to(cursor).flatMap(_.asOpt[Pagination]).getOrElse(Pagination.mkDefault)
 
     val filterDate = (startYear, endYear) match {
       case (Some(strYear), Some(ndYear)) =>
@@ -809,17 +807,11 @@ class Backend @Inject() (implicit
         Publications(total, year, nCursor, pubs)
       }
 
-    dbRetriever.executeQuery[Long, Query](simQ.total).flatMap {
-      case Vector(total) if total > 0 =>
+    dbRetriever.executeQuery[(Long, Int), Query](simQ.total).flatMap {
+      case Vector((total, minDate)) if total > 0 =>
         logger.debug(s"total number of publication occurrences $total")
-        dbRetriever.executeQuery[Int, Query](simQ.minDate).flatMap {
-          case Vector(year) =>
-            runQuery(year, total)
-          case _ =>
-            logger.info(s"Cannot find the earliest year for the publications.")
-            runQuery(1900, total)
-        }
-
+        require(minDate > 0, "Minimum date must be available for publications.")
+        runQuery(minDate, total)
       case _ =>
         logger.info(s"there is no publications with this set of ids $ids")
         Future.successful(Publications.empty())

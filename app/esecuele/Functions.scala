@@ -12,6 +12,10 @@ object Functions {
 
   def apply(name: String, col: Column, cols: Column*): Column = apply(name, col +: cols)
 
+  def countDistinct(cols: Seq[Column]): Column = f("countDistinct", cols)
+
+  def countDistinct(col: Column): Column = f("countDistinct", col)
+
   def set(cols: Seq[Column]): Column = f("", cols)
 
   def uniq(cols: Seq[Column]): Column = f("uniq", cols)
