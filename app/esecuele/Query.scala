@@ -7,7 +7,7 @@ case class Query(sections: Seq[QuerySection]) extends AnyQuery {
 
   override val rep: String = sections.map(_.rep).mkString("", " ", "")
 
-  def toColumn(named: Option[String]): Column = {
+  def toColumn(named: Option[String] = None): Column = {
     val q = sections.map(_.rep).mkString("(", " ", ")") + s"${named.map(" " + _).getOrElse("")}"
     Column(RawExpression(q), None)
   }
