@@ -28,9 +28,8 @@ case class QLITAGG(
   val T: Column = column(tableName) // "literature" in DB under default conditions
   val TIdx: Column = column(indexTableName) // "literature_index" in DB under default conditions
 
-  // Find pmids related to Ids from literature_index
-  private def pmidsQ(select: Seq[Column], dates: Option[(Int, Int, Int, Int)] = None): Q = {
-    val preWhereFilter = dates match {
+  private def createDatePreWhere(dates: Option[(Int, Int, Int, Int)]): PreWhere = {
+    dates match {
       case Some(date) =>
         PreWhere(
           F.and(
@@ -40,10 +39,14 @@ case class QLITAGG(
       case None =>
         PreWhere(F.in(key, F.set(ids.map(literal).toSeq)))
     }
+  }
+
+  // Find pmids related to Ids from literature_index
+  private def pmidsQ(select: Seq[Column], dates: Option[(Int, Int, Int, Int)] = None): Q = {
     Q(
       Select(select),
       From(TIdx),
-      preWhereFilter,
+      createDatePreWhere(dates),
       GroupBy(pmid.name :: Nil),
       Having(F.greaterOrEquals(F.count(pmid.name), literal(ids.size))),
       OrderBy(F.sum(relevance.name).desc :: F.any(date.name).desc :: Nil),
@@ -70,26 +73,11 @@ case class QLITAGG(
    * used.
    */
   val total: Q = {
-
-    val q = filterDate match {
-      case Some(dates) =>
-        Q(
-          Select(F.countDistinct(pmid) :: F.min(year) :: Nil),
-          From(TIdx),
-          Some(
-            PreWhere(F.and(F.in(key, F.set(ids.map(literal).toSeq)), createDateFilter(dates)))
-          )
-        )
-      case None =>
-        Q(Select(F.countDistinct(pmid) :: F.min(year) :: Nil),
-          From(TIdx),
-          Some(
-            PreWhere(
-              F.in(key, F.set(ids.map(literal).toSeq))
-            )
-          )
-        )
-    }
+    val q = Q(
+      Select(F.countDistinct(pmid) :: F.min(year) :: Nil),
+      From(TIdx),
+      createDatePreWhere(filterDate)
+    )
 
     logger.debug(q.toString)
 
