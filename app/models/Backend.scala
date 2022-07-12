@@ -818,20 +818,6 @@ class Backend @Inject() (implicit
     }
   }
 
-  def filterLiteratureByDate(pub: Publication, dateAndComparator: (Int, Int, Int, Int)): Boolean = {
-    // if no year is sent no filter is applied
-
-    def compareDates(pubDate: LocalDate, reqStartDate: LocalDate, reqEndDate: LocalDate): Boolean =
-      pubDate.compareTo(reqStartDate) >= 0 && pubDate.compareTo(reqEndDate) <= 0
-
-    val pubDate = LocalDate.of(pub.year, pub.month, 1)
-    val reqStartDate = LocalDate.of(dateAndComparator._1, dateAndComparator._2, 1)
-    val reqEndDate = LocalDate.of(dateAndComparator._3, dateAndComparator._4, 1)
-
-    compareDates(pubDate, reqStartDate, reqEndDate)
-
-  }
-
   /** @param index
     *   key of index (name field) in application.conf
     * @param default
