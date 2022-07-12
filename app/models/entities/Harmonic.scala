@@ -47,12 +47,18 @@ object Harmonic {
 
   /** Harmonic CH SQL dsl to compute associations on the fly
     *
-    * @param fixedCol       if your `queryColname` is target_id it needs to be disease_id
-    * @param queryColName   the other entity you are returning from `fixedCol` so target_id
-    * @param table          the table name used for the computation
-    * @param datasources    the configuration of datasources that are used to compute all harmonics
-    * @param expansionTable it is used if Some
-    * @param pagination     page and size to return
+    * @param fixedCol
+    *   if your `queryColname` is target_id it needs to be disease_id
+    * @param queryColName
+    *   the other entity you are returning from `fixedCol` so target_id
+    * @param table
+    *   the table name used for the computation
+    * @param datasources
+    *   the configuration of datasources that are used to compute all harmonics
+    * @param expansionTable
+    *   it is used if Some
+    * @param pagination
+    *   page and size to return
     */
   def apply(
       fixedCol: String,

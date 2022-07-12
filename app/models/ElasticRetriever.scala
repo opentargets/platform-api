@@ -75,8 +75,8 @@ class ElasticRetriever @Inject() (
   private def encodeSearchAfter(jsArray: Option[JsValue]): Option[String] =
     jsArray.map(jsv => Base64Engine.encode(Json.stringify(jsv))).map(new String(_))
 
-  /** This fn represents a query where each kv from the map is used in
-    * a bool must. Based on the query asked by `getByIndexedQuery` and aggregation is applied
+  /** This fn represents a query where each kv from the map is used in a bool must. Based on the
+    * query asked by `getByIndexedQuery` and aggregation is applied
     */
   def getAggregationsByQuery[A](
       esIndex: String,
@@ -111,8 +111,8 @@ class ElasticRetriever @Inject() (
     }
   }
 
-  /** This fn represents a query where each kv from the map is used in
-    * a bool must. Based on the query asked by `getByIndexedQuery` and aggregation is applied
+  /** This fn represents a query where each kv from the map is used in a bool must. Based on the
+    * query asked by `getByIndexedQuery` and aggregation is applied
     */
   def getByIndexedQueryMust[A, V](
       esIndex: String,
@@ -128,8 +128,8 @@ class ElasticRetriever @Inject() (
     getByIndexedQuery(searchRequest, sortByField, buildF)
   }
 
-  /** This fn represents a query where each kv from the map is used in
-    * a bool 'should'. Based on the query asked by `getByIndexedQuery` and aggregation is applied
+  /** This fn represents a query where each kv from the map is used in a bool 'should'. Based on the
+    * query asked by `getByIndexedQuery` and aggregation is applied
     */
   def getByIndexedQueryShould[A, V](
       esIndex: String,
@@ -558,9 +558,9 @@ class ElasticRetriever @Inject() (
 
 object ElasticRetriever extends Logging {
 
-  /** aggregationFilterProducer returns a tuple where the first element is the overall list
-    * of filters and the second is a map with the cartesian product of each aggregation with
-    * the complementary list of filters
+  /** aggregationFilterProducer returns a tuple where the first element is the overall list of
+    * filters and the second is a map with the cartesian product of each aggregation with the
+    * complementary list of filters
     */
   def aggregationFilterProducer(
       filters: Seq[AggregationFilter],
@@ -616,9 +616,7 @@ object ElasticRetriever extends Logging {
     }
   }
 
-  /** *
-    * SortBy case class use the `fieldName` to sort by and asc if `desc` is false
-    * otherwise desc
+  /** * SortBy case class use the `fieldName` to sort by and asc if `desc` is false otherwise desc
     */
   def sortByAsc(fieldName: String): Some[FieldSort] = Some(sort.FieldSort(fieldName).asc())
 

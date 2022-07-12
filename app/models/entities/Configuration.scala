@@ -12,16 +12,14 @@ object Configuration {
 
   case class APIVersion(x: Int, y: Int, z: Int)
 
-  /** meta class compile the name and version information for
-    * the application. Also, it serves as a container to include
-    * future fields
+  /** meta class compile the name and version information for the application. Also, it serves as a
+    * container to include future fields
     */
   case class Meta(name: String, apiVersion: APIVersion, dataVersion: DataVersion)
 
   case class ElasticsearchEntity(name: String, index: String, searchIndex: Option[String])
 
-  /** elasticsearch settings class set capture its configuration and the entities are
-    * stored there
+  /** elasticsearch settings class set capture its configuration and the entities are stored there
     */
   case class ElasticsearchSettings(
       host: String,
@@ -35,6 +33,7 @@ object Configuration {
   case class AssociationSettings(label: String, name: String)
 
   case class LiteratureIndexSettings(label: String, name: String)
+
   case class LiteratureSettings(label: String, name: String)
 
   case class TargetSettings(associations: AssociationSettings)
@@ -45,9 +44,8 @@ object Configuration {
 
   case class HarmonicSettings(pExponent: Int, datasources: Seq[DatasourceSettings])
 
-  /** ClickHouse settings stores the configuration for the entities it handles.
-    * Target Disease and Harmonic settings used to compute associations on the fly
-    * and LUTs for interaction expansions
+  /** ClickHouse settings stores the configuration for the entities it handles. Target Disease and
+    * Harmonic settings used to compute associations on the fly and LUTs for interaction expansions
     */
   case class ClickhouseSettings(
       target: TargetSettings,

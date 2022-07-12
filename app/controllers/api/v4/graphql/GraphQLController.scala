@@ -1,6 +1,6 @@
 package controllers.api.v4.graphql
 
-import akka.stream.{Materializer}
+import akka.stream.Materializer
 import controllers.api.v4.graphql.QueryMetadataHeaders.{GQL_OP_HEADER, GQL_VAR_HEADER}
 import models.entities.TooComplexQueryError
 import models.entities.TooComplexQueryError._
