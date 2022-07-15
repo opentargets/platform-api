@@ -5,30 +5,30 @@ import esecuele.{Functions => F, Query => Q, _}
 import play.api.Logging
 
 /** Helper class for querying the Literature tables in Clickhouse.
- *
- * There are two tables of relevance: literature and literature_index. Literature_index provides a
- * lookup table so that we can go from a target, drug or disease back to the publications which
- * mention those entities. Each of the rows has a score indicating how relevant the result is. Once
- * we select a subset of the rows from literature_index we then look up the publication data
- * (sentences) which provide more information about the exact match.
- *
- * This powers the `literatureOcurrences` (sic) section of the API.
- *
- * @param tableName
- * "literature" in DB under default conditions.
- * @param indexTableName
- * "literature_index" in DB under default conditions.
- * @param ids
- * to find related literature for. These are either a target, drug or disease and can be found in
- * the 'keywordId' field of the "literature_index" in the DB.
- * @param size
- * page size to return
- * @param offset
- * starting point for return set
- * @param filterDate
- * limit results to those between the specified dates. When no dates are specified, all records
- * since 1900 are returned by default.
- */
+  *
+  * There are two tables of relevance: literature and literature_index. Literature_index provides a
+  * lookup table so that we can go from a target, drug or disease back to the publications which
+  * mention those entities. Each of the rows has a score indicating how relevant the result is. Once
+  * we select a subset of the rows from literature_index we then look up the publication data
+  * (sentences) which provide more information about the exact match.
+  *
+  * This powers the `literatureOcurrences` (sic) section of the API.
+  *
+  * @param tableName
+  *   "literature" in DB under default conditions.
+  * @param indexTableName
+  *   "literature_index" in DB under default conditions.
+  * @param ids
+  *   to find related literature for. These are either a target, drug or disease and can be found in
+  *   the 'keywordId' field of the "literature_index" in the DB.
+  * @param size
+  *   page size to return
+  * @param offset
+  *   starting point for return set
+  * @param filterDate
+  *   limit results to those between the specified dates. When no dates are specified, all records
+  *   since 1900 are returned by default.
+  */
 case class QLITAGG(
     tableName: String,
     indexTableName: String,
@@ -91,9 +91,9 @@ case class QLITAGG(
     )
 
   /** Return the total number of publications with a selected date range, and the earliest
-   * publication year as tuple (Long, Int). If no date range is selected, a default of 1900 is
-   * used.
-   */
+    * publication year as tuple (Long, Int). If no date range is selected, a default of 1900 is
+    * used.
+    */
   val total: Q = {
     val q = Q(
       Select(F.countDistinct(pmid) :: F.min(year) :: Nil),
