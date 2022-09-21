@@ -13,7 +13,6 @@ case class ChemicalProbe(
     id: String,
     control: Option[String],
     drugId: Option[String],
-    inchiKey: String,
     mechanismOfAction: Option[Seq[String]],
     isHighQuality: Boolean,
     origin: Option[Seq[String]],

@@ -116,7 +116,6 @@ query TargetFullObject($ensgId: String!) {
       id
       control
       drugId
-      inchiKey
       mechanismOfAction
       origin
       isHighQuality
