@@ -891,7 +891,9 @@ object Objects extends Logging {
           "Therapeutic indications for drug based on clinical trial data or " +
             "post-marketed drugs, when mechanism of action is known\""
         ),
-        resolve = r => r.value.linkedDiseases
+        resolve = r => {
+          r.value.linkedDiseases
+        }
       )
     ),
     ReplaceField(
