@@ -120,7 +120,7 @@ query TargetFullObject($ensgId: String!) {
       origin
       isHighQuality
       probeMinerScore
-      probesDrugScore
+      probesDrugsScore
       scoreInCells
       scoreInOrganisms
       targetFromSourceId

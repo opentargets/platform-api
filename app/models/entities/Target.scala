@@ -17,7 +17,7 @@ case class ChemicalProbe(
     isHighQuality: Boolean,
     origin: Option[Seq[String]],
     probeMinerScore: Option[String],
-    probesDrugScore: Option[String],
+    probesDrugsScore: Option[String],
     scoreInCells: Option[String],
     scoreInOrganisms: Option[String],
     targetFromSourceId: String,
