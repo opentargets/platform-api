@@ -10,19 +10,19 @@ import shapeless.Generic
 case class ChemicalProbeUrl(niceName: String, url: Option[String])
 
 case class ChemicalProbe(
-                          id: String,
-                          control: Option[String],
-                          drugId: Option[String],
-                          mechanismOfAction: Option[Seq[String]],
-                          isHighQuality: Boolean,
-                          origin: Option[Seq[String]],
-                          probeMinerScore: Option[Double],
-                          probesDrugsScore: Option[Double],
-                          scoreInCells: Option[Double],
-                          scoreInOrganisms: Option[Double],
-                          targetFromSourceId: String,
-                          urls: Vector[ChemicalProbeUrl]
-                        )
+    id: String,
+    control: Option[String],
+    drugId: Option[String],
+    mechanismOfAction: Option[Seq[String]],
+    isHighQuality: Boolean,
+    origin: Option[Seq[String]],
+    probeMinerScore: Option[Double],
+    probesDrugsScore: Option[Double],
+    scoreInCells: Option[Double],
+    scoreInOrganisms: Option[Double],
+    targetFromSourceId: String,
+    urls: Vector[ChemicalProbeUrl]
+)
 
 case class SafetyEffects(
     direction: String,
