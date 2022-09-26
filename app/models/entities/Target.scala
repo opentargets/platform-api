@@ -16,10 +16,10 @@ case class ChemicalProbe(
     mechanismOfAction: Option[Seq[String]],
     isHighQuality: Boolean,
     origin: Option[Seq[String]],
-    probeMinerScore: Option[String],
-    probesDrugsScore: Option[String],
-    scoreInCells: Option[String],
-    scoreInOrganisms: Option[String],
+    probeMinerScore: Option[Double],
+    probesDrugsScore: Option[Double],
+    scoreInCells: Option[Double],
+    scoreInOrganisms: Option[Double],
     targetFromSourceId: String,
     urls: Vector[ChemicalProbeUrl]
 )
