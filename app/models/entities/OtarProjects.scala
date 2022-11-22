@@ -5,7 +5,12 @@ import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 import play.api.libs.json.JsonNaming.SnakeCase
 
-case class OtarProject(otarCode: String, status: String, projectName: String, reference: String)
+case class OtarProject(otarCode: String,
+                       status: String,
+                       projectName: String,
+                       reference: String,
+                       integratesInPPP: Option[Boolean] = Some(false)
+)
 
 case class OtarProjects(efoId: String, rows: Seq[OtarProject])
 
