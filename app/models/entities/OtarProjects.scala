@@ -9,7 +9,7 @@ case class OtarProject(otarCode: String,
                        status: String,
                        projectName: String,
                        reference: String,
-                       integratesInPPP: Boolean
+                       integratesInPPP: Option[Boolean] = Some(false)
 )
 
 case class OtarProjects(efoId: String, rows: Seq[OtarProject])
