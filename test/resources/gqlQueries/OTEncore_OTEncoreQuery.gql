@@ -33,7 +33,6 @@ query EncoreQuery($ensemblId: String!, $efoId: String!, $size: Int!) {
         phenotypicConsequenceLogFoldChange
         phenotypicConsequenceFDR
         phenotypicConsequencePValue
-        geneticInteractionMethod
         geneticInteractionScore
         geneticInteractionPValue
         geneticInteractionFDR
