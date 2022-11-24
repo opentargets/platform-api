@@ -30,6 +30,8 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import scala.collection.immutable.ArraySeq
 import scala.concurrent._
+import scala.concurrent.impl.Promise
+import scala.util.{Failure, Success}
 
 class Backend @Inject() (implicit
     ec: ExecutionContext,
@@ -786,6 +788,8 @@ class Backend @Inject() (implicit
     val indexTable = defaultOTSettings.clickhouse.literatureIndex
     logger.info(s"query literature ocurrences in table ${table.name}")
 
+    println("cursor" + cursor)
+
     val pag = Helpers.Cursor.to(cursor).flatMap(_.asOpt[Pagination]).getOrElse(Pagination.mkDefault)
 
     val filterDate = (startYear, endYear) match {
@@ -793,6 +797,9 @@ class Backend @Inject() (implicit
         Some(strYear, startMonth.getOrElse(1), ndYear, endMonth.getOrElse(12))
       case _ => Option.empty
     }
+
+    println("pag.size" + pag.size)
+    println("pag.offset" + pag.offset)
 
     val simQ = QLITAGG(table.name, indexTable.name, ids, pag.size, pag.offset, filterDate)
 
@@ -806,7 +813,12 @@ class Backend @Inject() (implicit
           val npag = pag.next
           Helpers.Cursor.from(Some(Json.toJson(npag)))
         }
-        Publications(total, year, nCursor, pubs)
+
+        val test = dbRetriever.executeQuery[Int, Query](simQ.filteredTotalQ).map { v2 =>
+          Publications(total, year, nCursor, pubs, v2.head)
+        }
+//          Publications(total, year, nCursor, pubs, 0)
+        test.await
       }
 
     dbRetriever.executeQuery[Long, Query](simQ.total).flatMap {
