@@ -23,8 +23,7 @@ object OtarProjects {
       (JsPath \ "status").read[String] and
       (JsPath \ "project_name").read[String] and
       (JsPath \ "reference").read[String] and
-      (JsPath \ "integrates_data_PPP").read[Boolean]
-      ) (OtarProject.apply _)
+      (JsPath \ "integrates_data_PPP").read[Boolean]) (OtarProject.apply _)
 
   implicit val otarProjectsImpW: OWrites[OtarProjects] = Json.writes[OtarProjects]
   implicit val otarProjectsImpR: Reads[OtarProjects] =
