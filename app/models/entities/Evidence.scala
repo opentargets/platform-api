@@ -1,28 +1,14 @@
 package models.entities
 
 import models.Backend
-import models.gql.Fetchers.{
-  diseasesFetcher,
-  drugsFetcher,
-  goFetcher,
-  soTermsFetcher,
-  targetsFetcher
-}
+import models.gql.Fetchers.{diseasesFetcher, drugsFetcher, goFetcher, soTermsFetcher, targetsFetcher}
 import models.gql.Objects
 import models.gql.Objects.{diseaseImp, drugImp, geneOntologyTermImp, targetImp}
+import play.api.Logging
 import play.api.libs.json._
-import sangria.schema.{
-  Field,
-  FloatType,
-  ListType,
-  LongType,
-  ObjectType,
-  OptionType,
-  StringType,
-  fields
-}
+import sangria.schema.{Field, FloatType, ListType, LongType, ObjectType, OptionType, StringType, fields}
 
-object Evidence {
+object Evidence extends Logging {
 
   import sangria.macros.derive._
 
