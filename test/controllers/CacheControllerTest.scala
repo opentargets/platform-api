@@ -56,9 +56,10 @@ class CacheControllerTest
       assert(drugCache.get("CHEMBL221959").isDefined)
 
       // when: the cache is cleared
-      controller.clearCache()
+      val clearRequest = FakeRequest(GET, "/cache/clear").withHeaders(("apiKey", apiKey))
+      Await.result(controller.clearCache().apply(clearRequest), 2.second)
       // then: the cache is empty
-      drugCache.get("CHEMBL221959").isDefined mustBe true
+      drugCache.get("CHEMBL221959").isDefined mustBe false
     }
   }
   "A request to clear the cache" must {
