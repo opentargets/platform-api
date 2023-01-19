@@ -916,18 +916,14 @@ object Objects extends Logging {
     deriveObjectType[Backend, DatasourceSettings]()
   implicit val interactionSettingsImp: ObjectType[Backend, LUTableSettings] =
     deriveObjectType[Backend, LUTableSettings]()
-  implicit val associationSettingsImp: ObjectType[Backend, AssociationSettings] =
-    deriveObjectType[Backend, AssociationSettings]()
+  implicit val dbSettingsImp: ObjectType[Backend, DbTableSettings] =
+    deriveObjectType[Backend, DbTableSettings]()
   implicit val targetSettingsImp: ObjectType[Backend, TargetSettings] =
     deriveObjectType[Backend, TargetSettings]()
   implicit val diseaseSettingsImp: ObjectType[Backend, DiseaseSettings] =
     deriveObjectType[Backend, DiseaseSettings]()
   implicit val harmonicSettingsImp: ObjectType[Backend, HarmonicSettings] =
     deriveObjectType[Backend, HarmonicSettings]()
-  implicit val literatureSettingsImp: ObjectType[Backend, LiteratureSettings] =
-    deriveObjectType[Backend, LiteratureSettings]()
-  implicit val literatureIndexSettingsImp: ObjectType[Backend, LiteratureIndexSettings] =
-    deriveObjectType[Backend, LiteratureIndexSettings]()
   implicit val clickhouseSettingsImp: ObjectType[Backend, ClickhouseSettings] =
     deriveObjectType[Backend, ClickhouseSettings]()
 

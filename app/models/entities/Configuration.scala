@@ -32,14 +32,11 @@ object Configuration {
 
   case class LUTableSettings(label: String, name: String, key: String, field: Option[String])
 
-  case class AssociationSettings(label: String, name: String)
+  case class DbTableSettings(label: String, name: String)
 
-  case class LiteratureIndexSettings(label: String, name: String)
-  case class LiteratureSettings(label: String, name: String)
+  case class TargetSettings(associations: DbTableSettings)
 
-  case class TargetSettings(associations: AssociationSettings)
-
-  case class DiseaseSettings(associations: AssociationSettings)
+  case class DiseaseSettings(associations: DbTableSettings)
 
   case class DatasourceSettings(id: String, weight: Double, propagate: Boolean)
 
@@ -52,10 +49,11 @@ object Configuration {
   case class ClickhouseSettings(
       target: TargetSettings,
       disease: DiseaseSettings,
-      similarities: AssociationSettings,
+      similarities: DbTableSettings,
       harmonic: HarmonicSettings,
-      literature: LiteratureSettings,
-      literatureIndex: LiteratureIndexSettings
+      literature: DbTableSettings,
+      literatureIndex: DbTableSettings,
+      sentences: DbTableSettings
   )
 
   /** main Open Targets configuration object. It keeps track of meta, elasticsearch and clickhouse
@@ -78,12 +76,8 @@ object Configuration {
     Json.format[ElasticsearchSettings]
 
   implicit val luTableJSONImp: OFormat[LUTableSettings] = Json.format[LUTableSettings]
-  implicit val literatureSettingsJSONImp: OFormat[LiteratureSettings] =
-    Json.format[LiteratureSettings]
-  implicit val literatureIndexSettingsJSONImp: OFormat[LiteratureIndexSettings] =
-    Json.format[LiteratureIndexSettings]
-  implicit val associationSettingsJSONImp: OFormat[AssociationSettings] =
-    Json.format[AssociationSettings]
+  implicit val dbTableSettingsImp: OFormat[DbTableSettings] =
+    Json.format[DbTableSettings]
   implicit val datasourceSettingsJSONImp: OFormat[DatasourceSettings] =
     Json.format[DatasourceSettings]
   implicit val harmonicSettingsJSONImp: OFormat[HarmonicSettings] = Json.format[HarmonicSettings]
