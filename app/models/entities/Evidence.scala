@@ -465,6 +465,17 @@ object Evidence extends Logging {
         }
       ),
       Field(
+        "variantFunctionalConsequenceFromQtlId",
+        OptionType(sequenceOntologyTermImp),
+        description = None,
+        resolve = js => {
+          val soId = ((js.value \ "variantFunctionalConsequenceFromQtlId")
+            .asOpt[String])
+            .map(id => id.replace("_", ":"))
+          soTermsFetcher.deferOpt(soId)
+        }
+      ),
+      Field(
         "biologicalModelGeneticBackground",
         OptionType(StringType),
         description = None,
