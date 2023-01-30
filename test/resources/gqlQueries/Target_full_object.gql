@@ -66,7 +66,7 @@ query TargetFullObject($ensgId: String!) {
       source
     }
     safetyLiabilities {
-      biosample {
+      biosamples {
         tissueId
         tissueLabel
         cellId
@@ -81,7 +81,7 @@ query TargetFullObject($ensgId: String!) {
       event
       eventId
       literature
-      study {
+      studies {
         name
         description
         type

@@ -53,14 +53,14 @@ case class SafetyBiosample(
 case class SafetyStudy(name: Option[String], description: Option[String], `type`: Option[String])
 
 case class SafetyLiability(
-    biosample: Option[Seq[SafetyBiosample]],
+    biosamples: Option[Seq[SafetyBiosample]],
     datasource: String,
     effects: Option[Seq[SafetyEffects]],
     event: Option[String],
     eventId: Option[String],
     literature: Option[String],
     url: Option[String],
-    study: Option[Seq[SafetyStudy]]
+    studies: Option[Seq[SafetyStudy]]
 )
 
 case class CancerHallmark(description: String, impact: Option[String], label: String, pmid: Long)
