@@ -58,7 +58,6 @@ case class SafetyLiability(
                             effects: Option[Seq[SafetyEffects]],
                             event: Option[String],
                             eventId: Option[String],
-                            isHumanApplicable: Option[Boolean],
                             literature: Option[String],
                             url: Option[String],
                             studies: Option[Seq[SafetyStudy]]
