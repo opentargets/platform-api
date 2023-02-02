@@ -8,9 +8,9 @@ object Configuration {
 
   case class Logging(otHeader: String, ignoredQueries: Seq[String])
 
-  case class DataVersion(year: Int, month: Int, iteration: Int)
+  case class DataVersion(year: String, month: String, iteration: String)
 
-  case class APIVersion(x: Int, y: Int, z: Int)
+  case class APIVersion(x: String, y: String, z: String)
 
   /** meta class compile the name and version information for
     * the application. Also, it serves as a container to include
