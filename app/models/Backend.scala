@@ -30,6 +30,8 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import scala.collection.immutable.ArraySeq
 import scala.concurrent._
+import scala.concurrent.impl.Promise
+import scala.util.{Failure, Success}
 
 class Backend @Inject() (implicit
     ec: ExecutionContext,
@@ -816,7 +818,12 @@ class Backend @Inject() (implicit
           val npag = pag.next
           Helpers.Cursor.from(Some(Json.toJson(npag)))
         }
-        Publications(total, year, nCursor, pubs)
+
+        val result = dbRetriever.executeQuery[Int, Query](simQ.filteredTotalQ).map { v2 =>
+          Publications(total, year, nCursor, pubs, v2.head)
+        }
+
+        result.await
       }
 
     dbRetriever.executeQuery[Long, Query](simQ.total).flatMap {

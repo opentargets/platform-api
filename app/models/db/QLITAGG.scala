@@ -25,7 +25,6 @@ case class QLITAGG(
   val year: Column = column("year")
   val month: Column = column("month")
   val day: Column = column("day")
-
   val T: Column = column(tableName)
   val TIdx: Column = column(indexTableName)
 
@@ -35,15 +34,50 @@ case class QLITAGG(
     PreWhere(F.in(key, F.set(ids.map(literal).toSeq))),
     GroupBy(pmid.name :: Nil),
     Having(F.greaterOrEquals(F.count(pmid.name), literal(ids.size))),
-    OrderBy(F.sum(relevance.name).desc :: F.any(date.name).desc :: Nil),
-    Limit(offset, size)
+    OrderBy(F.sum(relevance.name).desc :: F.any(date.name).desc :: Nil)
   )
 
-  val litQ: Q = Q(
-    Select(pmid :: pmcid :: date :: year :: month :: Nil),
-    From(T),
-    PreWhere(F.in(pmid, pmidsQ(pmid :: Nil).toColumn(None)))
+  private def pmidsQNord(select: Seq[Column]): Q = Q(
+    Select(select),
+    From(TIdx),
+    PreWhere(F.in(key, F.set(ids.map(literal).toSeq))),
+    GroupBy(pmid.name :: Nil),
+    Having(F.greaterOrEquals(F.count(pmid.name), literal(ids.size)))
   )
+
+  val filteredTotalQ: Q = {
+    val preCountQ = filterDate match {
+      case Some(value) =>
+        Q(
+          Select(literal(1) :: Nil),
+          From(T),
+          PreWhere(F.in(pmid, pmidsQNord(pmid :: Nil).toColumn(None))),
+          Where(
+            F.and(
+              F.greaterOrEquals(
+                F.plus(F.multiply(year, literal(100)), month),
+                literal((value._1 * 100) + value._2)
+              ),
+              F.lessOrEquals(
+                F.plus(F.multiply(year, literal(100)), month),
+                literal((filterDate.get._3 * 100) + filterDate.get._4)
+              )
+            )
+          )
+        )
+      case _ =>
+        Q(
+          Select(literal(1) :: Nil),
+          From(T),
+          PreWhere(F.in(pmid, pmidsQNord(pmid :: Nil).toColumn(None)))
+        )
+    }
+
+    Q(
+      Select(F.count(Column.star) :: Nil),
+      From(preCountQ.toColumn(None))
+    )
+  }
 
   val total: Q = {
     val countQ = Q(
@@ -67,8 +101,8 @@ case class QLITAGG(
   val minDate: Q = {
     val q = Q(
       Select(F.min(year) :: Nil),
-      From(pmidsQ(pmid :: Nil).toColumn(None), Some("L")),
-      Join(litQ.toColumn(None), Some("left"), Some("any"), global = false, Some("L"), pmid :: Nil)
+      From(T),
+      PreWhere(F.in(pmid, pmidsQ(pmid :: Nil).toColumn(None)))
     )
 
     logger.debug(q.toString)
@@ -82,14 +116,8 @@ case class QLITAGG(
       case Some(value) =>
         Q(
           Select(pmid :: pmcid :: date :: year :: month :: Nil),
-          From(pmidsQ(pmid :: Nil).toColumn(None), Some("L")),
-          Join(litQ.toColumn(None),
-               Some("left"),
-               Some("any"),
-               global = false,
-               Some("L"),
-               pmid :: Nil
-          ),
+          From(T),
+          PreWhere(F.in(pmid, pmidsQ(pmid :: Nil).toColumn(None))),
           Where(
             F.and(
               F.greaterOrEquals(
@@ -101,19 +129,15 @@ case class QLITAGG(
                 literal((filterDate.get._3 * 100) + filterDate.get._4)
               )
             )
-          )
+          ),
+          Limit(offset, size)
         )
       case _ =>
         Q(
           Select(pmid :: pmcid :: date :: year :: month :: Nil),
-          From(pmidsQ(pmid :: Nil).toColumn(None), Some("L")),
-          Join(litQ.toColumn(None),
-               Some("left"),
-               Some("any"),
-               global = false,
-               Some("L"),
-               pmid :: Nil
-          )
+          From(T),
+          PreWhere(F.in(pmid, pmidsQ(pmid :: Nil).toColumn(None))),
+          Limit(offset, size)
         )
     }
 
