@@ -25,7 +25,7 @@ case class QLITAGG(
   val year: Column = column("year")
   val month: Column = column("month")
   val day: Column = column("day")
-  val sentences: Column = column("sentences")
+
   val T: Column = column(tableName)
   val TIdx: Column = column(indexTableName)
 
@@ -40,7 +40,7 @@ case class QLITAGG(
   )
 
   val litQ: Q = Q(
-    Select(pmid :: pmcid :: date :: year :: month :: sentences :: Nil),
+    Select(pmid :: pmcid :: date :: year :: month :: Nil),
     From(T),
     PreWhere(F.in(pmid, pmidsQ(pmid :: Nil).toColumn(None)))
   )
@@ -81,7 +81,7 @@ case class QLITAGG(
     val q = filterDate match {
       case Some(value) =>
         Q(
-          Select(pmid :: pmcid :: date :: year :: month :: sentences :: Nil),
+          Select(pmid :: pmcid :: date :: year :: month :: Nil),
           From(pmidsQ(pmid :: Nil).toColumn(None), Some("L")),
           Join(litQ.toColumn(None),
                Some("left"),
@@ -105,7 +105,7 @@ case class QLITAGG(
         )
       case _ =>
         Q(
-          Select(pmid :: pmcid :: date :: year :: month :: sentences :: Nil),
+          Select(pmid :: pmcid :: date :: year :: month :: Nil),
           From(pmidsQ(pmid :: Nil).toColumn(None), Some("L")),
           Join(litQ.toColumn(None),
                Some("left"),
