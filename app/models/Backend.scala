@@ -10,7 +10,7 @@ import esecuele._
 
 import javax.inject.Inject
 import models.Helpers._
-import models.db.{QAOTF, QLITAGG, QW2V}
+import models.db.{QAOTF, QLITAGG, QW2V, SentenceQuery}
 import models.entities.Publication._
 import models.entities.Aggregations._
 import models.entities.Associations._
@@ -759,6 +759,16 @@ class Backend @Inject() (implicit
     }
   }
 
+  def getLiteratureSentences(
+      pmid: String
+  ): Future[Map[String, Vector[Sentence]]] = {
+    val table = defaultOTSettings.clickhouse.sentences
+    logger.debug(s"Query sentences for $pmid from table ${table.name}")
+    val sentenceQuery = SentenceQuery(pmid, table.name)
+    val results = dbRetriever.executeQuery[Sentence, Query](sentenceQuery.query)
+    results.map(vs => vs.groupMap(_.section)(identity))
+  }
+
   def getLiteratureOcurrences(ids: Set[String], cursor: Option[String]): Future[Publications] = {
     import Pagination._
 
@@ -783,7 +793,7 @@ class Backend @Inject() (implicit
                             endYear: Option[Int],
                             endMonth: Option[Int],
                             cursor: Option[String]
-  ) = {
+  ): Future[Publications] = {
     val table = defaultOTSettings.clickhouse.literature
     val indexTable = defaultOTSettings.clickhouse.literatureIndex
     logger.info(s"query literature ocurrences in table ${table.name}")

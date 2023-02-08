@@ -428,7 +428,9 @@ class ElasticRetriever @Inject() (
       excludedFields: Seq[String] = Seq.empty
   ): Future[IndexedSeq[A]] =
     ids match {
-      case Nil => Future.successful(IndexedSeq.empty)
+      case Nil =>
+        logger.warn("No IDs provided to getByIds. Something is probably wrong.")
+        Future.successful(IndexedSeq.empty)
       case _ =>
         val elems: Future[Response[SearchResponse]] = client.execute {
           val q = search(esIndex).query {

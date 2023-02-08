@@ -10,6 +10,7 @@ import models.gql.Fetchers.{
 }
 import models.gql.Objects
 import models.gql.Objects.{diseaseImp, drugImp, geneOntologyTermImp, targetImp}
+import play.api.Logging
 import play.api.libs.json._
 import sangria.schema.{
   Field,
@@ -22,7 +23,7 @@ import sangria.schema.{
   fields
 }
 
-object Evidence {
+object Evidence extends Logging {
 
   import sangria.macros.derive._
 
@@ -457,6 +458,18 @@ object Evidence {
         description = None,
         resolve = js => {
           val soId = ((js.value \ "variantFunctionalConsequenceId")
+            .asOpt[String])
+            .map(id => id.replace("_", ":"))
+          logger.error(s"Finding variant functional consequence: $soId")
+          soTermsFetcher.deferOpt(soId)
+        }
+      ),
+      Field(
+        "variantFunctionalConsequenceFromQtlId",
+        OptionType(sequenceOntologyTermImp),
+        description = None,
+        resolve = js => {
+          val soId = ((js.value \ "variantFunctionalConsequenceFromQtlId")
             .asOpt[String])
             .map(id => id.replace("_", ":"))
           soTermsFetcher.deferOpt(soId)
