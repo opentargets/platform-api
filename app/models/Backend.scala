@@ -788,8 +788,6 @@ class Backend @Inject() (implicit
     val indexTable = defaultOTSettings.clickhouse.literatureIndex
     logger.info(s"query literature ocurrences in table ${table.name}")
 
-    println("cursor" + cursor)
-
     val pag = Helpers.Cursor.to(cursor).flatMap(_.asOpt[Pagination]).getOrElse(Pagination.mkDefault)
 
     val filterDate = (startYear, endYear) match {
@@ -797,9 +795,6 @@ class Backend @Inject() (implicit
         Some(strYear, startMonth.getOrElse(1), ndYear, endMonth.getOrElse(12))
       case _ => Option.empty
     }
-
-    println("pag.size" + pag.size)
-    println("pag.offset" + pag.offset)
 
     val simQ = QLITAGG(table.name, indexTable.name, ids, pag.size, pag.offset, filterDate)
 
@@ -814,11 +809,11 @@ class Backend @Inject() (implicit
           Helpers.Cursor.from(Some(Json.toJson(npag)))
         }
 
-        val test = dbRetriever.executeQuery[Int, Query](simQ.filteredTotalQ).map { v2 =>
+        val result = dbRetriever.executeQuery[Int, Query](simQ.filteredTotalQ).map { v2 =>
           Publications(total, year, nCursor, pubs, v2.head)
         }
-//          Publications(total, year, nCursor, pubs, 0)
-        test.await
+
+        result.await
       }
 
     dbRetriever.executeQuery[Long, Query](simQ.total).flatMap {
