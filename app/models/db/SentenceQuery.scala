@@ -28,6 +28,6 @@ object SentenceQuery extends Logging {
       pmidC :: sectionC :: labelC :: sectionEndC :: sectionStartC :: startInSentenceC :: endInSentenceC :: keywordTypeC :: keywordIdC :: Nil
     ),
     From(column(tableName)),
-    Where(Functions.equals(pmidC, column(pmid)))
+    Where(Functions.in(pmidC, column(pmid)))
   )
 }
