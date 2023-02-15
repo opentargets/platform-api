@@ -17,7 +17,7 @@ case class Publication(
 
 object Publication {
   implicit val getSimilarityRowFromDB: GetResult[Publication] =
-    GetResult(r => Publication(r.<<[Long].toString, r.<<?, r.<<, r.<<, r.<<))
+    GetResult(r => Publication(r.<<, r.<<?, r.<<, r.<<, r.<<))
 
   implicit val similarityImp: OFormat[Publication] = Json.format[Publication]
 
