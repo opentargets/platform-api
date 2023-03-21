@@ -1,13 +1,18 @@
-FROM openjdk:11
-RUN mkdir -p /srv/app
+FROM sbtscala/scala-sbt:eclipse-temurin-jammy-11.0.17_8_1.8.2_2.13.10 as build
+RUN apt-get update \
+    && apt-get install -y unzip \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY target/universal/ot-platform-api-latest.zip /srv/app/ot-platform-api-latest.zip
+COPY . /platform-api
+WORKDIR /platform-api
+RUN sbt dist
+RUN unzip -q ot-platform-api-latest.zip
+
+FROM eclipse-temurin:11
+COPY --from=build /platform-api/ot-platform-api-latest /srv/app/ot-platform-api-latest
 COPY production.conf /srv/app/production.conf
 COPY production.xml /srv/app/production.xml
 WORKDIR /srv/app
-RUN unzip ot-platform-api-latest.zip
-
-RUN chmod +x ot-platform-api-latest/bin/ot-platform-api
 ENTRYPOINT ot-platform-api-latest/bin/ot-platform-api \
     -J-Xms2g \
     -J-Xmx7g \
