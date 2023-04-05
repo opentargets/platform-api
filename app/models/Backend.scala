@@ -25,13 +25,9 @@ import play.api.libs.json._
 import play.api.{Configuration, Environment, Logging}
 import play.db.NamedDatabase
 
-import java.text.SimpleDateFormat
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import scala.collection.immutable.ArraySeq
 import scala.concurrent._
-import scala.concurrent.impl.Promise
-import scala.util.{Failure, Success}
 
 class Backend @Inject() (implicit
     ec: ExecutionContext,
@@ -127,6 +123,39 @@ class Backend @Inject() (implicit
     val targetIndexName = getIndexOrDefault("go")
 
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[GeneOntologyTerm])
+  }
+
+  def getTargetsPriorisations(id: String): Future[IndexedSeq[JsValue]] = {
+    val targetsPriorisationIndexName = getIndexOrDefault("targets_priorisation")
+
+    esRetriever.getByIds(targetsPriorisationIndexName, Seq(id), fromJsValue[JsValue])
+  }
+
+  def getTargetsPriorisationJs(id: String): Future[Option[JsArray]] = {
+    val result = getTargetsPriorisations(id)
+    result.map { priorisations =>
+      if (!priorisations.isEmpty) {
+        val priorisation = priorisations.head
+
+        // Convert to a JsObject
+        val myObj: JsObject = priorisation.as[JsObject]
+
+        // Remove the targetId property
+        val updatedObj: JsObject = myObj - "targetId"
+
+        //transform the object in a key value pair array
+        val properties = (updatedObj.keys).toSeq
+        val keyValuePairs = properties.map { propName =>
+          val value = (updatedObj \ propName).get
+          Json.obj("key" -> propName, "value" -> value)
+        }
+        val arrStructure = JsArray(keyValuePairs)
+
+        Some(arrStructure)
+      } else {
+        Option.empty
+      }
+    }
   }
 
   def getKnownDrugs(

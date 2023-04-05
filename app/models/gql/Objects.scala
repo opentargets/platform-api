@@ -9,6 +9,7 @@ import models.entities._
 import models.gql.Arguments._
 import models.gql.Fetchers._
 import play.api.Logging
+import play.api.libs.json._
 import sangria.macros.derive.{DocumentField, _}
 import sangria.schema._
 
@@ -21,6 +22,29 @@ object Objects extends Logging {
   implicit val metaAPIVersionImp: ObjectType[Backend, APIVersion] =
     deriveObjectType[Backend, APIVersion]()
   implicit val metaImp: ObjectType[Backend, Meta] = deriveObjectType[Backend, Meta]()
+
+  // Define a case class to represent each item in the array
+  case class KeyValue(key: String, value: BigDecimal)
+
+  implicit val KeyValueFormat: OFormat[KeyValue] = Json.format[KeyValue]
+
+  val KeyValueObjectType: ObjectType[Unit, KeyValue] = ObjectType(
+    "KeyValue",
+    "A key-value pair",
+    fields[Unit, KeyValue](
+      Field("key", StringType, resolve = _.value.key),
+      Field("value", StringType, resolve = _.value.value.toString())
+    )
+  )
+
+  // Define the ObjectType for the array
+  val KeyValueArrayObjectType: ObjectType[Unit, JsArray] = ObjectType(
+    "KeyValueArray",
+    "An array of key-value pairs",
+    fields[Unit, JsArray](
+      Field("items", ListType(KeyValueObjectType), resolve = _.value.as[List[KeyValue]])
+    )
+  )
 
   implicit lazy val targetImp: ObjectType[Backend, Target] = deriveObjectType(
     ObjectTypeDescription("Target entity"),
@@ -179,6 +203,13 @@ object Objects extends Logging {
             }),
             ctx arg pageArg
           )
+      ),
+      Field(
+        "priorisations",
+        OptionType(KeyValueArrayObjectType),
+        description = Some("target priorisations"),
+        arguments = Nil,
+        resolve = ctx => ctx.ctx.getTargetsPriorisationJs(ctx.value.id)
       )
     )
   )
