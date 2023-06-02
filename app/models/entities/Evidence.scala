@@ -1,5 +1,6 @@
 package models.entities
 
+import com.sksamuel.elastic4s.requests.mappings.FieldType.DoubleType
 import models.Backend
 import models.gql.Fetchers.{
   diseasesFetcher,
@@ -13,6 +14,7 @@ import models.gql.Objects.{diseaseImp, drugImp, geneOntologyTermImp, targetImp}
 import play.api.Logging
 import play.api.libs.json._
 import sangria.schema.{
+  BigDecimalType,
   Field,
   FloatType,
   ListType,
@@ -442,9 +444,9 @@ object Evidence extends Logging {
       ),
       Field(
         "clinicalPhase",
-        OptionType(LongType),
+        OptionType(FloatType),
         description = None,
-        resolve = js => (js.value \ "clinicalPhase").asOpt[Long]
+        resolve = js => (js.value \ "clinicalPhase").asOpt[Double]
       ),
       Field(
         "resourceScore",
