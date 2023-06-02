@@ -28,7 +28,7 @@ case class MechanismOfActionRow(
 )
 
 case class IndicationRow(
-    maxPhaseForIndication: Long,
+    maxPhaseForIndication: Double,
     disease: String,
     references: Option[Seq[IndicationReference]]
 )
@@ -65,13 +65,13 @@ case class Drug(
     name: String,
     synonyms: Seq[String],
     tradeNames: Seq[String],
-    childChemblIds: Option[Seq[String]],
+    childChemblIds: Option[Seq[String]],//Gone?
     yearOfFirstApproval: Option[Int],
     drugType: String,
     isApproved: Option[Boolean],
     crossReferences: Option[Seq[DrugReferences]],
     parentId: Option[String],
-    maximumClinicalTrialPhase: Option[Int],
+    maximumClinicalTrialPhase: Option[Double],
     hasBeenWithdrawn: Boolean,
     linkedDiseases: Option[LinkedIds],
     linkedTargets: Option[LinkedIds],
