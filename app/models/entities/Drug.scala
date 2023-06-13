@@ -106,7 +106,7 @@ object Drug {
       (JsPath \ "efo_id").readNullable[String] and
       (JsPath \ "efo_id_for_warning_class").readNullable[String] and
       (JsPath \ "meddraSocCode").readNullable[String]
-    )(DrugWarning.apply _)
+  )(DrugWarning.apply _)
   implicit val referenceImpW: OFormat[Reference] = Json.format[models.entities.Reference]
   implicit val mechanismOfActionRowImpW: OFormat[MechanismOfActionRow] =
     Json.format[models.entities.MechanismOfActionRow]

@@ -783,9 +783,13 @@ object Objects extends Logging {
       DocumentField("country", "Country issuing warning"),
       DocumentField("references", "Source of withdrawal information"),
       DocumentField("warningType", "Either 'black box warning' or 'withdrawn'"),
-      DocumentField("efoTerm", " label of the curated EFO term that represents the adverse outcome"),
-      DocumentField("efoId","ID of the curated EFO term that represents the adverse outcome"),
-      DocumentField("efoIdForWarningClass","ID of the curated EFO term that represents the high level warning class"),
+      DocumentField("efoTerm",
+                    " label of the curated EFO term that represents the adverse outcome"
+      ),
+      DocumentField("efoId", "ID of the curated EFO term that represents the adverse outcome"),
+      DocumentField("efoIdForWarningClass",
+                    "ID of the curated EFO term that represents the high level warning class"
+      ),
       DocumentField("year", "Year of withdrawal")
     )
 
