@@ -11,7 +11,7 @@ case class DrugWarning(
     country: Option[String],
     id: Option[Long],
     references: Option[Seq[DrugWarningReference]],
-    warningType: Option[String],
+    warningType: String,
     year: Option[Int],
     efoTerm: Option[String],
     efoId: Option[String],
@@ -93,14 +93,14 @@ object Drug {
   )(DrugWarningReference.apply _)
   implicit val drugWarningReferenceImpW: OWrites[DrugWarningReference] =
     Json.writes[DrugWarningReference]
-  implicit val drugWarningImpW: OFormat[DrugWarning] = OWrites[models.entities.DrugWarning]
+  implicit val drugWarningImpW: OWrites[models.entities.DrugWarning] = Json.writes[DrugWarning]
   implicit val drugWarningImpR: Reads[models.entities.DrugWarning] = (
     (JsPath \ "toxicityClass").readNullable[String] and
       (JsPath \ "chemblIds").readNullable[Seq[String]] and
       (JsPath \ "country").readNullable[String] and
       (JsPath \ "id").readNullable[Long] and
       (JsPath \ "references").readNullable[Seq[DrugWarningReference]] and
-      (JsPath \ "warningType").readNullable[String] and
+      (JsPath \ "warningType").read[String] and
       (JsPath \ "year").readNullable[Int] and
       (JsPath \ "efo_term").readNullable[String] and
       (JsPath \ "efo_id").readNullable[String] and

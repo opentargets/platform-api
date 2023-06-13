@@ -773,7 +773,6 @@ object Objects extends Logging {
       ObjectTypeDescription("Drug warnings as calculated by ChEMBL"),
       DocumentField("toxicityClass", "High level toxicity category by Meddra System Organ Class"),
       DocumentField("country", "Country issuing warning"),
-      DocumentField("description", "Reason for withdrawal"),
       DocumentField("references", "Source of withdrawal information"),
       DocumentField("warningType", "Either 'black box warning' or 'withdrawn'"),
       DocumentField("efoTerm", " label of the curated EFO term that represents the adverse outcome"),
