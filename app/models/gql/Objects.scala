@@ -28,6 +28,13 @@ object Objects extends Logging {
 
   implicit val KeyValueFormat: OFormat[KeyValue] = Json.format[KeyValue]
 
+  implicit val geneEssentialityScreenImp: ObjectType[Backend, GeneEssentialityScreen] =
+    deriveObjectType[Backend, GeneEssentialityScreen]()
+  implicit val depMapEssentialityImp: ObjectType[Backend, DepMapEssentiality] =
+    deriveObjectType[Backend, DepMapEssentiality]()
+  implicit val geneEssentialityImp: ObjectType[Backend, GeneEssentiality] =
+    deriveObjectType[Backend, GeneEssentiality]()
+
   val KeyValueObjectType: ObjectType[Unit, KeyValue] = ObjectType(
     "KeyValue",
     "A key-value pair",
@@ -57,6 +64,7 @@ object Objects extends Logging {
     DocumentField("geneticConstraint", "Symbol synonyms"),
     DocumentField("genomicLocation", "Chromosomic location"),
     DocumentField("geneOntology", "Gene Ontology annotations"),
+    DocumentField("geneEssentiality", "Gene Core Essentiality"),
     DocumentField(
       "hallmarks",
       "Target-modulated essential alterations in cell physiology that dictate " +
