@@ -9,6 +9,7 @@ case class DrugWarning(
     toxicityClass: Option[String],
     chemblIds: Option[Seq[String]],
     country: Option[String],
+    description: Option[String],
     id: Option[Long],
     references: Option[Seq[DrugWarningReference]],
     warningType: String,
@@ -98,6 +99,7 @@ object Drug {
     (JsPath \ "toxicityClass").readNullable[String] and
       (JsPath \ "chemblIds").readNullable[Seq[String]] and
       (JsPath \ "country").readNullable[String] and
+      (JsPath \ "description").readNullable[String] and
       (JsPath \ "id").readNullable[Long] and
       (JsPath \ "references").readNullable[Seq[DrugWarningReference]] and
       (JsPath \ "warningType").read[String] and
