@@ -90,23 +90,6 @@ case class GeneOntology(
     source: String
 )
 
-case class GeneEssentialityScreen(cellLineName: Option[String],
-                                  depmapId: Option[String],
-                                  diseaseCellLineId: Option[String],
-                                  diseaseFromSource: Option[String],
-                                  expression: Option[Double],
-                                  geneEffect: Option[Double]
-)
-
-case class DepMapEssentiality(screens: Seq[GeneEssentialityScreen],
-                              tissueId: Option[String],
-                              tissueName: Option[String]
-)
-
-case class GeneEssentiality(isEssential: Option[Boolean],
-                            depMapEssentiality: Seq[DepMapEssentiality]
-)
-
 case class GeneOntologyLookup(id: String, name: String)
 
 case class Tep(
@@ -145,7 +128,6 @@ case class TH1(
     geneticConstraint: Seq[Constraint],
     genomicLocation: GenomicLocation,
     geneOntology: Seq[GeneOntology],
-    geneEssentiality: Seq[GeneEssentiality],
     hallmarks: Option[Hallmarks]
 )
 
@@ -178,7 +160,6 @@ case class Target(
     geneticConstraint: Seq[Constraint],
     genomicLocation: GenomicLocation,
     geneOntology: Seq[GeneOntology],
-    geneEssentiality: Seq[GeneEssentiality],
     hallmarks: Option[Hallmarks],
     homologues: Seq[Homologue],
     pathways: Seq[ReactomePathway],
@@ -227,28 +208,6 @@ object Target extends Logging {
       (__ \ "geneProduct").read[String] and
       (__ \ "source").read[String])(GeneOntology.apply _)
 
-  implicit val geneEssentialityScreenImpW: OWrites[GeneEssentialityScreen] =
-    Json.writes[models.entities.GeneEssentialityScreen]
-  implicit val geneEssentialityScreenImpR: Reads[models.entities.GeneEssentialityScreen] =
-    ((__ \ "cellLineName").readNullable[String] and
-      (__ \ "depmapId").readNullable[String] and
-      (__ \ "diseaseCellLineId").readNullable[String] and
-      (__ \ "diseaseFromSource").readNullable[String] and
-      (__ \ "expression").readNullable[Double] and
-      (__ \ "geneEffect").readNullable[Double])(GeneEssentialityScreen.apply _)
-
-  implicit val depMapEssentialityImpW: OWrites[DepMapEssentiality] =
-    Json.writes[models.entities.DepMapEssentiality]
-  implicit val depMapEssentialityImpR: Reads[models.entities.DepMapEssentiality] =
-    ((__ \ "screens").readWithDefault[Seq[GeneEssentialityScreen]](Seq.empty) and
-      (__ \ "tissueId").readNullable[String] and
-      (__ \ "tissueName").readNullable[String])(DepMapEssentiality.apply _)
-
-  implicit val geneEssentialityImpW: OWrites[GeneEssentiality] = Json.writes[GeneEssentiality]
-  implicit val geneEssentialityImpR: Reads[GeneEssentiality] =
-    ((__ \ "isEssential").readNullable[Boolean] and
-      (__ \ "depMapEssentiality").read[Seq[DepMapEssentiality]])(GeneEssentiality.apply _)
-
   implicit val tepImpF: OFormat[Tep] = Json.format[Tep]
   implicit val idAndSourceImpF: OFormat[IdAndSource] = Json.format[IdAndSource]
   implicit val labelAndSourceImpF: OFormat[LabelAndSource] = Json.format[LabelAndSource]
@@ -278,7 +237,6 @@ object Target extends Logging {
       (JsPath \ "constraint").readWithDefault[Seq[Constraint]](Seq.empty) and
       (JsPath \ "genomicLocation").read[GenomicLocation] and
       (JsPath \ "go").readWithDefault[Seq[GeneOntology]](Seq.empty) and
-      (JsPath \ "geneEssentiality").readWithDefault[Seq[GeneEssentiality]](Seq.empty) and
       (JsPath \ "hallmarks").readNullable[Hallmarks]
   )(TH1.apply _)
 
