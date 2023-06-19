@@ -169,7 +169,7 @@ object Objects extends Logging {
           DeferredValue(expressionFetcher.deferOpt(r.value.id)).map {
             case Some(expressions) => expressions.rows
             case None              => Seq.empty
-          }
+        }
       ),
       Field(
         "knownDrugs",
@@ -208,7 +208,7 @@ object Objects extends Logging {
               case _             => ("score", "desc")
             }),
             ctx arg pageArg
-          )
+        )
       ),
       Field(
         "priorisations",
@@ -223,18 +223,22 @@ object Objects extends Logging {
         description = Some("isEssential"),
         resolve = ctx => {
           val mp = ctx.ctx.getTargetEssentiality(Seq(ctx.value.id))
-          mp map { case ess =>
-            ess.head.geneEssentiality.head.isEssential
+          mp map {
+            case ess =>
+              if (ess.isEmpty) null else ess.head.geneEssentiality.head.isEssential
           }
         }
       ),
       Field(
         "depMapEssentiality",
-        ListType(depMapEssentialityImp),
+        OptionType(ListType(depMapEssentialityImp)),
         description = Some("depMapEssentiality"),
         resolve = ctx => {
           val mp = ctx.ctx.getTargetEssentiality(Seq(ctx.value.id))
-          mp.map(_.head.geneEssentiality.flatMap(_.depMapEssentiality))
+          mp map {
+            case ess =>
+              if (ess.isEmpty) null else ess.head.geneEssentiality.flatMap(_.depMapEssentiality)
+          }
         }
       )
     )
@@ -337,8 +341,7 @@ object Objects extends Logging {
                                         filterStartMonth,
                                         filterEndYear,
                                         filterEndMonth,
-                                        cur
-          )
+                                        cur)
         }
       ),
       Field(
@@ -381,7 +384,7 @@ object Objects extends Logging {
           DeferredValue(otarProjectsFetcher.deferOpt(r.value.id)).map {
             case Some(otars) => otars.rows
             case None        => Seq.empty
-          }
+        }
       ),
       Field(
         "knownDrugs",
@@ -423,7 +426,7 @@ object Objects extends Logging {
               case _             => ("score", "desc")
             }),
             ctx arg pageArg
-          )
+        )
       )
     )
   )
@@ -803,12 +806,10 @@ object Objects extends Logging {
       DocumentField("references", "Source of withdrawal information"),
       DocumentField("warningType", "Either 'black box warning' or 'withdrawn'"),
       DocumentField("efoTerm",
-                    " label of the curated EFO term that represents the adverse outcome"
-      ),
+                    " label of the curated EFO term that represents the adverse outcome"),
       DocumentField("efoId", "ID of the curated EFO term that represents the adverse outcome"),
       DocumentField("efoIdForWarningClass",
-                    "ID of the curated EFO term that represents the high level warning class"
-      ),
+                    "ID of the curated EFO term that represents the high level warning class"),
       DocumentField("year", "Year of withdrawal")
     )
 
@@ -899,8 +900,7 @@ object Objects extends Logging {
                                         filterStartMonth,
                                         filterEndYear,
                                         filterEndMonth,
-                                        cur
-          )
+                                        cur)
         }
       ),
       Field(
