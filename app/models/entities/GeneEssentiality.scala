@@ -4,8 +4,6 @@ import play.api.Logging
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 
-import scala.collection.Seq
-
 case class GeneEssentialityScreen(cellLineName: Option[String],
                                   depmapId: Option[String],
                                   diseaseCellLineId: Option[String],
@@ -24,7 +22,9 @@ case class GeneEssentiality(isEssential: Option[Boolean],
                             depMapEssentiality: Seq[DepMapEssentiality]
 )
 
-object GeneEssentiality extends Logging {
+case class TargetEssentiality(id: Option[String], geneEssentiality: Seq[GeneEssentiality])
+
+object TargetEssentiality extends Logging {
 
   implicit val geneEssentialityScreenImpW: OWrites[GeneEssentialityScreen] =
     Json.writes[models.entities.GeneEssentialityScreen]
@@ -48,5 +48,10 @@ object GeneEssentiality extends Logging {
   implicit val geneEssentialityImpR: Reads[GeneEssentiality] =
     ((__ \ "isEssential").readNullable[Boolean] and
       (__ \ "depMapEssentiality").read[Seq[DepMapEssentiality]])(GeneEssentiality.apply _)
+
+  implicit val targetEssentialityImpW: OWrites[TargetEssentiality] = Json.writes[TargetEssentiality]
+  implicit val targetEssentialityImpR: Reads[TargetEssentiality] =
+    ((__ \ "id").readNullable[String] and
+      (__ \ "geneEssentiality").read[Seq[GeneEssentiality]])(TargetEssentiality.apply _)
 
 }
