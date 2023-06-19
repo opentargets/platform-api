@@ -28,6 +28,12 @@ object Objects extends Logging {
 
   implicit val KeyValueFormat: OFormat[KeyValue] = Json.format[KeyValue]
 
+  implicit val geneEssentialityScreenImp: ObjectType[Backend, GeneEssentialityScreen] =
+    deriveObjectType[Backend, GeneEssentialityScreen]()
+
+  implicit val depMapEssentialityImp: ObjectType[Backend, DepMapEssentiality] =
+    deriveObjectType[Backend, DepMapEssentiality]()
+
   val KeyValueObjectType: ObjectType[Unit, KeyValue] = ObjectType(
     "KeyValue",
     "A key-value pair",
@@ -57,7 +63,6 @@ object Objects extends Logging {
     DocumentField("geneticConstraint", "Symbol synonyms"),
     DocumentField("genomicLocation", "Chromosomic location"),
     DocumentField("geneOntology", "Gene Ontology annotations"),
-    DocumentField("geneEssentiality", "Gene Core Essentiality"),
     DocumentField(
       "hallmarks",
       "Target-modulated essential alterations in cell physiology that dictate " +
@@ -208,7 +213,7 @@ object Objects extends Logging {
       Field(
         "priorisations",
         OptionType(KeyValueArrayObjectType),
-        description = Some("target priorisations"),
+        description = Some("target priorisations."),
         arguments = Nil,
         resolve = ctx => ctx.ctx.getTargetsPriorisationJs(ctx.value.id)
       ),
@@ -218,9 +223,8 @@ object Objects extends Logging {
         description = Some("isEssential"),
         resolve = ctx => {
           val mp = ctx.ctx.getTargetEssentiality(Seq(ctx.value.id))
-          mp map {
-            case ess => ess.head.isEssential
-            case _   => null
+          mp map { case ess =>
+            ess.head.geneEssentiality.head.isEssential
           }
         }
       ),
@@ -230,7 +234,7 @@ object Objects extends Logging {
         description = Some("depMapEssentiality"),
         resolve = ctx => {
           val mp = ctx.ctx.getTargetEssentiality(Seq(ctx.value.id))
-          mp.map(_.flatMap(_.depMapEssentiality))
+          mp.map(_.head.geneEssentiality.flatMap(_.depMapEssentiality))
         }
       )
     )
@@ -1007,11 +1011,6 @@ object Objects extends Logging {
           resolve = r => r.value.rows
         )
       )
-    )
-
-  implicit val depMapEssentialityImp: ObjectType[Backend, DepMapEssentiality] =
-    deriveObjectType[Backend, DepMapEssentiality](
-      ObjectTypeName("DepMapEssentiality")
     )
 
   implicit val associatedOTFDiseasesImp: ObjectType[Backend, Associations] =
