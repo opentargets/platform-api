@@ -431,7 +431,9 @@ object Objects extends Logging {
   )
 
   implicit val tractabilityImp: ObjectType[Backend, Tractability] =
-    deriveObjectType[Backend, Tractability]()
+    deriveObjectType[Backend, Tractability](
+      RenameField("id", "label")
+    )
 
   implicit val scoredDataTypeImp: ObjectType[Backend, ScoredComponent] =
     deriveObjectType[Backend, ScoredComponent]()
