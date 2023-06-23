@@ -345,13 +345,13 @@ class Backend @Inject() (implicit
       This work around relates to ticket opentargets/platform#1506
          */
         val drugWarnings =
-          results._1.foldLeft(Map.empty[(String, Option[String]), DrugWarning]) { (dwMap, dw) =>
-            if (dwMap.contains((dw.warningType, dw.toxicityClass))) {
-              val old = dwMap((dw.warningType, dw.toxicityClass))
+          results._1.foldLeft(Map.empty[(Option[Long]), DrugWarning]) { (dwMap, dw) =>
+            if (dwMap.contains((dw.id))) {
+              val old = dwMap((dw.id))
               val newDW =
                 old.copy(references = Some((old.references ++ dw.references).flatten.toSeq))
-              dwMap.updated((dw.warningType, dw.toxicityClass), newDW)
-            } else dwMap + ((dw.warningType, dw.toxicityClass) -> dw)
+              dwMap.updated((dw.id), newDW)
+            } else dwMap + ((dw.id) -> dw)
           }
         drugWarnings.values.toIndexedSeq
       }
