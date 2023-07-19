@@ -215,7 +215,7 @@ object Objects extends Logging {
         OptionType(KeyValueArrayObjectType),
         description = Some("target priorisations."),
         arguments = Nil,
-        resolve = ctx => ctx.ctx.getTargetsPriorisationJs(ctx.value.id)
+        resolve = ctx => ctx.ctx.getTargetsPrioritisationJs(ctx.value.id)
       ),
       Field(
         "isEssential",
