@@ -211,9 +211,11 @@ object Objects extends Logging {
           )
       ),
       Field(
-        "priorisations",
+        "prioritisation",
         OptionType(KeyValueArrayObjectType),
-        description = Some("target priorisations."),
+        description = Some(
+          "Factors influencing target-specific properties informative in a target prioritisation strategy. Values range from -1 (deprioritised) to 1 (prioritised)."
+        ),
         arguments = Nil,
         resolve = ctx => ctx.ctx.getTargetsPrioritisationJs(ctx.value.id)
       ),

@@ -131,10 +131,10 @@ class Backend @Inject() (implicit
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[TargetEssentiality])
   }
 
-  def getTargetsPriorisations(id: String): Future[IndexedSeq[JsValue]] = {
-    val targetsPriorisationIndexName = getIndexOrDefault("targets_priorisation")
+  def getTargetsPrioritisation(id: String): Future[IndexedSeq[JsValue]] = {
+    val targetsPrioritisationIndexName = getIndexOrDefault("target_prioritisation")
 
-    esRetriever.getByIds(targetsPriorisationIndexName, Seq(id), fromJsValue[JsValue])
+    esRetriever.getByIds(targetsPrioritisationIndexName, Seq(id), fromJsValue[JsValue])
   }
 
   def getKeyValuePairsStructure(prioritisation: JsValue) = // Convert to a JsObject
@@ -154,10 +154,10 @@ class Backend @Inject() (implicit
     }
 
   def getTargetsPrioritisationJs(id: String): Future[JsArray] = {
-    val result = getTargetsPriorisations(id)
+    val result = getTargetsPrioritisation(id)
     val essentialityData = getTargetEssentiality(Seq(id))
 
-    val priorisationFt = result.map { prioritisationList =>
+    val prioritisationFt = result.map { prioritisationList =>
       val prioritisation = prioritisationList.head
 
       val arrStructure = getKeyValuePairsStructure(prioritisation)
@@ -180,7 +180,7 @@ class Backend @Inject() (implicit
 
       arrStructureWithEssential.map(JsArray(_))
     }
-    priorisationFt.flatMap(identity)
+    prioritisationFt.flatMap(identity)
   }
 
   def getKnownDrugs(
