@@ -131,37 +131,56 @@ class Backend @Inject() (implicit
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[TargetEssentiality])
   }
 
-  def getTargetsPriorisations(id: String): Future[IndexedSeq[JsValue]] = {
-    val targetsPriorisationIndexName = getIndexOrDefault("targets_priorisation")
+  def getTargetsPrioritisation(id: String): Future[IndexedSeq[JsValue]] = {
+    val targetsPrioritisationIndexName = getIndexOrDefault("target_prioritisation")
 
-    esRetriever.getByIds(targetsPriorisationIndexName, Seq(id), fromJsValue[JsValue])
+    esRetriever.getByIds(targetsPrioritisationIndexName, Seq(id), fromJsValue[JsValue])
   }
 
-  def getTargetsPriorisationJs(id: String): Future[Option[JsArray]] = {
-    val result = getTargetsPriorisations(id)
-    result.map { priorisations =>
-      if (!priorisations.isEmpty) {
-        val priorisation = priorisations.head
+  def getKeyValuePairsStructure(prioritisation: JsValue) = // Convert to a JsObject
+    {
+      val myObj: JsObject = prioritisation.as[JsObject]
 
-        // Convert to a JsObject
-        val myObj: JsObject = priorisation.as[JsObject]
+      // Remove the targetId property
+      val updatedObj: JsObject = myObj - "targetId"
 
-        // Remove the targetId property
-        val updatedObj: JsObject = myObj - "targetId"
-
-        //transform the object in a key value pair array
-        val properties = (updatedObj.keys).toSeq
-        val keyValuePairs = properties.map { propName =>
-          val value = (updatedObj \ propName).get
-          Json.obj("key" -> propName, "value" -> value)
-        }
-        val arrStructure = JsArray(keyValuePairs)
-
-        Some(arrStructure)
-      } else {
-        Option.empty
+      //transform the object in a key value pair array
+      val properties = (updatedObj.keys).toSeq
+      val keyValuePairs = properties.map { propName =>
+        val value = (updatedObj \ propName).get
+        Json.obj("key" -> propName, "value" -> value)
       }
+      keyValuePairs
     }
+
+  def getTargetsPrioritisationJs(id: String): Future[JsArray] = {
+    val result = getTargetsPrioritisation(id)
+    val essentialityData = getTargetEssentiality(Seq(id))
+
+    val prioritisationFt = result.map { prioritisationList =>
+      val prioritisation = prioritisationList.head
+
+      val arrStructure = getKeyValuePairsStructure(prioritisation)
+
+      val arrStructureWithEssential: Future[Seq[JsObject]] = essentialityData map { case ess =>
+        val emptyValue = Json.obj("key" -> "geneEssentiality", "value" -> "")
+        if (!ess.isEmpty) {
+          val isEssentialOpt = ess.head.geneEssentiality.head.isEssential
+          val isEssentialObj = isEssentialOpt match {
+            case Some(isEssential) =>
+              val essValue = if (isEssential) -1 else 0
+              Json.obj("key" -> "geneEssentiality", "value" -> essValue)
+            case None => emptyValue
+          }
+          arrStructure ++ Seq(isEssentialObj)
+        } else {
+          arrStructure
+        }
+      }
+
+      arrStructureWithEssential.map(JsArray(_))
+    }
+    prioritisationFt.flatMap(identity)
   }
 
   def getKnownDrugs(
