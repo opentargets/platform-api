@@ -16,11 +16,11 @@ import scala.concurrent.ExecutionContext
 import sangria.ast.Document
 
 @Singleton
-class MetaController @Inject() (implicit
-    ec: ExecutionContext,
-    backend: Backend,
-    cc: ControllerComponents
-) extends AbstractController(cc)
+class MetaController @Inject()(implicit
+                               ec: ExecutionContext,
+                               backend: Backend,
+                               cc: ControllerComponents)
+    extends AbstractController(cc)
     with Logging {
 
   val metaGQLQ: Document =

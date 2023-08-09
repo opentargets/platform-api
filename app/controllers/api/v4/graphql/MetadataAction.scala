@@ -1,8 +1,9 @@
 package controllers.api.v4.graphql
 
-import QueryMetadataHeaders.{GQL_OP_HEADER, GQL_VAR_HEADER}
+import QueryMetadataHeaders.{GQL_COMPLEXITY_HEADER, GQL_OP_HEADER, GQL_VAR_HEADER}
 import models.Helpers.loadConfigurationObject
 import models.entities.Configuration.{APIVersion, DataVersion, OTSettings}
+import play.api.libs.json.JsObject
 import play.api.{Configuration, Logging}
 import play.api.mvc.{ActionBuilderImpl, BodyParsers, Request, Result}
 
@@ -16,6 +17,8 @@ case class GqlRequestMetadata(
     duration: Long,
     operation: String,
     variables: String,
+    complexity: String,
+    query: String,
     api: APIVersion,
     data: DataVersion
 )
@@ -48,14 +51,21 @@ class MetadataAction @Inject() (parser: BodyParsers.Default)(implicit
           if (operationFilters.contains(operation))
             response
           else {
+
             val endTime = System.currentTimeMillis
+            val query = request.body.asInstanceOf[JsObject].value("query")
+            //replace consecutive white spaces with single white space to make it easier to read
+            val trimmedQuery = query.toString().replaceAll("\\s+", " ")
             val requestTime = endTime - startTime
+
             val meta = GqlRequestMetadata(
               request.headers.hasHeader(metadataLoggingConfig.otHeader),
               new java.sql.Timestamp(System.currentTimeMillis()),
               requestTime,
               responseHeaders.getOrElse(GQL_OP_HEADER, ""),
               responseHeaders.getOrElse(GQL_VAR_HEADER, ""),
+              responseHeaders.getOrElse(GQL_COMPLEXITY_HEADER, ""),
+              trimmedQuery,
               apiVersion,
               dataVersion
             )

@@ -1,7 +1,11 @@
 package controllers.api.v4.graphql
 
-import akka.stream.{Materializer}
-import controllers.api.v4.graphql.QueryMetadataHeaders.{GQL_OP_HEADER, GQL_VAR_HEADER}
+import akka.stream.Materializer
+import controllers.api.v4.graphql.QueryMetadataHeaders.{
+  GQL_COMPLEXITY_HEADER,
+  GQL_OP_HEADER,
+  GQL_VAR_HEADER
+}
 import models.entities.TooComplexQueryError
 import models.entities.TooComplexQueryError._
 import models.{Backend, GQLSchema}
@@ -116,6 +120,7 @@ class GraphQLController @Inject() (implicit
 
       // query parsed successfully, time to execute it!
       case Success(queryAst) =>
+        var queryComplexity = -1.0
         Executor
           .execute(
             GQLSchema.schema,
@@ -126,6 +131,10 @@ class GraphQLController @Inject() (implicit
             deferredResolver = GQLSchema.resolvers,
             exceptionHandler = exceptionHandler,
             queryReducers = List(
+              QueryReducer.measureComplexity[Backend] { (c, ctx) =>
+                queryComplexity = c
+                ctx
+              },
               QueryReducer.rejectMaxDepth[Backend](15),
               QueryReducer.rejectComplexQueries[Backend](4000, (_, _) => TooComplexQueryError)
             )
@@ -139,7 +148,8 @@ class GraphQLController @Inject() (implicit
                    .map(op => op.name.getOrElse("Unknown operation"))
                    .getOrElse("Unknown operation")
                 ),
-                (GQL_VAR_HEADER, gqlQuery.variables.toString())
+                (GQL_VAR_HEADER, gqlQuery.variables.toString()),
+                (GQL_COMPLEXITY_HEADER, queryComplexity.toString())
               )
           )
           .recover {
