@@ -11,6 +11,8 @@ import java.sql.Timestamp
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
+import play.api.libs.json._
+
 case class GqlRequestMetadata(
     isOT: Boolean,
     date: Timestamp,
@@ -21,7 +23,10 @@ case class GqlRequestMetadata(
     query: String,
     api: APIVersion,
     data: DataVersion
-)
+) {
+  def jsonWritter: OWrites[GqlRequestMetadata] = Json.writes[GqlRequestMetadata]
+  override def toString: String = jsonWritter.writes(this).toString()
+}
 
 class MetadataAction @Inject() (parser: BodyParsers.Default)(implicit
     ec: ExecutionContext,
@@ -55,7 +60,9 @@ class MetadataAction @Inject() (parser: BodyParsers.Default)(implicit
             val endTime = System.currentTimeMillis
             val query = request.body.asInstanceOf[JsObject].value("query")
             //replace consecutive white spaces with single white space to make it easier to read
-            val trimmedQuery = query.toString().replaceAll("\\s+", " ")
+            val trimmedQuery = query
+              .toString()
+              .replaceAll("\\s+", " ")
             val requestTime = endTime - startTime
 
             val meta = GqlRequestMetadata(

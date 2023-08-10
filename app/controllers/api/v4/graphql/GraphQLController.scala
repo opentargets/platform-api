@@ -18,6 +18,7 @@ import sangria.execution._
 import sangria.marshalling.playJson._
 import sangria.parser.{QueryParser, SyntaxError}
 
+import java.sql.Timestamp
 import javax.inject._
 import scala.concurrent._
 import scala.concurrent.duration._
@@ -153,9 +154,15 @@ class GraphQLController @Inject() (implicit
               )
           )
           .recover {
-            case error: QueryAnalysisError => BadRequest(error.resolveError)
+            case error: QueryAnalysisError =>
+              val graphQLError: GraphQLError =
+                getErrorObject(gqlQuery, queryComplexity, error.getMessage())
+              logger.error(graphQLError.toString)
+              BadRequest(error.resolveError)
             case error: ErrorWithResolver =>
-              logger.error(error.getMessage)
+              val graphQLError: GraphQLError =
+                getErrorObject(gqlQuery, queryComplexity, error.getMessage())
+              logger.error(graphQLError.toString)
               InternalServerError(error.resolveError)
           }
 
@@ -178,4 +185,18 @@ class GraphQLController @Inject() (implicit
       case Failure(error) =>
         throw error
     }
+
+  private def getErrorObject(gqlQuery: GqlQuery, queryComplexity: Double, error: String) = {
+    val trimmedQuery = gqlQuery.query
+      .replaceAll("\\s+", " ")
+    val graphQLError = GraphQLError(
+      false,
+      error,
+      new Timestamp(System.currentTimeMillis()),
+      gqlQuery.variables.toString(),
+      queryComplexity,
+      trimmedQuery
+    )
+    graphQLError
+  }
 }
