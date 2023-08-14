@@ -29,25 +29,27 @@ resolvers += Resolver.sonatypeRepo("releases")
 libraryDependencies ++= Seq(
   guice,
   caffeine,
-  "com.typesafe.slick" %% "slick" % "3.3.3",
+  "com.typesafe.slick" %% "slick" % "3.4.1",
   "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test,
-  "org.scalatestplus" %% "scalacheck-1-15" % "3.2.8.0" % Test
+  "org.scalatestplus" %% "scalacheck-1-15" % "3.2.11.0" % Test
 )
 
-val playVersion = "2.8.9"
+val playVersion = "2.8.18"
 libraryDependencies += "com.typesafe.play" %% "play" % playVersion
 libraryDependencies += "com.typesafe.play" %% "filters-helpers" % playVersion
 libraryDependencies += "com.typesafe.play" %% "play-logback" % playVersion
-libraryDependencies += "com.typesafe.play" %% "play-json" % "2.9.2"
+libraryDependencies += "com.typesafe.play" %% "play-json" % "2.9.4"
 libraryDependencies += "com.typesafe.play" %% "play-streams" % playVersion
-libraryDependencies += "com.typesafe.play" %% "play-slick" % "5.0.0"
+libraryDependencies += "com.typesafe.play" %% "play-slick" % "5.1.0"
 
-val sangriaVersion = "2.1.0"
-libraryDependencies += "ru.yandex.clickhouse" % "clickhouse-jdbc" % "0.3.1-patch"
+val sangriaVersion = "3.5.3"
+libraryDependencies += "ru.yandex.clickhouse" % "clickhouse-jdbc" % "0.3.2"
 libraryDependencies += "org.sangria-graphql" %% "sangria" % sangriaVersion
 libraryDependencies += "org.sangria-graphql" %% "sangria-play-json" % "2.0.2"
 
-lazy val catsVersion = "2.6.1"
+libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.10"
+
+lazy val catsVersion = "2.9.0"
 lazy val cats = Seq(
   "org.typelevel" %% "cats-core" % catsVersion,
   "org.typelevel" %% "cats-laws" % catsVersion,
@@ -56,12 +58,13 @@ lazy val cats = Seq(
 )
 libraryDependencies ++= cats
 
-val s4sVersion = "7.9.2"
+//val s4sVersion = "7.12.3"
+val s4sVersion = "8.5.3"
 libraryDependencies ++= Seq(
-  "com.sksamuel.elastic4s" %% "elastic4s-core" % s4sVersion,
-  "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % s4sVersion,
-  "com.sksamuel.elastic4s" %% "elastic4s-http-streams" % s4sVersion,
-  "com.sksamuel.elastic4s" %% "elastic4s-json-play" % s4sVersion
+  "com.sksamuel.elastic4s" %% "elastic4s-core" % s4sVersion exclude ("org.slf4j", "slf4j-api"),
+  "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % s4sVersion exclude ("org.slf4j", "slf4j-api"),
+  "com.sksamuel.elastic4s" %% "elastic4s-http-streams" % s4sVersion exclude ("org.slf4j", "slf4j-api"),
+  "com.sksamuel.elastic4s" %% "elastic4s-json-play" % s4sVersion exclude ("org.slf4j", "slf4j-api")
 )
 
 lazy val frontendRepository = settingKey[String]("Git repository with open targets front end.")
