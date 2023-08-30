@@ -1,7 +1,7 @@
 sudo: required
 language: scala
 scala:
-  - 2.13.7
+  - 2.13.10
 dist: xenial
 jdk:
   - openjdk11
