@@ -1,8 +1,4 @@
-FROM eclipse-temurin:11
-RUN apt-get update \
-    && apt-get install -y unzip \
-    && rm -rf /var/lib/apt/lists/*
-
+FROM openjdk:11
 RUN mkdir -p /srv/app
 
 COPY target/universal/ot-platform-api-latest.zip /srv/app/ot-platform-api-latest.zip
