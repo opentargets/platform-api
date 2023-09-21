@@ -214,7 +214,7 @@ class Backend @Inject() (implicit
         cursor
       )
       .map {
-        case (Seq(), _, _) => None
+        case (Seq(), _, _) => Some(KnownDrugs(0, 0, 0, 0, cursor, Seq()))
         case (seq, agg, nextCursor) =>
           logger.trace(Json.prettyPrint(agg))
           val drugs = (agg \ "uniqueDrugs" \ "value").as[Long]
