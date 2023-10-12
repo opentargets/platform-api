@@ -6,11 +6,13 @@ import controllers.api.v4.graphql.QueryMetadataHeaders.{
   GQL_OP_HEADER,
   GQL_VAR_HEADER
 }
+import models.Helpers.loadConfigurationObject
+import models.entities.Configuration.OTSettings
 import models.entities.TooComplexQueryError
 import models.entities.TooComplexQueryError._
 import models.{Backend, GQLSchema}
 import org.apache.http.HttpStatus
-import play.api.Logging
+import play.api.{Configuration, Logging}
 import play.api.cache.AsyncCacheApi
 import play.api.libs.json._
 import play.api.mvc._
@@ -27,15 +29,18 @@ import scala.util.{Failure, Success}
 case class GqlQuery(query: String, variables: JsObject, operation: Option[String])
 
 @Singleton
-class GraphQLController @Inject() (implicit
-    ec: ExecutionContext,
-    mat: Materializer,
-    dbTables: Backend,
-    cache: AsyncCacheApi,
-    cc: ControllerComponents,
-    metadataAction: MetadataAction
-) extends AbstractController(cc)
+class GraphQLController @Inject()(implicit
+                                  ec: ExecutionContext,
+                                  mat: Materializer,
+                                  dbTables: Backend,
+                                  cache: AsyncCacheApi,
+                                  cc: ControllerComponents,
+                                  metadataAction: MetadataAction,
+                                  config: Configuration)
+    extends AbstractController(cc)
     with Logging {
+
+  implicit val otSettings: OTSettings = loadConfigurationObject[OTSettings]("ot", config)
 
   private val non200CacheDuration = Duration(10, "seconds")
 
@@ -45,7 +50,9 @@ class GraphQLController @Inject() (implicit
 
   def gql(query: String, variables: Option[String], operation: Option[String]): Action[AnyContent] =
     metadataAction.async {
-      cachedQuery(GqlQuery(query, (variables map parseVariables).getOrElse(Json.obj()), operation))
+      val gqlQuery =
+        GqlQuery(query, (variables map parseVariables).getOrElse(Json.obj()), operation)
+      runQuery(gqlQuery)
     }
 
   def gqlBody(): Action[JsValue] = metadataAction(parse.json).async { request =>
@@ -60,8 +67,14 @@ class GraphQLController @Inject() (implicit
       }
       .getOrElse(Json.obj())
 
-    cachedQuery(GqlQuery(query, variables, operation))
+    val gqlQuery = GqlQuery(query, variables, operation)
+    runQuery(gqlQuery)
   }
+
+  private def runQuery(gqlQuery: GqlQuery)(implicit otSettings: OTSettings) =
+    if (otSettings.ignoreCache)
+      executeQuery(gqlQuery)
+    else cachedQuery(gqlQuery)
 
   private def parseVariables(variables: String) =
     if (variables.trim == "" || variables.trim == "null") Json.obj()
@@ -85,26 +98,27 @@ class GraphQLController @Inject() (implicit
         case None =>
           logger.debug(s"Cache miss on ${gqlQuery.operation}: ${gqlQuery.variables}")
           val queryResult = executeQuery(gqlQuery)
-          queryResult.andThen { case Success(s) =>
-            if (s.header.status == HttpStatus.SC_OK) {
-              /*
+          queryResult.andThen {
+            case Success(s) =>
+              if (s.header.status == HttpStatus.SC_OK) {
+                /*
                 All GraphQL responses which pass basic validation return status code 200. If something went wrong a field
                 returned called 'errors'. If there were no errors, this field isn't present.
-               */
-              responseContainsErrors(s).onComplete {
-                case Success(hasErrors) =>
-                  if (hasErrors) {
-                    logger.info(s"Temporarily caching 200 response with errors")
-                    cache.set(gqlQuery.toString, s, non200CacheDuration)
-                  } else {
-                    logger.info(
-                      s"Caching 200 response on ${gqlQuery.operation}: ${gqlQuery.query.filter(_ >= ' ')}"
-                    )
-                    cache.set(gqlQuery.toString, s)
-                  }
-                case Failure(exception) => logger.error(exception.getMessage)
+                 */
+                responseContainsErrors(s).onComplete {
+                  case Success(hasErrors) =>
+                    if (hasErrors) {
+                      logger.info(s"Temporarily caching 200 response with errors")
+                      cache.set(gqlQuery.toString, s, non200CacheDuration)
+                    } else {
+                      logger.info(
+                        s"Caching 200 response on ${gqlQuery.operation}: ${gqlQuery.query.filter(_ >= ' ')}"
+                      )
+                      cache.set(gqlQuery.toString, s)
+                    }
+                  case Failure(exception) => logger.error(exception.getMessage)
+                }
               }
-            }
           }
       }
       cacheResult
@@ -147,8 +161,7 @@ class GraphQLController @Inject() (implicit
                  queryAst
                    .operation()
                    .map(op => op.name.getOrElse("Unknown operation"))
-                   .getOrElse("Unknown operation")
-                ),
+                   .getOrElse("Unknown operation")),
                 (GQL_VAR_HEADER, gqlQuery.variables.toString()),
                 (GQL_COMPLEXITY_HEADER, queryComplexity.toString())
               )
