@@ -29,15 +29,15 @@ import scala.util.{Failure, Success}
 case class GqlQuery(query: String, variables: JsObject, operation: Option[String])
 
 @Singleton
-class GraphQLController @Inject()(implicit
-                                  ec: ExecutionContext,
-                                  mat: Materializer,
-                                  dbTables: Backend,
-                                  cache: AsyncCacheApi,
-                                  cc: ControllerComponents,
-                                  metadataAction: MetadataAction,
-                                  config: Configuration)
-    extends AbstractController(cc)
+class GraphQLController @Inject() (implicit
+    ec: ExecutionContext,
+    mat: Materializer,
+    dbTables: Backend,
+    cache: AsyncCacheApi,
+    cc: ControllerComponents,
+    metadataAction: MetadataAction,
+    config: Configuration
+) extends AbstractController(cc)
     with Logging {
 
   implicit val otSettings: OTSettings = loadConfigurationObject[OTSettings]("ot", config)
@@ -98,27 +98,26 @@ class GraphQLController @Inject()(implicit
         case None =>
           logger.debug(s"Cache miss on ${gqlQuery.operation}: ${gqlQuery.variables}")
           val queryResult = executeQuery(gqlQuery)
-          queryResult.andThen {
-            case Success(s) =>
-              if (s.header.status == HttpStatus.SC_OK) {
-                /*
+          queryResult.andThen { case Success(s) =>
+            if (s.header.status == HttpStatus.SC_OK) {
+              /*
                 All GraphQL responses which pass basic validation return status code 200. If something went wrong a field
                 returned called 'errors'. If there were no errors, this field isn't present.
-                 */
-                responseContainsErrors(s).onComplete {
-                  case Success(hasErrors) =>
-                    if (hasErrors) {
-                      logger.info(s"Temporarily caching 200 response with errors")
-                      cache.set(gqlQuery.toString, s, non200CacheDuration)
-                    } else {
-                      logger.info(
-                        s"Caching 200 response on ${gqlQuery.operation}: ${gqlQuery.query.filter(_ >= ' ')}"
-                      )
-                      cache.set(gqlQuery.toString, s)
-                    }
-                  case Failure(exception) => logger.error(exception.getMessage)
-                }
+               */
+              responseContainsErrors(s).onComplete {
+                case Success(hasErrors) =>
+                  if (hasErrors) {
+                    logger.info(s"Temporarily caching 200 response with errors")
+                    cache.set(gqlQuery.toString, s, non200CacheDuration)
+                  } else {
+                    logger.info(
+                      s"Caching 200 response on ${gqlQuery.operation}: ${gqlQuery.query.filter(_ >= ' ')}"
+                    )
+                    cache.set(gqlQuery.toString, s)
+                  }
+                case Failure(exception) => logger.error(exception.getMessage)
               }
+            }
           }
       }
       cacheResult
@@ -161,7 +160,8 @@ class GraphQLController @Inject()(implicit
                  queryAst
                    .operation()
                    .map(op => op.name.getOrElse("Unknown operation"))
-                   .getOrElse("Unknown operation")),
+                   .getOrElse("Unknown operation")
+                ),
                 (GQL_VAR_HEADER, gqlQuery.variables.toString()),
                 (GQL_COMPLEXITY_HEADER, queryComplexity.toString())
               )

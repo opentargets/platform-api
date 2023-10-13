@@ -9,8 +9,6 @@ object Configuration {
 
   case class Logging(otHeader: String, ignoredQueries: Seq[String])
 
-  case class Cache(ignoreCache: Boolean)
-
   case class DataVersion(year: String, month: String, iteration: String)
 
   case class APIVersion(x: String, y: String, z: String)
@@ -90,18 +88,17 @@ object Configuration {
   implicit val clickhouseSettingsJSONImp: OFormat[ClickhouseSettings] =
     Json.format[ClickhouseSettings]
 
-//  implicit val otSettingsJSONImp: OFormat[OTSettings] = Json.format[OTSettings]
-  implicit val otSettingsJSONImp: Reads[OTSettings] = (
-    (__ \ "meta").read[Meta] and
-      (__ \ "elasticsearch").read[ElasticsearchSettings] and
-      (__ \ "clickhouse").read[ClickhouseSettings] and
-      (__ \ "ignoreCache").read[String] and
-      (__ \ "logging").read[Logging]
-  )(
+  implicit val otSettingsJSONImp: Reads[OTSettings] = ((__ \ "meta").read[Meta] and
+    (__ \ "elasticsearch").read[ElasticsearchSettings] and
+    (__ \ "clickhouse").read[ClickhouseSettings] and
+    (__ \ "ignoreCache").read[String] and
+    (__ \ "logging").read[Logging])(
     (meta, elasticsearchSettings, clickhouseSettings, ignoreCache, logging) =>
       OTSettings.apply(meta,
                        elasticsearchSettings,
                        clickhouseSettings,
                        ignoreCache.toBooleanOption.getOrElse(false),
-                       logging))
+                       logging
+      )
+  )
 }
