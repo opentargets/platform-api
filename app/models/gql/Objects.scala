@@ -240,7 +240,13 @@ object Objects extends Logging {
             if (ess.isEmpty) null else ess.head.geneEssentiality.flatMap(_.depMapEssentiality)
           }
         }
-      )
+      ),
+      Field(
+        "pharmacogenomics",
+        ListType(pharmacogenomicsImp),
+        description = Some("Pharmoacogenomics"),
+        arguments = pageArg :: Nil,
+        resolve = ctx => ctx.ctx.getPharmacogenomicsByTarget(ctx.value.id))
     )
   )
 
@@ -756,6 +762,9 @@ object Objects extends Logging {
   implicit lazy val drugReferenceImp: ObjectType[Backend, Reference] =
     deriveObjectType[Backend, Reference]()
 
+  implicit lazy val pharmacogenomicsImp: ObjectType[Backend, Pharmacogenomics] =
+    deriveObjectType[Backend, Pharmacogenomics]()
+
   implicit lazy val indicationReferenceImp: ObjectType[Backend, IndicationReference] =
     deriveObjectType[Backend, IndicationReference]()
 
@@ -950,7 +959,13 @@ object Objects extends Logging {
         description = Some("Significant adverse events inferred from FAERS reports"),
         arguments = pageArg :: Nil,
         resolve = ctx => ctx.ctx.getAdverseEvents(ctx.value.id, ctx.arg(pageArg))
-      )
+      ),
+      Field(
+        "pharmacogenomics",
+        ListType(pharmacogenomicsImp),
+        description = Some("Pharmoacogenomics"),
+        arguments = pageArg :: Nil,
+        resolve = ctx => ctx.ctx.getPharmacogenomicsByDrug(ctx.value.id))
     ),
     ReplaceField(
       "linkedDiseases",

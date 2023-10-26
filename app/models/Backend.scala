@@ -18,6 +18,7 @@ import models.entities.Configuration._
 import models.entities.DiseaseHPOs._
 import models.entities.Drug._
 import models.entities.MousePhenotypes._
+import models.entities.Pharmacogenomics._
 import models.entities._
 import play.api.cache.AsyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
@@ -290,6 +291,38 @@ class Backend @Inject() (implicit
         queryTerm,
         Pagination(0, Pagination.sizeMax),
         fromJsValue[MousePhenotype]
+      )
+      .map(_._1)
+  }
+
+  def getPharmacogenomicsByTarget(id: String): Future[IndexedSeq[Pharmacogenomics]] = {
+
+    val indexName = getIndexOrDefault("pharmacogenomics", Some("pharmacogenomics"))
+
+    val queryTerm = Map("targetFromSourceId.keyword" -> id)
+    logger.debug(s"Querying pharmacogenomics by target for: $id")
+
+    esRetriever
+      .getByIndexedQueryMust(
+        indexName,
+        queryTerm,
+        Pagination(0, Pagination.sizeMax),
+        fromJsValue[Pharmacogenomics]
+      )
+      .map(_._1)
+  }
+
+  def getPharmacogenomicsByDrug(id: String): Future[IndexedSeq[Pharmacogenomics]] = {
+    val indexName = getIndexOrDefault("pharmacogenomics", Some("pharmacogenomics"))
+    val queryTerm = Map("drugId.keyword" -> id)
+    logger.debug(s"Querying pharmacogenomics by drug for: $id")
+
+    esRetriever
+      .getByIndexedQueryMust(
+        indexName,
+        queryTerm,
+        Pagination(0, Pagination.sizeMax),
+        fromJsValue[Pharmacogenomics]
       )
       .map(_._1)
   }
