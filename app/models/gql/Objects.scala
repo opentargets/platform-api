@@ -246,7 +246,7 @@ object Objects extends Logging {
         ListType(pharmacogenomicsImp),
         description = Some("Pharmoacogenomics"),
         arguments = pageArg :: Nil,
-        resolve = ctx => ctx.ctx.getPharmacogenomicsByTarget(ctx.value.id))
+        resolve = ctx => ctx.ctx.getPharmacogenomics(ctx.value.id, "target"))
     )
   )
 
@@ -965,7 +965,7 @@ object Objects extends Logging {
         ListType(pharmacogenomicsImp),
         description = Some("Pharmoacogenomics"),
         arguments = pageArg :: Nil,
-        resolve = ctx => ctx.ctx.getPharmacogenomicsByDrug(ctx.value.id))
+        resolve = ctx => ctx.ctx.getPharmacogenomics(ctx.value.id, "drug"))
     ),
     ReplaceField(
       "linkedDiseases",
