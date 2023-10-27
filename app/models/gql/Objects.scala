@@ -2,6 +2,7 @@ package models.gql
 
 import models._
 import models.entities.Configuration._
+import models.entities.Evidence.sequenceOntologyTermImp
 import models.entities.Evidences._
 import models.entities.Interactions._
 import models.entities.Publications.publicationsImp
@@ -225,8 +226,9 @@ object Objects extends Logging {
         description = Some("isEssential"),
         resolve = ctx => {
           val mp = ctx.ctx.getTargetEssentiality(Seq(ctx.value.id))
-          mp map { case ess =>
-            if (ess.isEmpty) null else ess.head.geneEssentiality.head.isEssential
+          mp map {
+            case ess =>
+              if (ess.isEmpty) null else ess.head.geneEssentiality.head.isEssential
           }
         }
       ),
@@ -236,8 +238,9 @@ object Objects extends Logging {
         description = Some("depMapEssentiality"),
         resolve = ctx => {
           val mp = ctx.ctx.getTargetEssentiality(Seq(ctx.value.id))
-          mp map { case ess =>
-            if (ess.isEmpty) null else ess.head.geneEssentiality.flatMap(_.depMapEssentiality)
+          mp map {
+            case ess =>
+              if (ess.isEmpty) null else ess.head.geneEssentiality.flatMap(_.depMapEssentiality)
           }
         }
       ),
@@ -246,7 +249,8 @@ object Objects extends Logging {
         ListType(pharmacogenomicsImp),
         description = Some("Pharmoacogenomics"),
         arguments = pageArg :: Nil,
-        resolve = ctx => ctx.ctx.getPharmacogenomics(ctx.value.id, "target"))
+        resolve = ctx => ctx.ctx.getPharmacogenomics(ctx.value.id, "target")
+      )
     )
   )
 
@@ -347,8 +351,7 @@ object Objects extends Logging {
                                         filterStartMonth,
                                         filterEndYear,
                                         filterEndMonth,
-                                        cur
-          )
+            cur)
         }
       ),
       Field(
@@ -763,7 +766,22 @@ object Objects extends Logging {
     deriveObjectType[Backend, Reference]()
 
   implicit lazy val pharmacogenomicsImp: ObjectType[Backend, Pharmacogenomics] =
-    deriveObjectType[Backend, Pharmacogenomics]()
+    deriveObjectType[Backend, Pharmacogenomics](
+      ReplaceField(
+        "variantFunctionalConsequence",
+        Field(
+          "variantFunctionalConsequence",
+          OptionType(sequenceOntologyTermImp),
+          description = None,
+          resolve = r => {
+            val soId = (r.value.variantFunctionalConsequenceId)
+              .map(id => id.replace("_", ":"))
+            logger.debug(s"Finding variant functional consequence: $soId")
+            soTermsFetcher.deferOpt(soId)
+          }
+        )
+      )
+    )
 
   implicit lazy val indicationReferenceImp: ObjectType[Backend, IndicationReference] =
     deriveObjectType[Backend, IndicationReference]()
@@ -818,12 +836,10 @@ object Objects extends Logging {
       DocumentField("references", "Source of withdrawal information"),
       DocumentField("warningType", "Either 'black box warning' or 'withdrawn'"),
       DocumentField("efoTerm",
-                    " label of the curated EFO term that represents the adverse outcome"
-      ),
+        " label of the curated EFO term that represents the adverse outcome"),
       DocumentField("efoId", "ID of the curated EFO term that represents the adverse outcome"),
       DocumentField("efoIdForWarningClass",
-                    "ID of the curated EFO term that represents the high level warning class"
-      ),
+        "ID of the curated EFO term that represents the high level warning class"),
       DocumentField("year", "Year of withdrawal")
     )
 
@@ -914,8 +930,7 @@ object Objects extends Logging {
                                         filterStartMonth,
                                         filterEndYear,
                                         filterEndMonth,
-                                        cur
-          )
+            cur)
         }
       ),
       Field(
@@ -965,7 +980,8 @@ object Objects extends Logging {
         ListType(pharmacogenomicsImp),
         description = Some("Pharmoacogenomics"),
         arguments = pageArg :: Nil,
-        resolve = ctx => ctx.ctx.getPharmacogenomics(ctx.value.id, "drug"))
+        resolve = ctx => ctx.ctx.getPharmacogenomics(ctx.value.id, "drug")
+      )
     ),
     ReplaceField(
       "linkedDiseases",

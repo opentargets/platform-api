@@ -20,10 +20,10 @@ case class Pharmacogenomics(
     studyId: Option[String],
     targetFromSourceId: Option[String],
     variantFunctionalConsequenceId: Option[String],
+    variantFunctionalConsequence: Option[String],
     variantRsId: Option[String],
     isDirectTarget: Boolean
 )
-
 
 object Pharmacogenomics extends Logging {
   implicit val pharmacogenomicsW: OWrites[Pharmacogenomics] = Json.writes[Pharmacogenomics]
