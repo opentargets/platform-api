@@ -30,13 +30,13 @@ import java.time.LocalDate
 import scala.collection.immutable.ArraySeq
 import scala.concurrent._
 
-class Backend @Inject()(implicit
+class Backend @Inject() (implicit
     ec: ExecutionContext,
     @NamedDatabase("default") protected val dbConfigProvider: DatabaseConfigProvider,
     config: Configuration,
     env: Environment,
-                        cache: AsyncCacheApi
-                       ) extends Logging {
+    cache: AsyncCacheApi
+) extends Logging {
 
   implicit val defaultOTSettings: OTSettings = loadConfigurationObject[OTSettings]("ot", config)
   implicit val defaultESSettings: ElasticsearchSettings = defaultOTSettings.elasticsearch
@@ -307,7 +307,7 @@ class Backend @Inject()(implicit
 
   def getPharmacogenomics(id: String,
                           queryTerm: Map[String, String]
-                         ): Future[IndexedSeq[Pharmacogenomics]] = {
+  ): Future[IndexedSeq[Pharmacogenomics]] = {
     val indexName = getIndexOrDefault("pharmacogenomics", Some("pharmacogenomics"))
     logger.debug(s"Querying pharmacogenomics for: $id")
     esRetriever
@@ -861,7 +861,7 @@ class Backend @Inject()(implicit
                               endYear: Option[Int],
                               endMonth: Option[Int],
                               cursor: Option[String]
-                             ): Future[Publications] = {
+  ): Future[Publications] = {
     import Pagination._
 
     getLiterature(ids, startYear, startMonth, endYear, endMonth, cursor)
@@ -873,7 +873,7 @@ class Backend @Inject()(implicit
                             endYear: Option[Int],
                             endMonth: Option[Int],
                             cursor: Option[String]
-                           ): Future[Publications] = {
+  ): Future[Publications] = {
     val table = defaultOTSettings.clickhouse.literature
     val indexTable = defaultOTSettings.clickhouse.literatureIndex
     logger.info(s"query literature ocurrences in table ${table.name}")
@@ -938,11 +938,11 @@ class Backend @Inject()(implicit
   }
 
   /** @param index
-   * key of index (name field) in application.conf
+    * key of index (name field) in application.conf
     * @param default
-   * fallback index name
+    * fallback index name
     * @return
-   * elasticsearch index name resolved from application.conf or default.
+    * elasticsearch index name resolved from application.conf or default.
     */
   private def getIndexOrDefault(index: String, default: Option[String] = None): String =
     defaultESSettings.entities

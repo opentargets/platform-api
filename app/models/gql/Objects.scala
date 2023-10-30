@@ -349,7 +349,7 @@ object Objects extends Logging {
                                         filterStartMonth,
                                         filterEndYear,
                                         filterEndMonth,
-            cur
+                                        cur
           )
         }
       ),
@@ -853,11 +853,11 @@ object Objects extends Logging {
       DocumentField("references", "Source of withdrawal information"),
       DocumentField("warningType", "Either 'black box warning' or 'withdrawn'"),
       DocumentField("efoTerm",
-        " label of the curated EFO term that represents the adverse outcome"
+                    " label of the curated EFO term that represents the adverse outcome"
       ),
       DocumentField("efoId", "ID of the curated EFO term that represents the adverse outcome"),
       DocumentField("efoIdForWarningClass",
-        "ID of the curated EFO term that represents the high level warning class"
+                    "ID of the curated EFO term that represents the high level warning class"
       ),
       DocumentField("year", "Year of withdrawal")
     )
@@ -949,7 +949,7 @@ object Objects extends Logging {
                                         filterStartMonth,
                                         filterEndYear,
                                         filterEndMonth,
-            cur
+                                        cur
           )
         }
       ),
