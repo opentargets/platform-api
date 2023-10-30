@@ -247,7 +247,7 @@ object Objects extends Logging {
         ListType(pharmacogenomicsImp),
         description = Some("Pharmoacogenomics"),
         arguments = pageArg :: Nil,
-        resolve = ctx => ctx.ctx.getPharmacogenomics(ctx.value.id, "target")
+        resolve = ctx => ctx.ctx.getPharmacogenomicsByTarget(ctx.value.id)
       )
     )
   )
@@ -779,6 +779,24 @@ object Objects extends Logging {
             soTermsFetcher.deferOpt(soId)
           }
         )
+      ),
+      ReplaceField(
+        "drug",
+        Field(
+          "drug",
+          OptionType(drugImp),
+          description = Some("Drug entity"),
+          resolve = r => drugsFetcher.deferOpt(r.value.drugId)
+        )
+      ),
+      ReplaceField(
+        "target",
+        Field(
+          "target",
+          OptionType(targetImp),
+          description = Some("Target entity"),
+          resolve = r => targetsFetcher.deferOpt(r.value.targetFromSourceId)
+        )
       )
     )
 
@@ -982,7 +1000,7 @@ object Objects extends Logging {
         ListType(pharmacogenomicsImp),
         description = Some("Pharmoacogenomics"),
         arguments = pageArg :: Nil,
-        resolve = ctx => ctx.ctx.getPharmacogenomics(ctx.value.id, "drug")
+        resolve = ctx => ctx.ctx.getPharmacogenomicsByDrug(ctx.value.id)
       )
     ),
     ReplaceField(

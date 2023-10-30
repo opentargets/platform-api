@@ -295,16 +295,21 @@ class Backend @Inject()(implicit
       .map(_._1)
   }
 
-  def getPharmacogenomics(id: String, field: String): Future[IndexedSeq[Pharmacogenomics]] = {
+  def getPharmacogenomicsByDrug(id: String): Future[IndexedSeq[Pharmacogenomics]] = {
+    val queryTerm: Map[String, String] = Map("drugId.keyword" -> id)
+    getPharmacogenomics(id, queryTerm)
+  }
 
+  def getPharmacogenomicsByTarget(id: String): Future[IndexedSeq[Pharmacogenomics]] = {
+    val queryTerm: Map[String, String] = Map("targetFromSourceId.keyword" -> id)
+    getPharmacogenomics(id, queryTerm)
+  }
+
+  def getPharmacogenomics(id: String,
+                          queryTerm: Map[String, String]
+                         ): Future[IndexedSeq[Pharmacogenomics]] = {
     val indexName = getIndexOrDefault("pharmacogenomics", Some("pharmacogenomics"))
-
-    val queryTerm: Map[String, String] = field match {
-      case "target" => Map("targetFromSourceId.keyword" -> id)
-      case "drug" => Map("drugId.keyword" -> id)
-    }
-    logger.debug(s"Querying pharmacogenomics by $field for: $id")
-
+    logger.debug(s"Querying pharmacogenomics for: $id")
     esRetriever
       .getByIndexedQueryMust(
         indexName,

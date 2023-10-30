@@ -4,10 +4,11 @@ import play.api.Logging
 import play.api.libs.json._
 
 case class Pharmacogenomics(
-    drugId: Option[String],
     datasourceId: Option[String],
     datasourceVersion: Option[String],
     datatypeId: Option[String],
+    drug: Option[String],
+    drugId: Option[String],
     drugFromSource: Option[String],
     evidenceLevel: Option[String],
     genotype: Option[String],
@@ -18,6 +19,7 @@ case class Pharmacogenomics(
     phenotypeFromSourceId: Option[String],
     phenotypeText: Option[String],
     studyId: Option[String],
+    target: Option[String],
     targetFromSourceId: Option[String],
     variantFunctionalConsequenceId: Option[String],
     variantFunctionalConsequence: Option[String],
