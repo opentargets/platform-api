@@ -6,11 +6,13 @@ import controllers.api.v4.graphql.QueryMetadataHeaders.{
   GQL_OP_HEADER,
   GQL_VAR_HEADER
 }
+import models.Helpers.loadConfigurationObject
+import models.entities.Configuration.OTSettings
 import models.entities.TooComplexQueryError
 import models.entities.TooComplexQueryError._
 import models.{Backend, GQLSchema}
 import org.apache.http.HttpStatus
-import play.api.Logging
+import play.api.{Configuration, Logging}
 import play.api.cache.AsyncCacheApi
 import play.api.libs.json._
 import play.api.mvc._
@@ -33,9 +35,12 @@ class GraphQLController @Inject() (implicit
     dbTables: Backend,
     cache: AsyncCacheApi,
     cc: ControllerComponents,
-    metadataAction: MetadataAction
+    metadataAction: MetadataAction,
+    config: Configuration
 ) extends AbstractController(cc)
     with Logging {
+
+  implicit val otSettings: OTSettings = loadConfigurationObject[OTSettings]("ot", config)
 
   private val non200CacheDuration = Duration(10, "seconds")
 
@@ -45,7 +50,9 @@ class GraphQLController @Inject() (implicit
 
   def gql(query: String, variables: Option[String], operation: Option[String]): Action[AnyContent] =
     metadataAction.async {
-      cachedQuery(GqlQuery(query, (variables map parseVariables).getOrElse(Json.obj()), operation))
+      val gqlQuery =
+        GqlQuery(query, (variables map parseVariables).getOrElse(Json.obj()), operation)
+      runQuery(gqlQuery)
     }
 
   def gqlBody(): Action[JsValue] = metadataAction(parse.json).async { request =>
@@ -60,8 +67,14 @@ class GraphQLController @Inject() (implicit
       }
       .getOrElse(Json.obj())
 
-    cachedQuery(GqlQuery(query, variables, operation))
+    val gqlQuery = GqlQuery(query, variables, operation)
+    runQuery(gqlQuery)
   }
+
+  private def runQuery(gqlQuery: GqlQuery)(implicit otSettings: OTSettings) =
+    if (otSettings.ignoreCache)
+      executeQuery(gqlQuery)
+    else cachedQuery(gqlQuery)
 
   private def parseVariables(variables: String) =
     if (variables.trim == "" || variables.trim == "null") Json.obj()

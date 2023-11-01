@@ -1,7 +1,8 @@
 package models.entities
 
-import play.api.libs.json.Json
-import play.api.libs.json.OFormat
+import play.api.libs.json._
+import play.api.libs.json.Reads._
+import play.api.libs.functional.syntax._
 
 object Configuration {
   val batchSize = 100
@@ -63,6 +64,7 @@ object Configuration {
       meta: Meta,
       elasticsearch: ElasticsearchSettings,
       clickhouse: ClickhouseSettings,
+      ignoreCache: Boolean,
       logging: Logging
   )
 
@@ -86,5 +88,17 @@ object Configuration {
   implicit val clickhouseSettingsJSONImp: OFormat[ClickhouseSettings] =
     Json.format[ClickhouseSettings]
 
-  implicit val otSettingsJSONImp: OFormat[OTSettings] = Json.format[OTSettings]
+  implicit val otSettingsJSONImp: Reads[OTSettings] = ((__ \ "meta").read[Meta] and
+    (__ \ "elasticsearch").read[ElasticsearchSettings] and
+    (__ \ "clickhouse").read[ClickhouseSettings] and
+    (__ \ "ignoreCache").read[String] and
+    (__ \ "logging").read[Logging])(
+    (meta, elasticsearchSettings, clickhouseSettings, ignoreCache, logging) =>
+      OTSettings.apply(meta,
+                       elasticsearchSettings,
+                       clickhouseSettings,
+                       ignoreCache.toBooleanOption.getOrElse(false),
+                       logging
+      )
+  )
 }
