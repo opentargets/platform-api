@@ -2,6 +2,7 @@ package models.gql
 
 import models._
 import models.entities.Configuration._
+import models.entities.Evidence.sequenceOntologyTermImp
 import models.entities.Evidences._
 import models.entities.Interactions._
 import models.entities.Publications.publicationsImp
@@ -240,6 +241,13 @@ object Objects extends Logging {
             if (ess.isEmpty) null else ess.head.geneEssentiality.flatMap(_.depMapEssentiality)
           }
         }
+      ),
+      Field(
+        "pharmacogenomics",
+        ListType(pharmacogenomicsImp),
+        description = Some("Pharmoacogenomics"),
+        arguments = pageArg :: Nil,
+        resolve = ctx => ctx.ctx.getPharmacogenomicsByTarget(ctx.value.id)
       )
     )
   )
@@ -756,6 +764,42 @@ object Objects extends Logging {
   implicit lazy val drugReferenceImp: ObjectType[Backend, Reference] =
     deriveObjectType[Backend, Reference]()
 
+  implicit lazy val pharmacogenomicsImp: ObjectType[Backend, Pharmacogenomics] =
+    deriveObjectType[Backend, Pharmacogenomics](
+      ReplaceField(
+        "variantFunctionalConsequence",
+        Field(
+          "variantFunctionalConsequence",
+          OptionType(sequenceOntologyTermImp),
+          description = None,
+          resolve = r => {
+            val soId = (r.value.variantFunctionalConsequenceId)
+              .map(id => id.replace("_", ":"))
+            logger.debug(s"Finding variant functional consequence: $soId")
+            soTermsFetcher.deferOpt(soId)
+          }
+        )
+      ),
+      ReplaceField(
+        "drug",
+        Field(
+          "drug",
+          OptionType(drugImp),
+          description = Some("Drug entity"),
+          resolve = r => drugsFetcher.deferOpt(r.value.drugId)
+        )
+      ),
+      ReplaceField(
+        "target",
+        Field(
+          "target",
+          OptionType(targetImp),
+          description = Some("Target entity"),
+          resolve = r => targetsFetcher.deferOpt(r.value.targetFromSourceId)
+        )
+      )
+    )
+
   implicit lazy val indicationReferenceImp: ObjectType[Backend, IndicationReference] =
     deriveObjectType[Backend, IndicationReference]()
 
@@ -950,6 +994,13 @@ object Objects extends Logging {
         description = Some("Significant adverse events inferred from FAERS reports"),
         arguments = pageArg :: Nil,
         resolve = ctx => ctx.ctx.getAdverseEvents(ctx.value.id, ctx.arg(pageArg))
+      ),
+      Field(
+        "pharmacogenomics",
+        ListType(pharmacogenomicsImp),
+        description = Some("Pharmoacogenomics"),
+        arguments = pageArg :: Nil,
+        resolve = ctx => ctx.ctx.getPharmacogenomicsByDrug(ctx.value.id)
       )
     ),
     ReplaceField(
