@@ -31,5 +31,6 @@ object BaselineExpression {
   implicit val adatissScoreFormat: OFormat[AdatissScoreListItem] = Json.format[AdatissScoreListItem]
   implicit val expressionSpecificityListItemFormat: OFormat[ExpressionSpecificity] =
     Json.format[ExpressionSpecificity]
-  implicit val baselineExpressionFormat: OFormat[BaselineExpression] = Json.format[BaselineExpression]
+  implicit val baselineExpressionFormat: OFormat[BaselineExpression] =
+    Json.format[BaselineExpression]
 }
