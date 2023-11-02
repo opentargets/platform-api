@@ -240,6 +240,14 @@ object Objects extends Logging {
             if (ess.isEmpty) null else ess.head.geneEssentiality.flatMap(_.depMapEssentiality)
           }
         }
+      ),
+      Field(
+        "expressionSpecificity",
+        OptionType(expressionSpecificityImp),
+        description = Some(""),
+        resolve = ctx => {
+          ctx.ctx.getExpressionSpecificity(ctx.value.id)
+        }
       )
     )
   )
@@ -522,6 +530,7 @@ object Objects extends Logging {
     deriveObjectType[Backend, Expressions](
       ExcludeFields("id")
     )
+  implicit val expressionSpecificityImp: ObjectType[Backend, BaselineExpression] = deriveObjectType[Backend, BaselineExpression]()
 
   implicit val adverseEventImp: ObjectType[Backend, AdverseEvent] =
     deriveObjectType[Backend, AdverseEvent](

@@ -28,6 +28,7 @@ import play.db.NamedDatabase
 import java.time.LocalDate
 import scala.collection.immutable.ArraySeq
 import scala.concurrent._
+import scala.util.{Success, Failure}
 
 class Backend @Inject() (implicit
     ec: ExecutionContext,
@@ -181,6 +182,16 @@ class Backend @Inject() (implicit
       arrStructureWithEssential.map(JsArray(_))
     }
     prioritisationFt.flatMap(identity)
+  }
+
+  def getExpressionSpecificity(targetId: String): Future[Option[BaselineExpression]] = {
+    val expressionSpecificityIndexName = getIndexOrDefault("expression_specificity")
+
+    esRetriever
+      .getByIds(expressionSpecificityIndexName, Seq(targetId), fromJsValue[BaselineExpression]).map {
+        case Seq() => None
+        case seq => Some(seq.head)
+      }
   }
 
   def getKnownDrugs(
