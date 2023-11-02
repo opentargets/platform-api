@@ -251,7 +251,7 @@ object Objects extends Logging {
       ),
       Field(
         "expressionSpecificity",
-        OptionType(expressionSpecificityImp),
+        OptionType(baselineExpressionImp),
         description = Some(""),
         resolve = ctx => {
           ctx.ctx.getExpressionSpecificity(ctx.value.id)
@@ -538,7 +538,13 @@ object Objects extends Logging {
     deriveObjectType[Backend, Expressions](
       ExcludeFields("id")
     )
-  implicit val expressionSpecificityImp: ObjectType[Backend, BaselineExpression] =
+  implicit val expressionSpecificityImp: ObjectType[Backend, ExpressionSpecificity] =
+    deriveObjectType[Backend, ExpressionSpecificity]()
+  implicit val expressionListItemImp: ObjectType[Backend, ExpressionListItem] =
+    deriveObjectType[Backend, ExpressionListItem]()
+  implicit val adatissScoreListItemImp: ObjectType[Backend, AdatissScoreListItem] =
+    deriveObjectType[Backend, AdatissScoreListItem]()
+  implicit val baselineExpressionImp: ObjectType[Backend, BaselineExpression] =
     deriveObjectType[Backend, BaselineExpression]()
 
   implicit val adverseEventImp: ObjectType[Backend, AdverseEvent] =
