@@ -18,6 +18,7 @@ import models.entities.Configuration._
 import models.entities.DiseaseHPOs._
 import models.entities.Drug._
 import models.entities.MousePhenotypes._
+import models.entities.Pharmacogenomics._
 import models.entities._
 import play.api.cache.AsyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
@@ -302,6 +303,31 @@ class Backend @Inject() (implicit
         queryTerm,
         Pagination(0, Pagination.sizeMax),
         fromJsValue[MousePhenotype]
+      )
+      .map(_._1)
+  }
+
+  def getPharmacogenomicsByDrug(id: String): Future[IndexedSeq[Pharmacogenomics]] = {
+    val queryTerm: Map[String, String] = Map("drugId.keyword" -> id)
+    getPharmacogenomics(id, queryTerm)
+  }
+
+  def getPharmacogenomicsByTarget(id: String): Future[IndexedSeq[Pharmacogenomics]] = {
+    val queryTerm: Map[String, String] = Map("targetFromSourceId.keyword" -> id)
+    getPharmacogenomics(id, queryTerm)
+  }
+
+  def getPharmacogenomics(id: String,
+                          queryTerm: Map[String, String]
+  ): Future[IndexedSeq[Pharmacogenomics]] = {
+    val indexName = getIndexOrDefault("pharmacogenomics", Some("pharmacogenomics"))
+    logger.debug(s"Querying pharmacogenomics for: $id")
+    esRetriever
+      .getByIndexedQueryMust(
+        indexName,
+        queryTerm,
+        Pagination(0, Pagination.sizeMax),
+        fromJsValue[Pharmacogenomics]
       )
       .map(_._1)
   }
@@ -924,11 +950,11 @@ class Backend @Inject() (implicit
   }
 
   /** @param index
-    *   key of index (name field) in application.conf
+    * key of index (name field) in application.conf
     * @param default
-    *   fallback index name
+    * fallback index name
     * @return
-    *   elasticsearch index name resolved from application.conf or default.
+    * elasticsearch index name resolved from application.conf or default.
     */
   private def getIndexOrDefault(index: String, default: Option[String] = None): String =
     defaultESSettings.entities
