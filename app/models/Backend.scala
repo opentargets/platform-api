@@ -188,9 +188,10 @@ class Backend @Inject() (implicit
     val expressionSpecificityIndexName = getIndexOrDefault("expression_specificity")
 
     esRetriever
-      .getByIds(expressionSpecificityIndexName, Seq(targetId), fromJsValue[BaselineExpression]).map {
+      .getByIds(expressionSpecificityIndexName, Seq(targetId), fromJsValue[BaselineExpression])
+      .map {
         case Seq() => None
-        case seq => Some(seq.head)
+        case seq   => Some(seq.head)
       }
   }
 

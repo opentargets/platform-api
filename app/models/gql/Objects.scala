@@ -530,7 +530,8 @@ object Objects extends Logging {
     deriveObjectType[Backend, Expressions](
       ExcludeFields("id")
     )
-  implicit val expressionSpecificityImp: ObjectType[Backend, BaselineExpression] = deriveObjectType[Backend, BaselineExpression]()
+  implicit val expressionSpecificityImp: ObjectType[Backend, BaselineExpression] =
+    deriveObjectType[Backend, BaselineExpression]()
 
   implicit val adverseEventImp: ObjectType[Backend, AdverseEvent] =
     deriveObjectType[Backend, AdverseEvent](
