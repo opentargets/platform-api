@@ -83,10 +83,11 @@ object GQLSchema {
         "search",
         searchResultsGQLImp,
         description = Some("Multi entity search"),
-        arguments = queryString :: entityNames :: pageArg :: Nil,
+        arguments = queryString :: entityNames :: pageArg :: isKeywordSearch :: Nil,
         resolve = ctx => {
           val entities = ctx.arg(entityNames).getOrElse(Seq.empty)
-          ctx.ctx.search(ctx.arg(queryString), ctx.arg(pageArg), entities)
+          val keywordSearch = ctx.arg(isKeywordSearch).getOrElse(false)
+          ctx.ctx.search(ctx.arg(queryString), ctx.arg(pageArg), entities, keywordSearch)
         }
       ),
       Field(

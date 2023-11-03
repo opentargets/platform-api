@@ -410,14 +410,19 @@ class Backend @Inject() (implicit
   def search(
       qString: String,
       pagination: Option[Pagination],
-      entityNames: Seq[String]
+      entityNames: Seq[String],
+      keywordSearch: Boolean = false
   ): Future[SearchResults] = {
     val entities = for {
       e <- defaultESSettings.entities
       if (entityNames.contains(e.name) && e.searchIndex.isDefined)
     } yield e
-
-    esRetriever.getSearchResultSet(entities, qString, pagination.getOrElse(Pagination.mkDefault))
+    if (keywordSearch) {
+      val qStrings = qString.split('|').toSeq
+      esRetriever.getKeywordSearchResultSet(entities, qStrings, pagination.getOrElse(Pagination.mkDefault))
+    } else {
+      esRetriever.getSearchResultSet(entities, qString, pagination.getOrElse(Pagination.mkDefault))
+    }
   }
 
   def getAssociationDatasources: Future[Vector[EvidenceSource]] =

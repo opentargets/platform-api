@@ -57,6 +57,7 @@ object Arguments {
     Argument("chemblIds", ListInputType(StringType), description = "List of Chembl IDs")
   val goIds: Argument[Seq[String with tag.Tagged[FromInput.CoercedScalaResult]]] =
     Argument("goIds", ListInputType(StringType), description = "List of GO IDs, eg. GO:0005515")
+  val isKeywordSearch:  Argument[Option[Boolean]] = Argument("isKeywordSearch", OptionInputType(BooleanType), "Use exact searching of keyword terms")
   val indirectEvidences: Argument[Option[Boolean]] = Argument(
     "enableIndirect",
     OptionInputType(BooleanType),
