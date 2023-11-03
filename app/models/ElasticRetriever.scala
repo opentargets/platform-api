@@ -465,108 +465,48 @@ class ElasticRetriever @Inject()(
         }
     }
 
-  def getKeywordSearchResultSet(
-      entities: Seq[ElasticsearchEntity],
-      qStrings: Seq[String],
-      pagination: Pagination
-  ): Future[SearchResults] = {
-    val limitClause = pagination.toES
-    val esIndices = entities.withFilter(_.searchIndex.isDefined).map(_.searchIndex.get)
-
-    val keywordQueryFn = termsQuery("keywords.raw", qStrings)
-
-    val aggFns = Seq(
-      termsAgg("entities", "entity.raw")
-        .size(1000)
-        .subaggs(termsAgg("categories", "category.raw").size(1000)),
-      cardinalityAgg("total", "id.raw")
-    )
-
-    val fnQueries = boolQuery().should(keywordQueryFn) :: Nil
-
-    if (qStrings.nonEmpty) {
-      client
-        .execute {
-          val aggregations =
-            search(searchEntities) query (fnQueries.head) aggs (aggFns) size (0)
-          logger.trace(client.show(aggregations))
-          aggregations trackTotalHits (true)
-        }
-        .zip {
-          client.execute {
-            val mhits = search(esIndices)
-              .query(keywordQueryFn)
-              .start(limitClause._1)
-              .limit(limitClause._2)
-              .highlighting(HighlightOptions(highlighterType = Some("plain")),
-                            Seq(HighlightField("keywords")))
-              .trackTotalHits(true)
-            logger.trace(client.show(mhits))
-            mhits
-          }
-        }
-        .map {
-          case (aggregations, hits) =>
-            val aggsJ: JsValue = Json.parse(aggregations.result.aggregationsAsString)
-            val aggs = aggsJ.validateOpt[SearchResultAggs] match {
-              case JsSuccess(value, _) => value
-              case JsError(errors) =>
-                logger.error(errors.mkString("", " | ", ""))
-                None
-            }
-
-            if (logger.isTraceEnabled) {
-              val jsHits = Json.parse(hits.body.get)
-              logger.trace(Json.prettyPrint(jsHits))
-            }
-
-            val sresults =
-              (Json.parse(hits.body.get) \ "hits" \ "hits").validate[Seq[SearchResult]] match {
-                case JsSuccess(value, _) => value
-                case JsError(errors) =>
-                  logger.error(errors.mkString("", " | ", ""))
-                  Seq.empty
-              }
-
-            SearchResults(sresults, aggs, hits.result.totalHits)
-        }
-    } else {
-      Future.successful(SearchResults.empty)
-    }
-  }
-
   def getSearchResultSet(
       entities: Seq[ElasticsearchEntity],
       qString: String,
-      pagination: Pagination
+      pagination: Pagination,
+      keywordSearch: Boolean = false
   ): Future[SearchResults] = {
     val limitClause = pagination.toES
     val esIndices = entities.withFilter(_.searchIndex.isDefined).map(_.searchIndex.get)
-
-    val keywordQueryFn = multiMatchQuery(qString)
-      .analyzer("token")
-      .field("id.raw", 1000d)
-      .field("keywords.raw", 1000d)
-      .field("name.raw", 1000d)
-      .operator(Operator.AND)
-
-    val stringQueryFn = functionScoreQuery(
-      simpleStringQuery(qString)
+    val (mainQuery, fnQueries) = if (keywordSearch) {
+      val qStrings = qString.split('|').toSeq
+      val mainQuery = termsQuery("keywords.raw", qStrings)
+      val fnQueries = boolQuery().should(mainQuery) :: Nil
+      (mainQuery, fnQueries)
+    } else {
+      val keywordQueryFn = multiMatchQuery(qString)
         .analyzer("token")
-        .minimumShouldMatch("0")
-        .defaultOperator("AND")
-        .field("name", 50d)
-        .field("description", 25d)
-        .field("prefixes", 20d)
-        .field("terms5", 15d)
-        .field("terms25", 10d)
-        .field("terms", 5d)
-        .field("ngrams")
-    ).functions(
-      fieldFactorScore("multiplier")
-        .factor(1.0)
-        .modifier(FieldValueFactorFunctionModifier.NONE)
-    )
+        .field("id.raw", 1000d)
+        .field("keywords.raw", 1000d)
+        .field("name.raw", 1000d)
+        .operator(Operator.AND)
+      val stringQueryFn = functionScoreQuery(
+        simpleStringQuery(qString)
+          .analyzer("token")
+          .minimumShouldMatch("0")
+          .defaultOperator("AND")
+          .field("name", 50d)
+          .field("description", 25d)
+          .field("prefixes", 20d)
+          .field("terms5", 15d)
+          .field("terms25", 10d)
+          .field("terms", 5d)
+          .field("ngrams")
+      ).functions(
+        fieldFactorScore("multiplier")
+          .factor(1.0)
+          .modifier(FieldValueFactorFunctionModifier.NONE)
+      )
+      val filterQueries = boolQuery().must() :: Nil
+      val fnQueries = boolQuery().should(keywordQueryFn, stringQueryFn) :: Nil
+      val mainQuery = boolQuery().must(fnQueries ::: filterQueries)
+      (mainQuery, fnQueries)
+    }
 
     val aggFns = Seq(
       termsAgg("entities", "entity.raw")
@@ -575,31 +515,28 @@ class ElasticRetriever @Inject()(
       cardinalityAgg("total", "id.raw")
     )
 
-    val filterQueries = boolQuery().must() :: Nil
-    val fnQueries = boolQuery().should(keywordQueryFn, stringQueryFn) :: Nil
-    val mainQuery = boolQuery().must(fnQueries ::: filterQueries)
+    val execAggsSearch = client
+      .execute {
+        val aggregations =
+          search(searchEntities) query (fnQueries.head) aggs (aggFns) size (0)
+        logger.trace(client.show(aggregations))
+        aggregations trackTotalHits (true)
+      }
+    val execMainSearch = client.execute {
+      val mhits = search(esIndices)
+        .query(mainQuery)
+        .start(limitClause._1)
+        .limit(limitClause._2)
+        .highlighting(HighlightOptions(highlighterType = Some("fvh")), hlFieldSeq)
+        .trackTotalHits(true)
+        .sourceExclude("terms", "terms5", "terms25")
+      logger.trace(client.show(mhits))
+      mhits
+    }
+    val execSearch = execAggsSearch.zip(execMainSearch)
 
     if (qString.nonEmpty) {
-      client
-        .execute {
-          val aggregations =
-            search(searchEntities) query (fnQueries.head) aggs (aggFns) size (0)
-          logger.trace(client.show(aggregations))
-          aggregations trackTotalHits (true)
-        }
-        .zip {
-          client.execute {
-            val mhits = search(esIndices)
-              .query(mainQuery)
-              .start(limitClause._1)
-              .limit(limitClause._2)
-              .highlighting(HighlightOptions(highlighterType = Some("fvh")), hlFieldSeq)
-              .trackTotalHits(true)
-              .sourceExclude("terms", "terms5", "terms25")
-            logger.trace(client.show(mhits))
-            mhits
-          }
-        }
+      execSearch
         .map {
           case (aggregations, hits) =>
             val aggsJ: JsValue = Json.parse(aggregations.result.aggregationsAsString)

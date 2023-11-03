@@ -30,13 +30,14 @@ import java.time.LocalDate
 import scala.collection.immutable.ArraySeq
 import scala.concurrent._
 
-class Backend @Inject() (implicit
+class Backend @Inject()(
+    implicit
     ec: ExecutionContext,
     @NamedDatabase("default") protected val dbConfigProvider: DatabaseConfigProvider,
     config: Configuration,
     env: Environment,
-    cache: AsyncCacheApi
-) extends Logging {
+    cache: AsyncCacheApi)
+    extends Logging {
 
   implicit val defaultOTSettings: OTSettings = loadConfigurationObject[OTSettings]("ot", config)
   implicit val defaultESSettings: ElasticsearchSettings = defaultOTSettings.elasticsearch
@@ -163,20 +164,21 @@ class Backend @Inject() (implicit
 
       val arrStructure = getKeyValuePairsStructure(prioritisation)
 
-      val arrStructureWithEssential: Future[Seq[JsObject]] = essentialityData map { case ess =>
-        val emptyValue = Json.obj("key" -> "geneEssentiality", "value" -> "")
-        if (!ess.isEmpty) {
-          val isEssentialOpt = ess.head.geneEssentiality.head.isEssential
-          val isEssentialObj = isEssentialOpt match {
-            case Some(isEssential) =>
-              val essValue = if (isEssential) -1 else 0
-              Json.obj("key" -> "geneEssentiality", "value" -> essValue)
-            case None => emptyValue
+      val arrStructureWithEssential: Future[Seq[JsObject]] = essentialityData map {
+        case ess =>
+          val emptyValue = Json.obj("key" -> "geneEssentiality", "value" -> "")
+          if (!ess.isEmpty) {
+            val isEssentialOpt = ess.head.geneEssentiality.head.isEssential
+            val isEssentialObj = isEssentialOpt match {
+              case Some(isEssential) =>
+                val essValue = if (isEssential) -1 else 0
+                Json.obj("key" -> "geneEssentiality", "value" -> essValue)
+              case None => emptyValue
+            }
+            arrStructure ++ Seq(isEssentialObj)
+          } else {
+            arrStructure
           }
-          arrStructure ++ Seq(isEssentialObj)
-        } else {
-          arrStructure
-        }
       }
 
       arrStructureWithEssential.map(JsArray(_))
@@ -306,8 +308,7 @@ class Backend @Inject() (implicit
   }
 
   def getPharmacogenomics(id: String,
-                          queryTerm: Map[String, String]
-  ): Future[IndexedSeq[Pharmacogenomics]] = {
+                          queryTerm: Map[String, String]): Future[IndexedSeq[Pharmacogenomics]] = {
     val indexName = getIndexOrDefault("pharmacogenomics", Some("pharmacogenomics"))
     logger.debug(s"Querying pharmacogenomics for: $id")
     esRetriever
@@ -417,12 +418,10 @@ class Backend @Inject() (implicit
       e <- defaultESSettings.entities
       if (entityNames.contains(e.name) && e.searchIndex.isDefined)
     } yield e
-    if (keywordSearch) {
-      val qStrings = qString.split('|').toSeq
-      esRetriever.getKeywordSearchResultSet(entities, qStrings, pagination.getOrElse(Pagination.mkDefault))
-    } else {
-      esRetriever.getSearchResultSet(entities, qString, pagination.getOrElse(Pagination.mkDefault))
-    }
+    esRetriever.getSearchResultSet(entities,
+                                   qString,
+                                   pagination.getOrElse(Pagination.mkDefault),
+                                   keywordSearch)
   }
 
   def getAssociationDatasources: Future[Vector[EvidenceSource]] =
@@ -632,23 +631,25 @@ class Backend @Inject() (implicit
     }
 
     // TODO use option to enable or disable the computation of each of the sides
-    (dbRetriever.executeQuery[String, Query](simpleQ) zip esQ) flatMap { case (tIDs, esR) =>
-      val tids = esR.map(_._2 intersect tIDs.toSet).getOrElse(tIDs.toSet)
-      val fullQ = aotfQ(indirectIDs, tids).query
+    (dbRetriever.executeQuery[String, Query](simpleQ) zip esQ) flatMap {
+      case (tIDs, esR) =>
+        val tids = esR.map(_._2 intersect tIDs.toSet).getOrElse(tIDs.toSet)
+        val fullQ = aotfQ(indirectIDs, tids).query
 
-      logger.debug(
-        s"disease fixed get simpleQ n ${tIDs.size} " +
-          s"agg n ${esR.map(_._2.size).getOrElse(-1)} " +
-          s"inter n ${tids.size}"
-      )
+        logger.debug(
+          s"disease fixed get simpleQ n ${tIDs.size} " +
+            s"agg n ${esR.map(_._2.size).getOrElse(-1)} " +
+            s"inter n ${tids.size}"
+        )
 
-      if (tids.nonEmpty) {
-        dbRetriever.executeQuery[Association, Query](fullQ) map { case assocs =>
-          Associations(dss, esR.map(_._1), tids.size, assocs)
+        if (tids.nonEmpty) {
+          dbRetriever.executeQuery[Association, Query](fullQ) map {
+            case assocs =>
+              Associations(dss, esR.map(_._1), tids.size, assocs)
+          }
+        } else {
+          Future.successful(Associations(dss, esR.map(_._1), tids.size, Vector.empty))
         }
-      } else {
-        Future.successful(Associations(dss, esR.map(_._1), tids.size, Vector.empty))
-      }
     }
   }
 
@@ -801,23 +802,25 @@ class Backend @Inject() (implicit
       case _ => None
     }
 
-    (dbRetriever.executeQuery[String, Query](simpleQ) zip esQ) flatMap { case (dIDs, esR) =>
-      val dids = esR.map(_._2 intersect dIDs.toSet).getOrElse(dIDs.toSet)
-      val fullQ = aotfQ(indirectIDs, dids).query
+    (dbRetriever.executeQuery[String, Query](simpleQ) zip esQ) flatMap {
+      case (dIDs, esR) =>
+        val dids = esR.map(_._2 intersect dIDs.toSet).getOrElse(dIDs.toSet)
+        val fullQ = aotfQ(indirectIDs, dids).query
 
-      logger.debug(
-        s"target fixed get simpleQ n ${dIDs.size} " +
-          s"agg n ${esR.map(_._2.size).getOrElse(-1)} " +
-          s"inter n ${dids.size}"
-      )
+        logger.debug(
+          s"target fixed get simpleQ n ${dIDs.size} " +
+            s"agg n ${esR.map(_._2.size).getOrElse(-1)} " +
+            s"inter n ${dids.size}"
+        )
 
-      if (dids.nonEmpty) {
-        dbRetriever.executeQuery[Association, Query](fullQ) map { case assocs =>
-          Associations(dss, esR.map(_._1), dids.size, assocs)
+        if (dids.nonEmpty) {
+          dbRetriever.executeQuery[Association, Query](fullQ) map {
+            case assocs =>
+              Associations(dss, esR.map(_._1), dids.size, assocs)
+          }
+        } else {
+          Future.successful(Associations(dss, esR.map(_._1), dids.size, Vector.empty))
         }
-      } else {
-        Future.successful(Associations(dss, esR.map(_._1), dids.size, Vector.empty))
-      }
     }
   }
 
@@ -865,8 +868,7 @@ class Backend @Inject() (implicit
                               startMonth: Option[Int],
                               endYear: Option[Int],
                               endMonth: Option[Int],
-                              cursor: Option[String]
-  ): Future[Publications] = {
+                              cursor: Option[String]): Future[Publications] = {
     import Pagination._
 
     getLiterature(ids, startYear, startMonth, endYear, endMonth, cursor)
@@ -877,8 +879,7 @@ class Backend @Inject() (implicit
                             startMonth: Option[Int],
                             endYear: Option[Int],
                             endMonth: Option[Int],
-                            cursor: Option[String]
-  ): Future[Publications] = {
+                            cursor: Option[String]): Future[Publications] = {
     val table = defaultOTSettings.clickhouse.literature
     val indexTable = defaultOTSettings.clickhouse.literatureIndex
     logger.info(s"query literature ocurrences in table ${table.name}")
