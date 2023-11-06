@@ -12,7 +12,7 @@ if [ "${TRAVIS_PULL_REQUEST}" = "true" ] || [ "${TRAVIS_TAG}" != "" ]; then
   git_sha="${TRAVIS_COMMIT}"
   docker tag "${QUAY_REPO}" "${QUAY_REPO}:${docker_tag_label}"
   docker tag "${QUAY_REPO}" "${QUAY_REPO}:${TRAVIS_COMMIT}-${docker_tag_label}"
-  docker push "${QUAY_REPO}:${TRAVIS_BRANCH}" && docker push "${QUAY_REPO}:${git_sha}-${docker_tag_label}"
+  docker push "${QUAY_REPO}:${docker_tag_label}" && docker push "${QUAY_REPO}:${git_sha}-${docker_tag_label}"
   if [ "${TRAVIS_BRANCH}" = "master" ]; then
     docker tag "${QUAY_REPO}:${TRAVIS_BRANCH}" "${QUAY_REPO}:latest"
     docker push "${QUAY_REPO}:latest"
