@@ -1,5 +1,9 @@
 #!/bin/bash
 set -ev
+
+echo "TRAVIS_TAG: ${TRAVIS_TAG}"
+echo "TRAVIS_BRANCH: ${TRAVIS_BRANCH}"
+
 if [ "${TRAVIS_PULL_REQUEST}" = "true" ] || [ "${TRAVIS_TAG}" != "" ]; then
   docker pull "${QUAY_REPO}:${TRAVIS_BRANCH}" || true
   docker build --pull --cache-from "${QUAY_REPO}:${TRAVIS_BRANCH}" --tag "${QUAY_REPO}" . || docker build .
