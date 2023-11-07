@@ -419,6 +419,19 @@ class Backend @Inject() (implicit
     esRetriever.getByIds(diseaseIndexName, ids, fromJsValue[Disease])
   }
 
+  def mapIds(
+      queryTerms: Seq[String],
+      pagination: Option[Pagination],
+      entityNames: Seq[String]
+            ): Future[MappingResults] = {
+    val entities = for {
+      e <- defaultESSettings.entities
+      if (entityNames.contains(e.name) && e.searchIndex.isDefined)
+    } yield e
+
+    esRetriever.getTermsResultsMapping(entities, queryTerms, pagination.getOrElse(Pagination.mkDefault))
+  }
+
   def search(
       qString: String,
       pagination: Option[Pagination],
