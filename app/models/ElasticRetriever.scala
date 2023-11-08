@@ -477,11 +477,8 @@ class ElasticRetriever @Inject() (
       case _ =>
         val limitClause = pagination.toES
         val esIndices = entities.withFilter(_.searchIndex.isDefined).map(_.searchIndex.get)
-        val highlightOptions = HighlightOptions(highlighterType = Some("plain"),
-                                                preTags = Seq(""),
-                                                postTags = Seq(""),
-                                                numOfFragments = Some(1)
-        )
+        val highlightOptions =
+          HighlightOptions(highlighterType = Some("plain"), preTags = Seq(""), postTags = Seq(""))
         val highlightField = Seq(HighlightField("keywords.raw"))
         val mainQuery = termsQuery("keywords.raw", queryTerms)
         val aggFns = Seq(
