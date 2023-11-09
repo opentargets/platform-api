@@ -1072,6 +1072,7 @@ object Objects extends Logging {
     deriveObjectType[Backend, Aggregations]()
   implicit val evidenceSourceImp: ObjectType[Backend, EvidenceSource] =
     deriveObjectType[Backend, EvidenceSource]()
+
   implicit val associatedOTFTargetsImp: ObjectType[Backend, Associations] =
     deriveObjectType[Backend, Associations](
       ObjectTypeName("AssociatedTargets"),
@@ -1219,6 +1220,22 @@ object Objects extends Logging {
 
   implicit val searchResultsImp: ObjectType[Backend, SearchResults] =
     deriveObjectType[Backend, models.entities.SearchResults]()
+
+  implicit val mappingResultImp: ObjectType[Backend, MappingResult] =
+    deriveObjectType[Backend, MappingResult]()
+
+  implicit val mappingResultsImp: ObjectType[Backend, MappingResults] =
+    deriveObjectType[Backend, MappingResults](
+      ReplaceField(
+        "mappings",
+        Field(
+          "mappings",
+          ListType(mappingResultImp),
+          description = Some("Mappings"),
+          resolve = _.value.mappings
+        )
+      )
+    )
 
   val searchResultsGQLImp: ObjectType[Backend, SearchResults] = ObjectType(
     "SearchResults",

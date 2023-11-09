@@ -465,6 +465,73 @@ class ElasticRetriever @Inject() (
         }
     }
 
+  def getTermsResultsMapping(
+      entities: Seq[ElasticsearchEntity],
+      queryTerms: Seq[String],
+      pagination: Pagination
+  ): Future[MappingResults] = {
+    val queryTermsCleaned = queryTerms.filterNot(_.isEmpty)
+    queryTermsCleaned match {
+      case Nil =>
+        logger.warn("No terms provided.")
+        Future.successful(MappingResults.empty)
+      case _ =>
+        val limitClause = pagination.toES
+        val esIndices = entities.withFilter(_.searchIndex.isDefined).map(_.searchIndex.get)
+        val highlightOptions =
+          HighlightOptions(highlighterType = Some("plain"), preTags = Seq(""), postTags = Seq(""))
+        val highlightField = Seq(HighlightField("keywords.raw"))
+        val mainQuery = termsQuery("keywords.raw", queryTermsCleaned)
+        val aggFns = Seq(
+          termsAgg("entities", "entity.raw")
+            .size(1000)
+            .subaggs(termsAgg("categories", "category.raw").size(1000)),
+          cardinalityAgg("total", "id.raw")
+        )
+        val execAggsSearch = client
+          .execute {
+            val aggregations =
+              search(searchEntities) query mainQuery aggs (aggFns) size (0)
+            logger.trace(client.show(aggregations))
+            aggregations trackTotalHits (true)
+          }
+
+        val execMainSearch = client.execute {
+          val q = search(esIndices)
+            .query(mainQuery)
+            .start(limitClause._1)
+            .limit(limitClause._2)
+            .highlighting(highlightOptions, highlightField)
+            .trackTotalHits(true)
+          q
+        }
+        val execSearch = execAggsSearch.zip(execMainSearch)
+
+        execSearch
+          .map { case (aggregations, hits) =>
+            val aggsJ: JsValue = Json.parse(aggregations.result.aggregationsAsString)
+            val aggs = aggsJ.validateOpt[SearchResultAggs] match {
+              case JsSuccess(value, _) => value
+              case JsError(errors) =>
+                None
+            }
+            val results = {
+              (Json.parse(hits.body.get) \ "hits" \ "hits").validate[Seq[SearchResult]] match {
+                case JsSuccess(value, _) => value
+                case JsError(errors) =>
+                  Seq.empty
+              }
+            }
+            val mappings: Seq[MappingResult] = queryTermsCleaned.map { term =>
+              val termMappings =
+                results.filter(_.highlights.contains(term.toLowerCase()))
+              MappingResult(term, Some(termMappings))
+            }
+            MappingResults(mappings, aggs, hits.result.totalHits)
+          }
+    }
+  }
+
   def getSearchResultSet(
       entities: Seq[ElasticsearchEntity],
       qString: String,

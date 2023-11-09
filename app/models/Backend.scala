@@ -158,7 +158,6 @@ class Backend @Inject() (implicit
   def getTargetsPrioritisationJs(id: String): Future[JsArray] = {
     val result = getTargetsPrioritisation(id)
     val essentialityData = getTargetEssentiality(Seq(id))
-
     val prioritisationFt = result.map { prioritisationList =>
       val prioritisation = prioritisationList.head
 
@@ -417,6 +416,22 @@ class Backend @Inject() (implicit
   def getDiseases(ids: Seq[String]): Future[IndexedSeq[Disease]] = {
     val diseaseIndexName = getIndexOrDefault("disease")
     esRetriever.getByIds(diseaseIndexName, ids, fromJsValue[Disease])
+  }
+
+  def mapIds(
+      queryTerms: Seq[String],
+      pagination: Option[Pagination],
+      entityNames: Seq[String]
+  ): Future[MappingResults] = {
+    val entities = for {
+      e <- defaultESSettings.entities
+      if (entityNames.contains(e.name) && e.searchIndex.isDefined)
+    } yield e
+
+    esRetriever.getTermsResultsMapping(entities,
+                                       queryTerms,
+                                       pagination.getOrElse(Pagination.mkDefault)
+    )
   }
 
   def search(
