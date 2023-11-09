@@ -469,8 +469,9 @@ class ElasticRetriever @Inject() (
       entities: Seq[ElasticsearchEntity],
       queryTerms: Seq[String],
       pagination: Pagination
-  ): Future[MappingResults] =
-    queryTerms match {
+  ): Future[MappingResults] = {
+    val queryTermsCleaned = queryTerms.filterNot(_.isEmpty)
+    queryTermsCleaned match {
       case Nil =>
         logger.warn("No terms provided.")
         Future.successful(MappingResults.empty)
@@ -480,7 +481,7 @@ class ElasticRetriever @Inject() (
         val highlightOptions =
           HighlightOptions(highlighterType = Some("plain"), preTags = Seq(""), postTags = Seq(""))
         val highlightField = Seq(HighlightField("keywords.raw"))
-        val mainQuery = termsQuery("keywords.raw", queryTerms)
+        val mainQuery = termsQuery("keywords.raw", queryTermsCleaned)
         val aggFns = Seq(
           termsAgg("entities", "entity.raw")
             .size(1000)
@@ -521,7 +522,7 @@ class ElasticRetriever @Inject() (
                   Seq.empty
               }
             }
-            val mappings: Seq[MappingResult] = queryTerms.map { term =>
+            val mappings: Seq[MappingResult] = queryTermsCleaned.map { term =>
               val termMappings =
                 results.filter(_.highlights.contains(term.toLowerCase()))
               MappingResult(term, Some(termMappings))
@@ -529,6 +530,7 @@ class ElasticRetriever @Inject() (
             MappingResults(mappings, aggs, hits.result.totalHits)
           }
     }
+  }
 
   def getSearchResultSet(
       entities: Seq[ElasticsearchEntity],

@@ -158,7 +158,6 @@ class Backend @Inject() (implicit
   def getTargetsPrioritisationJs(id: String): Future[JsArray] = {
     val result = getTargetsPrioritisation(id)
     val essentialityData = getTargetEssentiality(Seq(id))
-
     val prioritisationFt = result.map { prioritisationList =>
       val prioritisation = prioritisationList.head
 
