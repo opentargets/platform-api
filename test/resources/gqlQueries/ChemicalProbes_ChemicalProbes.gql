@@ -9,7 +9,7 @@ query ChemicalProbes($ensemblId: String!) {
       mechanismOfAction
       origin
       probeMinerScore
-      probesDrugsScore
+      probesDrugScore
       scoreInCells
       scoreInOrganisms
       targetFromSourceId

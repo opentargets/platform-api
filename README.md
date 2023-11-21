@@ -2,6 +2,8 @@
 
 The GraphQL API supports queries for targets, disease/phenotype, drug, target-disease association and Search. You can also query metadata on the API to get the version of the data and API.
 
+At the moment the API uses Clickhouse and Elasticsearch 7.2 as data sources.
+
 ## Tech Stack
 
 | Technology      | Version |
@@ -13,14 +15,6 @@ The GraphQL API supports queries for targets, disease/phenotype, drug, target-di
 | elastic4s       | 8.5.3   |
 | clickhouse-jdbc | 0.3.2   |
 
-## Requirement
-
-SBT (Scala)
-Java 1.8 or later
-Play Framework
-
-ElasticSearch server: 7.2
-
 ## How to use
 
 To run locally you will need to have access to Elastic Search and Clickhouse. These instances need to run in specific ports Elastic Search will have to run in port 9200 and Clickhouse needs to be running in port 8123. You can do this by having local instances or tunnel to a server hosted instance.
@@ -30,16 +24,16 @@ To tunnel the instances hosted in GCP you can use the follow commands
 Elastic Search
 
 ```bash
-gcloud beta compute ssh --zone "<instance zone>" <some ES instance> --tunnel-through-iap -- -L 9200:localhost:9200
+make es_tunnel instance=<some ES instance> zone=<instance zone>
 ```
 
 Clickhouse
 
 ```bash
-gcloud compute ssh <some Clickhouse instance> --zone="<instance zone>" --tunnel-through-iap -- -L 8123:localhost:8123
+make ch_tunnel instance=<some ES instance> zone=<instance zone>
 ```
 
-Once you have access to the data you can execute `sbt run` to run the API. This will start an instance in port 9000. To debug the API you'll need to run `sbt -jvm-debug 9999 run`. After the API has started you can access the GraphQL Playground in `http://localhost:9000/playground`.
+Once you have access to the data you can execute `make run` to run the API. This will start an instance in port 9000. To debug the API you'll need to run `make debug`. After the API has started you can access the GraphQL Playground in `http://localhost:9000/playground`.
 
 ## Sangria caches
 
@@ -58,6 +52,8 @@ curl --location --request GET 'http://localhost:9000/api/v4/rest/cache/clear' \
 ## Logging
 
 Logging to local use / development can be configured by updating the `logback.xml` file in the _conf_ directory.
+
+If you want to run the API locally and include the logs you can use `make run_log logfile=<logback path>` or debug it using `make debug_log logfile=<logback path>` ex: `make run_log logfile=./conf/logback.xml`
 
 Production deployments use the `production.xml` file to configure loggging. These should be set conservatively because
 GCP charges based on the quantity of logs, so we only want to produce what we need for monitoring, basic
