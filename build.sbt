@@ -58,7 +58,6 @@ lazy val cats = Seq(
 )
 libraryDependencies ++= cats
 
-//val s4sVersion = "7.12.3"
 val s4sVersion = "8.5.3"
 libraryDependencies ++= Seq(
   "com.sksamuel.elastic4s" %% "elastic4s-core" % s4sVersion exclude ("org.slf4j", "slf4j-api"),

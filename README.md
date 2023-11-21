@@ -1,21 +1,52 @@
-# Open Targets Platform API BETA (experimental)
+# Open Targets Platform API
 
-Experimental GraphQL API.
+The GraphQL API supports queries for targets, disease/phenotype, drug, target-disease association and Search. You can also query metadata on the API to get the version of the data and API.
+
+## Tech Stack
+
+| Technology      | Version |
+| --------------- | ------- |
+| Scala           | 2.13.10 |
+| Play Framework  | 2.8.18  |
+| Sangria         | 3.5.3   |
+| Slick           | 3.4.1   |
+| elastic4s       | 8.5.3   |
+| clickhouse-jdbc | 0.3.2   |
 
 ## Requirement
+
 SBT (Scala)
 Java 1.8 or later
 Play Framework
 
-ES server: 7.2
-Eg. localhost:9200  (tunnelling or locally installed)
-
+ElasticSearch server: 7.2
 
 ## How to use
+
+To run locally you will need to have access to Elastic Search and Clickhouse. These instances need to run in specific ports Elastic Search will have to run in port 9200 and Clickhouse needs to be running in port 8123. You can do this by having local instances or tunnel to a server hosted instance.
+
+To tunnel the instances hosted in GCP you can use the follow commands
+
+Elastic Search
+
+```bash
+gcloud beta compute ssh --zone "<instance zone>" <some ES instance> --tunnel-through-iap -- -L 9200:localhost:9200
+```
+
+Clickhouse
+
+```bash
+gcloud compute ssh <some Clickhouse instance> --zone="<instance zone>" --tunnel-through-iap -- -L 8123:localhost:8123
+```
+
+Once you have access to the data you can execute `sbt run` to run the API. This will start an instance in port 9000. To debug the API you'll need to run `sbt -jvm-debug 9999 run`. After the API has started you can access the GraphQL Playground in `http://localhost:9000/playground`.
+
 ## Sangria caches
 
 This application uses Sangria as a GraphQL wrapper and uses deferred resolver caches to improve query times. In cases
 where the data is updated in Elasticsearch it will not be available on the front-end if it has previously been cached.
+
+To avoid using the cache in your deployments you can set the environment variable `$PLATFORM_API_IGNORE_CACHE` to `true`. The default value is `false` which means the cache will be used.
 
 To reset the cache following a data update use the following request:
 
@@ -42,13 +73,9 @@ to run the queries.
 The Open Targets Platform front end makes use of pre-written GraphQL queries. Since we want to be aware if changes in
 the API are likely to break the FE, we have integration tests in place to check if this is going to happen.
 
-Note, make sure you have access to ElasticSearch on a configured port!
+Note, make sure you have access to ElasticSearch and Clickhouse!
 
-```
-gcloud beta compute ssh --zone "europe-west1-d" [some es instance] --tunnel-through-iap -- -L 9200:localhost:9200
-```
-
-1. Get the files: run `sbt updateGqlFiles` to retrieve all '*.gql' files from the front-end repository and copy them to
+1. Get the files: run `sbt updateGqlFiles` to retrieve all '\*.gql' files from the front-end repository and copy them to
    the
    `test/resources/gqlQueries` directory and prints output regarding which files are new / changed.
 2. Run tests `sbt testOnly controllers.GqlTest`
