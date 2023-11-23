@@ -2,6 +2,7 @@ package models.entities
 
 import akka.http.scaladsl.model.DateTime
 import models.entities.Violations.InputParameterCheckError
+import models.gql.validators.InvalidQueryTerms
 import sangria.execution.{ExceptionHandler, HandledException, MaxQueryDepthReachedError}
 import sangria.marshalling.ResultMarshaller
 
@@ -28,6 +29,7 @@ case object TooComplexQueryError extends Exception("Query is too expensive.") {
     case (_, error @ TooComplexQueryError)         => HandledException(error.getMessage)
     case (_, error @ MaxQueryDepthReachedError(_)) => HandledException(error.getMessage)
     case (_, error @ InputParameterCheckError(_))  => HandledException(error.getMessage)
+    case (_, error @ InvalidQueryTerms(_))         => HandledException(error.getMessage)
     case (m, error: com.sksamuel.elastic4s.http.JavaClientExceptionWrapper) =>
       handleExceptionWithCode("Error connecting to Elasticsearch. Contact system administrator.",
                               "SOURCE_UNAVAILABLE_ELASTICSEARCH",

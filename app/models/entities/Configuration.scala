@@ -65,6 +65,7 @@ object Configuration {
       elasticsearch: ElasticsearchSettings,
       clickhouse: ClickhouseSettings,
       ignoreCache: Boolean,
+      maxNumberQueryTerms: Int,
       logging: Logging
   )
 
@@ -92,12 +93,14 @@ object Configuration {
     (__ \ "elasticsearch").read[ElasticsearchSettings] and
     (__ \ "clickhouse").read[ClickhouseSettings] and
     (__ \ "ignoreCache").read[String] and
+    (__ \ "maxNumberQueryTerms").read[String] and
     (__ \ "logging").read[Logging])(
-    (meta, elasticsearchSettings, clickhouseSettings, ignoreCache, logging) =>
+    (meta, elasticsearchSettings, clickhouseSettings, ignoreCache, maxNumberQueryTerms, logging) =>
       OTSettings.apply(meta,
                        elasticsearchSettings,
                        clickhouseSettings,
                        ignoreCache.toBooleanOption.getOrElse(false),
+                       maxNumberQueryTerms.toInt,
                        logging
       )
   )

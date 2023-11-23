@@ -9,6 +9,7 @@ import com.sksamuel.elastic4s.requests.searches.sort.SortOrder
 import esecuele._
 
 import javax.inject.Inject
+import gql.validators.QueryTermsValidator._
 import models.Helpers._
 import models.db.{QAOTF, QLITAGG, QW2V, SentenceQuery}
 import models.entities.Publication._
@@ -25,11 +26,12 @@ import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
 import play.api.{Configuration, Environment, Logging}
 import play.db.NamedDatabase
+import sangria.execution.HandledException
 
 import java.time.LocalDate
 import scala.collection.immutable.ArraySeq
 import scala.concurrent._
-import scala.util.{Success, Failure}
+import scala.util.{Failure, Success}
 
 class Backend @Inject() (implicit
     ec: ExecutionContext,
@@ -423,15 +425,18 @@ class Backend @Inject() (implicit
       pagination: Option[Pagination],
       entityNames: Seq[String]
   ): Future[MappingResults] = {
+
     val entities = for {
       e <- defaultESSettings.entities
       if (entityNames.contains(e.name) && e.searchIndex.isDefined)
     } yield e
+    withQueryTermsNumberValidation(queryTerms, defaultOTSettings.maxNumberQueryTerms) {
+      esRetriever.getTermsResultsMapping(entities,
+                                         queryTerms,
+                                         pagination.getOrElse(Pagination.mkDefault)
+      )
+    }
 
-    esRetriever.getTermsResultsMapping(entities,
-                                       queryTerms,
-                                       pagination.getOrElse(Pagination.mkDefault)
-    )
   }
 
   def search(
