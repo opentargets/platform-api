@@ -65,7 +65,7 @@ object Configuration {
       elasticsearch: ElasticsearchSettings,
       clickhouse: ClickhouseSettings,
       ignoreCache: Boolean,
-      maxNumberQueryTerms: Int,
+      qValidationLimitNTerms: Int,
       logging: Logging
   )
 
@@ -93,14 +93,20 @@ object Configuration {
     (__ \ "elasticsearch").read[ElasticsearchSettings] and
     (__ \ "clickhouse").read[ClickhouseSettings] and
     (__ \ "ignoreCache").read[String] and
-    (__ \ "maxNumberQueryTerms").read[String] and
+    (__ \ "qValidationLimitNTerms").read[String] and
     (__ \ "logging").read[Logging])(
-    (meta, elasticsearchSettings, clickhouseSettings, ignoreCache, maxNumberQueryTerms, logging) =>
+    (meta,
+     elasticsearchSettings,
+     clickhouseSettings,
+     ignoreCache,
+     qValidationLimitNTerms,
+     logging
+    ) =>
       OTSettings.apply(meta,
                        elasticsearchSettings,
                        clickhouseSettings,
                        ignoreCache.toBooleanOption.getOrElse(false),
-                       maxNumberQueryTerms.toInt,
+                       qValidationLimitNTerms.toInt,
                        logging
       )
   )

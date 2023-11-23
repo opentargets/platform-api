@@ -430,7 +430,7 @@ class Backend @Inject() (implicit
       e <- defaultESSettings.entities
       if (entityNames.contains(e.name) && e.searchIndex.isDefined)
     } yield e
-    withQueryTermsNumberValidation(queryTerms, defaultOTSettings.maxNumberQueryTerms) {
+    withQueryTermsNumberValidation(queryTerms, defaultOTSettings.qValidationLimitNTerms) {
       esRetriever.getTermsResultsMapping(entities,
                                          queryTerms,
                                          pagination.getOrElse(Pagination.mkDefault)
