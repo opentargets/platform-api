@@ -93,10 +93,10 @@ object GQLSchema {
         "mapIds",
         mappingResultsImp,
         description = Some("Map terms to IDs"),
-        arguments = queryTerms :: entityNames :: pageArg :: Nil,
+        arguments = queryTerms :: entityNames :: Nil,
         resolve = ctx => {
           val entities = ctx.arg(entityNames).getOrElse(Seq.empty)
-          ctx.ctx.mapIds(ctx.arg(queryTerms), ctx.arg(pageArg), entities)
+          ctx.ctx.mapIds(ctx.arg(queryTerms), entities)
         }
       ),
       Field(

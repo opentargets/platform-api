@@ -422,7 +422,6 @@ class Backend @Inject() (implicit
 
   def mapIds(
       queryTerms: Seq[String],
-      pagination: Option[Pagination],
       entityNames: Seq[String]
   ): Future[MappingResults] = {
 
@@ -431,10 +430,7 @@ class Backend @Inject() (implicit
       if (entityNames.contains(e.name) && e.searchIndex.isDefined)
     } yield e
     withQueryTermsNumberValidation(queryTerms, defaultOTSettings.qValidationLimitNTerms) {
-      esRetriever.getTermsResultsMapping(entities,
-                                         queryTerms,
-                                         pagination.getOrElse(Pagination.mkDefault)
-      )
+      esRetriever.getTermsResultsMapping(entities, queryTerms)
     }
 
   }
