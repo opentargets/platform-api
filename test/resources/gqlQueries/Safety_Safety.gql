@@ -4,7 +4,7 @@ query Safety($ensemblId: String!) {
     safetyLiabilities {
       event
       eventId
-      biosample {
+      biosamples {
         cellFormat
         cellLabel
         tissueLabel
@@ -14,7 +14,7 @@ query Safety($ensemblId: String!) {
         dosing
         direction
       }
-      study {
+      studies {
         name
         type
         description

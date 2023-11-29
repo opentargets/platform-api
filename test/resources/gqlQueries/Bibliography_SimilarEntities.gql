@@ -1,6 +1,10 @@
 query SimilarEntitiesQuery(
   $id: String!
   $ids: [String!] = []
+  $startYear: Int = null
+  $startMonth: Int = null
+  $endYear: Int = null
+  $endMonth: Int = null
   $threshold: Float = 0.5
   $size: Int! = 15
   $entityNames: [String!] = []
@@ -32,24 +36,21 @@ query SimilarEntitiesQuery(
         }
       }
     }
-    literatureOcurrences(additionalIds: $ids, cursor: $cursor) {
+    literatureOcurrences(
+      additionalIds: $ids
+      cursor: $cursor
+      startYear: $startYear
+      startMonth: $startMonth
+      endYear: $endYear
+      endMonth: $endMonth
+    ) {
       count
+      earliestPubYear
       cursor
       rows {
         pmid
         pmcid
         publicationDate
-        sentences {
-          section
-          matches {
-            mappedId
-            matchedLabel
-            sectionStart
-            sectionEnd
-            startInSentence
-            endInSentence
-          }
-        }
       }
     }
   }

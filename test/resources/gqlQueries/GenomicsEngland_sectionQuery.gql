@@ -1,11 +1,17 @@
-query GenomicsEnglandQuery($ensemblId: String!, $efoId: String!) {
+query GenomicsEnglandQuery($ensemblId: String!, $efoId: String!, $size: Int!) {
+  target(ensemblId: $ensemblId) {
+    approvedSymbol
+  }
   disease(efoId: $efoId) {
     id
-    evidences(
+    name
+    genomicsEngland: evidences(
       ensemblIds: [$ensemblId]
       enableIndirect: true
       datasourceIds: ["genomics_england"]
+      size: $size
     ) {
+      count
       rows {
         disease {
           id

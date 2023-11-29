@@ -1,11 +1,10 @@
-query ChemblQuery($ensemblId: String!, $efoId: String!, $size: Int!) {
+query ChemblQuery($ensemblId: String!, $efoId: String!) {
   disease(efoId: $efoId) {
     id
-    evidences(
+    chemblSummary: evidences(
       ensemblIds: [$ensemblId]
       enableIndirect: true
       datasourceIds: ["chembl"]
-      size: $size
     ) {
       count
       rows {

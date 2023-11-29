@@ -135,7 +135,7 @@ class GqlTest
       )
     }
     "return valid response for Bibliography summary fragment" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
-      testQueryAgainstGqlEndpoint(DiseaseFragment("Bibliography_BibliographySummaryFragment"))
+      testQueryAgainstGqlEndpoint(DiseaseDrugFragment("Bibliography_BibliographySummaryFragment"))
     }
     "return valid response for Bibliography similar entities summary fragment" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
       testQueryAgainstGqlEndpoint(TargetFragment("Bibliography_SimilarEntitiesSummary"))
@@ -320,7 +320,7 @@ class GqlTest
       testQueryAgainstGqlEndpoint(DiseaseFragment("DiseasePage_ProfileHeader"))
     }
     "return a valid response for known drugs" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(DiseaseFragment("KnownDrugs_KnownDrugsSummaryFragment"))
+      testQueryAgainstGqlEndpoint(DiseaseDrugFragment("KnownDrugs_KnownDrugsSummaryFragment"))
     }
     "return a valid response for ontology summary fragment" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(DiseaseFragment("Ontology_OntologySummaryFragment"))
@@ -396,13 +396,13 @@ class GqlTest
 
   "Gene2Phenotype_sectionQuery" must {
     "return a valid response" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(TargetDisease("Gene2Phenotype_sectionQuery"))
+      testQueryAgainstGqlEndpoint(TargetDiseaseSize("Gene2Phenotype_sectionQuery"))
     }
   }
 
   "GenomicsEngland_sectionQuery" must {
     "return a valid response" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(TargetDisease("GenomicsEngland_sectionQuery"))
+      testQueryAgainstGqlEndpoint(TargetDiseaseSize("GenomicsEngland_sectionQuery"))
     }
   }
 
@@ -497,9 +497,6 @@ class GqlTest
     "return valid target profile header fragment" taggedAs (IntegrationTestTag) in {
       testQueryAgainstGqlEndpoint(TargetFragment("TargetPage_TargetProfileHeader"))
     }
-    "return valid tep information" taggedAs (IntegrationTestTag) in {
-      testQueryAgainstGqlEndpoint(Target("ExternalLink_TepLinkQuery"))
-    }
     "return valid tractability summary fragment" taggedAs (IntegrationTestTag) in {
       testQueryAgainstGqlEndpoint(TargetFragment("Tractability_TractabilitySummary"))
     }
@@ -553,12 +550,6 @@ class GqlTest
     }
     "return valid response for variants query" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("UniProtVariants_UniprotVariantsQuery"))
-    }
-
-    "Target queries" must {
-      "support resolution of full object" taggedAs IntegrationTestTag in {
-        testQueryAgainstGqlEndpoint(Target("Target_full_object"))
-      }
     }
   }
 }

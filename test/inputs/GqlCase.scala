@@ -157,6 +157,13 @@ case class DiseaseFragment(file: String) extends AbstractDisease with GqlFragmen
       .replace("xyz", "$efoId")
 }
 
+
+case class DiseaseDrugFragment(file: String) extends AbstractDisease with GqlFragment[String] {
+  def generateFragmentQuery: String =
+    s"$fragmentQuery query DiseaseFragment(xyz: String!) { disease(efoId: xyz) { knownDrugs { rows { drug { ...$fragmentName } } } } }"
+      .replace("xyz", "$efoId")
+}
+
 /*
 This is a fragment on disease which takes a gene as an argument. Used on the FE to create
 summary information.

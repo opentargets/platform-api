@@ -21,7 +21,7 @@ debug_log: ## Debugs API using the logback file specified in logfile eg: make ru
 
 es_tunnel: ## Create tunnel connection to ElasticSearch eg make es_tunnel zone europe-west1-d instance trnplt-es-0-esearch-fl6c
 	@echo "Connecting to ElasticSearch"
-	@gcloud beta compute ssh --zone "${zone}" ${instance} --tunnel-through-iap -- -L 9200:localhost:9200
+	@gcloud compute ssh --zone "${zone}" ${instance} --tunnel-through-iap -- -L 9200:localhost:9200
 
 ch_tunnel: ## Create tunnel connection to Clickhouse eg. make ch_tunnel zone europe-west1-d instance trnplt-es-0-esearch-fl6c
 	@echo "Connecting to Clickhouse"
