@@ -467,8 +467,7 @@ class ElasticRetriever @Inject() (
 
   def getTermsResultsMapping(
       entities: Seq[ElasticsearchEntity],
-      queryTerms: Seq[String],
-      pagination: Pagination
+      queryTerms: Seq[String]
   ): Future[MappingResults] = {
     val queryTermsCleaned = queryTerms.filterNot(_.isEmpty)
     queryTermsCleaned match {
@@ -476,7 +475,6 @@ class ElasticRetriever @Inject() (
         logger.warn("No terms provided.")
         Future.successful(MappingResults.empty)
       case _ =>
-        val limitClause = pagination.toES
         val esIndices = entities.withFilter(_.searchIndex.isDefined).map(_.searchIndex.get)
         val highlightOptions =
           HighlightOptions(highlighterType = Some("plain"), preTags = Seq(""), postTags = Seq(""))
@@ -484,8 +482,8 @@ class ElasticRetriever @Inject() (
         val mainQuery = termsQuery("keywords.raw", queryTermsCleaned)
         val aggFns = Seq(
           termsAgg("entities", "entity.raw")
-            .size(1000)
-            .subaggs(termsAgg("categories", "category.raw").size(1000)),
+            .size(2000)
+            .subaggs(termsAgg("categories", "category.raw").size(2000)),
           cardinalityAgg("total", "id.raw")
         )
         val execAggsSearch = client
@@ -499,8 +497,8 @@ class ElasticRetriever @Inject() (
         val execMainSearch = client.execute {
           val q = search(esIndices)
             .query(mainQuery)
-            .start(limitClause._1)
-            .limit(limitClause._2)
+            .start(0)
+            .limit(10000)
             .highlighting(highlightOptions, highlightField)
             .trackTotalHits(true)
           q
