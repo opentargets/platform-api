@@ -1,0 +1,12 @@
+query EntityValidationQuery($entity: [String!], $queryTerms: [String!]!) {
+  mapIds(queryTerms: $queryTerms, entityNames: $entity) {
+    total
+    mappings {
+      term
+      hits {
+        id
+        name
+      }
+    }
+  }
+}

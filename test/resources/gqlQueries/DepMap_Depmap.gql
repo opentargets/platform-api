@@ -1,0 +1,15 @@
+query Depmap ($ensemblId: String!) {
+  target(ensemblId: $ensemblId) {
+    id
+    depMapEssentiality {
+      tissueName
+      screens{
+        depmapId
+        cellLineName
+        diseaseFromSource
+        geneEffect
+        expression
+      }
+    }
+  }
+}

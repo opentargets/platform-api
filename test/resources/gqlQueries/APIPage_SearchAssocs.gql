@@ -1,0 +1,11 @@
+query searchInsulinCatCounts {
+  search(queryString:"insulin"){
+    aggregations {
+      total
+      entities {
+        total
+        name
+      }
+    }
+  }
+}

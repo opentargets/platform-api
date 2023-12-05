@@ -1,0 +1,5 @@
+fragment PharmacogenomicsSummaryFragment on Target {
+  pharmacogenomics {
+    targetFromSourceId
+  }
+}

@@ -1,0 +1,10 @@
+query TractabilityQuery($ensemblId: String!) {
+  target(ensemblId: $ensemblId) {
+    id
+    tractability {
+      value
+      modality
+      label
+    }
+  }
+}
