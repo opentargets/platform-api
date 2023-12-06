@@ -58,7 +58,6 @@ lazy val cats = Seq(
 )
 libraryDependencies ++= cats
 
-//val s4sVersion = "7.12.3"
 val s4sVersion = "8.5.3"
 libraryDependencies ++= Seq(
   "com.sksamuel.elastic4s" %% "elastic4s-core" % s4sVersion exclude ("org.slf4j", "slf4j-api"),
@@ -72,7 +71,7 @@ lazy val gqlFileDir = settingKey[File]("Location to save test input queries")
 lazy val getGqlFiles = taskKey[Unit]("Add *.gql files from frontendRepository to test resources")
 lazy val updateGqlFiles = taskKey[Unit]("Report which files are new and which have been updated.")
 
-frontendRepository := "https://github.com/opentargets/platform-app.git"
+frontendRepository := "https://github.com/opentargets/ot-ui-apps.git"
 gqlFileDir := (Test / resourceDirectory).value / "gqlQueries"
 
 getGqlFiles := {
@@ -80,7 +79,7 @@ getGqlFiles := {
     // copy files
     Process(s"git clone ${frontendRepository.value} ${td.getAbsolutePath}") !
     // filter files of interest
-    val gqlFiles: Seq[File] = (td ** "*.gql").get
+    val gqlFiles: Seq[File] = (td / "apps/platform/" ** "*.gql").get ++ (td / "packages/sections/" ** "*.gql").get
 
     // delete files in current gql test resources so we can identify when the FE deletes a file
     val filesToDelete: Seq[File] =

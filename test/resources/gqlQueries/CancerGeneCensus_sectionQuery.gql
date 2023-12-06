@@ -1,12 +1,13 @@
 query CancerGeneCensusQuery($ensemblId: String!, $efoId: String!, $size: Int!) {
   disease(efoId: $efoId) {
     id
-    evidences(
+    cancerGeneCensusSummary: evidences(
       ensemblIds: [$ensemblId]
       enableIndirect: true
       datasourceIds: ["cancer_gene_census"]
       size: $size
     ) {
+      count
       rows {
         disease {
           id

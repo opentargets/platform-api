@@ -1,12 +1,16 @@
 query UniprotVariantsQuery($ensemblId: String!, $efoId: String!, $size: Int!) {
+  target(ensemblId: $ensemblId) {
+    approvedSymbol
+  }
   disease(efoId: $efoId) {
     id
-    evidences(
+    uniprotVariantsSummary: evidences(
       ensemblIds: [$ensemblId]
       enableIndirect: true
       datasourceIds: ["uniprot_variants"]
       size: $size
     ) {
+      count
       rows {
         disease {
           id

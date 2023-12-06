@@ -1,0 +1,10 @@
+query searchInsulin {
+  search(queryString:"insulin"){
+    total
+    hits {
+      id
+      entity
+      description
+    }
+  }
+}

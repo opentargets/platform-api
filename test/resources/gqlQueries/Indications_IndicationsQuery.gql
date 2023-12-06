@@ -17,6 +17,7 @@ query IndicationsQuery($chemblId: String!) {
           source
         }
       }
+      count
     }
   }
 }

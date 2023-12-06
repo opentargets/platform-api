@@ -105,6 +105,10 @@ class GqlTest
     */
   val ensgTransform = (t: String) => t.replace("ensgId", "ensemblId")
 
+  val ensemblToIdTransform = (t: String) => t.replace("ensemblId", "id")
+
+  val efoIdTransform = (t: String) => t.replace("efoId", "id")
+
   "Adverse events queries" must {
     "return a valid response" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(Drug("AdverseEvents_AdverseEventsQuery"))
@@ -135,7 +139,7 @@ class GqlTest
       )
     }
     "return valid response for Bibliography summary fragment" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
-      testQueryAgainstGqlEndpoint(DiseaseFragment("Bibliography_BibliographySummaryFragment"))
+      testQueryAgainstGqlEndpoint(DiseaseDrugFragment("Bibliography_BibliographySummaryFragment"))
     }
     "return valid response for Bibliography similar entities summary fragment" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
       testQueryAgainstGqlEndpoint(TargetFragment("Bibliography_SimilarEntitiesSummary"))
@@ -158,6 +162,7 @@ class GqlTest
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("CancerBiomarkers_CancerBiomarkersEvidence"))
     }
   }
+
   "Cancer hallmarks queries" must {
     "return a valid response for summary fragment" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetFragment("CancerHallmarks_HallmarksSummaryFragment"))
@@ -268,10 +273,17 @@ class GqlTest
     "return a valid response for ot_crispr" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("OTCRISPR_OTCrisprQuery"))
     }
+    "return a valid response for ot_crispr screen" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetDiseaseSize("CRISPRScreen_CrisprScreenQuery"))
+    }
+    "return a valid response for ot_crispr screen summary" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("CRISPRScreen_CrisprScreenSummary"))
+    }
     "return a valid response for ot_crispr fragment" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(DiseaseSummaryFragment("OTCRISPR_OTCrisprSummary"))
     }
   }
+
   "Encore queries" must {
     "return a valid response" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("OTEncore_OTEncoreQuery"))
@@ -308,6 +320,12 @@ class GqlTest
     }
   }
 
+  "OT Projects queries" must {
+    "return valid response" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(Disease("OTProjects_OTProjectsQuery"))
+    }
+  }
+
   "Disease page queries" must {
     "return a valid response for disease facets" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
       testQueryAgainstGqlEndpoint(DiseaseAggregationfilter("DiseasePage_DiseaseFacets"))
@@ -320,13 +338,18 @@ class GqlTest
       testQueryAgainstGqlEndpoint(DiseaseFragment("DiseasePage_ProfileHeader"))
     }
     "return a valid response for known drugs" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(DiseaseFragment("KnownDrugs_KnownDrugsSummaryFragment"))
+      testQueryAgainstGqlEndpoint(DiseaseDrugFragment("KnownDrugs_KnownDrugsSummaryFragment"))
     }
     "return a valid response for ontology summary fragment" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(DiseaseFragment("Ontology_OntologySummaryFragment"))
     }
     "return a valid response for phenotype summary fragment" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(DiseaseFragment("Phenotypes_PhenotypesSummaryFragment"))
+    }
+    "return a valid response for disease associations" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(
+        AssociationDiseaseIndirect("DiseaseAssociations_DiseaseAssociationsQuery")
+      )(efoIdTransform)
     }
   }
 
@@ -396,13 +419,13 @@ class GqlTest
 
   "Gene2Phenotype_sectionQuery" must {
     "return a valid response" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(TargetDisease("Gene2Phenotype_sectionQuery"))
+      testQueryAgainstGqlEndpoint(TargetDiseaseSize("Gene2Phenotype_sectionQuery"))
     }
   }
 
   "GenomicsEngland_sectionQuery" must {
     "return a valid response" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(TargetDisease("GenomicsEngland_sectionQuery"))
+      testQueryAgainstGqlEndpoint(TargetDiseaseSize("GenomicsEngland_sectionQuery"))
     }
   }
 
@@ -458,6 +481,12 @@ class GqlTest
     "return valid responses" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(Search("Search_SearchQuery"))
     }
+    "return valid search annotations response" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(Search("APIPage_SearchAnnotation"))
+    }
+    "return valid search Assocs response" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(Search("APIPage_SearchAssocs"))
+    }
   }
 
   "SearchPage_SearchPageQuery" must {
@@ -497,10 +526,10 @@ class GqlTest
     "return valid target profile header fragment" taggedAs (IntegrationTestTag) in {
       testQueryAgainstGqlEndpoint(TargetFragment("TargetPage_TargetProfileHeader"))
     }
-    "return valid tep information" taggedAs (IntegrationTestTag) in {
-      testQueryAgainstGqlEndpoint(Target("ExternalLink_TepLinkQuery"))
-    }
     "return valid tractability summary fragment" taggedAs (IntegrationTestTag) in {
+      testQueryAgainstGqlEndpoint(TargetFragment("Tractability_TractabilitySummary"))
+    }
+    "return valid tractability" taggedAs (IntegrationTestTag) in {
       testQueryAgainstGqlEndpoint(TargetFragment("Tractability_TractabilitySummary"))
     }
     "return valid gene ontology response" taggedAs IntegrationTestTag in {
@@ -545,6 +574,11 @@ class GqlTest
     "return a valid response for genetic contraint fragment query" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetFragment("GeneticConstraint_GeneticConstraintFragment"))
     }
+    "return a valid response for target associations" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(
+        AssociationTargetIndirect("TargetAssociations_TargetAssociationsQuery")
+      )(ensemblToIdTransform)
+    }
   }
 
   "Uniprot queries" must {
@@ -554,11 +588,30 @@ class GqlTest
     "return valid response for variants query" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetDiseaseSize("UniProtVariants_UniprotVariantsQuery"))
     }
+  }
 
-    "Target queries" must {
-      "support resolution of full object" taggedAs IntegrationTestTag in {
-        testQueryAgainstGqlEndpoint(Target("Target_full_object"))
-      }
+  "Depmap queries" must {
+    "return valid response for depmap" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(Target("DepMap_Depmap"))(ensgTransform)
+    }
+    "return valid response for depmap summary" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetFragment("DepMap_DepmapSummaryFragment"))
+    }
+  }
+
+  "Pharmacogenomics queries" must {
+    "return valid response for pharmacogenomics" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(Target("Pharmacogenomics_Pharmacogenomics"))(ensgTransform)
+    }
+
+    "return valid response for pharmacogenomics summary" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(TargetFragment("Pharmacogenomics_PharmacogenomicsSummary"))
+    }
+  }
+
+  "DataUploader queries" must {
+    "return valid response for validation query" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(DataUploadTarget("DataUploader_ValidationQuery"))
     }
   }
 }

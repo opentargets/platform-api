@@ -1,23 +1,21 @@
-query DrugWarningsQuery($chemblId: String!) {
-  drug(chemblId: $chemblId) {
+query drugApprovalWithdrawnWarningData {
+  drug(chemblId: "CHEMBL118") {
+    name
     id
+    isApproved
+    hasBeenWithdrawn
+    blackBoxWarning
     drugWarnings {
       warningType
       description
       toxicityClass
       meddraSocCode
-      country
       year
-      efoTerm
-      efoId
-      efoIdForWarningClass
       references {
         id
         source
         url
       }
     }
-    hasBeenWithdrawn
-    blackBoxWarning
   }
 }

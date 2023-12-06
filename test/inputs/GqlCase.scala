@@ -49,6 +49,29 @@ case class AssociationDisease(file: String) extends GqlCase[(String, Aggregation
     """
 }
 
+case class AssociationDiseaseIndirect(file: String) extends GqlCase[(String, AggregationFilter)] {
+  val inputGenerator = for {
+    disease <- diseaseGenerator
+    agg <- aggregationfilterGenerator
+  } yield (disease, agg)
+
+  def generateVariables(inputs: (String, AggregationFilter)) =
+    s"""
+      "variables": {
+      "efoId": "${inputs._1}",
+      "index": 0,
+      "size": 10,
+      "sortBy": "",
+      "enableIndirect": false,
+      "aggregationFilters": [
+        {
+        "name": "${inputs._2.name}",
+        "path": ${inputs._2.path.mkString("[\"", "\", \"", "\"]")}
+        }]
+    }
+    """
+}
+
 case class AssociationTarget(file: String) extends GqlCase[(String, AggregationFilter)] {
   val inputGenerator = for {
     target <- geneGenerator
@@ -60,6 +83,29 @@ case class AssociationTarget(file: String) extends GqlCase[(String, AggregationF
       "variables": {
       "ensemblId": "${inputs._1}",
       "index": 0,
+      "size": 10,
+      "sortBy": "",
+      "aggregationFilters": [
+        {
+        "name": "${inputs._2.name}",
+        "path": ${inputs._2.path.mkString("[\"", "\", \"", "\"]")}
+        }]
+    }
+    """
+}
+
+case class AssociationTargetIndirect(file: String) extends GqlCase[(String, AggregationFilter)] {
+  val inputGenerator = for {
+    target <- geneGenerator
+    agg <- aggregationfilterGenerator
+  } yield (target, agg)
+
+  def generateVariables(inputs: (String, AggregationFilter)) =
+    s"""
+      "variables": {
+      "ensemblId": "${inputs._1}",
+      "index": 0,
+      "enableIndirect": false,
       "size": 10,
       "sortBy": "",
       "aggregationFilters": [
@@ -157,6 +203,12 @@ case class DiseaseFragment(file: String) extends AbstractDisease with GqlFragmen
       .replace("xyz", "$efoId")
 }
 
+case class DiseaseDrugFragment(file: String) extends AbstractDisease with GqlFragment[String] {
+  def generateFragmentQuery: String =
+    s"$fragmentQuery query DiseaseFragment(xyz: String!) { disease(efoId: xyz) { knownDrugs { rows { drug { ...$fragmentName } } } } }"
+      .replace("xyz", "$efoId")
+}
+
 /*
 This is a fragment on disease which takes a gene as an argument. Used on the FE to create
 summary information.
@@ -231,6 +283,22 @@ case class SearchPage(file: String) extends GqlCase[(String, String, Int)] {
       "entityNames": ${inputs._2}
     }
     """
+}
+
+case class DataUploadTarget(file: String) extends GqlCase[(String)] {
+  val inputGenerator = for {
+    gene <- geneGenerator
+  } yield (gene)
+
+  def generateVariables(inputs: String): String = {
+    val (target) = inputs
+    s"""
+      "variables": {
+      "entity": "target",
+      "queryTerms": "[$target]"
+    }
+    """
+  }
 }
 
 case class Target(file: String) extends AbstractTarget with GqlCase[String]

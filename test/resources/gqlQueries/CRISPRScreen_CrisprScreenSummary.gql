@@ -1,0 +1,10 @@
+fragment CrisprScreenSummary on Disease {
+  CrisprScreenSummary: evidences(
+    ensemblIds: [$ensgId]
+    enableIndirect: true
+    datasourceIds: ["crispr_screen"]
+    size: 0
+  ) {
+    count
+  }
+}
