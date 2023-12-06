@@ -203,7 +203,6 @@ case class DiseaseFragment(file: String) extends AbstractDisease with GqlFragmen
       .replace("xyz", "$efoId")
 }
 
-
 case class DiseaseDrugFragment(file: String) extends AbstractDisease with GqlFragment[String] {
   def generateFragmentQuery: String =
     s"$fragmentQuery query DiseaseFragment(xyz: String!) { disease(efoId: xyz) { knownDrugs { rows { drug { ...$fragmentName } } } } }"
@@ -286,7 +285,7 @@ case class SearchPage(file: String) extends GqlCase[(String, String, Int)] {
     """
 }
 
-case class DataUploadTarget(file:String) extends GqlCase[(String)] {
+case class DataUploadTarget(file: String) extends GqlCase[(String)] {
   val inputGenerator = for {
     gene <- geneGenerator
   } yield (gene)

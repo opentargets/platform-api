@@ -347,7 +347,9 @@ class GqlTest
       testQueryAgainstGqlEndpoint(DiseaseFragment("Phenotypes_PhenotypesSummaryFragment"))
     }
     "return a valid response for disease associations" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(AssociationDiseaseIndirect("DiseaseAssociations_DiseaseAssociationsQuery"))(efoIdTransform)
+      testQueryAgainstGqlEndpoint(
+        AssociationDiseaseIndirect("DiseaseAssociations_DiseaseAssociationsQuery")
+      )(efoIdTransform)
     }
   }
 
@@ -573,7 +575,9 @@ class GqlTest
       testQueryAgainstGqlEndpoint(TargetFragment("GeneticConstraint_GeneticConstraintFragment"))
     }
     "return a valid response for target associations" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(AssociationTargetIndirect("TargetAssociations_TargetAssociationsQuery"))(ensemblToIdTransform)
+      testQueryAgainstGqlEndpoint(
+        AssociationTargetIndirect("TargetAssociations_TargetAssociationsQuery")
+      )(ensemblToIdTransform)
     }
   }
 
