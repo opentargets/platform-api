@@ -6,10 +6,10 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json.JsonNaming.SnakeCase
 
 case class OtarProject(otarCode: String,
-                       status: String,
-                       projectName: String,
+                       status: Option[String],
+                       projectName: Option[String],
                        reference: String,
-                       integratesInPPP: Boolean
+                       integratesInPPP: Option[Boolean]
 )
 
 case class OtarProjects(efoId: String, rows: Seq[OtarProject])
@@ -20,10 +20,10 @@ object OtarProjects {
 
   implicit val otarProjectImpR: Reads[OtarProject] =
     ((JsPath \ "otar_code").read[String] and
-      (JsPath \ "status").read[String] and
-      (JsPath \ "project_name").read[String] and
+      (JsPath \ "status").readNullable[String] and
+      (JsPath \ "project_name").readNullable[String] and
       (JsPath \ "reference").read[String] and
-      (JsPath \ "integrates_data_PPP").read[Boolean])(OtarProject.apply _)
+      (JsPath \ "integrates_data_PPP").readNullable[Boolean])(OtarProject.apply _)
 
   implicit val otarProjectsImpW: OWrites[OtarProjects] = Json.writes[OtarProjects]
   implicit val otarProjectsImpR: Reads[OtarProjects] =
