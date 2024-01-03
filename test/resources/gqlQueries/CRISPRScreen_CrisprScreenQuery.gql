@@ -1,0 +1,30 @@
+query CrisprScreenQuery($ensemblId: String!, $efoId: String!, $size: Int!) {
+  disease(efoId: $efoId) {
+    id
+    CrisprScreenSummary: evidences(
+      ensemblIds: [$ensemblId]
+      enableIndirect: true
+      datasourceIds: ["crispr_screen"]
+      size: $size
+    ) {
+      count
+      rows {
+        studyId
+        datatypeId
+        datasourceId
+        projectId
+        crisprScreenLibrary
+        studyOverview
+        cellType
+        literature
+        diseaseFromSource
+        diseaseFromSourceMappedId
+        contrast
+        targetFromSourceId
+        resourceScore
+        statisticalTestTail
+        log2FoldChangeValue
+      }
+    }
+  }
+}

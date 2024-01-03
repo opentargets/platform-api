@@ -2,88 +2,87 @@ package models.entities
 
 import models.Backend
 import play.api.libs.json._
-import sangria.schema.{Field, ListType, LongType, ObjectType, OptionType, StringType, fields}
+import sangria.schema.{Field, LongType, ListType, ObjectType, OptionType, StringType, fields}
 import slick.jdbc.GetResult
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 case class Publication(
     pmid: String,
     pmcid: Option[String],
     date: String,
     year: Int,
-    month: Int,
-    sentences: Option[JsValue]
+    month: Int
 )
 
 object Publication {
   implicit val getSimilarityRowFromDB: GetResult[Publication] =
-    GetResult(r =>
-      Publication(r.<<[Long].toString, r.<<?, r.<<, r.<<, r.<<, r.<<?[String].map(Json.parse))
-    )
+    GetResult(r => Publication(r.<<, r.<<?, r.<<, r.<<, r.<<))
 
   implicit val similarityImp: OFormat[Publication] = Json.format[Publication]
 
-  val matchImp: ObjectType[Backend, JsValue] = ObjectType(
+  val matchImp: ObjectType[Backend, Sentence] = ObjectType(
     "Match",
-    fields[Backend, JsValue](
+    fields[Backend, Sentence](
       Field(
         "mappedId",
         StringType,
         description = None,
-        resolve = js => (js.value \ "keywordId").as[String]
+        resolve = _.value.mappedId
       ),
       Field(
         "matchedLabel",
         StringType,
         description = None,
-        resolve = js => (js.value \ "label").as[String]
+        resolve = _.value.matchedLabel
       ),
       Field(
         "sectionStart",
         OptionType(LongType),
         description = None,
-        resolve = js => (js.value \ "sectionStart").asOpt[Long]
+        resolve = _.value.sectionStart
       ),
       Field(
         "sectionEnd",
         OptionType(LongType),
         description = None,
-        resolve = js => (js.value \ "sectionEnd").asOpt[Long]
+        resolve = _.value.sectionEnd
       ),
       Field(
         "startInSentence",
         LongType,
         description = None,
-        resolve = js => (js.value \ "startInSentence").as[Long]
+        resolve = _.value.startInSentence
       ),
       Field(
         "endInSentence",
         LongType,
         description = None,
-        resolve = js => (js.value \ "endInSentence").as[Long]
+        resolve = _.value.endInSentence
       ),
       Field(
         "matchedType",
         StringType,
         description = Some("Type of the matched label"),
-        resolve = js => (js.value \ "keywordType").as[String]
+        resolve = _.value.matchedType
       )
     )
   )
 
-  val sentenceImp: ObjectType[Backend, JsValue] = ObjectType(
+  val sentenceImp: ObjectType[Backend, SentenceBySection] = ObjectType(
     "Sentence",
-    fields[Backend, JsValue](
+    fields[Backend, SentenceBySection](
       Field(
         "section",
         StringType,
         description = Some("Section of the publication (either title or abstract)"),
-        resolve = js => (js.value \ "section").as[String]
+        resolve = _.value.section
       ),
       Field(
         "matches",
         ListType(matchImp),
         description = Some("List of matches"),
-        resolve = js => (js.value \ "matches").as[Seq[JsValue]]
+        resolve = _.value.matches
       )
     )
   )
@@ -108,7 +107,15 @@ object Publication {
         "sentences",
         OptionType(ListType(sentenceImp)),
         description = Some("Unique counts per matched keyword"),
-        resolve = js => (js.value \ "sentences").asOpt[Seq[JsValue]]
+        resolve = ctx => {
+          val pmid = (ctx.value \ "pmid").as[String]
+          val sentenceMap = ctx.ctx.getLiteratureSentences(pmid)
+          sentenceMap.map(mp =>
+            mp.keySet.foldLeft(List.empty[SentenceBySection])((acc, nxt) =>
+              SentenceBySection(nxt, mp(nxt).toList) :: acc
+            )
+          )
+        }
       )
     )
   )

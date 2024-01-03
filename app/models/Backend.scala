@@ -9,8 +9,9 @@ import com.sksamuel.elastic4s.requests.searches.sort.SortOrder
 import esecuele._
 
 import javax.inject.Inject
+import gql.validators.QueryTermsValidator._
 import models.Helpers._
-import models.db.{QAOTF, QLITAGG, QW2V}
+import models.db.{QAOTF, QLITAGG, QW2V, SentenceQuery}
 import models.entities.Publication._
 import models.entities.Aggregations._
 import models.entities.Associations._
@@ -18,18 +19,19 @@ import models.entities.Configuration._
 import models.entities.DiseaseHPOs._
 import models.entities.Drug._
 import models.entities.MousePhenotypes._
+import models.entities.Pharmacogenomics._
 import models.entities._
 import play.api.cache.AsyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
 import play.api.{Configuration, Environment, Logging}
 import play.db.NamedDatabase
+import sangria.execution.HandledException
 
-import java.text.SimpleDateFormat
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 import scala.collection.immutable.ArraySeq
 import scala.concurrent._
+import scala.util.{Failure, Success}
 
 class Backend @Inject() (implicit
     ec: ExecutionContext,
@@ -127,6 +129,74 @@ class Backend @Inject() (implicit
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[GeneOntologyTerm])
   }
 
+  def getTargetEssentiality(ids: Seq[String]): Future[IndexedSeq[TargetEssentiality]] = {
+    val targetIndexName = getIndexOrDefault("target_essentiality")
+
+    esRetriever.getByIds(targetIndexName, ids, fromJsValue[TargetEssentiality])
+  }
+
+  def getTargetsPrioritisation(id: String): Future[IndexedSeq[JsValue]] = {
+    val targetsPrioritisationIndexName = getIndexOrDefault("target_prioritisation")
+
+    esRetriever.getByIds(targetsPrioritisationIndexName, Seq(id), fromJsValue[JsValue])
+  }
+
+  def getKeyValuePairsStructure(prioritisation: JsValue) = // Convert to a JsObject
+    {
+      val myObj: JsObject = prioritisation.as[JsObject]
+
+      // Remove the targetId property
+      val updatedObj: JsObject = myObj - "targetId"
+
+      //transform the object in a key value pair array
+      val properties = (updatedObj.keys).toSeq
+      val keyValuePairs = properties.map { propName =>
+        val value = (updatedObj \ propName).get
+        Json.obj("key" -> propName, "value" -> value)
+      }
+      keyValuePairs
+    }
+
+  def getTargetsPrioritisationJs(id: String): Future[JsArray] = {
+    val result = getTargetsPrioritisation(id)
+    val essentialityData = getTargetEssentiality(Seq(id))
+    val prioritisationFt = result.map { prioritisationList =>
+      val prioritisation = prioritisationList.head
+
+      val arrStructure = getKeyValuePairsStructure(prioritisation)
+
+      val arrStructureWithEssential: Future[Seq[JsObject]] = essentialityData map { case ess =>
+        val emptyValue = Json.obj("key" -> "geneEssentiality", "value" -> "")
+        if (!ess.isEmpty) {
+          val isEssentialOpt = ess.head.geneEssentiality.head.isEssential
+          val isEssentialObj = isEssentialOpt match {
+            case Some(isEssential) =>
+              val essValue = if (isEssential) -1 else 0
+              Json.obj("key" -> "geneEssentiality", "value" -> essValue)
+            case None => emptyValue
+          }
+          arrStructure ++ Seq(isEssentialObj)
+        } else {
+          arrStructure
+        }
+      }
+
+      arrStructureWithEssential.map(JsArray(_))
+    }
+    prioritisationFt.flatMap(identity)
+  }
+
+  def getExpressionSpecificity(targetId: String): Future[Option[BaselineExpression]] = {
+    val expressionSpecificityIndexName = getIndexOrDefault("expression_specificity")
+
+    esRetriever
+      .getByIds(expressionSpecificityIndexName, Seq(targetId), fromJsValue[BaselineExpression])
+      .map {
+        case Seq() => None
+        case seq   => Some(seq.head)
+      }
+  }
+
   def getKnownDrugs(
       queryString: String,
       kv: Map[String, String],
@@ -158,7 +228,7 @@ class Backend @Inject() (implicit
         cursor
       )
       .map {
-        case (Seq(), _, _) => None
+        case (Seq(), _, _) => Some(KnownDrugs(0, 0, 0, 0, cursor, Seq()))
         case (seq, agg, nextCursor) =>
           logger.trace(Json.prettyPrint(agg))
           val drugs = (agg \ "uniqueDrugs" \ "value").as[Long]
@@ -238,6 +308,31 @@ class Backend @Inject() (implicit
       .map(_._1)
   }
 
+  def getPharmacogenomicsByDrug(id: String): Future[IndexedSeq[Pharmacogenomics]] = {
+    val queryTerm: Map[String, String] = Map("drugId.keyword" -> id)
+    getPharmacogenomics(id, queryTerm)
+  }
+
+  def getPharmacogenomicsByTarget(id: String): Future[IndexedSeq[Pharmacogenomics]] = {
+    val queryTerm: Map[String, String] = Map("targetFromSourceId.keyword" -> id)
+    getPharmacogenomics(id, queryTerm)
+  }
+
+  def getPharmacogenomics(id: String,
+                          queryTerm: Map[String, String]
+  ): Future[IndexedSeq[Pharmacogenomics]] = {
+    val indexName = getIndexOrDefault("pharmacogenomics", Some("pharmacogenomics"))
+    logger.debug(s"Querying pharmacogenomics for: $id")
+    esRetriever
+      .getByIndexedQueryMust(
+        indexName,
+        queryTerm,
+        Pagination(0, Pagination.sizeMax),
+        fromJsValue[Pharmacogenomics]
+      )
+      .map(_._1)
+  }
+
   def getOtarProjects(ids: Seq[String]): Future[IndexedSeq[OtarProjects]] = {
     val otarsIndexName = getIndexOrDefault("otar_projects")
 
@@ -308,13 +403,13 @@ class Backend @Inject() (implicit
       This work around relates to ticket opentargets/platform#1506
          */
         val drugWarnings =
-          results._1.foldLeft(Map.empty[(String, Option[String]), DrugWarning]) { (dwMap, dw) =>
-            if (dwMap.contains((dw.warningType, dw.toxicityClass))) {
-              val old = dwMap((dw.warningType, dw.toxicityClass))
+          results._1.foldLeft(Map.empty[(Option[Long]), DrugWarning]) { (dwMap, dw) =>
+            if (dwMap.contains((dw.id))) {
+              val old = dwMap((dw.id))
               val newDW =
                 old.copy(references = Some((old.references ++ dw.references).flatten.toSeq))
-              dwMap.updated((dw.warningType, dw.toxicityClass), newDW)
-            } else dwMap + ((dw.warningType, dw.toxicityClass) -> dw)
+              dwMap.updated((dw.id), newDW)
+            } else dwMap + ((dw.id) -> dw)
           }
         drugWarnings.values.toIndexedSeq
       }
@@ -323,6 +418,21 @@ class Backend @Inject() (implicit
   def getDiseases(ids: Seq[String]): Future[IndexedSeq[Disease]] = {
     val diseaseIndexName = getIndexOrDefault("disease")
     esRetriever.getByIds(diseaseIndexName, ids, fromJsValue[Disease])
+  }
+
+  def mapIds(
+      queryTerms: Seq[String],
+      entityNames: Seq[String]
+  ): Future[MappingResults] = {
+
+    val entities = for {
+      e <- defaultESSettings.entities
+      if (entityNames.contains(e.name) && e.searchIndex.isDefined)
+    } yield e
+    withQueryTermsNumberValidation(queryTerms, defaultOTSettings.qValidationLimitNTerms) {
+      esRetriever.getTermsResultsMapping(entities, queryTerms)
+    }
+
   }
 
   def search(
@@ -757,6 +867,16 @@ class Backend @Inject() (implicit
     }
   }
 
+  def getLiteratureSentences(
+      pmid: String
+  ): Future[Map[String, Vector[Sentence]]] = {
+    val table = defaultOTSettings.clickhouse.sentences
+    logger.debug(s"Query sentences for $pmid from table ${table.name}")
+    val sentenceQuery = SentenceQuery(pmid, table.name)
+    val results = dbRetriever.executeQuery[Sentence, Query](sentenceQuery.query)
+    results.map(vs => vs.groupMap(_.section)(identity))
+  }
+
   def getLiteratureOcurrences(ids: Set[String], cursor: Option[String]): Future[Publications] = {
     import Pagination._
 
@@ -778,7 +898,7 @@ class Backend @Inject() (implicit
                             endYear: Option[Int],
                             endMonth: Option[Int],
                             cursor: Option[String]
-  ) = {
+  ): Future[Publications] = {
     val table = defaultOTSettings.clickhouse.literature
     val indexTable = defaultOTSettings.clickhouse.literatureIndex
     logger.info(s"query literature ocurrences in table ${table.name}")
@@ -804,7 +924,12 @@ class Backend @Inject() (implicit
           val npag = pag.next
           Helpers.Cursor.from(Some(Json.toJson(npag)))
         }
-        Publications(total, year, nCursor, pubs)
+
+        val result = dbRetriever.executeQuery[Int, Query](simQ.filteredTotalQ).map { v2 =>
+          Publications(total, year, nCursor, pubs, v2.head)
+        }
+
+        result.await
       }
 
     dbRetriever.executeQuery[(Long, Int), Query](simQ.total).flatMap {
@@ -819,11 +944,11 @@ class Backend @Inject() (implicit
   }
 
   /** @param index
-    *   key of index (name field) in application.conf
+    * key of index (name field) in application.conf
     * @param default
-    *   fallback index name
+    * fallback index name
     * @return
-    *   elasticsearch index name resolved from application.conf or default.
+    * elasticsearch index name resolved from application.conf or default.
     */
   private def getIndexOrDefault(index: String, default: Option[String] = None): String =
     defaultESSettings.entities

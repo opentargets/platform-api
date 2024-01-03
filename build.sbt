@@ -10,7 +10,7 @@ version := "latest"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala, PlayLogback)
 
-scalaVersion := "2.13.7"
+scalaVersion := "2.13.10"
 maintainer := "ops@opentargets.org"
 
 javacOptions ++= Seq("-encoding", "UTF-8")
@@ -29,25 +29,27 @@ resolvers += Resolver.sonatypeRepo("releases")
 libraryDependencies ++= Seq(
   guice,
   caffeine,
-  "com.typesafe.slick" %% "slick" % "3.3.3",
+  "com.typesafe.slick" %% "slick" % "3.4.1",
   "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test,
-  "org.scalatestplus" %% "scalacheck-1-15" % "3.2.8.0" % Test
+  "org.scalatestplus" %% "scalacheck-1-15" % "3.2.11.0" % Test
 )
 
-val playVersion = "2.8.9"
+val playVersion = "2.8.18"
 libraryDependencies += "com.typesafe.play" %% "play" % playVersion
 libraryDependencies += "com.typesafe.play" %% "filters-helpers" % playVersion
 libraryDependencies += "com.typesafe.play" %% "play-logback" % playVersion
-libraryDependencies += "com.typesafe.play" %% "play-json" % "2.9.2"
+libraryDependencies += "com.typesafe.play" %% "play-json" % "2.9.4"
 libraryDependencies += "com.typesafe.play" %% "play-streams" % playVersion
-libraryDependencies += "com.typesafe.play" %% "play-slick" % "5.0.0"
+libraryDependencies += "com.typesafe.play" %% "play-slick" % "5.1.0"
 
-val sangriaVersion = "2.1.0"
-libraryDependencies += "ru.yandex.clickhouse" % "clickhouse-jdbc" % "0.3.1-patch"
+val sangriaVersion = "3.5.3"
+libraryDependencies += "ru.yandex.clickhouse" % "clickhouse-jdbc" % "0.3.2"
 libraryDependencies += "org.sangria-graphql" %% "sangria" % sangriaVersion
 libraryDependencies += "org.sangria-graphql" %% "sangria-play-json" % "2.0.2"
 
-lazy val catsVersion = "2.6.1"
+libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.10"
+
+lazy val catsVersion = "2.9.0"
 lazy val cats = Seq(
   "org.typelevel" %% "cats-core" % catsVersion,
   "org.typelevel" %% "cats-laws" % catsVersion,
@@ -56,12 +58,12 @@ lazy val cats = Seq(
 )
 libraryDependencies ++= cats
 
-val s4sVersion = "7.9.2"
+val s4sVersion = "8.5.3"
 libraryDependencies ++= Seq(
-  "com.sksamuel.elastic4s" %% "elastic4s-core" % s4sVersion,
-  "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % s4sVersion,
-  "com.sksamuel.elastic4s" %% "elastic4s-http-streams" % s4sVersion,
-  "com.sksamuel.elastic4s" %% "elastic4s-json-play" % s4sVersion
+  "com.sksamuel.elastic4s" %% "elastic4s-core" % s4sVersion exclude ("org.slf4j", "slf4j-api"),
+  "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % s4sVersion exclude ("org.slf4j", "slf4j-api"),
+  "com.sksamuel.elastic4s" %% "elastic4s-http-streams" % s4sVersion exclude ("org.slf4j", "slf4j-api"),
+  "com.sksamuel.elastic4s" %% "elastic4s-json-play" % s4sVersion exclude ("org.slf4j", "slf4j-api")
 )
 
 lazy val frontendRepository = settingKey[String]("Git repository with open targets front end.")
@@ -69,7 +71,7 @@ lazy val gqlFileDir = settingKey[File]("Location to save test input queries")
 lazy val getGqlFiles = taskKey[Unit]("Add *.gql files from frontendRepository to test resources")
 lazy val updateGqlFiles = taskKey[Unit]("Report which files are new and which have been updated.")
 
-frontendRepository := "https://github.com/opentargets/platform-app.git"
+frontendRepository := "https://github.com/opentargets/ot-ui-apps.git"
 gqlFileDir := (Test / resourceDirectory).value / "gqlQueries"
 
 getGqlFiles := {
@@ -77,7 +79,7 @@ getGqlFiles := {
     // copy files
     Process(s"git clone ${frontendRepository.value} ${td.getAbsolutePath}") !
     // filter files of interest
-    val gqlFiles: Seq[File] = (td ** "*.gql").get
+    val gqlFiles: Seq[File] = (td / "apps/platform/" ** "*.gql").get ++ (td / "packages/sections/" ** "*.gql").get
 
     // delete files in current gql test resources so we can identify when the FE deletes a file
     val filesToDelete: Seq[File] =

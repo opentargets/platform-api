@@ -1,7 +1,7 @@
 query GeneBurdenQuery($ensemblId: String!, $efoId: String!, $size: Int!) {
   disease(efoId: $efoId) {
     id
-    evidences(
+    geneBurdenSummary: evidences(
       ensemblIds: [$ensemblId]
       enableIndirect: true
       datasourceIds: ["gene_burden"]
@@ -18,6 +18,7 @@ query GeneBurdenQuery($ensemblId: String!, $efoId: String!, $size: Int!) {
           id
           approvedSymbol
         }
+        allelicRequirements
         studyId
         ancestry
         ancestryId

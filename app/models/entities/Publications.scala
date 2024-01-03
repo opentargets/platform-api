@@ -17,7 +17,8 @@ import sangria.schema.{
 case class Publications(count: Long,
                         lowYear: Int,
                         cursor: Option[String],
-                        rows: IndexedSeq[JsValue]
+                        rows: IndexedSeq[JsValue],
+                        filteredCount: Long = 0
 )
 
 object Publications {
@@ -29,6 +30,7 @@ object Publications {
     "Publication list",
     fields[Backend, Publications](
       Field("count", LongType, description = None, resolve = _.value.count),
+      Field("filteredCount", LongType, description = None, resolve = _.value.filteredCount),
       Field("earliestPubYear",
             IntType,
             description = Some("Earliest publication year."),

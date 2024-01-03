@@ -1,12 +1,18 @@
 package controllers.api.v4.graphql
 
 import akka.stream.Materializer
-import controllers.api.v4.graphql.QueryMetadataHeaders.{GQL_OP_HEADER, GQL_VAR_HEADER}
+import controllers.api.v4.graphql.QueryMetadataHeaders.{
+  GQL_COMPLEXITY_HEADER,
+  GQL_OP_HEADER,
+  GQL_VAR_HEADER
+}
+import models.Helpers.loadConfigurationObject
+import models.entities.Configuration.OTSettings
 import models.entities.TooComplexQueryError
 import models.entities.TooComplexQueryError._
 import models.{Backend, GQLSchema}
 import org.apache.http.HttpStatus
-import play.api.Logging
+import play.api.{Configuration, Logging}
 import play.api.cache.AsyncCacheApi
 import play.api.libs.json._
 import play.api.mvc._
@@ -14,6 +20,7 @@ import sangria.execution._
 import sangria.marshalling.playJson._
 import sangria.parser.{QueryParser, SyntaxError}
 
+import java.sql.Timestamp
 import javax.inject._
 import scala.concurrent._
 import scala.concurrent.duration._
@@ -28,9 +35,12 @@ class GraphQLController @Inject() (implicit
     dbTables: Backend,
     cache: AsyncCacheApi,
     cc: ControllerComponents,
-    metadataAction: MetadataAction
+    metadataAction: MetadataAction,
+    config: Configuration
 ) extends AbstractController(cc)
     with Logging {
+
+  implicit val otSettings: OTSettings = loadConfigurationObject[OTSettings]("ot", config)
 
   private val non200CacheDuration = Duration(10, "seconds")
 
@@ -40,7 +50,9 @@ class GraphQLController @Inject() (implicit
 
   def gql(query: String, variables: Option[String], operation: Option[String]): Action[AnyContent] =
     metadataAction.async {
-      cachedQuery(GqlQuery(query, (variables map parseVariables).getOrElse(Json.obj()), operation))
+      val gqlQuery =
+        GqlQuery(query, (variables map parseVariables).getOrElse(Json.obj()), operation)
+      runQuery(gqlQuery)
     }
 
   def gqlBody(): Action[JsValue] = metadataAction(parse.json).async { request =>
@@ -55,8 +67,14 @@ class GraphQLController @Inject() (implicit
       }
       .getOrElse(Json.obj())
 
-    cachedQuery(GqlQuery(query, variables, operation))
+    val gqlQuery = GqlQuery(query, variables, operation)
+    runQuery(gqlQuery)
   }
+
+  private def runQuery(gqlQuery: GqlQuery)(implicit otSettings: OTSettings) =
+    if (otSettings.ignoreCache)
+      executeQuery(gqlQuery)
+    else cachedQuery(gqlQuery)
 
   private def parseVariables(variables: String) =
     if (variables.trim == "" || variables.trim == "null") Json.obj()
@@ -116,6 +134,7 @@ class GraphQLController @Inject() (implicit
 
       // query parsed successfully, time to execute it!
       case Success(queryAst) =>
+        var queryComplexity = -1.0
         Executor
           .execute(
             GQLSchema.schema,
@@ -126,6 +145,10 @@ class GraphQLController @Inject() (implicit
             deferredResolver = GQLSchema.resolvers,
             exceptionHandler = exceptionHandler,
             queryReducers = List(
+              QueryReducer.measureComplexity[Backend] { (c, ctx) =>
+                queryComplexity = c
+                ctx
+              },
               QueryReducer.rejectMaxDepth[Backend](15),
               QueryReducer.rejectComplexQueries[Backend](4000, (_, _) => TooComplexQueryError)
             )
@@ -139,13 +162,20 @@ class GraphQLController @Inject() (implicit
                    .map(op => op.name.getOrElse("Unknown operation"))
                    .getOrElse("Unknown operation")
                 ),
-                (GQL_VAR_HEADER, gqlQuery.variables.toString())
+                (GQL_VAR_HEADER, gqlQuery.variables.toString()),
+                (GQL_COMPLEXITY_HEADER, queryComplexity.toString())
               )
           )
           .recover {
-            case error: QueryAnalysisError => BadRequest(error.resolveError)
+            case error: QueryAnalysisError =>
+              val graphQLError: GraphQLError =
+                getErrorObject(gqlQuery, queryComplexity, error.getMessage())
+              logger.error(graphQLError.toString)
+              BadRequest(error.resolveError)
             case error: ErrorWithResolver =>
-              logger.error(error.getMessage)
+              val graphQLError: GraphQLError =
+                getErrorObject(gqlQuery, queryComplexity, error.getMessage())
+              logger.error(graphQLError.toString)
               InternalServerError(error.resolveError)
           }
 
@@ -168,4 +198,18 @@ class GraphQLController @Inject() (implicit
       case Failure(error) =>
         throw error
     }
+
+  private def getErrorObject(gqlQuery: GqlQuery, queryComplexity: Double, error: String) = {
+    val trimmedQuery = gqlQuery.query
+      .replaceAll("\\s+", " ")
+    val graphQLError = GraphQLError(
+      false,
+      error,
+      new Timestamp(System.currentTimeMillis()),
+      gqlQuery.variables.toString(),
+      queryComplexity,
+      trimmedQuery
+    )
+    graphQLError
+  }
 }

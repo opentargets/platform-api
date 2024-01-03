@@ -1,16 +1,17 @@
-query OpenTargetsGeneticsQuery(
-  $ensemblId: String!
-  $efoId: String!
-  $size: Int!
-) {
+query OpenTargetsGeneticsQuery($ensemblId: String!, $efoId: String!, $size: Int!) {
+  target(ensemblId: $ensemblId) {
+    approvedSymbol
+  }
   disease(efoId: $efoId) {
     id
-    evidences(
+    name
+    openTargetsGenetics: evidences(
       ensemblIds: [$ensemblId]
       enableIndirect: true
-      size: $size
       datasourceIds: ["ot_genetics_portal"]
+      size: $size
     ) {
+      count
       rows {
         id
         disease {
@@ -34,6 +35,10 @@ query OpenTargetsGeneticsQuery(
         betaConfidenceIntervalLower
         betaConfidenceIntervalUpper
         variantFunctionalConsequence {
+          id
+          label
+        }
+        variantFunctionalConsequenceFromQtlId {
           id
           label
         }

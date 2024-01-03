@@ -2,6 +2,7 @@ package models.gql
 
 import models._
 import models.entities.Configuration._
+import models.entities.Evidence.sequenceOntologyTermImp
 import models.entities.Evidences._
 import models.entities.Interactions._
 import models.entities.Publications.publicationsImp
@@ -9,6 +10,7 @@ import models.entities._
 import models.gql.Arguments._
 import models.gql.Fetchers._
 import play.api.Logging
+import play.api.libs.json._
 import sangria.macros.derive.{DocumentField, _}
 import sangria.schema._
 
@@ -21,6 +23,35 @@ object Objects extends Logging {
   implicit val metaAPIVersionImp: ObjectType[Backend, APIVersion] =
     deriveObjectType[Backend, APIVersion]()
   implicit val metaImp: ObjectType[Backend, Meta] = deriveObjectType[Backend, Meta]()
+
+  // Define a case class to represent each item in the array
+  case class KeyValue(key: String, value: BigDecimal)
+
+  implicit val KeyValueFormat: OFormat[KeyValue] = Json.format[KeyValue]
+
+  implicit val geneEssentialityScreenImp: ObjectType[Backend, GeneEssentialityScreen] =
+    deriveObjectType[Backend, GeneEssentialityScreen]()
+
+  implicit val depMapEssentialityImp: ObjectType[Backend, DepMapEssentiality] =
+    deriveObjectType[Backend, DepMapEssentiality]()
+
+  val KeyValueObjectType: ObjectType[Unit, KeyValue] = ObjectType(
+    "KeyValue",
+    "A key-value pair",
+    fields[Unit, KeyValue](
+      Field("key", StringType, resolve = _.value.key),
+      Field("value", StringType, resolve = _.value.value.toString())
+    )
+  )
+
+  // Define the ObjectType for the array
+  val KeyValueArrayObjectType: ObjectType[Unit, JsArray] = ObjectType(
+    "KeyValueArray",
+    "An array of key-value pairs",
+    fields[Unit, JsArray](
+      Field("items", ListType(KeyValueObjectType), resolve = _.value.as[List[KeyValue]])
+    )
+  )
 
   implicit lazy val targetImp: ObjectType[Backend, Target] = deriveObjectType(
     ObjectTypeDescription("Target entity"),
@@ -177,6 +208,52 @@ object Objects extends Logging {
             }),
             ctx arg pageArg
           )
+      ),
+      Field(
+        "prioritisation",
+        OptionType(KeyValueArrayObjectType),
+        description = Some(
+          "Factors influencing target-specific properties informative in a target prioritisation strategy. Values range from -1 (deprioritised) to 1 (prioritised)."
+        ),
+        arguments = Nil,
+        resolve = ctx => ctx.ctx.getTargetsPrioritisationJs(ctx.value.id)
+      ),
+      Field(
+        "isEssential",
+        OptionType(BooleanType),
+        description = Some("isEssential"),
+        resolve = ctx => {
+          val mp = ctx.ctx.getTargetEssentiality(Seq(ctx.value.id))
+          mp map { case ess =>
+            if (ess.isEmpty) null else ess.head.geneEssentiality.head.isEssential
+          }
+        }
+      ),
+      Field(
+        "depMapEssentiality",
+        OptionType(ListType(depMapEssentialityImp)),
+        description = Some("depMapEssentiality"),
+        resolve = ctx => {
+          val mp = ctx.ctx.getTargetEssentiality(Seq(ctx.value.id))
+          mp map { case ess =>
+            if (ess.isEmpty) null else ess.head.geneEssentiality.flatMap(_.depMapEssentiality)
+          }
+        }
+      ),
+      Field(
+        "pharmacogenomics",
+        ListType(pharmacogenomicsImp),
+        description = Some("Pharmoacogenomics"),
+        arguments = pageArg :: Nil,
+        resolve = ctx => ctx.ctx.getPharmacogenomicsByTarget(ctx.value.id)
+      ),
+      Field(
+        "expressionSpecificity",
+        OptionType(baselineExpressionImp),
+        description = Some(""),
+        resolve = ctx => {
+          ctx.ctx.getExpressionSpecificity(ctx.value.id)
+        }
       )
     )
   )
@@ -369,7 +446,9 @@ object Objects extends Logging {
   )
 
   implicit val tractabilityImp: ObjectType[Backend, Tractability] =
-    deriveObjectType[Backend, Tractability]()
+    deriveObjectType[Backend, Tractability](
+      RenameField("id", "label")
+    )
 
   implicit val scoredDataTypeImp: ObjectType[Backend, ScoredComponent] =
     deriveObjectType[Backend, ScoredComponent]()
@@ -456,6 +535,14 @@ object Objects extends Logging {
     deriveObjectType[Backend, Expressions](
       ExcludeFields("id")
     )
+  implicit val expressionSpecificityImp: ObjectType[Backend, ExpressionSpecificity] =
+    deriveObjectType[Backend, ExpressionSpecificity]()
+  implicit val expressionListItemImp: ObjectType[Backend, ExpressionListItem] =
+    deriveObjectType[Backend, ExpressionListItem]()
+  implicit val adatissScoreListItemImp: ObjectType[Backend, AdatissScoreListItem] =
+    deriveObjectType[Backend, AdatissScoreListItem]()
+  implicit val baselineExpressionImp: ObjectType[Backend, BaselineExpression] =
+    deriveObjectType[Backend, BaselineExpression]()
 
   implicit val adverseEventImp: ObjectType[Backend, AdverseEvent] =
     deriveObjectType[Backend, AdverseEvent](
@@ -685,6 +772,42 @@ object Objects extends Logging {
   implicit lazy val drugReferenceImp: ObjectType[Backend, Reference] =
     deriveObjectType[Backend, Reference]()
 
+  implicit lazy val pharmacogenomicsImp: ObjectType[Backend, Pharmacogenomics] =
+    deriveObjectType[Backend, Pharmacogenomics](
+      ReplaceField(
+        "variantFunctionalConsequence",
+        Field(
+          "variantFunctionalConsequence",
+          OptionType(sequenceOntologyTermImp),
+          description = None,
+          resolve = r => {
+            val soId = (r.value.variantFunctionalConsequenceId)
+              .map(id => id.replace("_", ":"))
+            logger.debug(s"Finding variant functional consequence: $soId")
+            soTermsFetcher.deferOpt(soId)
+          }
+        )
+      ),
+      ReplaceField(
+        "drug",
+        Field(
+          "drug",
+          OptionType(drugImp),
+          description = Some("Drug entity"),
+          resolve = r => drugsFetcher.deferOpt(r.value.drugId)
+        )
+      ),
+      ReplaceField(
+        "target",
+        Field(
+          "target",
+          OptionType(targetImp),
+          description = Some("Target entity"),
+          resolve = r => targetsFetcher.deferOpt(r.value.targetFromSourceId)
+        )
+      )
+    )
+
   implicit lazy val indicationReferenceImp: ObjectType[Backend, IndicationReference] =
     deriveObjectType[Backend, IndicationReference]()
 
@@ -737,6 +860,13 @@ object Objects extends Logging {
       DocumentField("description", "Reason for withdrawal"),
       DocumentField("references", "Source of withdrawal information"),
       DocumentField("warningType", "Either 'black box warning' or 'withdrawn'"),
+      DocumentField("efoTerm",
+                    " label of the curated EFO term that represents the adverse outcome"
+      ),
+      DocumentField("efoId", "ID of the curated EFO term that represents the adverse outcome"),
+      DocumentField("efoIdForWarningClass",
+                    "ID of the curated EFO term that represents the high level warning class"
+      ),
       DocumentField("year", "Year of withdrawal")
     )
 
@@ -869,6 +999,13 @@ object Objects extends Logging {
         description = Some("Significant adverse events inferred from FAERS reports"),
         arguments = pageArg :: Nil,
         resolve = ctx => ctx.ctx.getAdverseEvents(ctx.value.id, ctx.arg(pageArg))
+      ),
+      Field(
+        "pharmacogenomics",
+        ListType(pharmacogenomicsImp),
+        description = Some("Pharmoacogenomics"),
+        arguments = pageArg :: Nil,
+        resolve = ctx => ctx.ctx.getPharmacogenomicsByDrug(ctx.value.id)
       )
     ),
     ReplaceField(
@@ -880,7 +1017,9 @@ object Objects extends Logging {
           "Therapeutic indications for drug based on clinical trial data or " +
             "post-marketed drugs, when mechanism of action is known\""
         ),
-        resolve = r => r.value.linkedDiseases
+        resolve = r => {
+          r.value.linkedDiseases
+        }
       )
     ),
     ReplaceField(
@@ -903,18 +1042,14 @@ object Objects extends Logging {
     deriveObjectType[Backend, DatasourceSettings]()
   implicit val interactionSettingsImp: ObjectType[Backend, LUTableSettings] =
     deriveObjectType[Backend, LUTableSettings]()
-  implicit val associationSettingsImp: ObjectType[Backend, AssociationSettings] =
-    deriveObjectType[Backend, AssociationSettings]()
+  implicit val dbSettingsImp: ObjectType[Backend, DbTableSettings] =
+    deriveObjectType[Backend, DbTableSettings]()
   implicit val targetSettingsImp: ObjectType[Backend, TargetSettings] =
     deriveObjectType[Backend, TargetSettings]()
   implicit val diseaseSettingsImp: ObjectType[Backend, DiseaseSettings] =
     deriveObjectType[Backend, DiseaseSettings]()
   implicit val harmonicSettingsImp: ObjectType[Backend, HarmonicSettings] =
     deriveObjectType[Backend, HarmonicSettings]()
-  implicit val literatureSettingsImp: ObjectType[Backend, LiteratureSettings] =
-    deriveObjectType[Backend, LiteratureSettings]()
-  implicit val literatureIndexSettingsImp: ObjectType[Backend, LiteratureIndexSettings] =
-    deriveObjectType[Backend, LiteratureIndexSettings]()
   implicit val clickhouseSettingsImp: ObjectType[Backend, ClickhouseSettings] =
     deriveObjectType[Backend, ClickhouseSettings]()
 
@@ -926,6 +1061,7 @@ object Objects extends Logging {
     deriveObjectType[Backend, Aggregations]()
   implicit val evidenceSourceImp: ObjectType[Backend, EvidenceSource] =
     deriveObjectType[Backend, EvidenceSource]()
+
   implicit val associatedOTFTargetsImp: ObjectType[Backend, Associations] =
     deriveObjectType[Backend, Associations](
       ObjectTypeName("AssociatedTargets"),
@@ -1071,6 +1207,22 @@ object Objects extends Logging {
 
   implicit val searchResultsImp: ObjectType[Backend, SearchResults] =
     deriveObjectType[Backend, models.entities.SearchResults]()
+
+  implicit val mappingResultImp: ObjectType[Backend, MappingResult] =
+    deriveObjectType[Backend, MappingResult]()
+
+  implicit val mappingResultsImp: ObjectType[Backend, MappingResults] =
+    deriveObjectType[Backend, MappingResults](
+      ReplaceField(
+        "mappings",
+        Field(
+          "mappings",
+          ListType(mappingResultImp),
+          description = Some("Mappings"),
+          resolve = _.value.mappings
+        )
+      )
+    )
 
   val searchResultsGQLImp: ObjectType[Backend, SearchResults] = ObjectType(
     "SearchResults",

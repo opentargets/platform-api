@@ -90,6 +90,16 @@ object GQLSchema {
         }
       ),
       Field(
+        "mapIds",
+        mappingResultsImp,
+        description = Some("Map terms to IDs"),
+        arguments = queryTerms :: entityNames :: Nil,
+        resolve = ctx => {
+          val entities = ctx.arg(entityNames).getOrElse(Seq.empty)
+          ctx.ctx.mapIds(ctx.arg(queryTerms), entities)
+        }
+      ),
+      Field(
         "associationDatasources",
         ListType(evidenceSourceImp),
         description = Some("The complete list of all possible datasources"),

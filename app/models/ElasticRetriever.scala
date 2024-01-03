@@ -2,13 +2,14 @@ package models
 
 import com.google.inject.Inject
 import com.sksamuel.elastic4s._
+import com.sksamuel.elastic4s.api.QueryApi
 import com.sksamuel.elastic4s.requests.common.Operator
 import com.sksamuel.elastic4s.requests.searches._
 import com.sksamuel.elastic4s.requests.searches.aggs.AbstractAggregation
-import com.sksamuel.elastic4s.requests.searches.queries.{BoolQuery, NestedQuery}
+import com.sksamuel.elastic4s.requests.searches.queries.NestedQuery
+import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
 import com.sksamuel.elastic4s.requests.searches.queries.funcscorer._
 import com.sksamuel.elastic4s.requests.searches.queries.matches.MultiMatchQueryBuilderType
-import com.sksamuel.elastic4s.requests.searches.queries.term.TermQuery
 import models.entities.Configuration.ElasticsearchEntity
 import models.entities.SearchResults._
 import models.entities._
@@ -21,6 +22,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Try
 import com.sksamuel.elastic4s.requests.searches.sort.FieldSort
+import com.sksamuel.elastic4s.requests.searches.term.TermQuery
 
 class ElasticRetriever @Inject() (
     client: ElasticClient,
@@ -428,7 +430,9 @@ class ElasticRetriever @Inject() (
       excludedFields: Seq[String] = Seq.empty
   ): Future[IndexedSeq[A]] =
     ids match {
-      case Nil => Future.successful(IndexedSeq.empty)
+      case Nil =>
+        logger.warn("No IDs provided to getByIds. Something is probably wrong.")
+        Future.successful(IndexedSeq.empty)
       case _ =>
         val elems: Future[Response[SearchResponse]] = client.execute {
           val q = search(esIndex).query {
@@ -460,6 +464,71 @@ class ElasticRetriever @Inject() (
             mappedHits.to(IndexedSeq)
         }
     }
+
+  def getTermsResultsMapping(
+      entities: Seq[ElasticsearchEntity],
+      queryTerms: Seq[String]
+  ): Future[MappingResults] = {
+    val queryTermsCleaned = queryTerms.filterNot(_.isEmpty)
+    queryTermsCleaned match {
+      case Nil =>
+        logger.warn("No terms provided.")
+        Future.successful(MappingResults.empty)
+      case _ =>
+        val esIndices = entities.withFilter(_.searchIndex.isDefined).map(_.searchIndex.get)
+        val highlightOptions =
+          HighlightOptions(highlighterType = Some("plain"), preTags = Seq(""), postTags = Seq(""))
+        val highlightField = Seq(HighlightField("keywords.raw"))
+        val mainQuery = termsQuery("keywords.raw", queryTermsCleaned)
+        val aggFns = Seq(
+          termsAgg("entities", "entity.raw")
+            .size(2000)
+            .subaggs(termsAgg("categories", "category.raw").size(2000)),
+          cardinalityAgg("total", "id.raw")
+        )
+        val execAggsSearch = client
+          .execute {
+            val aggregations =
+              search(searchEntities) query mainQuery aggs (aggFns) size (0)
+            logger.trace(client.show(aggregations))
+            aggregations trackTotalHits (true)
+          }
+
+        val execMainSearch = client.execute {
+          val q = search(esIndices)
+            .query(mainQuery)
+            .start(0)
+            .limit(10000)
+            .highlighting(highlightOptions, highlightField)
+            .trackTotalHits(true)
+          q
+        }
+        val execSearch = execAggsSearch.zip(execMainSearch)
+
+        execSearch
+          .map { case (aggregations, hits) =>
+            val aggsJ: JsValue = Json.parse(aggregations.result.aggregationsAsString)
+            val aggs = aggsJ.validateOpt[SearchResultAggs] match {
+              case JsSuccess(value, _) => value
+              case JsError(errors) =>
+                None
+            }
+            val results = {
+              (Json.parse(hits.body.get) \ "hits" \ "hits").validate[Seq[SearchResult]] match {
+                case JsSuccess(value, _) => value
+                case JsError(errors) =>
+                  Seq.empty
+              }
+            }
+            val mappings: Seq[MappingResult] = queryTermsCleaned.map { term =>
+              val termMappings =
+                results.filter(_.highlights.contains(term.toLowerCase()))
+              MappingResult(term, Some(termMappings))
+            }
+            MappingResults(mappings, aggs, hits.result.totalHits)
+          }
+    }
+  }
 
   def getSearchResultSet(
       entities: Seq[ElasticsearchEntity],

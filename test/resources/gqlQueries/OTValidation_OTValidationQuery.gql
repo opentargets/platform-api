@@ -1,12 +1,13 @@
 query ValidationQuery($ensemblId: String!, $efoId: String!, $size: Int!) {
   disease(efoId: $efoId) {
     id
-    evidences(
+    otValidationSummary: evidences(
       ensemblIds: [$ensemblId]
       enableIndirect: true
       datasourceIds: ["ot_crispr_validation"]
       size: $size
     ) {
+      count
       rows {
         disease {
           id
@@ -34,6 +35,7 @@ query ValidationQuery($ensemblId: String!, $efoId: String!, $size: Int!) {
           description
           status
         }
+        releaseVersion
       }
     }
   }

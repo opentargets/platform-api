@@ -1,4 +1,4 @@
-query IntOgenQuery(
+query EuropePMCQuery(
   $ensemblId: String!
   $efoId: String!
   $size: Int!
@@ -6,7 +6,7 @@ query IntOgenQuery(
 ) {
   disease(efoId: $efoId) {
     id
-    evidences(
+    europePmc: evidences(
       ensemblIds: [$ensemblId]
       enableIndirect: true
       size: $size

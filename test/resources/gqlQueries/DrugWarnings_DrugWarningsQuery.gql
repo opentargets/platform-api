@@ -8,11 +8,16 @@ query DrugWarningsQuery($chemblId: String!) {
       meddraSocCode
       country
       year
+      efoTerm
+      efoId
+      efoIdForWarningClass
       references {
         id
         source
         url
       }
     }
+    hasBeenWithdrawn
+    blackBoxWarning
   }
 }

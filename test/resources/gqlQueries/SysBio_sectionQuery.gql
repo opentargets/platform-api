@@ -1,12 +1,16 @@
 query SysBioQuery($ensemblId: String!, $efoId: String!, $size: Int!) {
+  target(ensemblId: $ensemblId) {
+    approvedSymbol
+  }
   disease(efoId: $efoId) {
     id
-    evidences(
+    sysBio: evidences(
       ensemblIds: [$ensemblId]
       enableIndirect: true
-      size: $size
       datasourceIds: ["sysbio"]
+      size: $size
     ) {
+      count
       rows {
         disease {
           id

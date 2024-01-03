@@ -4,8 +4,12 @@ query ClinvarQuery(
   $size: Int!
   $cursor: String
 ) {
+  target(ensemblId: $ensemblId) {
+    approvedSymbol
+  }
   disease(efoId: $efoId) {
     id
+    name
     evidences(
       ensemblIds: [$ensemblId]
       enableIndirect: true
@@ -14,6 +18,7 @@ query ClinvarQuery(
       cursor: $cursor
     ) {
       cursor
+      count
       rows {
         disease {
           id

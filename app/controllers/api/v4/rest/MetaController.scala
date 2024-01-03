@@ -43,7 +43,7 @@ class MetaController @Inject() (implicit
       """
 
   private def queryMeta = {
-    logger.debug(s"parsed document: ${metaGQLQ.renderPretty}")
+    logger.debug(s"parsed document: ${metaGQLQ}")
 
     Executor
       .execute(

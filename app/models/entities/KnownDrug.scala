@@ -18,7 +18,7 @@ case class KnownDrug(
     targetId: String,
     diseaseId: String,
     drugId: String,
-    phase: Int,
+    phase: Double,
     mechanismOfAction: String,
     status: Option[String],
     targetClass: Seq[String],
@@ -58,7 +58,7 @@ object KnownDrug extends Logging {
       (__ \ "targetId").read[String] and
       (__ \ "diseaseId").read[String] and
       (__ \ "drugId").read[String] and
-      (__ \ "phase").read[Int] and
+      (__ \ "phase").read[Double] and
       (__ \ "mechanismOfAction").read[String] and
       (__ \ "status").readNullable[String] and
       (__ \ "targetClass").readWithDefault[Seq[String]](Seq.empty) and
