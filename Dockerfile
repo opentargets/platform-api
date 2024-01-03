@@ -2,7 +2,6 @@ FROM openjdk:11
 RUN mkdir -p /srv/app
 
 COPY target/universal/ot-platform-api-latest.zip /srv/app/ot-platform-api-latest.zip
-COPY production.conf /srv/app/production.conf
 COPY production.xml /srv/app/production.xml
 WORKDIR /srv/app
 RUN unzip ot-platform-api-latest.zip
