@@ -148,7 +148,7 @@ class Backend @Inject() (implicit
       // Remove the targetId property
       val updatedObj: JsObject = myObj - "targetId"
 
-      //transform the object in a key value pair array
+      // transform the object in a key value pair array
       val properties = (updatedObj.keys).toSeq
       val keyValuePairs = properties.map { propName =>
         val value = (updatedObj \ propName).get
@@ -944,11 +944,11 @@ class Backend @Inject() (implicit
   }
 
   /** @param index
-    * key of index (name field) in application.conf
+    *   key of index (name field) in application.conf
     * @param default
-    * fallback index name
+    *   fallback index name
     * @return
-    * elasticsearch index name resolved from application.conf or default.
+    *   elasticsearch index name resolved from application.conf or default.
     */
   private def getIndexOrDefault(index: String, default: Option[String] = None): String =
     defaultESSettings.entities

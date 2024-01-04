@@ -1,34 +1,10 @@
 package models.db
 
+import akka.http.scaladsl.model.DateTime
 import esecuele.Column._
 import esecuele.{Functions => F, Query => Q, _}
 import play.api.Logging
 
-/** Helper class for querying the Literature tables in Clickhouse.
-  *
-  * There are two tables of relevance: literature and literature_index. Literature_index provides a
-  * lookup table so that we can go from a target, drug or disease back to the publications which
-  * mention those entities. Each of the rows has a score indicating how relevant the result is. Once
-  * we select a subset of the rows from literature_index we then look up the publication data
-  * (sentences) which provide more information about the exact match.
-  *
-  * This powers the `literatureOcurrences` (sic) section of the API.
-  *
-  * @param tableName
-  *   "literature" in DB under default conditions.
-  * @param indexTableName
-  *   "literature_index" in DB under default conditions.
-  * @param ids
-  *   to find related literature for. These are either a target, drug or disease and can be found in
-  *   the 'keywordId' field of the "literature_index" in the DB.
-  * @param size
-  *   page size to return
-  * @param offset
-  *   starting point for return set
-  * @param filterDate
-  *   limit results to those between the specified dates. When no dates are specified, all records
-  *   since 1900 are returned by default.
-  */
 case class QLITAGG(
     tableName: String,
     indexTableName: String,
@@ -49,56 +25,84 @@ case class QLITAGG(
   val year: Column = column("year")
   val month: Column = column("month")
   val day: Column = column("day")
-  val sentences: Column = column("sentences")
-  val T: Column = column(tableName) // "literature" in DB under default conditions
-  val TIdx: Column = column(indexTableName) // "literature_index" in DB under default conditions
+  val T: Column = column(tableName)
+  val TIdx: Column = column(indexTableName)
 
-  private def createDatePreWhere(dates: Option[(Int, Int, Int, Int)]): PreWhere =
-    dates match {
-      case Some(date) =>
-        PreWhere(
-          F.and(
-            F.in(key, F.set(ids.map(literal).toSeq)),
-            createDateFilter(date)
+  private def pmidsQ(select: Seq[Column]): Q = Q(
+    Select(select),
+    From(TIdx),
+    PreWhere(F.in(key, F.set(ids.map(literal).toSeq))),
+    GroupBy(pmid.name :: Nil),
+    Having(F.greaterOrEquals(F.count(pmid.name), literal(ids.size))),
+    OrderBy(F.sum(relevance.name).desc :: F.any(date.name).desc :: Nil)
+  )
+
+  private def pmidsQNord(select: Seq[Column]): Q = Q(
+    Select(select),
+    From(TIdx),
+    PreWhere(F.in(key, F.set(ids.map(literal).toSeq))),
+    GroupBy(pmid.name :: Nil),
+    Having(F.greaterOrEquals(F.count(pmid.name), literal(ids.size)))
+  )
+
+  val filteredTotalQ: Q = {
+    val preCountQ = filterDate match {
+      case Some(value) =>
+        Q(
+          Select(literal(1) :: Nil),
+          From(T),
+          PreWhere(F.in(pmid, pmidsQNord(pmid :: Nil).toColumn(None))),
+          Where(
+            F.and(
+              F.greaterOrEquals(
+                F.plus(F.multiply(year, literal(100)), month),
+                literal((value._1 * 100) + value._2)
+              ),
+              F.lessOrEquals(
+                F.plus(F.multiply(year, literal(100)), month),
+                literal((filterDate.get._3 * 100) + filterDate.get._4)
+              )
+            )
           )
         )
-      case None =>
-        PreWhere(F.in(key, F.set(ids.map(literal).toSeq)))
+      case _ =>
+        Q(
+          Select(literal(1) :: Nil),
+          From(T),
+          PreWhere(F.in(pmid, pmidsQNord(pmid :: Nil).toColumn(None)))
+        )
     }
 
-  // Find pmids related to Ids from literature_index
-  private def pmidsQ(select: Seq[Column], dates: Option[(Int, Int, Int, Int)] = None): Q =
     Q(
-      Select(select),
-      From(TIdx),
-      createDatePreWhere(dates),
-      GroupBy(pmid.name :: Nil),
-      Having(F.greaterOrEquals(F.count(pmid.name), literal(ids.size))),
-      OrderBy(F.sum(relevance.name).desc :: F.any(date.name).desc :: Nil),
-      Limit(offset, size)
+      Select(F.count(Column.star) :: Nil),
+      From(preCountQ.toColumn(None))
     )
+  }
 
-  private def createDateFilter(value: (Int, Int, Int, Int)): Column =
-    F.and(
-      F.greaterOrEquals(
-        F.plus(F.multiply(year, literal(100)), month),
-        literal((value._1 * 100) + value._2)
-      ),
-      F.lessOrEquals(
-        F.plus(F.multiply(year, literal(100)), month),
-        literal((filterDate.get._3 * 100) + filterDate.get._4)
-      )
-    )
-
-  /** Return the total number of publications with a selected date range, and the earliest
-    * publication year as tuple (Long, Int). If no date range is selected, a default of 1900 is
-    * used.
-    */
   val total: Q = {
-    val q = Q(
-      Select(F.countDistinct(pmid) :: F.min(year) :: Nil),
+    val countQ = Q(
+      Select(literal(1) :: Nil),
       From(TIdx),
-      createDatePreWhere(filterDate)
+      PreWhere(F.in(key, F.set(ids.map(literal).toSeq))),
+      GroupBy(pmid.name :: Nil),
+      Having(F.greaterOrEquals(F.count(pmid.name), literal(ids.size)))
+    )
+
+    val q = Q(
+      Select(F.count(Column.star) :: Nil),
+      From(countQ.toColumn(None))
+    )
+
+    logger.debug(q.toString)
+
+    q
+  }
+
+  val minDate: Q = {
+    val q = Q(
+      Select(F.min(year) :: Nil),
+      From(T),
+      PreWhere(F.in(pmid, pmidsQ(pmid :: Nil).toColumn(None)))
     )
 
     logger.debug(q.toString)
@@ -108,11 +112,34 @@ case class QLITAGG(
 
   override val query: Q = {
 
-    val q = Q(
-      Select(pmid :: pmcid :: date :: year :: month :: sentences :: Nil),
-      From(T),
-      PreWhere(F.in(pmid, pmidsQ(pmid :: Nil, filterDate).toColumn()))
-    )
+    val q = filterDate match {
+      case Some(value) =>
+        Q(
+          Select(pmid :: pmcid :: date :: year :: month :: Nil),
+          From(T),
+          PreWhere(F.in(pmid, pmidsQ(pmid :: Nil).toColumn(None))),
+          Where(
+            F.and(
+              F.greaterOrEquals(
+                F.plus(F.multiply(year, literal(100)), month),
+                literal((value._1 * 100) + value._2)
+              ),
+              F.lessOrEquals(
+                F.plus(F.multiply(year, literal(100)), month),
+                literal((filterDate.get._3 * 100) + filterDate.get._4)
+              )
+            )
+          ),
+          Limit(offset, size)
+        )
+      case _ =>
+        Q(
+          Select(pmid :: pmcid :: date :: year :: month :: Nil),
+          From(T),
+          PreWhere(F.in(pmid, pmidsQ(pmid :: Nil).toColumn(None))),
+          Limit(offset, size)
+        )
+    }
 
     logger.debug(q.toString)
 

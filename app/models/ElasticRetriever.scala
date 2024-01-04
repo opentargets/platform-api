@@ -513,13 +513,12 @@ class ElasticRetriever @Inject() (
               case JsError(errors) =>
                 None
             }
-            val results = {
+            val results =
               (Json.parse(hits.body.get) \ "hits" \ "hits").validate[Seq[SearchResult]] match {
                 case JsSuccess(value, _) => value
                 case JsError(errors) =>
                   Seq.empty
               }
-            }
             val mappings: Seq[MappingResult] = queryTermsCleaned.map { term =>
               val termMappings =
                 results.filter(_.highlights.contains(term.toLowerCase()))

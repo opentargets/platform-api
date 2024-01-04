@@ -251,9 +251,7 @@ object Objects extends Logging {
         "expressionSpecificity",
         OptionType(baselineExpressionImp),
         description = Some(""),
-        resolve = ctx => {
-          ctx.ctx.getExpressionSpecificity(ctx.value.id)
-        }
+        resolve = ctx => ctx.ctx.getExpressionSpecificity(ctx.value.id)
       )
     )
   )
@@ -1017,9 +1015,7 @@ object Objects extends Logging {
           "Therapeutic indications for drug based on clinical trial data or " +
             "post-marketed drugs, when mechanism of action is known\""
         ),
-        resolve = r => {
-          r.value.linkedDiseases
-        }
+        resolve = r => r.value.linkedDiseases
       )
     ),
     ReplaceField(
