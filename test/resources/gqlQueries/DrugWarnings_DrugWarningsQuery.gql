@@ -5,7 +5,6 @@ query DrugWarningsQuery($chemblId: String!) {
       warningType
       description
       toxicityClass
-      meddraSocCode
       country
       year
       efoTerm

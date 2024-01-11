@@ -9,7 +9,6 @@ query drugApprovalWithdrawnWarningData {
       warningType
       description
       toxicityClass
-      meddraSocCode
       year
       references {
         id

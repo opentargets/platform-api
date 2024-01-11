@@ -16,8 +16,7 @@ case class DrugWarning(
     year: Option[Int],
     efoTerm: Option[String],
     efoId: Option[String],
-    efoIdForWarningClass: Option[String],
-    meddraSocCode: Option[String]
+    efoIdForWarningClass: Option[String]
 )
 
 case class Reference(ids: Option[Seq[String]], source: String, urls: Option[Seq[String]])
@@ -106,8 +105,7 @@ object Drug {
       (JsPath \ "year").readNullable[Int] and
       (JsPath \ "efo_term").readNullable[String] and
       (JsPath \ "efo_id").readNullable[String] and
-      (JsPath \ "efo_id_for_warning_class").readNullable[String] and
-      (JsPath \ "meddraSocCode").readNullable[String]
+      (JsPath \ "efo_id_for_warning_class").readNullable[String]
   )(DrugWarning.apply _)
   implicit val referenceImpW: OFormat[Reference] = Json.format[models.entities.Reference]
   implicit val mechanismOfActionRowImpW: OFormat[MechanismOfActionRow] =
