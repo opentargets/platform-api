@@ -11,7 +11,6 @@ ENTRYPOINT ot-platform-api-latest/bin/ot-platform-api \
     -J-Xms2g \
     -J-Xmx7g \
     -J-server \
-    -Dconfig.file=/srv/app/production.conf \
     -Dlogger.file=/srv/app/production.xml \
     -Dlogback.debug=true \
     -Dcom.sun.management.jmxremote \
