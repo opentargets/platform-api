@@ -2,8 +2,7 @@ package clickhouse.rep
 
 import scala.reflect.ClassTag
 
-/** Clickhouse supports Array of elements from different types and this is an approximation
-  * to it.
+/** Clickhouse supports Array of elements from different types and this is an approximation to it.
   *
   * @param from
   * @tparam T

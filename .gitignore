@@ -16,3 +16,4 @@ lib/
 /app/target
 project/metals.sbt
 .vscode/settings.json
+null/

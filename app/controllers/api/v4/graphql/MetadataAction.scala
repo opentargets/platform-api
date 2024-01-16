@@ -59,7 +59,7 @@ class MetadataAction @Inject() (parser: BodyParsers.Default)(implicit
 
             val endTime = System.currentTimeMillis
             val query = request.body.asInstanceOf[JsObject].value("query")
-            //replace consecutive white spaces with single white space to make it easier to read
+            // replace consecutive white spaces with single white space to make it easier to read
             val trimmedQuery = query
               .toString()
               .replaceAll("\\s+", " ")

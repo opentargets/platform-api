@@ -85,12 +85,11 @@ trait GqlItTestInputs {
   )
 
   // Generators
-  val aggregationfilterGenerator: Gen[AggregationFilter] = {
+  val aggregationfilterGenerator: Gen[AggregationFilter] =
     for {
       name <- Gen.oneOf(aggregationFilterMap.keySet)
       paths <- Gen.someOf(aggregationFilterMap(name))
     } yield AggregationFilter(name, paths.to(Seq))
-  }
 
   val geneGenerator: Gen[String] = Gen.oneOf(geneInputs)
   val diseaseGenerator: Gen[String] = Gen.oneOf(diseaseInputs)

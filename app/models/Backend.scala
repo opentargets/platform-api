@@ -148,7 +148,7 @@ class Backend @Inject() (implicit
       // Remove the targetId property
       val updatedObj: JsObject = myObj - "targetId"
 
-      //transform the object in a key value pair array
+      // transform the object in a key value pair array
       val properties = (updatedObj.keys).toSeq
       val keyValuePairs = properties.map { propName =>
         val value = (updatedObj \ propName).get
@@ -889,11 +889,8 @@ class Backend @Inject() (implicit
                               endYear: Option[Int],
                               endMonth: Option[Int],
                               cursor: Option[String]
-  ): Future[Publications] = {
-    import Pagination._
-
+  ): Future[Publications] =
     getLiterature(ids, startYear, startMonth, endYear, endMonth, cursor)
-  }
 
   private def getLiterature(ids: Set[String],
                             startYear: Option[Int],
@@ -906,7 +903,8 @@ class Backend @Inject() (implicit
     val indexTable = defaultOTSettings.clickhouse.literatureIndex
     logger.info(s"query literature ocurrences in table ${table.name}")
 
-    val pag = Helpers.Cursor.to(cursor).flatMap(_.asOpt[Pagination]).getOrElse(Pagination.mkDefault)
+    val pag: Pagination =
+      Helpers.Cursor.to(cursor).flatMap(_.asOpt[Pagination]).getOrElse(Pagination.mkDefault)
 
     val filterDate = (startYear, endYear) match {
       case (Some(strYear), Some(ndYear)) =>
@@ -934,43 +932,23 @@ class Backend @Inject() (implicit
         result.await
       }
 
-    dbRetriever.executeQuery[Long, Query](simQ.total).flatMap {
-      case Vector(total) if total > 0 =>
+    dbRetriever.executeQuery[(Long, Int), Query](simQ.total).flatMap {
+      case Vector((total, minDate)) if total > 0 =>
         logger.debug(s"total number of publication occurrences $total")
-        dbRetriever.executeQuery[Int, Query](simQ.minDate).flatMap {
-          case Vector(year) =>
-            runQuery(year, total)
-          case _ =>
-            logger.info(s"Cannot find the earliest year for the publications.")
-            runQuery(1900, total)
-        }
-
+        require(minDate > 0, "Minimum date must be available for publications.")
+        runQuery(minDate, total)
       case _ =>
         logger.info(s"there is no publications with this set of ids $ids")
         Future.successful(Publications.empty())
     }
   }
 
-  def filterLiteratureByDate(pub: Publication, dateAndComparator: (Int, Int, Int, Int)): Boolean = {
-    // if no year is sent no filter is applied
-
-    def compareDates(pubDate: LocalDate, reqStartDate: LocalDate, reqEndDate: LocalDate): Boolean =
-      pubDate.compareTo(reqStartDate) >= 0 && pubDate.compareTo(reqEndDate) <= 0
-
-    val pubDate = LocalDate.of(pub.year, pub.month, 1)
-    val reqStartDate = LocalDate.of(dateAndComparator._1, dateAndComparator._2, 1)
-    val reqEndDate = LocalDate.of(dateAndComparator._3, dateAndComparator._4, 1)
-
-    compareDates(pubDate, reqStartDate, reqEndDate)
-
-  }
-
   /** @param index
-    * key of index (name field) in application.conf
+    *   key of index (name field) in application.conf
     * @param default
-    * fallback index name
+    *   fallback index name
     * @return
-    * elasticsearch index name resolved from application.conf or default.
+    *   elasticsearch index name resolved from application.conf or default.
     */
   private def getIndexOrDefault(index: String, default: Option[String] = None): String =
     defaultESSettings.entities

@@ -2,7 +2,7 @@ package models.gql
 
 import models.entities.Configuration._
 import models.entities.Pagination._
-import models.entities.{_}
+import models.entities._
 import sangria.macros.derive._
 import sangria.schema._
 import sangria.marshalling.playJson._
