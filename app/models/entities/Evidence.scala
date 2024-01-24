@@ -867,6 +867,18 @@ object Evidence extends Logging {
         OptionType(StringType),
         description = Some("Warning message"),
         resolve = js => (js.value \ "warningMessage").asOpt[String]
+      ),
+      Field(
+        "variantEffect",
+        OptionType(StringType),
+        description = Some("Variant effect"),
+        resolve = js => (js.value \ "variantEffect").asOpt[String]
+      ),
+      Field(
+        "directionOnTrait",
+        OptionType(StringType),
+        description = Some("Direction On Trait"),
+        resolve = js => (js.value \ "directionOnTrait").asOpt[String]
       )
     )
   )
