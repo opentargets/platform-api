@@ -102,7 +102,7 @@ case class QLITAGG(
     val q = Q(
       Select(F.min(year) :: Nil),
       From(T),
-      PreWhere(F.in(pmid, pmidsQ(pmid :: Nil).toColumn(None)))
+      PreWhere(F.and(F.in(pmid, pmidsQ(pmid :: Nil).toColumn(None)), F.greater(year, literal(0))))
     )
 
     logger.debug(q.toString)
