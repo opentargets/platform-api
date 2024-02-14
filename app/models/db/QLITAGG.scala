@@ -99,7 +99,7 @@ case class QLITAGG(
     q
   }
 
-  private def dateFilter(value:(Int, Int, Int, Int)) = Where(
+  private def dateFilter(value: (Int, Int, Int, Int)) = Where(
     F.or(
       F.equals(year, literal(0)),
       F.and(
