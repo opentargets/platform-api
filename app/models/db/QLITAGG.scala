@@ -52,18 +52,7 @@ case class QLITAGG(
           Select(literal(1) :: Nil),
           From(T),
           PreWhere(F.in(pmid, pmidsQNord(pmid :: Nil).toColumn(None))),
-          Where(
-            F.and(
-              F.greaterOrEquals(
-                F.plus(F.multiply(year, literal(100)), month),
-                literal((value._1 * 100) + value._2)
-              ),
-              F.lessOrEquals(
-                F.plus(F.multiply(year, literal(100)), month),
-                literal((filterDate.get._3 * 100) + filterDate.get._4)
-              )
-            )
-          )
+          dateFilter(value)
         )
       case _ =>
         Q(
@@ -110,6 +99,22 @@ case class QLITAGG(
     q
   }
 
+  private def dateFilter(value: (Int, Int, Int, Int)) = Where(
+    F.or(
+      F.equals(year, literal(0)),
+      F.and(
+        F.greaterOrEquals(
+          F.plus(F.multiply(year, literal(100)), month),
+          literal((value._1 * 100) + value._2)
+        ),
+        F.lessOrEquals(
+          F.plus(F.multiply(year, literal(100)), month),
+          literal((filterDate.get._3 * 100) + filterDate.get._4)
+        )
+      )
+    )
+  )
+
   override val query: Q = {
 
     val q = filterDate match {
@@ -118,18 +123,7 @@ case class QLITAGG(
           Select(pmid :: pmcid :: date :: year :: month :: Nil),
           From(T),
           PreWhere(F.in(pmid, pmidsQ(pmid :: Nil).toColumn(None))),
-          Where(
-            F.and(
-              F.greaterOrEquals(
-                F.plus(F.multiply(year, literal(100)), month),
-                literal((value._1 * 100) + value._2)
-              ),
-              F.lessOrEquals(
-                F.plus(F.multiply(year, literal(100)), month),
-                literal((filterDate.get._3 * 100) + filterDate.get._4)
-              )
-            )
-          ),
+          dateFilter(value),
           Limit(offset, size)
         )
       case _ =>
