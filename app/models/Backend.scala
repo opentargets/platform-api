@@ -186,17 +186,6 @@ class Backend @Inject() (implicit
     prioritisationFt.flatMap(identity)
   }
 
-  def getExpressionSpecificity(targetId: String): Future[Option[BaselineExpression]] = {
-    val expressionSpecificityIndexName = getIndexOrDefault("expression_specificity")
-
-    esRetriever
-      .getByIds(expressionSpecificityIndexName, Seq(targetId), fromJsValue[BaselineExpression])
-      .map {
-        case Seq() => None
-        case seq   => Some(seq.head)
-      }
-  }
-
   def getKnownDrugs(
       queryString: String,
       kv: Map[String, String],
