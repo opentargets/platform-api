@@ -782,8 +782,7 @@ object Objects extends Logging {
 
   implicit lazy val pharmacogenomicsImp: ObjectType[Backend, Pharmacogenomics] =
     deriveObjectType[Backend, Pharmacogenomics](
-      ReplaceField(
-        "variantFunctionalConsequence",
+      AddFields(
         Field(
           "variantFunctionalConsequence",
           OptionType(sequenceOntologyTermImp),
@@ -794,19 +793,13 @@ object Objects extends Logging {
             logger.debug(s"Finding variant functional consequence: $soId")
             soTermsFetcher.deferOpt(soId)
           }
-        )
-      ),
-      ReplaceField(
-        "drug",
+        ),
         Field(
           "drug",
           OptionType(drugImp),
           description = Some("Drug entity"),
           resolve = r => drugsFetcher.deferOpt(r.value.drugId)
-        )
-      ),
-      ReplaceField(
-        "target",
+        ),
         Field(
           "target",
           OptionType(targetImp),
