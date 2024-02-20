@@ -5,12 +5,10 @@ import play.api.libs.json._
 
 case class Pharmacogenomics(
     datasourceId: Option[String],
-    datasourceVersion: Option[String],
     datatypeId: Option[String],
     drugId: Option[String],
     drugFromSource: Option[String],
     evidenceLevel: Option[String],
-    genotype: Option[String],
     genotypeAnnotationText: Option[String],
     genotypeId: Option[String],
     haplotypeFromSourceId: Option[String],
