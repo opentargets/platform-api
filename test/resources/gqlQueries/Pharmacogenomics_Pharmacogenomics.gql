@@ -12,6 +12,8 @@ query PharmacogenomicsQuery($ensemblId: String!) {
       drugId
       phenotypeFromSourceId
       genotypeAnnotationText
+      haplotypeId
+      haplotypeFromSourceId
       phenotypeText
       pgxCategory
       evidenceLevel
