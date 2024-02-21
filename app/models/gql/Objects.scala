@@ -248,14 +248,6 @@ object Objects extends Logging {
         description = Some("Pharmoacogenomics"),
         arguments = pageArg :: Nil,
         resolve = ctx => ctx.ctx.getPharmacogenomicsByTarget(ctx.value.id)
-      ),
-      Field(
-        "expressionSpecificity",
-        OptionType(baselineExpressionImp),
-        description = Some(""),
-        resolve = ctx => {
-          ctx.ctx.getExpressionSpecificity(ctx.value.id)
-        }
       )
     )
   )
@@ -538,14 +530,6 @@ object Objects extends Logging {
     deriveObjectType[Backend, Expressions](
       ExcludeFields("id")
     )
-  implicit val expressionSpecificityImp: ObjectType[Backend, ExpressionSpecificity] =
-    deriveObjectType[Backend, ExpressionSpecificity]()
-  implicit val expressionListItemImp: ObjectType[Backend, ExpressionListItem] =
-    deriveObjectType[Backend, ExpressionListItem]()
-  implicit val adatissScoreListItemImp: ObjectType[Backend, AdatissScoreListItem] =
-    deriveObjectType[Backend, AdatissScoreListItem]()
-  implicit val baselineExpressionImp: ObjectType[Backend, BaselineExpression] =
-    deriveObjectType[Backend, BaselineExpression]()
 
   implicit val adverseEventImp: ObjectType[Backend, AdverseEvent] =
     deriveObjectType[Backend, AdverseEvent](
