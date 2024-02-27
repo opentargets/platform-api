@@ -1,0 +1,27 @@
+{
+	"name": "Scala",
+	"build": {
+		"dockerfile": "Dockerfile"
+	},
+
+	// Configure tool-specific properties.
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"scala-lang.scala",
+				"scalameta.metals"
+			]
+		},
+		"intellij": {
+			"extensions": [
+				"org.intellij.scala"
+			]
+		}
+	},
+	"remoteUser": "sbtuser",
+	"forwardPorts": [8090],
+	"appPort": "8090:8090",
+	"runArgs": [
+		"--network=ot_platform"
+	]
+}
