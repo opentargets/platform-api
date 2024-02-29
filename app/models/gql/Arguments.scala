@@ -35,7 +35,11 @@ object Arguments {
     description = "List of datasource ids"
   )
 
-  val pageArg: Argument[Option[Pagination]] = Argument("page", OptionInputType(paginationGQLImp), description = "Pagination settings with index and size")
+  val pageArg: Argument[Option[Pagination]] = Argument("page",
+                                                       OptionInputType(paginationGQLImp),
+                                                       description =
+                                                         "Pagination settings with index and size"
+  )
   val pageSize: Argument[Option[Int]] = Argument("size", OptionInputType(IntType))
   val cursor: Argument[Option[String]] = Argument("cursor", OptionInputType(StringType))
   val databaseName: Argument[Option[String]] =
@@ -93,8 +97,16 @@ object Arguments {
              description = "Month at the higher end of the filter"
     )
 
-  val BFilterString: Argument[Option[String]] = Argument("BFilter", OptionInputType(StringType), description = "Filter to apply to the ids with string prefixes")
-  val scoreSorting: Argument[Option[String]] = Argument("orderByScore", OptionInputType(StringType), description = "Ordering for the associations. By default is score desc")
+  val BFilterString: Argument[Option[String]] = Argument(
+    "BFilter",
+    OptionInputType(StringType),
+    description = "Filter to apply to the ids with string prefixes"
+  )
+  val scoreSorting: Argument[Option[String]] = Argument(
+    "orderByScore",
+    OptionInputType(StringType),
+    description = "Ordering for the associations. By default is score desc"
+  )
 
   val AId: Argument[String] = Argument("A", StringType)
   val AIds: Argument[Seq[String with tag.Tagged[FromInput.CoercedScalaResult]]] =
@@ -119,8 +131,14 @@ object Arguments {
   )
 
   val datasourceSettingsListArg: Argument[Option[Seq[DatasourceSettings]]] =
-    Argument("datasources", OptionInputType(ListInputType(datasourceSettingsInputImp)), description = "List of datasource settings")
+    Argument("datasources",
+             OptionInputType(ListInputType(datasourceSettingsInputImp)),
+             description = "List of datasource settings"
+    )
 
   val aggregationFiltersListArg: Argument[Option[Seq[AggregationFilter]]] =
-    Argument("aggregationFilters", OptionInputType(ListInputType(aggregationFilterImp)), description = "List of the facets to aggregate by")
+    Argument("aggregationFilters",
+             OptionInputType(ListInputType(aggregationFilterImp)),
+             description = "List of the facets to aggregate by"
+    )
 }
