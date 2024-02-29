@@ -194,12 +194,12 @@ object Objects extends Logging {
         associatedOTFDiseasesImp,
         description = Some("associations on the fly"),
         arguments =
-          BIds :: indirectEvidences :: datasourceSettingsListArg :: aggregationFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
+          BIds :: indirectTargetEvidences :: datasourceSettingsListArg :: aggregationFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
         resolve = ctx =>
           ctx.ctx.getAssociationsTargetFixed(
             ctx.value,
             ctx arg datasourceSettingsListArg,
-            ctx arg indirectEvidences getOrElse false,
+            ctx arg indirectTargetEvidences getOrElse false,
             ctx arg aggregationFiltersListArg getOrElse Seq.empty,
             ctx arg BIds map (_.toSet) getOrElse Set.empty,
             ctx arg BFilterString,
