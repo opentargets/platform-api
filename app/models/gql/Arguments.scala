@@ -112,7 +112,7 @@ object Arguments {
   val AIds: Argument[Seq[String with tag.Tagged[FromInput.CoercedScalaResult]]] =
     Argument("As", ListInputType(StringType))
   val BIds: Argument[Option[Seq[String]]] =
-    Argument("Bs", OptionInputType(ListInputType(StringType)), description = "List of disease IDs")
+    Argument("Bs", OptionInputType(ListInputType(StringType)), description = "List of disease or target IDs")
 
   val idsArg: Argument[Option[Seq[String]]] = Argument(
     "additionalIds",
