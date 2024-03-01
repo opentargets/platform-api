@@ -449,7 +449,7 @@ class Backend @Inject() (implicit
       indirect: Boolean,
       aggregationFilters: Seq[AggregationFilter],
       targetSet: Set[String],
-      filter: Option[String], // this is not doing anything
+      filter: Option[String],
       orderBy: Option[(String, String)],
       pagination: Option[Pagination]
   ): Future[Associations] = {
