@@ -433,8 +433,14 @@ class Backend @Inject() (implicit
       e <- defaultESSettings.entities
       if (entityNames.contains(e.name) && e.searchIndex.isDefined)
     } yield e
-
     esRetriever.getSearchResultSet(entities, qString, pagination.getOrElse(Pagination.mkDefault))
+  }
+
+  def searchFacets(
+      qString: String,
+      pagination: Option[Pagination]
+  ): Future[SearchFacetsResults] = {
+    esRetriever.getSearchFacetsResultSet(qString, pagination.getOrElse(Pagination.mkDefault))
   }
 
   def getAssociationDatasources: Future[Vector[EvidenceSource]] =

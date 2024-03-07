@@ -90,6 +90,13 @@ object GQLSchema {
         }
       ),
       Field(
+        "facets",
+        searchFacetsResultsGQLImp,
+        description = Some("Search facets"),
+        arguments = queryString :: pageArg :: Nil,
+        resolve = ctx => ctx.ctx.searchFacets(ctx.arg(queryString), ctx.arg(pageArg))
+      ),
+      Field(
         "mapIds",
         mappingResultsImp,
         description = Some("Map terms to IDs"),

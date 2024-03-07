@@ -12,6 +12,7 @@ import com.sksamuel.elastic4s.requests.searches.queries.funcscorer._
 import com.sksamuel.elastic4s.requests.searches.queries.matches.MultiMatchQueryBuilderType
 import models.entities.Configuration.ElasticsearchEntity
 import models.entities.SearchResults._
+import models.entities.SearchFacetsResults._
 import models.entities._
 import models.Helpers.Base64Engine
 import play.api.Logging
@@ -530,6 +531,59 @@ class ElasticRetriever @Inject() (
     }
   }
 
+  def getSearchFacetsResultSet(
+    qString: String,
+    pagination: Pagination
+  ): Future[SearchFacetsResults] = {
+    val limitClause = pagination.toES
+    val hlFieldSeq = Seq(HighlightField("facet"))
+    val keywordQueryFn = multiMatchQuery(qString)
+      .analyzer("token")
+      .field("facet.raw", 1000d)
+      .field("category.raw", 50d)
+      .operator(Operator.AND)
+  
+    val stringQueryFn = functionScoreQuery(
+      simpleStringQuery(qString)
+        .analyzer("token")
+        .minimumShouldMatch("0")
+        .defaultOperator("AND")
+        .field("facet", 50d)
+        .field("category", 25d)
+    )
+    val filterQueries = boolQuery().must() :: Nil
+    val fnQueries = boolQuery().should(keywordQueryFn, stringQueryFn) :: Nil
+    val mainQuery = boolQuery().must(fnQueries ::: filterQueries)
+
+    if (qString.nonEmpty) {
+          client.execute {
+            val mhits = search("search_facetsb")
+              .query(mainQuery)
+              .start(limitClause._1)
+              .limit(limitClause._2)
+              .highlighting(HighlightOptions(highlighterType = Some("fvh")), hlFieldSeq)
+              .trackTotalHits(true)
+            logger.trace(client.show(mhits))
+            mhits
+          }.map { case (hits) =>
+            val jsHits = Json.parse(hits.body.get)
+            logger.debug(Json.prettyPrint(jsHits))
+            val sresults =
+            (Json.parse(hits.body.get) \ "hits" \ "hits").validate[Seq[SearchFacetsResult]] match {
+              case JsSuccess(value, _) => value
+              case JsError(errors) =>
+                logger.error(errors.mkString("", " | ", ""))
+                Seq.empty
+            }
+
+          SearchFacetsResults(sresults, hits.result.totalHits)
+        }
+    } else {
+      Future.successful(SearchFacetsResults.empty)
+    }
+  }
+  
+
   def getSearchResultSet(
       entities: Seq[ElasticsearchEntity],
       qString: String,
@@ -604,10 +658,8 @@ class ElasticRetriever @Inject() (
               None
           }
 
-          if (logger.isTraceEnabled) {
-            val jsHits = Json.parse(hits.body.get)
-            logger.trace(Json.prettyPrint(jsHits))
-          }
+          val jsHits = Json.parse(hits.body.get)
+          logger.debug  (Json.prettyPrint(jsHits))
 
           val sresults =
             (Json.parse(hits.body.get) \ "hits" \ "hits").validate[Seq[SearchResult]] match {
