@@ -27,4 +27,7 @@ ch_tunnel: ## Create tunnel connection to Clickhouse eg. make ch_tunnel zone eur
 	@echo "Connecting to Clickhouse"
 	@gcloud compute ssh ${instance} --zone="${zone}" --tunnel-through-iap -- -L 8123:localhost:8123
 
-.PHONY: help run_local debug_local es_tunnel ch_tunnel
+run_with_standalone: ## Runs API with standalone platform
+	@sbt "run 8090" -DELASTICSEARCH_HOST=elasticsearch -DSLICK_CLICKHOUSE_URL=jdbc:clickhouse://clickhouse:8123
+
+.PHONY: help run_local debug_local es_tunnel ch_tunnel run_with_standalone
