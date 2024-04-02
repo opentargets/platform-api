@@ -93,8 +93,11 @@ object GQLSchema {
         "facets",
         searchFacetsResultsGQLImp,
         description = Some("Search facets"),
-        arguments = queryString :: pageArg :: Nil,
-        resolve = ctx => ctx.ctx.searchFacets(ctx.arg(queryString), ctx.arg(pageArg))
+        arguments = queryString :: entityNames :: pageArg :: Nil,
+        resolve = ctx => {
+          val entities = ctx.arg(entityNames).getOrElse(Seq.empty)
+          ctx.ctx.searchFacets(ctx.arg(queryString), ctx.arg(pageArg), entities)
+        }
       ),
       Field(
         "mapIds",

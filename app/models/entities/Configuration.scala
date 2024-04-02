@@ -19,7 +19,7 @@ object Configuration {
     */
   case class Meta(name: String, apiVersion: APIVersion, dataVersion: DataVersion)
 
-  case class ElasticsearchEntity(name: String, index: String, searchIndex: Option[String])
+  case class ElasticsearchEntity(name: String, index: String, searchIndex: Option[String], facetSearchIndex: Option[String])
 
   /** elasticsearch settings class set capture its configuration and the entities are
     * stored there

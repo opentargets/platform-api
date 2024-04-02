@@ -15,10 +15,10 @@ case class SearchFacetsResultAggEntity(
 case class SearchFacetsResultAggs(total: Long, entities: Seq[SearchFacetsResultAggEntity])
 
 case class SearchFacetsResult(
-    facet: String,
+    id: String,
+    label: String,
     category: String,
-    diseaseIds: Option[Seq[String]],
-    targetIds: Option[Seq[String]],
+    entityIds: Option[Seq[String]],
     score: Double,
     highlights: Seq[String]
 )
@@ -35,10 +35,10 @@ object SearchFacetsResults {
   implicit val SearchFacetsResultImpW: OWrites[SearchFacetsResult] = Json.writes[models.entities.SearchFacetsResult]
 
   implicit val SearchFacetsResultImpR: Reads[models.entities.SearchFacetsResult] =
-    ((__ \ "_source" \ "facet").read[String] and
+    ((__ \ "_id").read[String] and
+      (__ \ "_source" \ "label").read[String] and
       (__ \ "_source" \ "category").read[String] and
-      (__ \ "_source" \ "diseaseIds").readNullable[Seq[String]] and
-      (__ \ "_source" \ "targetIds").readNullable[Seq[String]] and
+      (__ \ "_source" \ "entityIds").readNullable[Seq[String]] and
       (__ \ "_score").read[Double] and
       (__ \ "highlight").readNullable[Map[String, Seq[String]]].map {
         case Some(m) =>
