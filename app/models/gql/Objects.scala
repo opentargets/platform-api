@@ -1176,6 +1176,8 @@ object Objects extends Logging {
         )
       )
     )
+  implicit val searchFacetsResultImp: ObjectType[Backend, SearchFacetsResult] =
+    deriveObjectType[Backend, models.entities.SearchFacetsResult]()
 
   implicit val similarityGQLImp: ObjectType[Backend, Similarity] =
     deriveObjectType[Backend, models.entities.Similarity](
@@ -1227,6 +1229,25 @@ object Objects extends Logging {
       Field(
         "hits",
         ListType(searchResultImp),
+        description = Some("Return combined"),
+        resolve = _.value.hits
+      ),
+      Field(
+        "total",
+        LongType,
+        description = Some("Total number or results given a entity filter"),
+        resolve = _.value.total
+      )
+    )
+  )
+
+  val searchFacetsResultsGQLImp: ObjectType[Backend, SearchFacetsResults] = ObjectType(
+    "SearchFacetsResults",
+    "Search facets results",
+    fields[Backend, SearchFacetsResults](
+      Field(
+        "hits",
+        ListType(searchFacetsResultImp),
         description = Some("Return combined"),
         resolve = _.value.hits
       ),
