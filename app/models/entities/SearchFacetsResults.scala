@@ -31,8 +31,8 @@ case class SearchFacetsResults(
 object SearchFacetsResults {
   val empty: SearchFacetsResults = SearchFacetsResults(Seq.empty, 0)
 
-
-  implicit val SearchFacetsResultImpW: OWrites[SearchFacetsResult] = Json.writes[models.entities.SearchFacetsResult]
+  implicit val SearchFacetsResultImpW: OWrites[SearchFacetsResult] =
+    Json.writes[models.entities.SearchFacetsResult]
 
   implicit val SearchFacetsResultImpR: Reads[models.entities.SearchFacetsResult] =
     ((__ \ "_id").read[String] and

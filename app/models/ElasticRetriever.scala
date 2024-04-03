@@ -532,9 +532,9 @@ class ElasticRetriever @Inject() (
   }
 
   def getSearchFacetsResultSet(
-    entities: Seq[ElasticsearchEntity],
-    qString: String,
-    pagination: Pagination
+      entities: Seq[ElasticsearchEntity],
+      qString: String,
+      pagination: Pagination
   ): Future[SearchFacetsResults] = {
     val limitClause = pagination.toES
     val esIndices = entities.withFilter(_.facetSearchIndex.isDefined).map(_.facetSearchIndex.get)
@@ -546,7 +546,7 @@ class ElasticRetriever @Inject() (
       .field("label.raw", 1000d)
       .field("category.raw", 500d)
       .operator(Operator.AND)
-  
+
     val stringQueryFn = functionScoreQuery(
       simpleStringQuery(qString)
         .analyzer("token")
@@ -555,7 +555,7 @@ class ElasticRetriever @Inject() (
         .field("label", 200d)
         .field("category", 100d)
     )
-    
+
     val fuzzyQueryFns = searchFields.map { field =>
       functionScoreQuery(
         fuzzyQuery(field, qString)
@@ -571,19 +571,21 @@ class ElasticRetriever @Inject() (
     val mainQuery = boolQuery().must(fnQueries ::: filterQueries)
 
     if (qString.nonEmpty) {
-          client.execute {
-            val mhits = search(esIndices)
-              .query(mainQuery)
-              .start(limitClause._1)
-              .limit(limitClause._2)
-              .highlighting(HighlightOptions(highlighterType = Some("unified")), hlFieldSeq)
-              .trackTotalHits(true)
-            logger.trace(client.show(mhits))
-            mhits
-          }.map { case (hits) =>
-            val jsHits = Json.parse(hits.body.get)
-            logger.debug(Json.prettyPrint(jsHits))
-            val sresults =
+      client
+        .execute {
+          val mhits = search(esIndices)
+            .query(mainQuery)
+            .start(limitClause._1)
+            .limit(limitClause._2)
+            .highlighting(HighlightOptions(highlighterType = Some("unified")), hlFieldSeq)
+            .trackTotalHits(true)
+          logger.trace(client.show(mhits))
+          mhits
+        }
+        .map { case (hits) =>
+          val jsHits = Json.parse(hits.body.get)
+          logger.debug(Json.prettyPrint(jsHits))
+          val sresults =
             (Json.parse(hits.body.get) \ "hits" \ "hits").validate[Seq[SearchFacetsResult]] match {
               case JsSuccess(value, _) => value
               case JsError(errors) =>
@@ -597,7 +599,6 @@ class ElasticRetriever @Inject() (
       Future.successful(SearchFacetsResults.empty)
     }
   }
-  
 
   def getSearchResultSet(
       entities: Seq[ElasticsearchEntity],
@@ -674,7 +675,7 @@ class ElasticRetriever @Inject() (
           }
 
           val jsHits = Json.parse(hits.body.get)
-          logger.debug  (Json.prettyPrint(jsHits))
+          logger.debug(Json.prettyPrint(jsHits))
 
           val sresults =
             (Json.parse(hits.body.get) \ "hits" \ "hits").validate[Seq[SearchResult]] match {
