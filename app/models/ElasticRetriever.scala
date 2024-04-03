@@ -538,11 +538,13 @@ class ElasticRetriever @Inject() (
   ): Future[SearchFacetsResults] = {
     val limitClause = pagination.toES
     val esIndices = entities.withFilter(_.facetSearchIndex.isDefined).map(_.facetSearchIndex.get)
-    val hlFieldSeq = Seq(HighlightField("label"), HighlightField("category"))
+    val searchFields = Seq("label", "category")
+    val hlFieldSeq = searchFields.map(f => HighlightField(f))
+
     val keywordQueryFn = multiMatchQuery(qString)
       .analyzer("token")
       .field("label.raw", 1000d)
-      .field("category.raw", 200d)
+      .field("category.raw", 500d)
       .operator(Operator.AND)
   
     val stringQueryFn = functionScoreQuery(
@@ -550,11 +552,22 @@ class ElasticRetriever @Inject() (
         .analyzer("token")
         .minimumShouldMatch("0")
         .defaultOperator("AND")
-        .field("label", 50d)
-        .field("category", 25d)
+        .field("label", 200d)
+        .field("category", 100d)
     )
+    
+    val fuzzyQueryFns = searchFields.map { field =>
+      functionScoreQuery(
+        fuzzyQuery(field, qString)
+          .fuzziness("AUTO")
+          .prefixLength(1)
+          .maxExpansions(50)
+          .boost(50d)
+      )
+    }
+
     val filterQueries = boolQuery().must() :: Nil
-    val fnQueries = boolQuery().should(keywordQueryFn, stringQueryFn) :: Nil
+    val fnQueries = boolQuery().should(Seq(keywordQueryFn, stringQueryFn) ++ fuzzyQueryFns) :: Nil
     val mainQuery = boolQuery().must(fnQueries ::: filterQueries)
 
     if (qString.nonEmpty) {
