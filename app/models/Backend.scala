@@ -20,6 +20,7 @@ import models.entities.DiseaseHPOs._
 import models.entities.Drug._
 import models.entities.MousePhenotypes._
 import models.entities.Pharmacogenomics._
+import models.entities.SearchFacetsResults._
 import models.entities._
 import play.api.cache.AsyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
@@ -461,6 +462,7 @@ class Backend @Inject() (implicit
       disease: Disease,
       datasources: Option[Seq[DatasourceSettings]],
       indirect: Boolean,
+      facetFilters: Seq[String],
       aggregationFilters: Seq[AggregationFilter],
       targetSet: Set[String],
       filter: Option[String],
@@ -487,7 +489,10 @@ class Backend @Inject() (implicit
 
     logger.debug(s"get disease id ${disease.name}")
     val indirectIDs = if (indirect) disease.descendants.toSet + disease.id else Set.empty[String]
-    val simpleQ = aotfQ(indirectIDs, targetSet).simpleQuery(0, 100000)
+    val targetsFromFacets = esRetriever.getByIds(getIndexOrDefault("facet_search_target"), facetFilters, fromJsValue[Facet])
+    val targetIdsFromFacets = targetsFromFacets.await.map(_.entityIds.getOrElse(Seq.empty)).flatten.toSet
+    val targetIds = targetSet ++ targetIdsFromFacets
+    val simpleQ = aotfQ(indirectIDs, targetIds).simpleQuery(0, 100000)
 
     val evidencesIndexName = defaultESSettings.entities
       .find(_.name == "evidences_aotf")

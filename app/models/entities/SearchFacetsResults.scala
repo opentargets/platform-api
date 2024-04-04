@@ -12,6 +12,13 @@ case class SearchFacetsResultAggEntity(
     categories: Seq[SearchFacetsResultAggCategory]
 )
 
+case class Facet(
+    label: String,
+    category: String,
+    entityIds: Option[Seq[String]],
+    facetIds: Option[Seq[String]]
+)
+
 case class SearchFacetsResultAggs(total: Long, entities: Seq[SearchFacetsResultAggEntity])
 
 case class SearchFacetsResult(
@@ -31,6 +38,8 @@ case class SearchFacetsResults(
 
 object SearchFacetsResults {
   val empty: SearchFacetsResults = SearchFacetsResults(Seq.empty, 0)
+  
+  implicit val FacetF: OFormat[Facet] = Json.format[Facet]
 
   implicit val SearchFacetsResultImpW: OWrites[SearchFacetsResult] =
     Json.writes[models.entities.SearchFacetsResult]

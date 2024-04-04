@@ -144,4 +144,10 @@ object Arguments {
              OptionInputType(ListInputType(aggregationFilterImp)),
              description = "List of the facets to aggregate by"
     )
+  
+  val facetFiltersListArg: Argument[Option[Seq[String]]] = Argument(
+    "facetFilters",
+    OptionInputType(ListInputType(StringType)),
+    description = "List of the facet IDs to filter by (using OR)"
+  )
 }
