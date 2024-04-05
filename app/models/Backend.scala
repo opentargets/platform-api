@@ -489,17 +489,7 @@ class Backend @Inject() (implicit
 
     logger.debug(s"get disease id ${disease.name}")
     val indirectIDs = if (indirect) disease.descendants.toSet + disease.id else Set.empty[String]
-    val targetIds = if (facetFilters.isEmpty) {
-      targetSet
-    } else {
-      val targetsFromFacets = esRetriever.getByIds(getIndexOrDefault("facet_search_target"),
-                                                   facetFilters,
-                                                   fromJsValue[Facet]
-      )
-      val targetIdsFromFacets =
-        targetsFromFacets.await.map(_.entityIds.getOrElse(Seq.empty)).flatten.toSet
-      targetSet ++ targetIdsFromFacets
-    }
+    val targetIds = expandBIDSetWithFacetDerivedBIDs("facet_search_target", targetSet, facetFilters)
     val simpleQ = aotfQ(indirectIDs, targetIds).simpleQuery(0, 100000)
 
     val evidencesIndexName = defaultESSettings.entities
@@ -695,6 +685,7 @@ class Backend @Inject() (implicit
       target: Target,
       datasources: Option[Seq[DatasourceSettings]],
       indirect: Boolean,
+      facetFilters: Seq[String],
       aggregationFilters: Seq[AggregationFilter],
       diseaseSet: Set[String],
       filter: Option[String],
@@ -734,7 +725,8 @@ class Backend @Inject() (implicit
 
     } else Set.empty[String]
 
-    val simpleQ = aotfQ(indirectIDs, diseaseSet).simpleQuery(0, 100000)
+    val diseaseIds = expandBIDSetWithFacetDerivedBIDs("facet_search_disease", diseaseSet, facetFilters)
+    val simpleQ = aotfQ(indirectIDs, diseaseIds).simpleQuery(0, 100000)
 
     val evidencesIndexName = defaultESSettings.entities
       .find(_.name == "evidences_aotf")
@@ -993,4 +985,18 @@ class Backend @Inject() (implicit
       .find(_.name == index)
       .map(_.index)
       .getOrElse(default.getOrElse(index))
+
+  private def expandBIDSetWithFacetDerivedBIDs(index: String, bIDs: Set[String], facetFilters: Seq[String]): Set[String] = {
+    if (facetFilters.isEmpty) {
+      bIDs
+    } else {
+      val targetsFromFacets = esRetriever.getByIds(getIndexOrDefault(index),
+                                                   facetFilters,
+                                                   fromJsValue[Facet]
+      )
+      val targetIdsFromFacets =
+        targetsFromFacets.await.map(_.entityIds.getOrElse(Seq.empty)).flatten.toSet
+      bIDs ++ targetIdsFromFacets
+    }
+  }
 }
