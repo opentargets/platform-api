@@ -725,7 +725,8 @@ class Backend @Inject() (implicit
 
     } else Set.empty[String]
 
-    val diseaseIds = expandBIDSetWithFacetDerivedBIDs("facet_search_disease", diseaseSet, facetFilters)
+    val diseaseIds =
+      expandBIDSetWithFacetDerivedBIDs("facet_search_disease", diseaseSet, facetFilters)
     val simpleQ = aotfQ(indirectIDs, diseaseIds).simpleQuery(0, 100000)
 
     val evidencesIndexName = defaultESSettings.entities
@@ -986,17 +987,17 @@ class Backend @Inject() (implicit
       .map(_.index)
       .getOrElse(default.getOrElse(index))
 
-  private def expandBIDSetWithFacetDerivedBIDs(index: String, bIDs: Set[String], facetFilters: Seq[String]): Set[String] = {
+  private def expandBIDSetWithFacetDerivedBIDs(index: String,
+                                               bIDs: Set[String],
+                                               facetFilters: Seq[String]
+  ): Set[String] =
     if (facetFilters.isEmpty) {
       bIDs
     } else {
-      val targetsFromFacets = esRetriever.getByIds(getIndexOrDefault(index),
-                                                   facetFilters,
-                                                   fromJsValue[Facet]
-      )
+      val targetsFromFacets =
+        esRetriever.getByIds(getIndexOrDefault(index), facetFilters, fromJsValue[Facet])
       val targetIdsFromFacets =
         targetsFromFacets.await.map(_.entityIds.getOrElse(Seq.empty)).flatten.toSet
       bIDs ++ targetIdsFromFacets
     }
-  }
 }
