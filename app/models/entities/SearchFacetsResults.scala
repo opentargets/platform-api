@@ -38,7 +38,7 @@ case class SearchFacetsResults(
 
 object SearchFacetsResults {
   val empty: SearchFacetsResults = SearchFacetsResults(Seq.empty, 0)
-  
+
   implicit val FacetF: OFormat[Facet] = Json.format[Facet]
 
   implicit val SearchFacetsResultImpW: OWrites[SearchFacetsResult] =

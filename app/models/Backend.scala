@@ -489,9 +489,17 @@ class Backend @Inject() (implicit
 
     logger.debug(s"get disease id ${disease.name}")
     val indirectIDs = if (indirect) disease.descendants.toSet + disease.id else Set.empty[String]
-    val targetsFromFacets = esRetriever.getByIds(getIndexOrDefault("facet_search_target"), facetFilters, fromJsValue[Facet])
-    val targetIdsFromFacets = targetsFromFacets.await.map(_.entityIds.getOrElse(Seq.empty)).flatten.toSet
-    val targetIds = targetSet ++ targetIdsFromFacets
+    val targetIds = if (facetFilters.isEmpty) {
+      targetSet
+    } else {
+      val targetsFromFacets = esRetriever.getByIds(getIndexOrDefault("facet_search_target"),
+                                                   facetFilters,
+                                                   fromJsValue[Facet]
+      )
+      val targetIdsFromFacets =
+        targetsFromFacets.await.map(_.entityIds.getOrElse(Seq.empty)).flatten.toSet
+      targetSet ++ targetIdsFromFacets
+    }
     val simpleQ = aotfQ(indirectIDs, targetIds).simpleQuery(0, 100000)
 
     val evidencesIndexName = defaultESSettings.entities
