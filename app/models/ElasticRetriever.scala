@@ -538,7 +538,7 @@ class ElasticRetriever @Inject() (
   ): Future[SearchFacetsResults] = {
     val limitClause = pagination.toES
     val esIndices = entities.withFilter(_.facetSearchIndex.isDefined).map(_.facetSearchIndex.get)
-    val searchFields = Seq("label", "category")
+    val searchFields = Seq("label", "category", "facetIds")
     val hlFieldSeq = searchFields.map(f => HighlightField(f))
 
     val keywordQueryFn = multiMatchQuery(qString)
@@ -558,7 +558,7 @@ class ElasticRetriever @Inject() (
 
     val fuzzyQueryFns = searchFields.map { field =>
       functionScoreQuery(
-        fuzzyQuery(field, qString)
+        matchQuery(field, qString)
           .fuzziness("AUTO")
           .prefixLength(1)
           .maxExpansions(50)

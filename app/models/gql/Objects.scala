@@ -194,12 +194,13 @@ object Objects extends Logging {
         associatedOTFDiseasesImp,
         description = Some("associations on the fly"),
         arguments =
-          BIds :: indirectTargetEvidences :: datasourceSettingsListArg :: aggregationFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
+          BIds :: indirectTargetEvidences :: datasourceSettingsListArg :: facetFiltersListArg :: aggregationFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
         resolve = ctx =>
           ctx.ctx.getAssociationsTargetFixed(
             ctx.value,
             ctx arg datasourceSettingsListArg,
             ctx arg indirectTargetEvidences getOrElse false,
+            ctx arg facetFiltersListArg getOrElse (Seq.empty),
             ctx arg aggregationFiltersListArg getOrElse Seq.empty,
             ctx arg BIds map (_.toSet) getOrElse Set.empty,
             ctx arg BFilterString,
@@ -420,12 +421,13 @@ object Objects extends Logging {
         associatedOTFTargetsImp,
         description = Some("associations on the fly"),
         arguments =
-          BIds :: indirectEvidences :: datasourceSettingsListArg :: aggregationFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
+          BIds :: indirectEvidences :: datasourceSettingsListArg :: facetFiltersListArg :: aggregationFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
         resolve = ctx =>
           ctx.ctx.getAssociationsDiseaseFixed(
             ctx.value,
             ctx arg datasourceSettingsListArg,
             ctx arg indirectEvidences getOrElse (true),
+            ctx arg facetFiltersListArg getOrElse (Seq.empty),
             ctx arg aggregationFiltersListArg getOrElse (Seq.empty),
             ctx arg BIds map (_.toSet) getOrElse (Set.empty),
             ctx arg BFilterString,

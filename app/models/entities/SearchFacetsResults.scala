@@ -12,6 +12,13 @@ case class SearchFacetsResultAggEntity(
     categories: Seq[SearchFacetsResultAggCategory]
 )
 
+case class Facet(
+    label: String,
+    category: String,
+    entityIds: Option[Seq[String]],
+    facetIds: Option[Seq[String]]
+)
+
 case class SearchFacetsResultAggs(total: Long, entities: Seq[SearchFacetsResultAggEntity])
 
 case class SearchFacetsResult(
@@ -19,6 +26,7 @@ case class SearchFacetsResult(
     label: String,
     category: String,
     entityIds: Option[Seq[String]],
+    facetIds: Option[Seq[String]],
     score: Double,
     highlights: Seq[String]
 )
@@ -31,6 +39,8 @@ case class SearchFacetsResults(
 object SearchFacetsResults {
   val empty: SearchFacetsResults = SearchFacetsResults(Seq.empty, 0)
 
+  implicit val FacetF: OFormat[Facet] = Json.format[Facet]
+
   implicit val SearchFacetsResultImpW: OWrites[SearchFacetsResult] =
     Json.writes[models.entities.SearchFacetsResult]
 
@@ -39,6 +49,7 @@ object SearchFacetsResults {
       (__ \ "_source" \ "label").read[String] and
       (__ \ "_source" \ "category").read[String] and
       (__ \ "_source" \ "entityIds").readNullable[Seq[String]] and
+      (__ \ "_source" \ "facetIds").readNullable[Seq[String]] and
       (__ \ "_score").read[Double] and
       (__ \ "highlight").readNullable[Map[String, Seq[String]]].map {
         case Some(m) =>
