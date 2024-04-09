@@ -541,33 +541,21 @@ class ElasticRetriever @Inject() (
     val searchFields = Seq("label", "category", "facetIds")
     val hlFieldSeq = searchFields.map(f => HighlightField(f))
 
-    val keywordQueryFn = multiMatchQuery(qString)
-      .analyzer("token")
-      .field("label.raw", 1000d)
-      .field("category.raw", 500d)
-      .operator(Operator.AND)
-
-    val stringQueryFn = functionScoreQuery(
-      simpleStringQuery(qString)
-        .analyzer("token")
-        .minimumShouldMatch("0")
-        .defaultOperator("AND")
-        .field("label", 200d)
-        .field("category", 100d)
-    )
-
-    val fuzzyQueryFns = searchFields.map { field =>
-      functionScoreQuery(
-        matchQuery(field, qString)
-          .fuzziness("AUTO")
-          .prefixLength(1)
-          .maxExpansions(50)
-          .boost(50d)
-      )
+    val exactQueryFn = searchFields.map { f =>
+      termQuery(f + ".keyword", qString).caseInsensitive(true).boost(10000d)
     }
 
+    val fuzzyQueryFn = multiMatchQuery(qString)
+      .fuzziness("AUTO")
+      .prefixLength(1)
+      .maxExpansions(50)
+      .field("label", 100d)
+      .field("facetIds", 70d)
+      .field("category", 50d)
+      .operator(Operator.OR)
+
     val filterQueries = boolQuery().must() :: Nil
-    val fnQueries = boolQuery().should(Seq(keywordQueryFn, stringQueryFn) ++ fuzzyQueryFns) :: Nil
+    val fnQueries = boolQuery().should(Seq(fuzzyQueryFn) ++ exactQueryFn) :: Nil
     val mainQuery = boolQuery().must(fnQueries ::: filterQueries)
 
     if (qString.nonEmpty) {
