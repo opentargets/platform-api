@@ -29,20 +29,12 @@ object Evidence extends Logging {
 
   case class NameAndDescription(name: String, description: String)
 
-  case class ValidationHypothesis(name: String, description: String, status: String)
-
   implicit val nameAndDescriptionJsonFormatImp: OFormat[NameAndDescription] =
     Json.format[NameAndDescription]
-  implicit val validationHypothesisJsonFormatImp: OFormat[ValidationHypothesis] =
-    Json.format[ValidationHypothesis]
 
   val nameAndDescriptionImp: ObjectType[Backend, NameAndDescription] =
     deriveObjectType[Backend, NameAndDescription](
       ObjectTypeName("NameDescription")
-    )
-  val validationHypothesisImp: ObjectType[Backend, ValidationHypothesis] =
-    deriveObjectType[Backend, ValidationHypothesis](
-      ObjectTypeName("ValidationHypothesis")
     )
   val pathwayTermImp: ObjectType[Backend, JsValue] = ObjectType(
     "Pathway",
@@ -777,22 +769,10 @@ object Evidence extends Logging {
         resolve = js => (js.value \ "biomarkerList").asOpt[Seq[NameAndDescription]]
       ),
       Field(
-        "expectedConfidence",
-        OptionType(StringType),
-        description = None,
-        resolve = js => (js.value \ "expectedConfidence").asOpt[String]
-      ),
-      Field(
         "projectDescription",
         OptionType(StringType),
         description = None,
         resolve = js => (js.value \ "projectDescription").asOpt[String]
-      ),
-      Field(
-        "validationHypotheses",
-        OptionType(ListType(validationHypothesisImp)),
-        description = None,
-        resolve = js => (js.value \ "validationHypotheses").asOpt[Seq[ValidationHypothesis]]
       ),
       Field(
         "geneInteractionType",

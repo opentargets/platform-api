@@ -29,12 +29,6 @@ query ValidationQuery($ensemblId: String!, $efoId: String!, $size: Int!) {
           description
         }
         confidence
-        expectedConfidence
-        validationHypotheses {
-          name
-          description
-          status
-        }
         releaseVersion
       }
     }
