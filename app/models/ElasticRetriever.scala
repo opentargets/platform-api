@@ -552,7 +552,7 @@ class ElasticRetriever @Inject() (
       .field("label", 100d)
       .field("datasourceId", 70d)
       .field("category", 50d)
-      .operator(Operator.OR)
+      .operator(Operator.AND)
 
     val filterQueries = boolQuery().must() :: Nil
     val fnQueries = boolQuery().should(Seq(fuzzyQueryFn) ++ exactQueryFn) :: Nil
