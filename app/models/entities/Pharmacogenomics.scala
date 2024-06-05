@@ -3,12 +3,17 @@ package models.entities
 import play.api.Logging
 import play.api.libs.json._
 
+case class DrugWithIdentifiers(
+    drugId: Option[String],
+    drugFromSource: Option[String]
+)
+
 case class Pharmacogenomics(
     datasourceId: Option[String],
     datatypeId: Option[String],
-    drugId: Option[String],
-    drugFromSource: Option[String],
+    drugs: Seq[DrugWithIdentifiers],
     evidenceLevel: Option[String],
+    genotype: Option[String],
     genotypeAnnotationText: Option[String],
     genotypeId: Option[String],
     haplotypeFromSourceId: Option[String],
@@ -25,6 +30,8 @@ case class Pharmacogenomics(
 )
 
 object Pharmacogenomics extends Logging {
+  implicit val drugW: OWrites[DrugWithIdentifiers] = Json.writes[DrugWithIdentifiers]
+  implicit val drugF: OFormat[DrugWithIdentifiers] = Json.format[DrugWithIdentifiers]
   implicit val pharmacogenomicsW: OWrites[Pharmacogenomics] = Json.writes[Pharmacogenomics]
   implicit val pharmacogenomicsF: OFormat[Pharmacogenomics] = Json.format[Pharmacogenomics]
 }
