@@ -766,6 +766,20 @@ object Objects extends Logging {
   implicit lazy val drugReferenceImp: ObjectType[Backend, Reference] =
     deriveObjectType[Backend, Reference]()
 
+  implicit lazy val drugWithIdsImp: ObjectType[Backend, DrugWithIdentifiers] =
+    deriveObjectType[Backend, DrugWithIdentifiers](
+      ObjectTypeName("DrugWithIdentifiers"),
+      ObjectTypeDescription("Drug with drug identifiers"),
+      AddFields(
+        Field(
+          "drug",
+          OptionType(drugImp),
+          description = Some("Drug entity"),
+          resolve = r => drugsFetcher.deferOpt(r.value.drugId)
+        )
+      )
+    )
+
   implicit lazy val pharmacogenomicsImp: ObjectType[Backend, Pharmacogenomics] =
     deriveObjectType[Backend, Pharmacogenomics](
       AddFields(
@@ -781,16 +795,19 @@ object Objects extends Logging {
           }
         ),
         Field(
-          "drug",
-          OptionType(drugImp),
-          description = Some("Drug entity"),
-          resolve = r => drugsFetcher.deferOpt(r.value.drugId)
-        ),
-        Field(
           "target",
           OptionType(targetImp),
           description = Some("Target entity"),
           resolve = r => targetsFetcher.deferOpt(r.value.targetFromSourceId)
+        )
+      ),
+      ReplaceField(
+        "drugs",
+        Field(
+          "drugs",
+          ListType(drugWithIdsImp),
+          Some("Drug List"),
+          resolve = r => r.value.drugs
         )
       )
     )
