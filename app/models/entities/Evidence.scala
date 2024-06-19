@@ -20,6 +20,7 @@ import sangria.schema.{
   ObjectType,
   OptionType,
   StringType,
+  BooleanType,
   fields
 }
 
@@ -238,6 +239,29 @@ object Evidence extends Logging {
         OptionType(ListType(biomarkerVariantImp)),
         description = None,
         resolve = js => (js.value \ "variant").asOpt[Seq[JsValue]]
+      )
+    )
+  )
+  val assaysImp: ObjectType[Backend, JsValue] = ObjectType(
+    "assays",
+    fields[Backend, JsValue](
+      Field(
+        "description",
+        OptionType(StringType),
+        description = None,
+        resolve = js => (js.value \ "description").asOpt[String]
+      ),
+      Field(
+        "isHit",
+        OptionType(BooleanType),
+        description = None,
+        resolve = js => (js.value \ "isHit").asOpt[Boolean]
+      ),
+      Field(
+        "shortName",
+        OptionType(StringType),
+        description = None,
+        resolve = js => (js.value \ "shortName").asOpt[String]
       )
     )
   )
@@ -859,6 +883,30 @@ object Evidence extends Logging {
         OptionType(StringType),
         description = Some("Direction On Trait"),
         resolve = js => (js.value \ "directionOnTrait").asOpt[String]
+      ),
+      Field(
+        "assessment",
+        OptionType(StringType),
+        description = Some("Assessment"),
+        resolve = js => (js.value \ "assessment").asOpt[String]
+      ),
+      Field(
+        "primaryProjectHit",
+        OptionType(BooleanType),
+        description = Some("Primary Project Hit"),
+        resolve = js => (js.value \ "primaryProjectHit").asOpt[Boolean]
+      ),
+      Field(
+        "primaryProjectId",
+        OptionType(StringType),
+        description = Some("Primary Project Id"),
+        resolve = js => (js.value \ "primaryProjectId").asOpt[String]
+      ),
+      Field(
+        "assays",
+        OptionType(ListType(assaysImp)),
+        description = None,
+        resolve = js => (js.value \ "assays").asOpt[Seq[JsValue]]
       )
     )
   )
