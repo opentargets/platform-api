@@ -4,13 +4,7 @@ import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 
-case class SearchFacetsResultAggCategory(name: String, total: Long)
-
-case class SearchFacetsResultAggEntity(
-    name: String,
-    total: Long,
-    categories: Seq[SearchFacetsResultAggCategory]
-)
+case class SearchFacetsCategory(name: String, total: Long)
 
 case class Facet(
     label: String,
@@ -18,8 +12,6 @@ case class Facet(
     entityIds: Option[Seq[String]],
     datasourceId: Option[String]
 )
-
-case class SearchFacetsResultAggs(total: Long, entities: Seq[SearchFacetsResultAggEntity])
 
 case class SearchFacetsResult(
     id: String,
@@ -33,18 +25,25 @@ case class SearchFacetsResult(
 
 case class SearchFacetsResults(
     hits: Seq[SearchFacetsResult],
-    total: Long
+    total: Long,
+    categories: Seq[SearchFacetsCategory]
 )
 
 object SearchFacetsResults {
-  val empty: SearchFacetsResults = SearchFacetsResults(Seq.empty, 0)
+  implicit val searchFacetsCategoryImpW: OWrites[SearchFacetsCategory] =
+    Json.writes[models.entities.SearchFacetsCategory]
 
-  implicit val FacetF: OFormat[Facet] = Json.format[Facet]
+  implicit val facetF: OFormat[Facet] = Json.format[Facet]
 
-  implicit val SearchFacetsResultImpW: OWrites[SearchFacetsResult] =
+  implicit val searchFacetsResultImpW: OWrites[SearchFacetsResult] =
     Json.writes[models.entities.SearchFacetsResult]
 
-  implicit val SearchFacetsResultImpR: Reads[models.entities.SearchFacetsResult] =
+  implicit val searchFacetsCategoryImpR: Reads[SearchFacetsCategory] = (
+    (__ \ "key").read[String] and
+      (__ \ "doc_count").read[Long]
+  )(SearchFacetsCategory.apply _)
+
+  implicit val searchFacetsResultImpR: Reads[models.entities.SearchFacetsResult] =
     ((__ \ "_id").read[String] and
       (__ \ "_source" \ "label").read[String] and
       (__ \ "_source" \ "category").read[String] and
@@ -59,6 +58,6 @@ object SearchFacetsResults {
         case None => Seq.empty[String]
       })(SearchFacetsResult.apply _)
 
-  implicit val mSearchFacetsResultsImpW: OFormat[SearchFacetsResults] =
+  implicit val searchFacetsResultsImpW: OFormat[SearchFacetsResults] =
     Json.format[models.entities.SearchFacetsResults]
 }

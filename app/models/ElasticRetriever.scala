@@ -24,6 +24,7 @@ import scala.concurrent.Future
 import scala.util.Try
 import com.sksamuel.elastic4s.requests.searches.sort.FieldSort
 import com.sksamuel.elastic4s.requests.searches.term.TermQuery
+import com.sksamuel.elastic4s.handlers.index.Search
 
 class ElasticRetriever @Inject() (
     client: ElasticClient,
@@ -557,6 +558,27 @@ class ElasticRetriever @Inject() (
     val filterQueries = boolQuery().must() :: Nil
     val fnQueries = boolQuery().should(Seq(fuzzyQueryFn) ++ exactQueryFn) :: Nil
     val mainQuery = boolQuery().must(fnQueries ::: filterQueries)
+    val aggQuery = termsAgg("categories", "category.keyword").size(1000)
+
+    val searchFacetCategories = client
+      .execute {
+        val aggregations = search(esIndices)
+          .aggs(aggQuery)
+          .trackTotalHits(true)
+        logger.trace(client.show(aggregations))
+        aggregations
+      }
+      .map { case (aggregations) =>
+        val aggs = (Json.parse(aggregations.body.get) \ "aggregations" \ "categories" \ "buckets")
+          .validate[Seq[SearchFacetsCategory]] match {
+          case JsSuccess(value, _) => value
+          case JsError(errors) =>
+            logger.error(errors.mkString("", " | ", ""))
+            Seq.empty
+        }
+        aggs
+      }
+      .await
 
     if (qString.nonEmpty) {
       client
@@ -581,10 +603,10 @@ class ElasticRetriever @Inject() (
                 Seq.empty
             }
 
-          SearchFacetsResults(sresults, hits.result.totalHits)
+          SearchFacetsResults(sresults, hits.result.totalHits, searchFacetCategories)
         }
     } else {
-      Future.successful(SearchFacetsResults.empty)
+      Future.successful(SearchFacetsResults(Seq.empty, 0, searchFacetCategories))
     }
   }
 

@@ -1235,6 +1235,9 @@ object Objects extends Logging {
       )
     )
 
+  implicit val searchFacetsCategoryImp: ObjectType[Backend, SearchFacetsCategory] =
+    deriveObjectType[Backend, SearchFacetsCategory]()
+
   val searchResultsGQLImp: ObjectType[Backend, SearchResults] = ObjectType(
     "SearchResults",
     "Search results",
@@ -1275,6 +1278,12 @@ object Objects extends Logging {
         LongType,
         description = Some("Total number or results given a entity filter"),
         resolve = _.value.total
+      ),
+      Field(
+        "categories",
+        ListType(searchFacetsCategoryImp),
+        description = Some("Categories"),
+        resolve = _.value.categories
       )
     )
   )
