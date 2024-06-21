@@ -24,7 +24,8 @@ object GQLSchema {
     otarProjectsFetcher,
     soTermsFetcher,
     indicationFetcher,
-    goFetcher
+    goFetcher,
+    variantFetcher
   )
 
   val query: ObjectType[Backend, Unit] = ObjectType(
@@ -43,13 +44,6 @@ object GQLSchema {
         description = Some("Return a Target"),
         arguments = ensemblId :: Nil,
         resolve = ctx => targetsFetcher.deferOpt(ctx.arg(ensemblId))
-      ),
-      Field(
-        "variant",
-        OptionType(variantIndexImp),
-        description = Some("Return a Variant"),
-        arguments = variantId :: Nil,
-        resolve = ctx => variantFetcher.deferOpt(ctx.arg(variantId))
       ),
       Field(
         "targets",
@@ -138,7 +132,14 @@ object GQLSchema {
         description = Some("Gene ontology terms"),
         arguments = goIds :: Nil,
         resolve = ctx => goFetcher.deferSeqOptExplicit(ctx.arg(goIds))
-      )
+      ),
+      Field(
+        "variant",
+        OptionType(variantIndexImp),
+        description = Some("Return a Variant"),
+        arguments = variantId :: Nil,
+        resolve = ctx => variantFetcher.deferOpt(ctx.arg(variantId))
+      ),
     )
   )
 
