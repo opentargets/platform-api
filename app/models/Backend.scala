@@ -134,6 +134,12 @@ class Backend @Inject() (implicit
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[GeneOntologyTerm])
   }
 
+  def getVariants(ids: Seq[String]): Future[IndexedSeq[VariantIndex]] = {
+    val indexName = getIndexOrDefault("variant")
+
+    esRetriever.getByIds(indexName, ids, fromJsValue[VariantIndex])
+  }
+
   def getTargetEssentiality(ids: Seq[String]): Future[IndexedSeq[TargetEssentiality]] = {
     val targetIndexName = getIndexOrDefault("target_essentiality")
 

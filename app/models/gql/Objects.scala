@@ -1278,4 +1278,11 @@ object Objects extends Logging {
       )
     )
   )
+
+  implicit val inSilicoPredictorImp: ObjectType[Backend, InSilicoPredictor] = deriveObjectType[Backend, InSilicoPredictor]()
+  implicit val transcriptConsequenceImp: ObjectType[Backend, TranscriptConsequence] = deriveObjectType[Backend, TranscriptConsequence]()
+  implicit val alleleFrequencyImp: ObjectType[Backend, AlleleFrequency] = deriveObjectType[Backend, AlleleFrequency]()
+  implicit val dbXrefImp: ObjectType[Backend, DbXref] = deriveObjectType[Backend, DbXref]()
+  implicit val variantIndexImp: ObjectType[Backend, VariantIndex] = deriveObjectType[Backend, VariantIndex]()
+
 }
