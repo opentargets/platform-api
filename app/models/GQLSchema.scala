@@ -45,6 +45,13 @@ object GQLSchema {
         resolve = ctx => targetsFetcher.deferOpt(ctx.arg(ensemblId))
       ),
       Field(
+        "variant",
+        OptionType(variantIndexImp),
+        description = Some("Return a Variant"),
+        arguments = variantId :: Nil,
+        resolve = ctx => variantFetcher.deferOpt(ctx.arg(variantId))
+      ),
+      Field(
         "targets",
         ListType(targetImp),
         description = Some("Return Targets"),
