@@ -987,17 +987,40 @@ class Backend @Inject() (implicit
       .map(_.index)
       .getOrElse(default.getOrElse(index))
 
+  /**
+    * Expand a set of BIDs with the BIDs derived from the facets.
+    * If the set of BIDs is empty, the BIDs are derived from the facets.
+    * If the set of facets is empty, the BIDs are returned as is.
+    * If both the set of BIDs and the set of facets are not empty, the BIDs are intersected with the BIDs derived from the facets.
+    * If the intersection is empty, a Set of "" is returned to ensure that no ids are returned.
+    *
+    * @param index
+    * @param bIDs
+    * @param facetFilters
+    * @return
+    */
   private def expandBIDSetWithFacetDerivedBIDs(index: String,
                                                bIDs: Set[String],
                                                facetFilters: Seq[String]
   ): Set[String] =
     if (facetFilters.isEmpty) {
       bIDs
+    } else if (bIDs.isEmpty) {
+      val targetsFromFacets =
+        esRetriever.getByIds(getIndexOrDefault(index), facetFilters, fromJsValue[Facet])
+      val targetIdsFromFacets =
+        targetsFromFacets.await.map(_.entityIds.getOrElse(Seq.empty)).flatten.toSet
+      targetIdsFromFacets
     } else {
       val targetsFromFacets =
         esRetriever.getByIds(getIndexOrDefault(index), facetFilters, fromJsValue[Facet])
       val targetIdsFromFacets =
         targetsFromFacets.await.map(_.entityIds.getOrElse(Seq.empty)).flatten.toSet
-      bIDs ++ targetIdsFromFacets
+      val intersectingIds = bIDs.intersect(targetIdsFromFacets)
+      if (intersectingIds.isEmpty) {
+        Set("")
+      } else {
+        intersectingIds
+      }
     }
 }
