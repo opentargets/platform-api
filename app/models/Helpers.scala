@@ -83,4 +83,7 @@ object Helpers extends Logging {
         obj.as[A]
       }
   }
+
+  def emptySetToSetOfEmptyString(s: Set[String]): Set[String] =
+    if (s.isEmpty) Set("") else s
 }

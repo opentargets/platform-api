@@ -489,7 +489,7 @@ class Backend @Inject() (implicit
 
     logger.debug(s"get disease id ${disease.name}")
     val indirectIDs = if (indirect) disease.descendants.toSet + disease.id else Set.empty[String]
-    val targetIds = expandBIDSetWithFacetDerivedBIDs("facet_search_target", targetSet, facetFilters)
+    val targetIds = applyFacetFiltersToBIDs("facet_search_target", targetSet, facetFilters)
     val simpleQ = aotfQ(indirectIDs, targetIds).simpleQuery(0, 100000)
 
     val evidencesIndexName = defaultESSettings.entities
@@ -726,7 +726,7 @@ class Backend @Inject() (implicit
     } else Set.empty[String]
 
     val diseaseIds =
-      expandBIDSetWithFacetDerivedBIDs("facet_search_disease", diseaseSet, facetFilters)
+      applyFacetFiltersToBIDs("facet_search_disease", diseaseSet, facetFilters)
     val simpleQ = aotfQ(indirectIDs, diseaseIds).simpleQuery(0, 100000)
 
     val evidencesIndexName = defaultESSettings.entities
@@ -987,7 +987,20 @@ class Backend @Inject() (implicit
       .map(_.index)
       .getOrElse(default.getOrElse(index))
 
-  /** Expand a set of BIDs with the BIDs derived from the facets.
+  /** Get the targets ids for a given set of facet filters.
+    * @return
+    * An indexed sequence of target id sequences.
+    */
+  private def resolveTargetsFromFacets(facetFilters: Seq[String]): IndexedSeq[Seq[String]] = {
+    val targetsFromFacets =
+      esRetriever.getByIds(getIndexOrDefault("facet_search_target"),
+                           facetFilters,
+                           fromJsValue[Facet]
+      )
+    targetsFromFacets.await.map(_.entityIds.getOrElse(Seq.empty))
+  }
+
+  /** Reduce a set of BIDs with the BIDs derived from the facets.
     * If the set of BIDs is empty, the BIDs are derived from the facets.
     * If the set of facets is empty, the BIDs are returned as is.
     * If both the set of BIDs and the set of facets are not empty, the BIDs are intersected with the BIDs derived from the facets.
@@ -998,22 +1011,16 @@ class Backend @Inject() (implicit
     * @param facetFilters
     * @return
     */
-  private def expandBIDSetWithFacetDerivedBIDs(index: String,
-                                               bIDs: Set[String],
-                                               facetFilters: Seq[String]
+  private def applyFacetFiltersToBIDs(index: String,
+                                      bIDs: Set[String],
+                                      facetFilters: Seq[String]
   ): Set[String] =
     if (facetFilters.isEmpty) {
       bIDs
     } else {
-      val targetsFromFacets =
-        esRetriever.getByIds(getIndexOrDefault(index), facetFilters, fromJsValue[Facet])
-      val targetIdsFromFacets =
-        targetsFromFacets.await.map(_.entityIds.getOrElse(Seq.empty)).flatten.toSet
-      if (bIDs.isEmpty) {
-        targetIdsFromFacets
-      } else {
-        val intersectingIds = bIDs.intersect(targetIdsFromFacets)
-        if (intersectingIds.isEmpty) Set("") else intersectingIds
-      }
+      val targetIdsInAllFacets: Set[String] =
+        resolveTargetsFromFacets(facetFilters).map(_.toSet).reduce(_ intersect _)
+      if (bIDs.isEmpty) emptySetToSetOfEmptyString(targetIdsInAllFacets)
+      else emptySetToSetOfEmptyString(bIDs.intersect(targetIdsInAllFacets))
     }
 }
