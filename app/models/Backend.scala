@@ -1004,18 +1004,16 @@ class Backend @Inject() (implicit
   ): Set[String] =
     if (facetFilters.isEmpty) {
       bIDs
-    } else if (bIDs.isEmpty) {
-      val targetsFromFacets =
-        esRetriever.getByIds(getIndexOrDefault(index), facetFilters, fromJsValue[Facet])
-      val targetIdsFromFacets =
-        targetsFromFacets.await.map(_.entityIds.getOrElse(Seq.empty)).flatten.toSet
-      targetIdsFromFacets
     } else {
       val targetsFromFacets =
         esRetriever.getByIds(getIndexOrDefault(index), facetFilters, fromJsValue[Facet])
       val targetIdsFromFacets =
         targetsFromFacets.await.map(_.entityIds.getOrElse(Seq.empty)).flatten.toSet
-      val intersectingIds = bIDs.intersect(targetIdsFromFacets)
-      if (intersectingIds.isEmpty) Set("") else intersectingIds
+      if (bIDs.isEmpty) {
+        targetIdsFromFacets
+      } else {
+        val intersectingIds = bIDs.intersect(targetIdsFromFacets)
+        if (intersectingIds.isEmpty) Set("") else intersectingIds
+      }
     }
 }
