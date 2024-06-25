@@ -987,8 +987,7 @@ class Backend @Inject() (implicit
       .map(_.index)
       .getOrElse(default.getOrElse(index))
 
-  /**
-    * Expand a set of BIDs with the BIDs derived from the facets.
+  /** Expand a set of BIDs with the BIDs derived from the facets.
     * If the set of BIDs is empty, the BIDs are derived from the facets.
     * If the set of facets is empty, the BIDs are returned as is.
     * If both the set of BIDs and the set of facets are not empty, the BIDs are intersected with the BIDs derived from the facets.
@@ -1017,10 +1016,6 @@ class Backend @Inject() (implicit
       val targetIdsFromFacets =
         targetsFromFacets.await.map(_.entityIds.getOrElse(Seq.empty)).flatten.toSet
       val intersectingIds = bIDs.intersect(targetIdsFromFacets)
-      if (intersectingIds.isEmpty) {
-        Set("")
-      } else {
-        intersectingIds
-      }
+      if (intersectingIds.isEmpty) Set("") else intersectingIds
     }
 }
