@@ -987,17 +987,16 @@ class Backend @Inject() (implicit
       .map(_.index)
       .getOrElse(default.getOrElse(index))
 
-  /** Get the targets ids for a given set of facet filters.
+  /** Get the entity ids for a given set of facet filters.
     * @return
-    * An indexed sequence of target id sequences.
+    * An indexed sequence of entity id sets.
     */
-  private def resolveTargetsFromFacets(facetFilters: Seq[String]): IndexedSeq[Seq[String]] = {
-    val targetsFromFacets =
-      esRetriever.getByIds(getIndexOrDefault("facet_search_target"),
-                           facetFilters,
-                           fromJsValue[Facet]
-      )
-    targetsFromFacets.await.map(_.entityIds.getOrElse(Seq.empty))
+  private def resolveEntityIdsFromFacets(facetFilters: Seq[String],
+                                         index: String
+  ): IndexedSeq[Seq[String]] = {
+    val facets =
+      esRetriever.getByIds(getIndexOrDefault(index), facetFilters, fromJsValue[Facet])
+    facets.await.map(_.entityIds.getOrElse(Seq.empty))
   }
 
   /** Reduce a set of BIDs with the BIDs derived from the facets.
@@ -1018,9 +1017,12 @@ class Backend @Inject() (implicit
     if (facetFilters.isEmpty) {
       bIDs
     } else {
-      val targetIdsInAllFacets: Set[String] =
-        resolveTargetsFromFacets(facetFilters).map(_.toSet).reduce(_ intersect _)
-      if (bIDs.isEmpty) emptySetToSetOfEmptyString(targetIdsInAllFacets)
-      else emptySetToSetOfEmptyString(bIDs.intersect(targetIdsInAllFacets))
+      val entityIdsFromFacets: IndexedSeq[Seq[String]] =
+        resolveEntityIdsFromFacets(facetFilters, index)
+      val entityIdsFromFacetsIntersect: Set[String] =
+        if (entityIdsFromFacets.isEmpty) Set.empty
+        else entityIdsFromFacets.map(_.toSet).reduce(_ intersect _)
+      if (bIDs.isEmpty) emptySetToSetOfEmptyString(entityIdsFromFacetsIntersect)
+      else emptySetToSetOfEmptyString(bIDs.intersect(entityIdsFromFacetsIntersect))
     }
 }
