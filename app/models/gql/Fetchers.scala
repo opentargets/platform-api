@@ -1,7 +1,18 @@
 package models.gql
 
 import models.Helpers.fromJsValue
-import models.entities.{Disease, Drug, Expressions, GeneOntologyTerm, HPO, Indications, OtarProjects, Reactome, Target, VariantIndex}
+import models.entities.{
+  Disease,
+  Drug,
+  Expressions,
+  GeneOntologyTerm,
+  HPO,
+  Indications,
+  OtarProjects,
+  Reactome,
+  Target,
+  VariantIndex
+}
 import models.{Backend, entities}
 import play.api.Logging
 import play.api.libs.json.JsValue
@@ -105,7 +116,8 @@ object Fetchers extends Logging {
     }
   )
 
-  implicit val variantFetcherId: HasId[VariantIndex, String] = HasId[VariantIndex, String](_.variantId)
+  implicit val variantFetcherId: HasId[VariantIndex, String] =
+    HasId[VariantIndex, String](_.variantId)
   val variantFetcherCache = FetcherCache.simple
   val variantFetcher: Fetcher[Backend, VariantIndex, VariantIndex, String] = Fetcher(
     config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(goFetcherCache),

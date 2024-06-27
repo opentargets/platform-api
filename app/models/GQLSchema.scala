@@ -138,7 +138,7 @@ object GQLSchema {
         description = Some("Return a Variant"),
         arguments = variantId :: Nil,
         resolve = ctx => variantFetcher.deferOpt(ctx.arg(variantId))
-      ),
+      )
     )
   )
 
