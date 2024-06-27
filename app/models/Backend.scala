@@ -20,6 +20,7 @@ import models.entities.DiseaseHPOs._
 import models.entities.Drug._
 import models.entities.MousePhenotypes._
 import models.entities.Pharmacogenomics._
+import models.entities.SearchFacetsResults._
 import models.entities._
 import play.api.cache.AsyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
@@ -433,8 +434,22 @@ class Backend @Inject() (implicit
       e <- defaultESSettings.entities
       if (entityNames.contains(e.name) && e.searchIndex.isDefined)
     } yield e
-
     esRetriever.getSearchResultSet(entities, qString, pagination.getOrElse(Pagination.mkDefault))
+  }
+
+  def searchFacets(
+      qString: String,
+      pagination: Option[Pagination],
+      entityNames: Seq[String]
+  ): Future[SearchFacetsResults] = {
+    val entities = for {
+      e <- defaultESSettings.entities
+      if (entityNames.contains(e.name) && e.facetSearchIndex.isDefined)
+    } yield e
+    esRetriever.getSearchFacetsResultSet(entities,
+                                         qString,
+                                         pagination.getOrElse(Pagination.mkDefault)
+    )
   }
 
   def getAssociationDatasources: Future[Vector[EvidenceSource]] =
@@ -447,6 +462,7 @@ class Backend @Inject() (implicit
       disease: Disease,
       datasources: Option[Seq[DatasourceSettings]],
       indirect: Boolean,
+      facetFilters: Seq[String],
       aggregationFilters: Seq[AggregationFilter],
       targetSet: Set[String],
       filter: Option[String],
@@ -473,7 +489,8 @@ class Backend @Inject() (implicit
 
     logger.debug(s"get disease id ${disease.name}")
     val indirectIDs = if (indirect) disease.descendants.toSet + disease.id else Set.empty[String]
-    val simpleQ = aotfQ(indirectIDs, targetSet).simpleQuery(0, 100000)
+    val targetIds = applyFacetFiltersToBIDs("facet_search_target", targetSet, facetFilters)
+    val simpleQ = aotfQ(indirectIDs, targetIds).simpleQuery(0, 100000)
 
     val evidencesIndexName = defaultESSettings.entities
       .find(_.name == "evidences_aotf")
@@ -668,6 +685,7 @@ class Backend @Inject() (implicit
       target: Target,
       datasources: Option[Seq[DatasourceSettings]],
       indirect: Boolean,
+      facetFilters: Seq[String],
       aggregationFilters: Seq[AggregationFilter],
       diseaseSet: Set[String],
       filter: Option[String],
@@ -707,7 +725,9 @@ class Backend @Inject() (implicit
 
     } else Set.empty[String]
 
-    val simpleQ = aotfQ(indirectIDs, diseaseSet).simpleQuery(0, 100000)
+    val diseaseIds =
+      applyFacetFiltersToBIDs("facet_search_disease", diseaseSet, facetFilters)
+    val simpleQ = aotfQ(indirectIDs, diseaseIds).simpleQuery(0, 100000)
 
     val evidencesIndexName = defaultESSettings.entities
       .find(_.name == "evidences_aotf")
@@ -966,4 +986,43 @@ class Backend @Inject() (implicit
       .find(_.name == index)
       .map(_.index)
       .getOrElse(default.getOrElse(index))
+
+  /** Get the entity ids for a given set of facet filters.
+    * @return
+    * An indexed sequence of entity id sets.
+    */
+  private def resolveEntityIdsFromFacets(facetFilters: Seq[String],
+                                         index: String
+  ): IndexedSeq[Seq[String]] = {
+    val facets =
+      esRetriever.getByIds(getIndexOrDefault(index), facetFilters, fromJsValue[Facet])
+    facets.await.map(_.entityIds.getOrElse(Seq.empty))
+  }
+
+  /** Reduce a set of BIDs with the BIDs derived from the facets.
+    * If the set of BIDs is empty, the BIDs are derived from the facets.
+    * If the set of facets is empty, the BIDs are returned as is.
+    * If both the set of BIDs and the set of facets are not empty, the BIDs are intersected with the BIDs derived from the facets.
+    * If the intersection is empty, a Set of "" is returned to ensure that no ids are returned.
+    *
+    * @param index
+    * @param bIDs
+    * @param facetFilters
+    * @return
+    */
+  private def applyFacetFiltersToBIDs(index: String,
+                                      bIDs: Set[String],
+                                      facetFilters: Seq[String]
+  ): Set[String] =
+    if (facetFilters.isEmpty) {
+      bIDs
+    } else {
+      val entityIdsFromFacets: IndexedSeq[Seq[String]] =
+        resolveEntityIdsFromFacets(facetFilters, index)
+      val entityIdsFromFacetsIntersect: Set[String] =
+        if (entityIdsFromFacets.isEmpty) Set.empty
+        else entityIdsFromFacets.map(_.toSet).reduce(_ intersect _)
+      if (bIDs.isEmpty) emptySetToSetOfEmptyString(entityIdsFromFacetsIntersect)
+      else emptySetToSetOfEmptyString(bIDs.intersect(entityIdsFromFacetsIntersect))
+    }
 }

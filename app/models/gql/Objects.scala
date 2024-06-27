@@ -194,12 +194,13 @@ object Objects extends Logging {
         associatedOTFDiseasesImp,
         description = Some("associations on the fly"),
         arguments =
-          BIds :: indirectTargetEvidences :: datasourceSettingsListArg :: aggregationFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
+          BIds :: indirectTargetEvidences :: datasourceSettingsListArg :: facetFiltersListArg :: aggregationFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
         resolve = ctx =>
           ctx.ctx.getAssociationsTargetFixed(
             ctx.value,
             ctx arg datasourceSettingsListArg,
             ctx arg indirectTargetEvidences getOrElse false,
+            ctx arg facetFiltersListArg getOrElse (Seq.empty),
             ctx arg aggregationFiltersListArg getOrElse Seq.empty,
             ctx arg BIds map (_.toSet) getOrElse Set.empty,
             ctx arg BFilterString,
@@ -420,12 +421,13 @@ object Objects extends Logging {
         associatedOTFTargetsImp,
         description = Some("associations on the fly"),
         arguments =
-          BIds :: indirectEvidences :: datasourceSettingsListArg :: aggregationFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
+          BIds :: indirectEvidences :: datasourceSettingsListArg :: facetFiltersListArg :: aggregationFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
         resolve = ctx =>
           ctx.ctx.getAssociationsDiseaseFixed(
             ctx.value,
             ctx arg datasourceSettingsListArg,
             ctx arg indirectEvidences getOrElse (true),
+            ctx arg facetFiltersListArg getOrElse (Seq.empty),
             ctx arg aggregationFiltersListArg getOrElse (Seq.empty),
             ctx arg BIds map (_.toSet) getOrElse (Set.empty),
             ctx arg BFilterString,
@@ -764,6 +766,20 @@ object Objects extends Logging {
   implicit lazy val drugReferenceImp: ObjectType[Backend, Reference] =
     deriveObjectType[Backend, Reference]()
 
+  implicit lazy val drugWithIdsImp: ObjectType[Backend, DrugWithIdentifiers] =
+    deriveObjectType[Backend, DrugWithIdentifiers](
+      ObjectTypeName("DrugWithIdentifiers"),
+      ObjectTypeDescription("Drug with drug identifiers"),
+      AddFields(
+        Field(
+          "drug",
+          OptionType(drugImp),
+          description = Some("Drug entity"),
+          resolve = r => drugsFetcher.deferOpt(r.value.drugId)
+        )
+      )
+    )
+
   implicit lazy val pharmacogenomicsImp: ObjectType[Backend, Pharmacogenomics] =
     deriveObjectType[Backend, Pharmacogenomics](
       AddFields(
@@ -779,16 +795,19 @@ object Objects extends Logging {
           }
         ),
         Field(
-          "drug",
-          OptionType(drugImp),
-          description = Some("Drug entity"),
-          resolve = r => drugsFetcher.deferOpt(r.value.drugId)
-        ),
-        Field(
           "target",
           OptionType(targetImp),
           description = Some("Target entity"),
           resolve = r => targetsFetcher.deferOpt(r.value.targetFromSourceId)
+        )
+      ),
+      ReplaceField(
+        "drugs",
+        Field(
+          "drugs",
+          ListType(drugWithIdsImp),
+          Some("Drug List"),
+          resolve = r => r.value.drugs
         )
       )
     )
@@ -1176,6 +1195,8 @@ object Objects extends Logging {
         )
       )
     )
+  implicit val searchFacetsResultImp: ObjectType[Backend, SearchFacetsResult] =
+    deriveObjectType[Backend, models.entities.SearchFacetsResult]()
 
   implicit val similarityGQLImp: ObjectType[Backend, Similarity] =
     deriveObjectType[Backend, models.entities.Similarity](
@@ -1214,6 +1235,9 @@ object Objects extends Logging {
       )
     )
 
+  implicit val searchFacetsCategoryImp: ObjectType[Backend, SearchFacetsCategory] =
+    deriveObjectType[Backend, SearchFacetsCategory]()
+
   val searchResultsGQLImp: ObjectType[Backend, SearchResults] = ObjectType(
     "SearchResults",
     "Search results",
@@ -1235,6 +1259,31 @@ object Objects extends Logging {
         LongType,
         description = Some("Total number or results given a entity filter"),
         resolve = _.value.total
+      )
+    )
+  )
+
+  val searchFacetsResultsGQLImp: ObjectType[Backend, SearchFacetsResults] = ObjectType(
+    "SearchFacetsResults",
+    "Search facets results",
+    fields[Backend, SearchFacetsResults](
+      Field(
+        "hits",
+        ListType(searchFacetsResultImp),
+        description = Some("Return combined"),
+        resolve = _.value.hits
+      ),
+      Field(
+        "total",
+        LongType,
+        description = Some("Total number or results given a entity filter"),
+        resolve = _.value.total
+      ),
+      Field(
+        "categories",
+        ListType(searchFacetsCategoryImp),
+        description = Some("Categories"),
+        resolve = _.value.categories
       )
     )
   )

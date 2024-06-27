@@ -12,6 +12,7 @@ import com.sksamuel.elastic4s.requests.searches.queries.funcscorer._
 import com.sksamuel.elastic4s.requests.searches.queries.matches.MultiMatchQueryBuilderType
 import models.entities.Configuration.ElasticsearchEntity
 import models.entities.SearchResults._
+import models.entities.SearchFacetsResults._
 import models.entities._
 import models.Helpers.Base64Engine
 import play.api.Logging
@@ -23,6 +24,7 @@ import scala.concurrent.Future
 import scala.util.Try
 import com.sksamuel.elastic4s.requests.searches.sort.FieldSort
 import com.sksamuel.elastic4s.requests.searches.term.TermQuery
+import com.sksamuel.elastic4s.handlers.index.Search
 
 class ElasticRetriever @Inject() (
     client: ElasticClient,
@@ -530,6 +532,84 @@ class ElasticRetriever @Inject() (
     }
   }
 
+  def getSearchFacetsResultSet(
+      entities: Seq[ElasticsearchEntity],
+      qString: String,
+      pagination: Pagination
+  ): Future[SearchFacetsResults] = {
+    val limitClause = pagination.toES
+    val esIndices = entities.withFilter(_.facetSearchIndex.isDefined).map(_.facetSearchIndex.get)
+    val searchFields = Seq("label", "category", "datasourceId")
+    val hlFieldSeq = searchFields.map(f => HighlightField(f))
+
+    val exactQueryFn = searchFields.map { f =>
+      termQuery(f + ".keyword", qString).caseInsensitive(true).boost(10000d)
+    }
+
+    val fuzzyQueryFn = multiMatchQuery(qString)
+      .fuzziness("AUTO")
+      .prefixLength(1)
+      .maxExpansions(50)
+      .field("label", 100d)
+      .field("datasourceId", 70d)
+      .field("category", 50d)
+      .operator(Operator.OR)
+
+    val filterQueries = boolQuery().must() :: Nil
+    val fnQueries = boolQuery().should(Seq(fuzzyQueryFn) ++ exactQueryFn) :: Nil
+    val mainQuery = boolQuery().must(fnQueries ::: filterQueries)
+    val aggQuery = termsAgg("categories", "category.keyword").size(1000)
+
+    val searchFacetCategories = client
+      .execute {
+        val aggregations = search(esIndices)
+          .aggs(aggQuery)
+          .trackTotalHits(true)
+        logger.trace(client.show(aggregations))
+        aggregations
+      }
+      .map { case (aggregations) =>
+        val aggs = (Json.parse(aggregations.body.get) \ "aggregations" \ "categories" \ "buckets")
+          .validate[Seq[SearchFacetsCategory]] match {
+          case JsSuccess(value, _) => value
+          case JsError(errors) =>
+            logger.error(errors.mkString("", " | ", ""))
+            Seq.empty
+        }
+        aggs
+      }
+      .await
+
+    if (qString.nonEmpty) {
+      client
+        .execute {
+          val mhits = search(esIndices)
+            .query(mainQuery)
+            .start(limitClause._1)
+            .limit(limitClause._2)
+            .highlighting(HighlightOptions(highlighterType = Some("unified")), hlFieldSeq)
+            .trackTotalHits(true)
+          logger.trace(client.show(mhits))
+          mhits
+        }
+        .map { case (hits) =>
+          val jsHits = Json.parse(hits.body.get)
+          logger.debug(Json.prettyPrint(jsHits))
+          val sresults =
+            (Json.parse(hits.body.get) \ "hits" \ "hits").validate[Seq[SearchFacetsResult]] match {
+              case JsSuccess(value, _) => value
+              case JsError(errors) =>
+                logger.error(errors.mkString("", " | ", ""))
+                Seq.empty
+            }
+
+          SearchFacetsResults(sresults, hits.result.totalHits, searchFacetCategories)
+        }
+    } else {
+      Future.successful(SearchFacetsResults(Seq.empty, 0, searchFacetCategories))
+    }
+  }
+
   def getSearchResultSet(
       entities: Seq[ElasticsearchEntity],
       qString: String,
@@ -604,10 +684,8 @@ class ElasticRetriever @Inject() (
               None
           }
 
-          if (logger.isTraceEnabled) {
-            val jsHits = Json.parse(hits.body.get)
-            logger.trace(Json.prettyPrint(jsHits))
-          }
+          val jsHits = Json.parse(hits.body.get)
+          logger.debug(Json.prettyPrint(jsHits))
 
           val sresults =
             (Json.parse(hits.body.get) \ "hits" \ "hits").validate[Seq[SearchResult]] match {
