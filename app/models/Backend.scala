@@ -135,7 +135,7 @@ class Backend @Inject() (implicit
   }
 
   def getVariants(ids: Seq[String]): Future[IndexedSeq[VariantIndex]] = {
-    val indexName = getIndexOrDefault("variant")
+    val indexName = getIndexOrDefault("variant_index")
 
     esRetriever.getByIds(indexName, ids, fromJsValue[VariantIndex])
   }
