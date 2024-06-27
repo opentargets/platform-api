@@ -539,7 +539,7 @@ class ElasticRetriever @Inject() (
   ): Future[SearchFacetsResults] = {
     val limitClause = pagination.toES
     val esIndices = entities.withFilter(_.facetSearchIndex.isDefined).map(_.facetSearchIndex.get)
-    val searchFields = Seq("label", "category", "datasourceId")
+    val searchFields = Seq("label", "datasourceId")
     val hlFieldSeq = searchFields.map(f => HighlightField(f))
 
     val exactQueryFn = searchFields.map { f =>
@@ -552,7 +552,6 @@ class ElasticRetriever @Inject() (
       .maxExpansions(50)
       .field("label", 100d)
       .field("datasourceId", 70d)
-      .field("category", 50d)
       .operator(Operator.OR)
 
     val filterQueries = boolQuery().must() :: Nil
