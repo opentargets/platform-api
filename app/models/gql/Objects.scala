@@ -1289,4 +1289,14 @@ object Objects extends Logging {
   implicit val variantIndexImp: ObjectType[Backend, VariantIndex] =
     deriveObjectType[Backend, VariantIndex]()
 
+  implicit val ldPopulationStructureImp: ObjectType[Backend, LdPopulationStructure] =
+    deriveObjectType[Backend, LdPopulationStructure]()
+  implicit val sampleImp: ObjectType[Backend, Sample] = deriveObjectType[Backend, Sample]()
+  implicit val gwasIndexImp: ObjectType[Backend, GwasIndex] =
+    deriveObjectType[Backend, GwasIndex]()
+
+  ///ReplaceField(
+  //        "id",
+  //        Field("target", targetImp, Some("Target"), resolve = r => targetsFetcher.defer(r.value.id))
+  //      )
 }
