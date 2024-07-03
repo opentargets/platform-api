@@ -462,6 +462,48 @@ class Backend @Inject() (implicit
       defaultOTSettings.clickhouse.disease.associations.name
     )
 
+  def getAssociationsEntityFixed(
+      tableName: String,
+      datasources: Option[Seq[DatasourceSettings]],
+      fixedEntityId: String,
+      indirectIds: Set[String],
+      bIds: Set[String],
+      filter: Option[String],
+      orderBy: Option[(String, String)],
+      pagination: Option[Pagination]
+  ): Future[Associations] = {
+    val page = pagination.getOrElse(Pagination.mkDefault)
+    val dss = datasources.getOrElse(defaultOTSettings.clickhouse.harmonic.datasources)
+    val weights = dss.map(s => (s.id, s.weight))
+    val dontPropagate = dss.withFilter(!_.propagate).map(_.id).toSet
+    val aotfQ = QAOTF(
+      tableName,
+      fixedEntityId,
+      _,
+      _,
+      filter,
+      orderBy,
+      weights,
+      dontPropagate,
+      page.offset,
+      page.size
+    )
+    val simpleQ = aotfQ(indirectIds, bIds).simpleQuery(0, 100000)
+
+    (dbRetriever.executeQuery[String, Query](simpleQ)) flatMap { case assocIds =>
+      val assocIdSet = assocIds.toSet
+      val fullQ = aotfQ(indirectIds, assocIdSet).query
+
+      if (assocIdSet.nonEmpty) {
+        dbRetriever.executeQuery[Association, Query](fullQ) map { case assocs =>
+          Associations(dss, assocIdSet.size, assocs)
+        }
+      } else {
+        Future.successful(Associations(dss, assocIdSet.size, Vector.empty))
+      }
+    }
+  }
+
   def getAssociationsDiseaseFixed(
       disease: Disease,
       datasources: Option[Seq[DatasourceSettings]],
@@ -472,46 +514,19 @@ class Backend @Inject() (implicit
       orderBy: Option[(String, String)],
       pagination: Option[Pagination]
   ): Future[Associations] = {
-    val page = pagination.getOrElse(Pagination.mkDefault)
-    val dss = datasources.getOrElse(defaultOTSettings.clickhouse.harmonic.datasources)
-
-    val weights = dss.map(s => (s.id, s.weight))
-    val dontPropagate = dss.withFilter(!_.propagate).map(_.id).toSet
-    val aotfQ = QAOTF(
-      defaultOTSettings.clickhouse.disease.associations.name,
-      disease.id,
-      _,
-      _,
-      filter,
-      orderBy,
-      weights,
-      dontPropagate,
-      page.offset,
-      page.size
-    )
-
     logger.debug(s"get disease id ${disease.name}")
     val indirectIDs = if (indirect) disease.descendants.toSet + disease.id else Set.empty[String]
     val targetIds = applyFacetFiltersToBIDs("facet_search_target", targetSet, facetFilters)
-    val simpleQ = aotfQ(indirectIDs, targetIds).simpleQuery(0, 100000)
-
-    (dbRetriever.executeQuery[String, Query](simpleQ)) flatMap { case tIDs =>
-      val tids = tIDs.toSet
-      logger.info(tids.toString())
-      val fullQ = aotfQ(indirectIDs, tids).query
-
-      logger.debug(
-        s"target fixed get simpleQ n ${tIDs.size} " +
-          s"inter n ${tids.size}"
-      )
-      if (tids.nonEmpty) {
-        dbRetriever.executeQuery[Association, Query](fullQ) map { case assocs =>
-          Associations(dss, tids.size, assocs)
-        }
-      } else {
-        Future.successful(Associations(dss, tids.size, Vector.empty))
-      }
-    }
+    getAssociationsEntityFixed(
+      defaultOTSettings.clickhouse.disease.associations.name,
+      datasources,
+      disease.id,
+      indirectIDs,
+      targetIds,
+      filter,
+      orderBy,
+      pagination
+    )
   }
 
   def getAssociationsTargetFixed(
@@ -524,24 +539,6 @@ class Backend @Inject() (implicit
       orderBy: Option[(String, String)],
       pagination: Option[Pagination]
   ): Future[Associations] = {
-    val page = pagination.getOrElse(Pagination.mkDefault)
-    val dss = datasources.getOrElse(defaultOTSettings.clickhouse.harmonic.datasources)
-
-    val weights = dss.map(s => (s.id, s.weight))
-    val dontPropagate = dss.withFilter(!_.propagate).map(_.id).toSet
-    val aotfQ = QAOTF(
-      defaultOTSettings.clickhouse.target.associations.name,
-      target.id,
-      _,
-      _,
-      filter,
-      orderBy,
-      weights,
-      dontPropagate,
-      page.offset,
-      page.size
-    )
-
     logger.debug(s"get target id ${target.approvedSymbol} ACTUALLY DISABLED!")
     val indirectIDs = if (indirect) {
       val interactions =
@@ -552,32 +549,22 @@ class Backend @Inject() (implicit
               .toSet + target.id
           case None => Set.empty + target.id
         }
-
       interactions.await
-
     } else Set.empty[String]
 
     val diseaseIds =
       applyFacetFiltersToBIDs("facet_search_disease", diseaseSet, facetFilters)
-    val simpleQ = aotfQ(indirectIDs, diseaseIds).simpleQuery(0, 100000)
 
-    (dbRetriever.executeQuery[String, Query](simpleQ)) flatMap { case dIDs =>
-      val dids = dIDs.toSet
-      logger.info(dids.toString())
-      val fullQ = aotfQ(indirectIDs, dids).query
-
-      logger.debug(
-        s"target fixed get simpleQ n ${dIDs.size} " +
-          s"inter n ${dids.size}"
-      )
-      if (dids.nonEmpty) {
-        dbRetriever.executeQuery[Association, Query](fullQ) map { case assocs =>
-          Associations(dss, dids.size, assocs)
-        }
-      } else {
-        Future.successful(Associations(dss, dids.size, Vector.empty))
-      }
-    }
+    getAssociationsEntityFixed(
+      defaultOTSettings.clickhouse.target.associations.name,
+      datasources,
+      target.id,
+      indirectIDs,
+      diseaseIds,
+      filter,
+      orderBy,
+      pagination
+    )
   }
 
   def getSimilarW2VEntities(
