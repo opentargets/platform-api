@@ -1297,5 +1297,7 @@ object Objects extends Logging {
   implicit val dbXrefImp: ObjectType[Backend, DbXref] = deriveObjectType[Backend, DbXref]()
   implicit val variantIndexImp: ObjectType[Backend, VariantIndex] =
     deriveObjectType[Backend, VariantIndex]()
+  implicit val gwasIndexImp: ObjectType[Backend, GwasIndex] =
+    deriveObjectType[Backend, GwasIndex]()
 
 }
