@@ -6,6 +6,7 @@ import models.entities.{
   Drug,
   Expressions,
   GeneOntologyTerm,
+  GwasIndex,
   HPO,
   Indications,
   OtarProjects,
@@ -15,7 +16,7 @@ import models.entities.{
 }
 import models.{Backend, entities}
 import play.api.Logging
-import play.api.libs.json.JsValue
+import play.api.libs.json.{JsValue, __}
 import sangria.execution.deferred.{Fetcher, FetcherCache, FetcherConfig, HasId, SimpleFetcherCache}
 
 object Fetchers extends Logging {
@@ -120,9 +121,20 @@ object Fetchers extends Logging {
     HasId[VariantIndex, String](_.variantId)
   val variantFetcherCache = FetcherCache.simple
   val variantFetcher: Fetcher[Backend, VariantIndex, VariantIndex, String] = Fetcher(
-    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(goFetcherCache),
+    config =
+      FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(variantFetcherCache),
     fetch = (ctx: Backend, ids: Seq[String]) => {
       ctx.getVariants(ids)
+    }
+  )
+
+  implicit val gwasFetcherId: HasId[GwasIndex, String] =
+    HasId[GwasIndex, String](_.studyId)
+  val gwasFetcherCache = FetcherCache.simple
+  val gwasFetcher: Fetcher[Backend, GwasIndex, GwasIndex, String] = Fetcher(
+    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(gwasFetcherCache),
+    fetch = (ctx: Backend, ids: Seq[String]) => {
+      ctx.getGwasIndexes(ids)
     }
   )
 

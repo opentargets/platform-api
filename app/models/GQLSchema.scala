@@ -25,7 +25,8 @@ object GQLSchema {
     soTermsFetcher,
     indicationFetcher,
     goFetcher,
-    variantFetcher
+    variantFetcher,
+    gwasFetcher
   )
 
   val query: ObjectType[Backend, Unit] = ObjectType(
@@ -139,6 +140,13 @@ object GQLSchema {
         description = Some("Return a Variant"),
         arguments = variantId :: Nil,
         resolve = ctx => variantFetcher.deferOpt(ctx.arg(variantId))
+      ),
+      Field(
+        "gwasStudy",
+        OptionType(gwasIndexImp),
+        description = Some("Return a Gwas Index Study"),
+        arguments = studyId :: Nil,
+        resolve = ctx => gwasFetcher.deferOpt(ctx.arg(studyId))
       )
     )
   )
