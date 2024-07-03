@@ -494,10 +494,10 @@ class Backend @Inject() (implicit
     val indirectIDs = if (indirect) disease.descendants.toSet + disease.id else Set.empty[String]
     val targetIds = applyFacetFiltersToBIDs("facet_search_target", targetSet, facetFilters)
     val simpleQ = aotfQ(indirectIDs, targetIds).simpleQuery(0, 100000)
-    
+
     (dbRetriever.executeQuery[String, Query](simpleQ)) flatMap { case tIDs =>
       val tids = tIDs.toSet
-      logger.info(tids.toString()) 
+      logger.info(tids.toString())
       val fullQ = aotfQ(indirectIDs, tids).query
 
       logger.debug(
@@ -513,7 +513,7 @@ class Backend @Inject() (implicit
       }
     }
   }
-  
+
   def getAssociationsTargetFixed(
       target: Target,
       datasources: Option[Seq[DatasourceSettings]],
@@ -560,10 +560,10 @@ class Backend @Inject() (implicit
     val diseaseIds =
       applyFacetFiltersToBIDs("facet_search_disease", diseaseSet, facetFilters)
     val simpleQ = aotfQ(indirectIDs, diseaseIds).simpleQuery(0, 100000)
-    
+
     (dbRetriever.executeQuery[String, Query](simpleQ)) flatMap { case dIDs =>
       val dids = dIDs.toSet
-      logger.info(dids.toString()) 
+      logger.info(dids.toString())
       val fullQ = aotfQ(indirectIDs, dids).query
 
       logger.debug(

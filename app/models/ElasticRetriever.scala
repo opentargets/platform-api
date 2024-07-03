@@ -739,6 +739,7 @@ class ElasticRetriever @Inject() (
 }
 
 object ElasticRetriever extends Logging {
+
   /** *
     * SortBy case class use the `fieldName` to sort by and asc if `desc` is false
     * otherwise desc
