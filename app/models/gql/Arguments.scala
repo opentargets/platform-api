@@ -11,17 +11,12 @@ import sangria.util.tag
 
 object Arguments {
 
-  import Aggregations._
-
   val paginationGQLImp: InputObjectType[Pagination] = deriveInputObjectType[Pagination]()
 
   val datasourceSettingsInputImp: InputObjectType[DatasourceSettings] =
     deriveInputObjectType[DatasourceSettings](
       InputObjectTypeName("DatasourceSettingsInput")
     )
-
-  val aggregationFilterImp: InputObjectType[AggregationFilter] =
-    deriveInputObjectType[AggregationFilter]()
 
   val entityNames: Argument[Option[Seq[String]]] = Argument(
     "entityNames",
@@ -139,15 +134,9 @@ object Arguments {
              description = "List of datasource settings"
     )
 
-  val aggregationFiltersListArg: Argument[Option[Seq[AggregationFilter]]] =
-    Argument("aggregationFilters",
-             OptionInputType(ListInputType(aggregationFilterImp)),
-             description = "List of the facets to aggregate by"
-    )
-
   val facetFiltersListArg: Argument[Option[Seq[String]]] = Argument(
     "facetFilters",
     OptionInputType(ListInputType(StringType)),
-    description = "List of the facet IDs to filter by (using OR)"
+    description = "List of the facet IDs to filter by (using AND)"
   )
 }
