@@ -1280,23 +1280,112 @@ object Objects extends Logging {
   )
 
   implicit val inSilicoPredictorImp: ObjectType[Backend, InSilicoPredictor] =
-    deriveObjectType[Backend, InSilicoPredictor]()
+    deriveObjectType[Backend, InSilicoPredictor](
+      ReplaceField(
+        "targetId",
+        Field(
+          "target",
+          OptionType(targetImp),
+          Some("Target"),
+          resolve = r => targetsFetcher.deferOpt(r.value.targetId)
+        )
+      )
+    )
   implicit val transcriptConsequenceImp: ObjectType[Backend, TranscriptConsequence] =
-    deriveObjectType[Backend, TranscriptConsequence]()
+    deriveObjectType[Backend, TranscriptConsequence](
+      ReplaceField(
+        "targetId",
+        Field("target",
+          OptionType(targetImp),
+          Some("Target"),
+          resolve = r => targetsFetcher.deferOpt(r.value.targetId)
+        )
+      ),
+      ReplaceField(
+        "variantConsequenceIds",
+        Field(
+          "variantConsequences",
+          ListType(sequenceOntologyTermImp),
+          description = Some("Most severe consequence sequence ontology"),
+          resolve = r => {
+            r.value.variantConsequenceIds match {
+              case Some(ids) =>
+                val soIds = ids.map(_.replace("_", ":"))
+                logger.debug(s"Finding variant functional consequences: $soIds")
+                soTermsFetcher.deferSeqOpt(soIds)
+              case None => Future.successful(Seq.empty)
+            }
+          }
+        )
+      )
+    )
   implicit val alleleFrequencyImp: ObjectType[Backend, AlleleFrequency] =
     deriveObjectType[Backend, AlleleFrequency]()
   implicit val dbXrefImp: ObjectType[Backend, DbXref] = deriveObjectType[Backend, DbXref]()
   implicit val variantIndexImp: ObjectType[Backend, VariantIndex] =
-    deriveObjectType[Backend, VariantIndex]()
+    deriveObjectType[Backend, VariantIndex](
+      ReplaceField(
+        "mostSevereConsequenceId",
+        Field(
+          "mostSevereConsequence",
+          OptionType(sequenceOntologyTermImp),
+          description = Some("Most severe consequence sequence ontology"),
+          resolve = r => {
+            val soId = (r.value.mostSevereConsequenceId)
+              .replace("_", ":")
+            logger.debug(s"Finding variant functional consequence: $soId")
+            soTermsFetcher.deferOpt(soId)
+          }
+        )
+      )
+    )
 
   implicit val ldPopulationStructureImp: ObjectType[Backend, LdPopulationStructure] =
     deriveObjectType[Backend, LdPopulationStructure]()
   implicit val sampleImp: ObjectType[Backend, Sample] = deriveObjectType[Backend, Sample]()
   implicit val gwasIndexImp: ObjectType[Backend, GwasIndex] =
-    deriveObjectType[Backend, GwasIndex]()
-
-  ///ReplaceField(
-  //        "id",
-  //        Field("target", targetImp, Some("Target"), resolve = r => targetsFetcher.defer(r.value.id))
-  //      )
+    deriveObjectType[Backend, GwasIndex](
+      ReplaceField(
+        "geneId",
+        Field(
+          "target",
+          OptionType(targetImp),
+          Some("Target"),
+          resolve = r => {
+            logger.debug(s"Finding target: ${r.value.geneId}")
+            targetsFetcher.deferOpt(r.value.geneId)
+        }
+        )
+      ),
+      ReplaceField(
+        "traitFromSourceMappedIds",
+        Field(
+          "traitsFromSourceMapped",
+          ListType(diseaseImp),
+          None,
+          resolve = r => {
+            logger.debug(s"Finding diseases for ids: ${r.value.traitFromSourceMappedIds}")
+            r.value.traitFromSourceMappedIds match {
+              case Some(diseaseIds) => diseasesFetcher.deferSeq(diseaseIds)
+              case None => Future.successful(Seq.empty)
+            }
+          }
+        )
+      ),
+      ReplaceField(
+        "backgroundTraitFromSourceMappedIds",
+        Field(
+          "backgroundTraitsFromSourceMapped",
+          ListType(diseaseImp),
+          None,
+          resolve = r => {
+            logger.debug(s"Finding target: ${r.value.backgroundTraitFromSourceMappedIds}")
+            r.value.backgroundTraitFromSourceMappedIds match {
+              case Some(diseaseIds) => diseasesFetcher.deferSeq(diseaseIds)
+              case None => Future.successful(Seq.empty)
+            }
+          }
+        )
+      )
+    )
 }
