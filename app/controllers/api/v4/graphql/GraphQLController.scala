@@ -80,12 +80,13 @@ class GraphQLController @Inject() (implicit
     if (variables.trim == "" || variables.trim == "null") Json.obj()
     else Json.parse(variables).as[JsObject]
 
-  private def responseContainsErrors(response: Result): Future[Boolean] =
+  private def responseContainsErrors(response: Result): Future[(Boolean, Option[String])] =
     response.body.consumeData
       .map(_.utf8String)
       .map(Json.parse)
       .map { json =>
-        (json \ "errors").isDefined
+        val errorsOpt = (json \ "errors").toOption.map(_.toString())
+        (errorsOpt.isDefined, errorsOpt)
       }
 
   private def cachedQuery(gqlQuery: GqlQuery): Future[Result] = {
@@ -105,9 +106,10 @@ class GraphQLController @Inject() (implicit
                 returned called 'errors'. If there were no errors, this field isn't present.
                */
               responseContainsErrors(s).onComplete {
-                case Success(hasErrors) =>
+                case Success((hasErrors, errorMessagesOpt)) =>
                   if (hasErrors) {
                     logger.info(s"Temporarily caching 200 response with errors")
+                    errorMessagesOpt.foreach(errors => logger.error(s"Errors in response: $errors"))
                     cache.set(gqlQuery.toString, s, non200CacheDuration)
                   } else {
                     logger.info(
