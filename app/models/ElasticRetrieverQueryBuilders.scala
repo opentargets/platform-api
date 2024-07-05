@@ -9,9 +9,7 @@ import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
 import models.entities.Pagination
 import play.api.Logging
 
-
-/**
-  * IndexQuery is a case class that represents a query to be executed on an Elasticsearch index.
+/** IndexQuery is a case class that represents a query to be executed on an Elasticsearch index.
   * @param esIndex the Elasticsearch index to query
   * @param kv a map of key-value pairs to form match queries with, where the key is the field name and the value is the match value
   * @param filters a sequence of additional filters to apply
