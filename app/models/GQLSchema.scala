@@ -142,7 +142,7 @@ object GQLSchema {
         resolve = ctx => variantFetcher.deferOpt(ctx.arg(variantId))
       ),
       Field(
-        "gwasIndex",
+        "gwasStudy",
         OptionType(gwasIndexImp),
         description = Some("Return a Gwas Index Study"),
         arguments = studyId :: Nil,
