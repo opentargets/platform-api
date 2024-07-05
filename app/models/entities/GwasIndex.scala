@@ -29,7 +29,7 @@ case class GwasIndex(
     nControls: Option[Int],
     pubmedId: Option[String],
     publicationFirstAuthor: Option[String],
-    publicationTitle: Option[String],
+    publicationTitle: Option[String]
 //    discoverySamples: Option[Seq[Sample]],
 //    nCases: Option[Int],
 //    analysisFlags: Option[Seq[String]]
