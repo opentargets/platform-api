@@ -130,12 +130,12 @@ class ElasticRetriever @Inject() (
       excludedFields: Seq[String] = Seq.empty
   ): Future[(IndexedSeq[A], JsValue)] = {
     // just log and execute the query
-    val indexQuery: IndexQuery[V] = IndexQuery(
-      esIndex = esIndex,
-      kv = kv, 
-      pagination = pagination, 
-      aggs = aggs, 
-      excludedFields = excludedFields)
+    val indexQuery: IndexQuery[V] = IndexQuery(esIndex = esIndex,
+                                               kv = kv,
+                                               pagination = pagination,
+                                               aggs = aggs,
+                                               excludedFields = excludedFields
+    )
     val searchRequest: SearchRequest = IndexQueryMust(indexQuery)
     getByIndexedQuery(searchRequest, sortByField, buildF)
   }
@@ -151,17 +151,16 @@ class ElasticRetriever @Inject() (
       excludedFields: Seq[String] = Seq.empty
   ): Future[(IndexedSeq[A], JsValue)] = {
     // just log and execute the query
-    val indexQuery: IndexQuery[V] = IndexQuery(
-      esIndex = esIndex,
-      kv = kv, 
-      filters = filters,
-      pagination = pagination, 
-      aggs = aggs, 
-      excludedFields = excludedFields)
+    val indexQuery: IndexQuery[V] = IndexQuery(esIndex = esIndex,
+                                               kv = kv,
+                                               filters = filters,
+                                               pagination = pagination,
+                                               aggs = aggs,
+                                               excludedFields = excludedFields
+    )
     val searchRequest: SearchRequest = IndexQueryMust(indexQuery)
     getByIndexedQuery(searchRequest, sortByField, buildF)
   }
-
 
   /** This fn represents a query where each kv from the map is used in
     * a bool 'should'. Based on the query asked by `getByIndexedQuery` and aggregation is applied
@@ -175,12 +174,12 @@ class ElasticRetriever @Inject() (
       sortByField: Option[sort.FieldSort] = None,
       excludedFields: Seq[String] = Seq.empty
   ): Future[(IndexedSeq[A], JsValue)] = {
-    val indexQuery: IndexQuery[V] = IndexQuery(
-      esIndex = esIndex,
-      kv = kv, 
-      pagination = pagination, 
-      aggs = aggs, 
-      excludedFields = excludedFields)
+    val indexQuery: IndexQuery[V] = IndexQuery(esIndex = esIndex,
+                                               kv = kv,
+                                               pagination = pagination,
+                                               aggs = aggs,
+                                               excludedFields = excludedFields
+    )
     val searchRequest: SearchRequest =
       IndexQueryShould(indexQuery)
     // log and execute the query

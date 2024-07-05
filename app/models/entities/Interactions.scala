@@ -26,7 +26,11 @@ object Interactions extends Logging {
     )
   )
 
-  def find(id: String, scoreThreshold: Option[Double], dbName: Option[String], pagination: Option[Pagination])(implicit
+  def find(id: String,
+           scoreThreshold: Option[Double],
+           dbName: Option[String],
+           pagination: Option[Pagination]
+  )(implicit
       ec: ExecutionContext,
       esSettings: ElasticsearchSettings,
       esRetriever: ElasticRetriever
@@ -48,8 +52,8 @@ object Interactions extends Logging {
       should(
         rangeQuery("scoring").gte(scoreThreshold.getOrElse(0.0d)),
         not(existsQuery("scoring"))
-        )
       )
+    )
 
     val aggs = Seq(
       valueCountAgg("rowsCount", "targetA.keyword")
