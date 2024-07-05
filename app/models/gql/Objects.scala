@@ -146,11 +146,11 @@ object Objects extends Logging {
         "interactions",
         OptionType(interactions),
         description = Some("Biological pathway membership from Reactome"),
-        arguments = databaseName :: pageArg :: Nil,
+        arguments = scoreThreshold :: databaseName :: pageArg :: Nil,
         resolve = r => {
           import r.ctx._
 
-          Interactions.find(r.value.id, r arg databaseName, r arg pageArg)
+          Interactions.find(r.value.id, r arg scoreThreshold, r arg databaseName, r arg pageArg)
         }
       ),
       Field(

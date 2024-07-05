@@ -718,7 +718,7 @@ class Backend @Inject() (implicit
     logger.debug(s"get target id ${target.approvedSymbol} ACTUALLY DISABLED!")
     val indirectIDs = if (indirect) {
       val interactions =
-        Interactions.find(target.id, None, pagination = Some(Pagination(0, 10000))) map {
+        Interactions.find(target.id, None, None, pagination = Some(Pagination(0, 10000))) map {
           case Some(ints) =>
             ints.rows
               .flatMap(int => (int \ ("targetB")).asOpt[String].filter(_.startsWith("ENSG")))
