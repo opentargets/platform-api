@@ -1296,9 +1296,9 @@ object Objects extends Logging {
       ReplaceField(
         "targetId",
         Field("target",
-          OptionType(targetImp),
-          Some("Target"),
-          resolve = r => targetsFetcher.deferOpt(r.value.targetId)
+              OptionType(targetImp),
+              Some("Target"),
+              resolve = r => targetsFetcher.deferOpt(r.value.targetId)
         )
       ),
       ReplaceField(
@@ -1340,52 +1340,4 @@ object Objects extends Logging {
       )
     )
 
-  implicit val ldPopulationStructureImp: ObjectType[Backend, LdPopulationStructure] =
-    deriveObjectType[Backend, LdPopulationStructure]()
-  implicit val sampleImp: ObjectType[Backend, Sample] = deriveObjectType[Backend, Sample]()
-  implicit val gwasIndexImp: ObjectType[Backend, GwasIndex] =
-    deriveObjectType[Backend, GwasIndex](
-      ReplaceField(
-        "geneId",
-        Field(
-          "target",
-          OptionType(targetImp),
-          Some("Target"),
-          resolve = r => {
-            logger.debug(s"Finding target: ${r.value.geneId}")
-            targetsFetcher.deferOpt(r.value.geneId)
-        }
-        )
-      ),
-      ReplaceField(
-        "traitFromSourceMappedIds",
-        Field(
-          "traitsFromSourceMapped",
-          ListType(diseaseImp),
-          None,
-          resolve = r => {
-            logger.debug(s"Finding diseases for ids: ${r.value.traitFromSourceMappedIds}")
-            r.value.traitFromSourceMappedIds match {
-              case Some(diseaseIds) => diseasesFetcher.deferSeq(diseaseIds)
-              case None => Future.successful(Seq.empty)
-            }
-          }
-        )
-      ),
-      ReplaceField(
-        "backgroundTraitFromSourceMappedIds",
-        Field(
-          "backgroundTraitsFromSourceMapped",
-          ListType(diseaseImp),
-          None,
-          resolve = r => {
-            logger.debug(s"Finding target: ${r.value.backgroundTraitFromSourceMappedIds}")
-            r.value.backgroundTraitFromSourceMappedIds match {
-              case Some(diseaseIds) => diseasesFetcher.deferSeq(diseaseIds)
-              case None => Future.successful(Seq.empty)
-            }
-          }
-        )
-      )
-    )
 }
