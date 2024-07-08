@@ -128,15 +128,18 @@ object Fetchers extends Logging {
     }
   )
 
-  implicit val gwasFetcherId: HasId[GwasIndex, String] =
-    HasId[GwasIndex, String](_.studyId)
   val gwasFetcherCache = FetcherCache.simple
-  val gwasFetcher: Fetcher[Backend, GwasIndex, GwasIndex, String] = Fetcher(
-    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(gwasFetcherCache),
-    fetch = (ctx: Backend, ids: Seq[String]) => {
-      ctx.getGwasIndexes(ids)
-    }
-  )
+  val gwasFetcher: Fetcher[Backend, JsValue, JsValue, String] = {
+    implicit val gwasFetcherId: HasId[JsValue, String] =
+      HasId[JsValue, String](js => (js \ "studyId").as[String])
+    Fetcher(
+      config =
+        FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(gwasFetcherCache),
+      fetch = (ctx: Backend, ids: Seq[String]) => {
+        ctx.getGwasIndexes(ids)
+      }
+    )
+  }
 
   def buildFetcher(index: String): Fetcher[Backend, JsValue, JsValue, String] = {
     implicit val soTermHasId = HasId[JsValue, String](el => (el \ "id").as[String])
