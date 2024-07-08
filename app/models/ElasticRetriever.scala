@@ -46,7 +46,7 @@ class ElasticRetriever @Inject() (
             .map(_.asOpt[JsArray])
             .fold(
               ex => {
-                logger.error(s"bae64 encoded  ${ex.toString}")
+                logger.error(s"base64 encoded ${ex.toString}")
                 None
               },
               identity
