@@ -1,8 +1,10 @@
 package models
 
 import play.api.Logging
+import play.api.libs.json._
 import sangria.schema._
 import entities._
+import models.entities.GwasIndex.gwasImp
 import sangria.execution.deferred._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -143,7 +145,7 @@ object GQLSchema {
       ),
       Field(
         "gwasStudy",
-        OptionType(gwasIndexImp),
+        OptionType(gwasImp),
         description = Some("Return a Gwas Index Study"),
         arguments = studyId :: Nil,
         resolve = ctx => gwasFetcher.deferOpt(ctx.arg(studyId))
