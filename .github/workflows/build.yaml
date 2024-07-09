@@ -79,8 +79,8 @@ jobs:
         with:
           token_format: access_token
           project_id: 'open-targets-eu-dev'
-          workload_identity_provider: projects/426265110888/locations/global/workloadIdentityPools/github/providers/my-repo
-          service_account: pis-test-image-upload@open-targets-eu-dev.iam.gserviceaccount.com
+          workload_identity_provider: projects/426265110888/locations/global/workloadIdentityPools/github/providers/opentargets-github
+          service_account: platform-api-gar@open-targets-eu-dev.iam.gserviceaccount.com
           access_token_lifetime: 300s
 
       - id: auth_gar
@@ -99,15 +99,15 @@ jobs:
           context: .
           push: true
           tags: |
-            quay.io/opentargets/platform-api-test:latest
-            quay.io/opentargets/platform-api-test:${{ github.ref_name }}
-            europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api-test/platform-api-test:latest
-            europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api-test/platform-api-test:${{ github.ref_name }}
+            quay.io/opentargets/platform-api:latest
+            quay.io/opentargets/platform-api:${{ github.ref_name }}
+            europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:latest
+            europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:${{ github.ref_name }}
 
       - id: generate-attestations
         name: Generate artifact attestation
         uses: actions/attest-build-provenance@v1
         with:
-          subject-name: quay.io/opentargets/platform-api-test
+          subject-name: quay.io/opentargets/platform-api
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
