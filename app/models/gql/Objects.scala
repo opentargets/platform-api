@@ -1302,13 +1302,13 @@ object Objects extends Logging {
         )
       ),
       ReplaceField(
-        "variantConsequenceIds",
+        "variantFunctionalConsequenceIds",
         Field(
           "variantConsequences",
           ListType(sequenceOntologyTermImp),
           description = Some("Most severe consequence sequence ontology"),
           resolve = r => {
-            r.value.variantConsequenceIds match {
+            r.value.variantFunctionalConsequenceIds match {
               case Some(ids) =>
                 val soIds = ids.map(_.replace("_", ":"))
                 logger.debug(s"Finding variant functional consequences: $soIds")

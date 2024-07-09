@@ -106,7 +106,7 @@ object GwasIndex extends Logging {
         resolve = js => (js.value \ "initialSampleSize").asOpt[String]
       ),
       Field(
-        "traitsFromSourceMapped",
+        "diseases",
         OptionType(ListType(diseaseImp)),
         None,
         resolve = js => {
@@ -134,7 +134,7 @@ object GwasIndex extends Logging {
         resolve = js => (js.value \ "ldPopulationStructure").asOpt[Seq[LdPopulationStructure]]
       ),
       Field(
-        "backgroundTraitsFromSourceMapped",
+        "backgroundTraits",
         OptionType(ListType(diseaseImp)),
         None,
         resolve = js => {
