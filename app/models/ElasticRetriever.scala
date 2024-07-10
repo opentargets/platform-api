@@ -593,22 +593,20 @@ class ElasticRetriever @Inject() (
 
     val filterQueries = filters.getOrElse(boolQuery().must()) :: Nil
     val fnQueries = boolQuery().should(Seq(fuzzyQueryFn) ++ exactQueryFn) :: Nil
-    val mainQuery = if (qString.nonEmpty) {
-      if (filters.isEmpty) {
-        logger.info("just fnQueries")
-        boolQuery().must(fnQueries)
-      } else {
-        logger.info("fnQueries and filterQueries")
-        boolQuery().must(fnQueries ::: filterQueries)
-      }
-    } else {
-      if (filters.nonEmpty) { 
-        logger.info("just filterQueries")
-        boolQuery().must(filterQueries)
-      } else {
-        logger.info("no queries")
+    // use case matching to determine the main query
+    val mainQuery = (qString, filters) match {
+      case ("", None) =>
+        logger.debug("no query or filters")
         boolQuery().must()
-      }
+      case ("", Some(f)) =>
+        logger.debug("only filters")
+        boolQuery().must(f)
+      case (_, None) =>
+        logger.debug("only query")
+        boolQuery().must(fnQueries)
+      case (_, Some(f)) =>
+        logger.debug("query and filters")
+        boolQuery().must(fnQueries ::: filterQueries)
     }
     val aggQuery = termsAgg("categories", "category.keyword").size(1000)
 

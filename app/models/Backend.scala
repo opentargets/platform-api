@@ -28,6 +28,7 @@ import play.api.libs.json._
 import play.api.{Configuration, Environment, Logging}
 import play.db.NamedDatabase
 import sangria.execution.HandledException
+import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
 
 import java.time.LocalDate
 import scala.collection.immutable.ArraySeq
@@ -458,7 +459,7 @@ class Backend @Inject() (implicit
     dbRetriever.executeQuery[String, Query](simpleQ)
   }
 
-  def resolveFacetFilters(facetFilters: FacetSearchFilters) = {
+  def resolveFacetFilters(facetFilters: FacetSearchFilters): Option[BoolQuery] = {
     val diseaseIds: Vector[String] = if (facetFilters.associatedTargetId.isDefined) {
       getAssociatedEntities(
         defaultOTSettings.clickhouse.target.associations.name,
@@ -478,10 +479,8 @@ class Backend @Inject() (implicit
       Vector.empty
     }
     val entityIds: Set[String] = facetFilters.entityIds.getOrElse(Set.empty).toSet ++ diseaseIds.toSet ++ targetIds.toSet
-    logger.info(entityIds.toString)
-    boolQuery().must(
-      termsQuery("entityIds.keyword", entityIds)
-    )
+    if (entityIds.isEmpty) None
+    else Some(boolQuery().must(termsQuery("entityIds.keyword", entityIds)))
   }
   
 
@@ -496,12 +495,12 @@ class Backend @Inject() (implicit
       if (entityNames.contains(e.name) && e.facetSearchIndex.isDefined)
     } yield e
     val facetFilters = facetSearchFilters.getOrElse(FacetSearchFilters.empty)
-    val filters = resolveFacetFilters(facetFilters)
+    val filters: Option[BoolQuery] = resolveFacetFilters(facetFilters)
 
     esRetriever.getSearchFacetsResultSet(entities,
                                          qString,
                                          pagination.getOrElse(Pagination.mkDefault),
-                                         Some(filters))
+                                         filters)
   }
 
   def getAssociationDatasources: Future[Vector[EvidenceSource]] =
