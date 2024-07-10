@@ -42,6 +42,11 @@ object Arguments {
   )
   val pageSize: Argument[Option[Int]] = Argument("size", OptionInputType(IntType))
   val cursor: Argument[Option[String]] = Argument("cursor", OptionInputType(StringType))
+  val scoreThreshold: Argument[Option[Double]] = Argument(
+    "scoreThreshold",
+    OptionInputType(FloatType),
+    description = "Threshold similarity between 0 and 1"
+  )
   val databaseName: Argument[Option[String]] =
     Argument("sourceDatabase", OptionInputType(StringType), description = "Database name")
   val queryString: Argument[String] =

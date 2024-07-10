@@ -7,6 +7,7 @@ import com.sksamuel.elastic4s.requests.common.Operator
 import com.sksamuel.elastic4s.requests.searches._
 import com.sksamuel.elastic4s.requests.searches.aggs.AbstractAggregation
 import com.sksamuel.elastic4s.requests.searches.queries.NestedQuery
+import com.sksamuel.elastic4s.requests.searches.queries.Query
 import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
 import com.sksamuel.elastic4s.requests.searches.queries.funcscorer._
 import com.sksamuel.elastic4s.requests.searches.queries.matches.MultiMatchQueryBuilderType
@@ -25,6 +26,7 @@ import scala.util.Try
 import com.sksamuel.elastic4s.requests.searches.sort.FieldSort
 import com.sksamuel.elastic4s.requests.searches.term.TermQuery
 import com.sksamuel.elastic4s.handlers.index.Search
+import views.html.index.f
 
 class ElasticRetriever @Inject() (
     client: ElasticClient,
@@ -128,7 +130,35 @@ class ElasticRetriever @Inject() (
       excludedFields: Seq[String] = Seq.empty
   ): Future[(IndexedSeq[A], JsValue)] = {
     // just log and execute the query
-    val searchRequest: SearchRequest = IndexQueryMust(esIndex, kv, pagination, aggs, excludedFields)
+    val indexQuery: IndexQuery[V] = IndexQuery(esIndex = esIndex,
+                                               kv = kv,
+                                               pagination = pagination,
+                                               aggs = aggs,
+                                               excludedFields = excludedFields
+    )
+    val searchRequest: SearchRequest = IndexQueryMust(indexQuery)
+    getByIndexedQuery(searchRequest, sortByField, buildF)
+  }
+
+  def getByIndexedQueryMustWithFilters[A, V](
+      esIndex: String,
+      kv: Map[String, V],
+      filters: Seq[Query],
+      pagination: Pagination,
+      buildF: JsValue => Option[A],
+      aggs: Iterable[AbstractAggregation] = Iterable.empty,
+      sortByField: Option[sort.FieldSort] = None,
+      excludedFields: Seq[String] = Seq.empty
+  ): Future[(IndexedSeq[A], JsValue)] = {
+    // just log and execute the query
+    val indexQuery: IndexQuery[V] = IndexQuery(esIndex = esIndex,
+                                               kv = kv,
+                                               filters = filters,
+                                               pagination = pagination,
+                                               aggs = aggs,
+                                               excludedFields = excludedFields
+    )
+    val searchRequest: SearchRequest = IndexQueryMust(indexQuery)
     getByIndexedQuery(searchRequest, sortByField, buildF)
   }
 
@@ -144,8 +174,14 @@ class ElasticRetriever @Inject() (
       sortByField: Option[sort.FieldSort] = None,
       excludedFields: Seq[String] = Seq.empty
   ): Future[(IndexedSeq[A], JsValue)] = {
+    val indexQuery: IndexQuery[V] = IndexQuery(esIndex = esIndex,
+                                               kv = kv,
+                                               pagination = pagination,
+                                               aggs = aggs,
+                                               excludedFields = excludedFields
+    )
     val searchRequest: SearchRequest =
-      IndexQueryShould(esIndex, kv, pagination, aggs, excludedFields)
+      IndexQueryShould(indexQuery)
     // log and execute the query
     getByIndexedQuery(searchRequest, sortByField, buildF)
   }
