@@ -571,7 +571,8 @@ class ElasticRetriever @Inject() (
   def getSearchFacetsResultSet(
       entities: Seq[ElasticsearchEntity],
       qString: String,
-      pagination: Pagination
+      pagination: Pagination,
+      filters: Option[BoolQuery]
   ): Future[SearchFacetsResults] = {
     val limitClause = pagination.toES
     val esIndices = entities.withFilter(_.facetSearchIndex.isDefined).map(_.facetSearchIndex.get)
@@ -590,9 +591,25 @@ class ElasticRetriever @Inject() (
       .field("datasourceId", 70d)
       .operator(Operator.OR)
 
-    val filterQueries = boolQuery().must() :: Nil
+    val filterQueries = filters.getOrElse(boolQuery().must()) :: Nil
     val fnQueries = boolQuery().should(Seq(fuzzyQueryFn) ++ exactQueryFn) :: Nil
-    val mainQuery = boolQuery().must(fnQueries ::: filterQueries)
+    val mainQuery = if (qString.nonEmpty) {
+      if (filters.isEmpty) {
+        logger.info("just fnQueries")
+        boolQuery().must(fnQueries)
+      } else {
+        logger.info("fnQueries and filterQueries")
+        boolQuery().must(fnQueries ::: filterQueries)
+      }
+    } else {
+      if (filters.nonEmpty) { 
+        logger.info("just filterQueries")
+        boolQuery().must(filterQueries)
+      } else {
+        logger.info("no queries")
+        boolQuery().must()
+      }
+    }
     val aggQuery = termsAgg("categories", "category.keyword").size(1000)
 
     val searchFacetCategories = client
@@ -615,7 +632,7 @@ class ElasticRetriever @Inject() (
       }
       .await
 
-    if (qString.nonEmpty) {
+    if (qString.nonEmpty | filters.nonEmpty) {
       client
         .execute {
           val mhits = search(esIndices)

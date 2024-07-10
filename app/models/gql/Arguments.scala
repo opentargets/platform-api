@@ -12,6 +12,7 @@ import sangria.util.tag
 object Arguments {
 
   import Aggregations._
+  import SearchFacetsResults._
 
   val paginationGQLImp: InputObjectType[Pagination] = deriveInputObjectType[Pagination]()
 
@@ -27,6 +28,14 @@ object Arguments {
     "entityNames",
     OptionInputType(ListInputType(StringType)),
     description = "List of entity names to search for (target, disease, drug,...)"
+  )
+  val facetSearchFilterImp: InputObjectType[FacetSearchFilters] =
+    deriveInputObjectType[FacetSearchFilters]()
+
+  val facetSearchFilters: Argument[Option[FacetSearchFilters]] = Argument(
+    "facetSearchFilters", 
+    OptionInputType(facetSearchFilterImp),
+    description = "Optional filters to apply to the facet search"
   )
 
   val datasourceIdsArg: Argument[Option[Seq[String]]] = Argument(

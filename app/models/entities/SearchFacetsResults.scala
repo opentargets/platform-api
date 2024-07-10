@@ -29,6 +29,15 @@ case class SearchFacetsResults(
     categories: Seq[SearchFacetsCategory]
 )
 
+case class FacetSearchFilters(
+    category: Option[Seq[String]],
+    datasourceId: Option[Seq[String]],
+    entityIds: Option[Seq[String]],
+    label: Option[Seq[String]],
+    associatedTargetId: Option[String],
+    associatedDiseaseId: Option[String]
+)
+
 object SearchFacetsResults {
   implicit val searchFacetsCategoryImpW: OWrites[SearchFacetsCategory] =
     Json.writes[models.entities.SearchFacetsCategory]
@@ -60,4 +69,10 @@ object SearchFacetsResults {
 
   implicit val searchFacetsResultsImpW: OFormat[SearchFacetsResults] =
     Json.format[models.entities.SearchFacetsResults]
+  implicit val facetSearchFilterImpW: OFormat[FacetSearchFilters] =
+    Json.format[models.entities.FacetSearchFilters]
+}
+
+object FacetSearchFilters {
+  val empty: FacetSearchFilters = FacetSearchFilters(None, None, None, None, None, None)
 }

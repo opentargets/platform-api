@@ -437,19 +437,71 @@ class Backend @Inject() (implicit
     esRetriever.getSearchResultSet(entities, qString, pagination.getOrElse(Pagination.mkDefault))
   }
 
+  def getAssociatedEntities(table: String, entityId: String, datasources: Option[Seq[DatasourceSettings]],
+      indirect: Boolean): Future[Vector[String]] = {
+    val dss = datasources.getOrElse(defaultOTSettings.clickhouse.harmonic.datasources)
+    val weights = dss.map(s => (s.id, s.weight))
+    val dontPropagate = dss.withFilter(!_.propagate).map(_.id).toSet
+    val aotfQ = QAOTF(
+      table,
+      entityId,
+      Set.empty,
+      Set.empty,
+      None,
+      None,
+      weights,
+      dontPropagate,
+      0,
+      100000
+    )
+    val simpleQ = aotfQ.simpleQuery(0, 100000)
+    dbRetriever.executeQuery[String, Query](simpleQ)
+  }
+
+  def resolveFacetFilters(facetFilters: FacetSearchFilters) = {
+    val diseaseIds: Vector[String] = if (facetFilters.associatedTargetId.isDefined) {
+      getAssociatedEntities(
+        defaultOTSettings.clickhouse.target.associations.name,
+        facetFilters.associatedTargetId.get, 
+        None, 
+        false).await
+    } else {
+      Vector.empty
+    }
+    val targetIds: Vector[String] = if (facetFilters.associatedDiseaseId.isDefined) {
+       getAssociatedEntities(
+        defaultOTSettings.clickhouse.disease.associations.name,
+        facetFilters.associatedDiseaseId.get, 
+        None, 
+        false).await
+    } else {
+      Vector.empty
+    }
+    val entityIds: Set[String] = facetFilters.entityIds.getOrElse(Set.empty).toSet ++ diseaseIds.toSet ++ targetIds.toSet
+    logger.info(entityIds.toString)
+    boolQuery().must(
+      termsQuery("entityIds.keyword", entityIds)
+    )
+  }
+  
+
   def searchFacets(
       qString: String,
       pagination: Option[Pagination],
-      entityNames: Seq[String]
+      entityNames: Seq[String],
+      facetSearchFilters: Option[FacetSearchFilters]
   ): Future[SearchFacetsResults] = {
     val entities = for {
       e <- defaultESSettings.entities
       if (entityNames.contains(e.name) && e.facetSearchIndex.isDefined)
     } yield e
+    val facetFilters = facetSearchFilters.getOrElse(FacetSearchFilters.empty)
+    val filters = resolveFacetFilters(facetFilters)
+
     esRetriever.getSearchFacetsResultSet(entities,
                                          qString,
-                                         pagination.getOrElse(Pagination.mkDefault)
-    )
+                                         pagination.getOrElse(Pagination.mkDefault),
+                                         Some(filters))
   }
 
   def getAssociationDatasources: Future[Vector[EvidenceSource]] =
