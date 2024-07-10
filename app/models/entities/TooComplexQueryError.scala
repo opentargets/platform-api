@@ -31,7 +31,8 @@ case object TooComplexQueryError extends Exception("Query is too expensive.") wi
     case (_, error @ MaxQueryDepthReachedError(_)) => HandledException(error.getMessage)
     case (_, error @ InputParameterCheckError(_))  => HandledException(error.getMessage)
     case (_, error @ InvalidQueryTerms(_))         => HandledException(error.getMessage)
-    case (m, error @ com.sksamuel.elastic4s.http.JavaClientExceptionWrapper(_)) => HandledException(error.getMessage)
+    case (m, error @ com.sksamuel.elastic4s.http.JavaClientExceptionWrapper(_)) =>
+      HandledException(error.getMessage)
     case (m, error: java.sql.SQLTransientConnectionException) =>
       handleExceptionWithCode(
         "Error connecting to the Clickhouse db. Contact system administrator.",
