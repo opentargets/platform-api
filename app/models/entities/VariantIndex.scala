@@ -10,7 +10,7 @@ case class InSilicoPredictor(method: Option[String],
                              targetId: Option[String]
 )
 
-case class TranscriptConsequence(variantConsequenceIds: Option[Seq[String]],
+case class TranscriptConsequence(variantFunctionalConsequenceIds: Option[Seq[String]],
                                  amino_acid_change: Option[String],
                                  uniprotAccessions: Option[Seq[String]],
                                  isEnsemblCanonical: Boolean,
