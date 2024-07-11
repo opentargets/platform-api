@@ -36,6 +36,9 @@ class ElasticRetriever @Inject() (
 
   val hlFieldSeq: Seq[HighlightField] = hlFields.map(HighlightField(_))
 
+  // Use the wrapper instead of the direct client
+  private val clientWithRetry = new ElasticClientWrapper(client)
+
   import com.sksamuel.elastic4s.ElasticDsl._
 
   private def decodeSearchAfter(searchAfter: Option[String]): collection.Seq[Any] =
@@ -97,9 +100,11 @@ class ElasticRetriever @Inject() (
       .trackTotalHits(true)
 
     // just log and execute the query
-    val elems: Future[Response[SearchResponse]] = client.execute {
-      logger.debug(s"Elasticsearch query to execute: ${client.show(q)}")
-      q
+    val elems: Future[Response[SearchResponse]] = clientWithRetry.execute {
+      client.execute {
+        logger.debug(s"Elasticsearch query to execute: ${client.show(q)}")
+        q
+      }
     }
 
     elems.map {
@@ -166,7 +171,7 @@ class ElasticRetriever @Inject() (
   private def executeQuery(
       searchRequest: SearchRequest,
       sortByField: Option[sort.FieldSort]
-  ): Future[Response[SearchResponse]] =
+  ): Future[Response[SearchResponse]] = clientWithRetry.execute {
     client.execute {
       val sortedSearchRequest = sortByField match {
         case Some(s) => searchRequest.sortBy(s)
@@ -176,6 +181,7 @@ class ElasticRetriever @Inject() (
       logger.debug(s"Elasticsearch query: ${client.show(sortedSearchRequest)}")
       sortedSearchRequest
     }
+  }
 
   private def handleSearchResponse[A](
       searchResponse: Response[SearchResponse],
@@ -226,16 +232,18 @@ class ElasticRetriever @Inject() (
       .searchAfter(sa)
 
     // just log and execute the query
-    val elems: Future[Response[SearchResponse]] = client.execute {
-      val qq = sortByFields match {
-        case Nil => q
-        case _ =>
-          q.sortBy(sortByFields: _*)
+    val elems: Future[Response[SearchResponse]] = clientWithRetry.execute {
+      client.execute {
+        val qq = sortByFields match {
+          case Nil => q
+          case _ =>
+            q.sortBy(sortByFields: _*)
 
+        }
+
+        logger.debug(s"Elasticsearch query to execute: ${client.show(qq)}")
+        qq
       }
-
-      logger.debug(s"Elasticsearch query to execute: ${client.show(qq)}")
-      qq
     }
 
     elems.map {
@@ -295,16 +303,18 @@ class ElasticRetriever @Inject() (
       .searchAfter(sa)
 
     // just log and execute the query
-    val elems: Future[Response[SearchResponse]] = client.execute {
-      val qq = sortByField match {
-        case Some(s) =>
-          val tie = sort.FieldSort("id.keyword").asc()
-          q.sortBy(s, tie)
-        case None => q
-      }
+    val elems: Future[Response[SearchResponse]] = clientWithRetry.execute {
+      client.execute {
+        val qq = sortByField match {
+          case Some(s) =>
+            val tie = sort.FieldSort("id.keyword").asc()
+            q.sortBy(s, tie)
+          case None => q
+        }
 
-      logger.debug(s"Elasticsearch query to execute: ${client.show(qq)}")
-      qq
+        logger.debug(s"Elasticsearch query to execute: ${client.show(qq)}")
+        qq
+      }
     }
 
     elems.map {
@@ -380,7 +390,7 @@ class ElasticRetriever @Inject() (
         .sourceExclude(excludedFields)
         .searchAfter(searchAfterEntries)
 
-    val elems =
+    val elems = clientWithRetry.execute {
       client.execute {
         val qq = sortByField match {
           case Some(s) =>
@@ -392,6 +402,7 @@ class ElasticRetriever @Inject() (
         logger.debug(s"Elasticsearch query to execute: ${client.show(qq)}")
         qq
       }
+    }
 
     elems.map {
       case _: RequestFailure                       => (IndexedSeq.empty, JsNull, None)
@@ -436,13 +447,15 @@ class ElasticRetriever @Inject() (
         logger.warn("No IDs provided to getByIds. Something is probably wrong.")
         Future.successful(IndexedSeq.empty)
       case _ =>
-        val elems: Future[Response[SearchResponse]] = client.execute {
-          val q = search(esIndex).query {
-            idsQuery(ids)
-          } limit (Configuration.batchSize) trackTotalHits (true) sourceExclude (excludedFields)
+        val elems: Future[Response[SearchResponse]] = clientWithRetry.execute {
+          client.execute {
+            val q = search(esIndex).query {
+              idsQuery(ids)
+            } limit (Configuration.batchSize) trackTotalHits (true) sourceExclude (excludedFields)
 
-          logger.debug(s"Elasticsearch query to execute: ${client.show(q)}")
-          q
+            logger.debug(s"Elasticsearch query to execute: ${client.show(q)}")
+            q
+          }
         }
 
         elems.map {
@@ -496,14 +509,16 @@ class ElasticRetriever @Inject() (
             aggregations trackTotalHits (true)
           }
 
-        val execMainSearch = client.execute {
-          val q = search(esIndices)
-            .query(mainQuery)
-            .start(0)
-            .limit(10000)
-            .highlighting(highlightOptions, highlightField)
-            .trackTotalHits(true)
-          q
+        val execMainSearch = clientWithRetry.execute {
+          client.execute {
+            val q = search(esIndices)
+              .query(mainQuery)
+              .start(0)
+              .limit(10000)
+              .highlighting(highlightOptions, highlightField)
+              .trackTotalHits(true)
+            q
+          }
         }
         val execSearch = execAggsSearch.zip(execMainSearch)
 
@@ -662,16 +677,18 @@ class ElasticRetriever @Inject() (
           aggregations trackTotalHits (true)
         }
         .zip {
-          client.execute {
-            val mhits = search(esIndices)
-              .query(mainQuery)
-              .start(limitClause._1)
-              .limit(limitClause._2)
-              .highlighting(HighlightOptions(highlighterType = Some("fvh")), hlFieldSeq)
-              .trackTotalHits(true)
-              .sourceExclude("terms", "terms5", "terms25")
-            logger.trace(client.show(mhits))
-            mhits
+          clientWithRetry.execute {
+            client.execute {
+              val mhits = search(esIndices)
+                .query(mainQuery)
+                .start(limitClause._1)
+                .limit(limitClause._2)
+                .highlighting(HighlightOptions(highlighterType = Some("fvh")), hlFieldSeq)
+                .trackTotalHits(true)
+                .sourceExclude("terms", "terms5", "terms25")
+              logger.trace(client.show(mhits))
+              mhits
+            }
           }
         }
         .map { case (aggregations, hits) =>
