@@ -1317,8 +1317,7 @@ object Objects extends Logging {
             }
           }
         )
-      ),
-      RenameField("amino_acid_change", "aminoAcidChange")
+      )
     )
   implicit val alleleFrequencyImp: ObjectType[Backend, AlleleFrequency] =
     deriveObjectType[Backend, AlleleFrequency]()
