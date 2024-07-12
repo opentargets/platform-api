@@ -22,6 +22,7 @@ import models.entities.MousePhenotypes._
 import models.entities.Pharmacogenomics._
 import models.entities.SearchFacetsResults._
 import models.entities._
+import org.apache.http.impl.nio.reactor.IOReactorConfig
 import play.api.cache.AsyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
@@ -48,7 +49,11 @@ class Backend @Inject() (implicit
   /** return meta information loaded from ot.meta settings */
   lazy val getMeta: Meta = defaultOTSettings.meta
   lazy val getESClient: ElasticClient = ElasticClient(
-    JavaClient(ElasticProperties(s"http://${defaultESSettings.host}:${defaultESSettings.port}"))
+    JavaClient(
+      ElasticProperties(s"http://${defaultESSettings.host}:${defaultESSettings.port}"),
+      httpClientConfigCallback =
+        _.setDefaultIOReactorConfig(IOReactorConfig.custom.setSoKeepAlive(true).build())
+    )
   )
   val allSearchableIndices: Seq[String] = defaultESSettings.entities
     .withFilter(_.searchIndex.isDefined)
