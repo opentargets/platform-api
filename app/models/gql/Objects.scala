@@ -1287,4 +1287,66 @@ object Objects extends Logging {
       )
     )
   )
+
+  implicit val inSilicoPredictorImp: ObjectType[Backend, InSilicoPredictor] =
+    deriveObjectType[Backend, InSilicoPredictor](
+      ReplaceField(
+        "targetId",
+        Field(
+          "target",
+          OptionType(targetImp),
+          Some("Target"),
+          resolve = r => targetsFetcher.deferOpt(r.value.targetId)
+        )
+      )
+    )
+  implicit val transcriptConsequenceImp: ObjectType[Backend, TranscriptConsequence] =
+    deriveObjectType[Backend, TranscriptConsequence](
+      ReplaceField(
+        "targetId",
+        Field("target",
+              OptionType(targetImp),
+              Some("Target"),
+              resolve = r => targetsFetcher.deferOpt(r.value.targetId)
+        )
+      ),
+      ReplaceField(
+        "variantFunctionalConsequenceIds",
+        Field(
+          "variantConsequences",
+          ListType(sequenceOntologyTermImp),
+          description = Some("Most severe consequence sequence ontology"),
+          resolve = r => {
+            r.value.variantFunctionalConsequenceIds match {
+              case Some(ids) =>
+                val soIds = ids.map(_.replace("_", ":"))
+                logger.debug(s"Finding variant functional consequences: $soIds")
+                soTermsFetcher.deferSeqOpt(soIds)
+              case None => Future.successful(Seq.empty)
+            }
+          }
+        )
+      )
+    )
+  implicit val alleleFrequencyImp: ObjectType[Backend, AlleleFrequency] =
+    deriveObjectType[Backend, AlleleFrequency]()
+  implicit val dbXrefImp: ObjectType[Backend, DbXref] = deriveObjectType[Backend, DbXref]()
+  implicit val variantIndexImp: ObjectType[Backend, VariantIndex] =
+    deriveObjectType[Backend, VariantIndex](
+      ReplaceField(
+        "mostSevereConsequenceId",
+        Field(
+          "mostSevereConsequence",
+          OptionType(sequenceOntologyTermImp),
+          description = Some("Most severe consequence sequence ontology"),
+          resolve = r => {
+            val soId = (r.value.mostSevereConsequenceId)
+              .replace("_", ":")
+            logger.debug(s"Finding variant functional consequence: $soId")
+            soTermsFetcher.deferOpt(soId)
+          }
+        )
+      )
+    )
+
 }

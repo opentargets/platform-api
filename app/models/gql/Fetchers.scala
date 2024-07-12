@@ -6,15 +6,17 @@ import models.entities.{
   Drug,
   Expressions,
   GeneOntologyTerm,
+  GwasIndex,
   HPO,
   Indications,
   OtarProjects,
   Reactome,
-  Target
+  Target,
+  VariantIndex
 }
 import models.{Backend, entities}
 import play.api.Logging
-import play.api.libs.json.JsValue
+import play.api.libs.json.{JsValue, __}
 import sangria.execution.deferred.{Fetcher, FetcherCache, FetcherConfig, HasId, SimpleFetcherCache}
 
 object Fetchers extends Logging {
@@ -114,6 +116,30 @@ object Fetchers extends Logging {
       ctx.getGoTerms(ids)
     }
   )
+
+  implicit val variantFetcherId: HasId[VariantIndex, String] =
+    HasId[VariantIndex, String](_.variantId)
+  val variantFetcherCache = FetcherCache.simple
+  val variantFetcher: Fetcher[Backend, VariantIndex, VariantIndex, String] = Fetcher(
+    config =
+      FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(variantFetcherCache),
+    fetch = (ctx: Backend, ids: Seq[String]) => {
+      ctx.getVariants(ids)
+    }
+  )
+
+  val gwasFetcherCache = FetcherCache.simple
+  val gwasFetcher: Fetcher[Backend, JsValue, JsValue, String] = {
+    implicit val gwasFetcherId: HasId[JsValue, String] =
+      HasId[JsValue, String](js => (js \ "studyId").as[String])
+    Fetcher(
+      config =
+        FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(gwasFetcherCache),
+      fetch = (ctx: Backend, ids: Seq[String]) => {
+        ctx.getGwasIndexes(ids)
+      }
+    )
+  }
 
   def buildFetcher(index: String): Fetcher[Backend, JsValue, JsValue, String] = {
     implicit val soTermHasId = HasId[JsValue, String](el => (el \ "id").as[String])

@@ -30,4 +30,7 @@ ch_tunnel: ## Create tunnel connection to Clickhouse eg. make ch_tunnel zone eur
 run_with_standalone: ## Runs API with standalone platform
 	@sbt "run 8090" -DELASTICSEARCH_HOST=elasticsearch -DSLICK_CLICKHOUSE_URL=jdbc:clickhouse://clickhouse:8123 -DPLATFORM_API_IGNORE_CACHE=true
 
+debug_with_standalone: ## Runs API with standalone platform
+	@sbt -jvm-debug 9999 run 8090 -DSLICK_CLICKHOUSE_URL=jdbc:clickhouse://clickhouse:8123 -DPLATFORM_API_IGNORE_CACHE=true
+
 .PHONY: help run_local debug_local es_tunnel ch_tunnel run_with_standalone
