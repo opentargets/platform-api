@@ -9,37 +9,41 @@ import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
 import models.entities.Pagination
 import play.api.Logging
 
+/** IndexQuery is a case class that represents a query to be executed on an Elasticsearch index.
+  * @param esIndex the Elasticsearch index to query
+  * @param kv a map of key-value pairs to form match queries with, where the key is the field name and the value is the match value
+  * @param filters a sequence of additional filters to apply
+  * @param pagination the pagination settings
+  * @param aggs a sequence of aggregations to apply
+  * @param excludedFields a sequence of fields to exclude from the results
+  * @tparam V the type of the values in the key-value map
+  */
+case class IndexQuery[V](
+    esIndex: String,
+    kv: Map[String, V],
+    filters: Seq[Query] = Seq.empty,
+    pagination: Pagination,
+    aggs: Iterable[AbstractAggregation] = Iterable.empty,
+    excludedFields: Seq[String] = Seq.empty
+)
+
 trait ElasticRetrieverQueryBuilders extends QueryApi with Logging {
 
-  def IndexQueryMust[A](
-      esIndex: String,
-      kv: Map[String, A],
-      pagination: Pagination,
-      aggs: Iterable[AbstractAggregation] = Iterable.empty,
-      excludedFields: Seq[String] = Seq.empty
-  ): SearchRequest =
-    getByIndexQueryBuilder(esIndex, kv, pagination, aggs, excludedFields, must)
+  def IndexQueryMust[V](indexQuery: IndexQuery[V]): SearchRequest =
+    getByIndexQueryBuilder(indexQuery, must)
 
-  def IndexQueryShould[A](
-      esIndex: String,
-      kv: Map[String, A],
-      pagination: Pagination,
-      aggs: Iterable[AbstractAggregation] = Iterable.empty,
-      excludedFields: Seq[String] = Seq.empty
+  def IndexQueryShould[V](
+      indexQuery: IndexQuery[V]
   ): SearchRequest =
-    getByIndexQueryBuilder(esIndex, kv, pagination, aggs, excludedFields, should)
+    getByIndexQueryBuilder(indexQuery, should)
 
-  def getByIndexQueryBuilder[A, V](
-      esIndex: String,
-      kv: Map[String, V],
-      pagination: Pagination,
-      aggs: Iterable[AbstractAggregation] = Iterable.empty,
-      excludedFields: Seq[String] = Seq.empty,
+  def getByIndexQueryBuilder[V](
+      indexQuery: IndexQuery[V],
       f: Iterable[Query] => BoolQuery
   ): SearchRequest = {
-    val limitClause = pagination.toES
+    val limitClause = indexQuery.pagination.toES
     val query: Iterable[Query] = {
-      val querySeq = kv.toSeq
+      val querySeq = indexQuery.kv.toSeq
       querySeq.flatMap { it =>
         it._2 match {
           case a: Iterable[Any] => a.map(iterVal => matchQuery(it._1, iterVal))
@@ -47,16 +51,13 @@ trait ElasticRetrieverQueryBuilders extends QueryApi with Logging {
         }
       }
     }
-    search(esIndex)
-      .bool {
-        f(
-          query
-        )
-      }
+    val boolQuery: BoolQuery = f(query).filter(indexQuery.filters)
+    search(indexQuery.esIndex)
+      .bool(boolQuery)
       .start(limitClause._1)
       .limit(limitClause._2)
-      .aggs(aggs)
+      .aggs(indexQuery.aggs)
       .trackTotalHits(true)
-      .sourceExclude(excludedFields)
+      .sourceExclude(indexQuery.excludedFields)
   }
 }
