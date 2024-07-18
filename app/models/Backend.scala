@@ -304,7 +304,7 @@ class Backend @Inject() (implicit
   }
 
   def getPharmacogenomicsByDrug(id: String): Future[IndexedSeq[Pharmacogenomics]] = {
-    val queryTerm: Map[String, String] = Map("drugId.keyword" -> id)
+    val queryTerm: Map[String, String] = Map("drugs.drugId.keyword" -> id)
     getPharmacogenomics(id, queryTerm)
   }
 
