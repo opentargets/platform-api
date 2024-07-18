@@ -1170,7 +1170,7 @@ object Objects extends Logging {
     )
 
   lazy val mUnionType: UnionType[Backend] =
-    UnionType("EntityUnionType", types = List(targetImp, drugImp, diseaseImp))
+    UnionType("EntityUnionType", types = List(targetImp, drugImp, diseaseImp, variantIndexImp))
 
   implicit val searchResultAggsCategoryImp: ObjectType[Backend, SearchResultAggCategory] =
     deriveObjectType[Backend, models.entities.SearchResultAggCategory]()
@@ -1189,6 +1189,7 @@ object Objects extends Logging {
             ctx.value.entity match {
               case "target"  => targetsFetcher.deferOpt(ctx.value.id)
               case "disease" => diseasesFetcher.deferOpt(ctx.value.id)
+              case "variant" => variantFetcher.deferOpt(ctx.value.id)
               case _         => drugsFetcher.deferOpt(ctx.value.id)
             }
           }
