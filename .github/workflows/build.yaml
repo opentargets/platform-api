@@ -63,7 +63,6 @@ jobs:
         with:
           file: 'target/universal/ot-platform-api-latest.zip'
           tags: true
-          draft: true
 
       - id: auth_quay
         name: Log in to quay.io
