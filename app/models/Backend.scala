@@ -141,6 +141,12 @@ class Backend @Inject() (implicit
     esRetriever.getByIds(indexName, ids, fromJsValue[VariantIndex])
   }
 
+  def getCredSet(ids: Seq[Long]): Future[IndexedSeq[CredibleSet]] = {
+    val indexName = getIndexOrDefault("credible_set")
+
+    esRetriever.getByIds(indexName, ids, fromJsValue[CredibleSet])
+  }
+
   def getGwasIndexes(ids: Seq[String]): Future[IndexedSeq[JsValue]] = {
     val indexName = getIndexOrDefault("gwas_index")
 

@@ -4,6 +4,7 @@ import models._
 import models.entities.Configuration._
 import models.entities.Evidence.sequenceOntologyTermImp
 import models.entities.Evidences._
+import models.entities.GwasIndex.gwasImp
 import models.entities.Interactions._
 import models.entities.Publications.publicationsImp
 import models.entities._
@@ -1344,6 +1345,53 @@ object Objects extends Logging {
               .replace("_", ":")
             logger.debug(s"Finding variant functional consequence: $soId")
             soTermsFetcher.deferOpt(soId)
+          }
+        )
+      )
+    )
+
+  implicit val ldSetImp: ObjectType[Backend, LdSet] =
+    deriveObjectType[Backend, LdSet]()
+  implicit val locusImp: ObjectType[Backend, Locus] = deriveObjectType[Backend, Locus](
+    ReplaceField(
+      "variantId",
+      Field(
+        "variant",
+        OptionType(variantIndexImp),
+        description = None,
+        resolve = r => {
+          val variantId = (r.value.variantId)
+          logger.debug(s"Finding variant index: $variantId")
+          variantFetcher.deferOpt(variantId)
+        }
+      )
+    )
+  )
+  implicit val credSetImp: ObjectType[Backend, CredibleSet] =
+    deriveObjectType[Backend, CredibleSet](
+      ReplaceField(
+        "variantId",
+        Field(
+          "variant",
+          OptionType(variantIndexImp),
+          description = None,
+          resolve = r => {
+            val variantId = (r.value.variantId)
+            logger.debug(s"Finding variant index: $variantId")
+            variantFetcher.deferOpt(variantId)
+          }
+        )
+      ),
+      ReplaceField(
+        "studyId",
+        Field(
+          "study",
+          OptionType(gwasImp),
+          description = Some("Gwas study"),
+          resolve = r => {
+            val studyId = (r.value.studyId)
+            logger.debug(s"Finding gwas study: $studyId")
+            gwasFetcher.deferOpt(studyId)
           }
         )
       )

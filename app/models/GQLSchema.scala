@@ -149,6 +149,13 @@ object GQLSchema {
         description = Some("Return a Gwas Index Study"),
         arguments = studyId :: Nil,
         resolve = ctx => gwasFetcher.deferOpt(ctx.arg(studyId))
+      ),
+      Field(
+        "credibleSet",
+        OptionType(credSetImp),
+        description = None,
+        arguments = credibleSetId :: Nil,
+        resolve = ctx => credSetFetcher.deferOpt(ctx.arg(credibleSetId))
       )
     )
   )

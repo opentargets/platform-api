@@ -463,7 +463,7 @@ class ElasticRetriever @Inject() (
 
   def getByIds[A](
       esIndex: String,
-      ids: Seq[String],
+      ids: Seq[Any],
       buildF: JsValue => Option[A],
       excludedFields: Seq[String] = Seq.empty
   ): Future[IndexedSeq[A]] =

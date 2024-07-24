@@ -1,19 +1,7 @@
 package models.gql
 
 import models.Helpers.fromJsValue
-import models.entities.{
-  Disease,
-  Drug,
-  Expressions,
-  GeneOntologyTerm,
-  GwasIndex,
-  HPO,
-  Indications,
-  OtarProjects,
-  Reactome,
-  Target,
-  VariantIndex
-}
+import models.entities.{CredibleSet, Disease, Drug, Expressions, GeneOntologyTerm, GwasIndex, HPO, Indications, OtarProjects, Reactome, Target, VariantIndex}
 import models.{Backend, entities}
 import play.api.Logging
 import play.api.libs.json.{JsValue, __}
@@ -125,6 +113,17 @@ object Fetchers extends Logging {
       FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(variantFetcherCache),
     fetch = (ctx: Backend, ids: Seq[String]) => {
       ctx.getVariants(ids)
+    }
+  )
+
+  implicit val credSetFetcherId: HasId[CredibleSet, Long] =
+    HasId[CredibleSet, Long](_.studyLocusId)
+  val credSetFetcherCache = FetcherCache.simple
+  val credSetFetcher: Fetcher[Backend, CredibleSet, CredibleSet, Long] = Fetcher(
+    config =
+      FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(credSetFetcherCache),
+    fetch = (ctx: Backend, ids: Seq[Long]) => {
+      ctx.getCredSet(ids)
     }
   )
 
