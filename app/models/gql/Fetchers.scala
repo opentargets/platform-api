@@ -1,7 +1,20 @@
 package models.gql
 
 import models.Helpers.fromJsValue
-import models.entities.{CredibleSet, Disease, Drug, Expressions, GeneOntologyTerm, GwasIndex, HPO, Indications, OtarProjects, Reactome, Target, VariantIndex}
+import models.entities.{
+  CredibleSet,
+  Disease,
+  Drug,
+  Expressions,
+  GeneOntologyTerm,
+  GwasIndex,
+  HPO,
+  Indications,
+  OtarProjects,
+  Reactome,
+  Target,
+  VariantIndex
+}
 import models.{Backend, entities}
 import play.api.Logging
 import play.api.libs.json.{JsValue, __}
