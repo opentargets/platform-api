@@ -178,7 +178,8 @@ object Fetchers extends Logging {
       reactomeFetcherCache,
       expressionFetcherCache,
       otarProjectsFetcherCache,
-      soTermsFetcherCache
+      soTermsFetcherCache,
+      credSetFetcherCache
     )
     fetchers.foreach(_.clear())
   }

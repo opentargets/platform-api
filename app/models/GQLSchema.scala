@@ -28,7 +28,8 @@ object GQLSchema {
     indicationFetcher,
     goFetcher,
     variantFetcher,
-    gwasFetcher
+    gwasFetcher,
+    credSetFetcher
   )
 
   val query: ObjectType[Backend, Unit] = ObjectType(
