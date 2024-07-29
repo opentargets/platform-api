@@ -21,7 +21,9 @@ case class TranscriptConsequence(variantFunctionalConsequenceIds: Option[Seq[Str
                                  transcriptId: Option[String],
                                  lofteePrediction: Option[String],
                                  siftPrediction: Option[Double],
-                                 polyphenPrediction: Option[Double]
+                                 polyphenPrediction: Option[Double],
+                                 transcriptIndex: Long,
+                                 consequenceScore: Double
 )
 
 case class DbXref(id: Option[String], source: Option[String])
@@ -38,7 +40,8 @@ case class VariantIndex(variantId: String,
                         transcriptConsequences: Option[Seq[TranscriptConsequence]],
                         rsIds: Option[Seq[String]],
                         dbXrefs: Option[Seq[DbXref]],
-                        alleleFrequencies: Option[Seq[AlleleFrequency]]
+                        alleleFrequencies: Option[Seq[AlleleFrequency]],
+                        hgvsId: String
 )
 
 object VariantIndex extends Logging {
