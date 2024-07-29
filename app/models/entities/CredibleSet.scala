@@ -21,7 +21,7 @@ case class LdSet(
     r2Overall: Option[Double]
 )
 
-case class StrongestLocus2gene(geneId: String, score:Double)
+case class StrongestLocus2gene(geneId: String, score: Double)
 
 case class CredibleSet(studyLocusId: String,
                        variantId: Option[String],
@@ -59,4 +59,3 @@ object CredibleSet extends Logging {
   implicit val strongestLocus2geneF: OFormat[StrongestLocus2gene] = Json.format[StrongestLocus2gene]
   implicit val credibleSetF: OFormat[CredibleSet] = Json.format[CredibleSet]
 }
-
