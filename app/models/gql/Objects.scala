@@ -1351,6 +1351,18 @@ object Objects extends Logging {
       )
     )
 
+  implicit val strongestLocus2geneImp: ObjectType[Backend, StrongestLocus2gene] =
+    deriveObjectType[Backend, StrongestLocus2gene](
+      ReplaceField(
+        "geneId",
+        Field(
+          "target",
+          OptionType(targetImp),
+          Some("Target"),
+          resolve = r => targetsFetcher.deferOpt(r.value.geneId)
+        )
+      )
+    )
   implicit val ldSetImp: ObjectType[Backend, LdSet] =
     deriveObjectType[Backend, LdSet]()
   implicit val locusImp: ObjectType[Backend, Locus] = deriveObjectType[Backend, Locus](
@@ -1393,6 +1405,19 @@ object Objects extends Logging {
             val studyId = (r.value.studyId)
             logger.debug(s"Finding gwas study: $studyId")
             gwasFetcher.deferOpt(studyId)
+          }
+        )
+      ),
+      ReplaceField(
+        "qtlGeneId",
+        Field(
+          "target",
+          OptionType(targetImp),
+          description = Some("QTL gene"),
+          resolve = r => {
+            val qtlGeneId = r.value.qtlGeneId
+            logger.debug(s"Finding qtl gene: $qtlGeneId")
+            targetsFetcher.deferOpt(qtlGeneId)
           }
         )
       )
