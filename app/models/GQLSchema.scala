@@ -4,6 +4,7 @@ import play.api.Logging
 import play.api.libs.json._
 import sangria.schema._
 import entities._
+import models.entities.CredibleSet.credibleSetImp
 import models.entities.GwasIndex.gwasImp
 import sangria.execution.deferred._
 
@@ -28,7 +29,8 @@ object GQLSchema {
     indicationFetcher,
     goFetcher,
     variantFetcher,
-    gwasFetcher
+    gwasFetcher,
+    credSetFetcher
   )
 
   val query: ObjectType[Backend, Unit] = ObjectType(
@@ -149,6 +151,13 @@ object GQLSchema {
         description = Some("Return a Gwas Index Study"),
         arguments = studyId :: Nil,
         resolve = ctx => gwasFetcher.deferOpt(ctx.arg(studyId))
+      ),
+      Field(
+        "credibleSet",
+        OptionType(credibleSetImp),
+        description = None,
+        arguments = credibleSetId :: Nil,
+        resolve = ctx => credSetFetcher.deferOpt(ctx.arg(credibleSetId))
       )
     )
   )
