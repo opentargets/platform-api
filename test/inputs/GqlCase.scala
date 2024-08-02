@@ -1,7 +1,6 @@
 package inputs
 
 import controllers.GqlTest
-import models.entities.AggregationFilter
 import org.scalacheck.Gen
 import play.api.Logging
 
@@ -27,92 +26,60 @@ sealed trait GqlFragment[T] extends GqlCase[T] {
   def generateFragmentQuery: String
 }
 
-case class AssociationDisease(file: String) extends GqlCase[(String, AggregationFilter)] {
-  val inputGenerator = for {
-    disease <- diseaseGenerator
-    agg <- aggregationfilterGenerator
-  } yield (disease, agg)
+case class AssociationDisease(file: String) extends GqlCase[String] {
+  val inputGenerator = diseaseGenerator
 
-  def generateVariables(inputs: (String, AggregationFilter)) =
+  def generateVariables(disease: String) =
     s"""
       "variables": {
-      "efoId": "${inputs._1}",
+      "efoId": "$disease",
       "index": 0,
       "size": 10,
-      "sortBy": "",
-      "aggregationFilters": [
-        {
-        "name": "${inputs._2.name}",
-        "path": ${inputs._2.path.mkString("[\"", "\", \"", "\"]")}
-        }]
+      "sortBy": ""
     }
     """
 }
 
-case class AssociationDiseaseIndirect(file: String) extends GqlCase[(String, AggregationFilter)] {
-  val inputGenerator = for {
-    disease <- diseaseGenerator
-    agg <- aggregationfilterGenerator
-  } yield (disease, agg)
+case class AssociationDiseaseIndirect(file: String) extends GqlCase[String] {
+  val inputGenerator = diseaseGenerator
 
-  def generateVariables(inputs: (String, AggregationFilter)) =
+  def generateVariables(disease: String) =
     s"""
       "variables": {
-      "efoId": "${inputs._1}",
+      "efoId": "$disease",
       "index": 0,
       "size": 10,
       "sortBy": "",
-      "enableIndirect": false,
-      "aggregationFilters": [
-        {
-        "name": "${inputs._2.name}",
-        "path": ${inputs._2.path.mkString("[\"", "\", \"", "\"]")}
-        }]
+      "enableIndirect": false
     }
     """
 }
 
-case class AssociationTarget(file: String) extends GqlCase[(String, AggregationFilter)] {
-  val inputGenerator = for {
-    target <- geneGenerator
-    agg <- aggregationfilterGenerator
-  } yield (target, agg)
+case class AssociationTarget(file: String) extends GqlCase[String] {
+  val inputGenerator = geneGenerator
 
-  def generateVariables(inputs: (String, AggregationFilter)) =
+  def generateVariables(target: String) =
     s"""
       "variables": {
-      "ensemblId": "${inputs._1}",
+      "ensemblId": "$target",
       "index": 0,
       "size": 10,
-      "sortBy": "",
-      "aggregationFilters": [
-        {
-        "name": "${inputs._2.name}",
-        "path": ${inputs._2.path.mkString("[\"", "\", \"", "\"]")}
-        }]
+      "sortBy": ""
     }
     """
 }
 
-case class AssociationTargetIndirect(file: String) extends GqlCase[(String, AggregationFilter)] {
-  val inputGenerator = for {
-    target <- geneGenerator
-    agg <- aggregationfilterGenerator
-  } yield (target, agg)
+case class AssociationTargetIndirect(file: String) extends GqlCase[String] {
+  val inputGenerator = geneGenerator
 
-  def generateVariables(inputs: (String, AggregationFilter)) =
+  def generateVariables(target: String) =
     s"""
       "variables": {
-      "ensemblId": "${inputs._1}",
+      "ensemblId": "$target",
       "index": 0,
       "enableIndirect": false,
       "size": 10,
-      "sortBy": "",
-      "aggregationFilters": [
-        {
-        "name": "${inputs._2.name}",
-        "path": ${inputs._2.path.mkString("[\"", "\", \"", "\"]")}
-        }]
+      "sortBy": ""
     }
     """
 }
@@ -126,25 +93,6 @@ case class Disease(file: String) extends GqlCase[String] {
       "efoId": "$disease",
       "size": 10,
       "index": 0
-    }
-    """
-}
-
-case class DiseaseAggregationfilter(file: String) extends GqlCase[(String, AggregationFilter)] {
-  val inputGenerator = for {
-    disease <- diseaseGenerator
-    agg <- aggregationfilterGenerator
-  } yield (disease, agg)
-
-  def generateVariables(inputs: (String, AggregationFilter)): String =
-    s"""
-      "variables": {
-      "efoId": "${inputs._1}",
-      "aggregationFilters": [
-        {
-        "name": "${inputs._2.name}",
-        "path": ${inputs._2.path.mkString("[\"", "\", \"", "\"]")}
-        }]
     }
     """
 }
@@ -318,28 +266,6 @@ case class TargetDisease(file: String) extends GqlCase[(String, String)] {
     }
     """
   }
-}
-
-case class TargetAggregationfilter(file: String) extends GqlCase[(String, AggregationFilter)] {
-  val inputGenerator = for {
-    gene <- geneGenerator
-    aggregationFilter <- aggregationfilterGenerator
-  } yield (gene, aggregationFilter)
-
-  def generateVariables(inputs: (String, AggregationFilter)): String =
-    s"""
-      "variables": {
-      "ensemblId": "${inputs._1}",
-      "size": 10,
-      "index": 0,
-      "aggregationFilters": [
-        {
-        "name": "${inputs._2.name}",
-        "path": ${inputs._2.path.mkString("[\"", "\", \"", "\"]")}
-        }]
-    }
-    """
-
 }
 
 case class TargetDiseaseSize(file: String) extends GqlCase[(String, String, Int)] {

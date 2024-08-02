@@ -740,64 +740,6 @@ class ElasticRetriever @Inject() (
 
 object ElasticRetriever extends Logging {
 
-  /** aggregationFilterProducer returns a tuple where the first element is the overall list
-    * of filters and the second is a map with the cartesian product of each aggregation with
-    * the complementary list of filters
-    */
-  def aggregationFilterProducer(
-      filters: Seq[AggregationFilter],
-      mappings: Map[String, AggregationMapping]
-  ): (BoolQuery, Map[String, BoolQuery]) = {
-    val filtersByName = filters
-      .groupBy(_.name)
-      .view
-      .filterKeys(mappings.contains)
-      .toMap
-      .map { case (facet, filters) =>
-        val mappedFacet = mappings(facet)
-        val ff = filters.foldLeft(BoolQuery()) { (b, filter) =>
-          val termKey = filter.path.zipWithIndex.last
-          val termLevel = mappedFacet.pathKeys.lift
-          val termPrefix = if (mappedFacet.nested) s"${mappedFacet.key}." else ""
-          val keyName = termPrefix + s"${termLevel(termKey._2).getOrElse(mappedFacet.key)}.keyword"
-          b.withShould(TermQuery(keyName, termKey._1))
-        }
-
-        if (mappedFacet.nested) {
-          facet -> NestedQuery(mappedFacet.key, ff)
-        } else {
-          facet -> ff
-        }
-
-      }
-      .withDefaultValue(BoolQuery())
-
-    val overallFilters = filtersByName.foldLeft(BoolQuery()) { case (b, f) =>
-      b.withMust(f._2)
-    }
-
-    val namesR = mappings.keys.toList.reverse
-    if (namesR.size > 1) {
-      val mappedMappgings =
-        mappings.map(p => p._1 -> filtersByName(p._1)).toList.combinations(namesR.size - 1).toList
-
-      val cartesianProd = (namesR zip mappedMappgings).toMap.view
-        .mapValues(_.foldLeft(BoolQuery()) { (b, q) =>
-          b.withMust(q._2)
-        })
-        .toMap
-
-      logger.debug(s"overall filters $overallFilters")
-      cartesianProd foreach { el =>
-        logger.debug(s"cartesian product ${el._1} -> ${el._2.toString}")
-      }
-
-      (overallFilters, cartesianProd)
-    } else {
-      (overallFilters, Map.empty[String, BoolQuery].withDefaultValue(BoolQuery()))
-    }
-  }
-
   /** *
     * SortBy case class use the `fieldName` to sort by and asc if `desc` is false
     * otherwise desc

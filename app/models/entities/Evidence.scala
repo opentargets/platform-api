@@ -200,7 +200,7 @@ object Evidence extends Logging {
     )
   )
   val biomarkerVariantImp: ObjectType[Backend, JsValue] = ObjectType(
-    "variant",
+    "geneticVariation",
     fields[Backend, JsValue](
       Field(
         "id",
@@ -235,10 +235,10 @@ object Evidence extends Logging {
         resolve = js => (js.value \ "geneExpression").asOpt[Seq[JsValue]]
       ),
       Field(
-        "variant",
+        "geneticVariation",
         OptionType(ListType(biomarkerVariantImp)),
         description = None,
-        resolve = js => (js.value \ "variant").asOpt[Seq[JsValue]]
+        resolve = js => (js.value \ "geneticVariation").asOpt[Seq[JsValue]]
       )
     )
   )
