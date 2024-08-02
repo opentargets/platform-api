@@ -194,14 +194,13 @@ object Objects extends Logging {
         associatedOTFDiseasesImp,
         description = Some("associations on the fly"),
         arguments =
-          BIds :: indirectTargetEvidences :: datasourceSettingsListArg :: facetFiltersListArg :: aggregationFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
+          BIds :: indirectTargetEvidences :: datasourceSettingsListArg :: facetFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
         resolve = ctx =>
           ctx.ctx.getAssociationsTargetFixed(
             ctx.value,
             ctx arg datasourceSettingsListArg,
             ctx arg indirectTargetEvidences getOrElse false,
             ctx arg facetFiltersListArg getOrElse (Seq.empty),
-            ctx arg aggregationFiltersListArg getOrElse Seq.empty,
             ctx arg BIds map (_.toSet) getOrElse Set.empty,
             ctx arg BFilterString,
             (ctx arg scoreSorting) map (_.split(" ").take(2).toList match {
@@ -421,14 +420,13 @@ object Objects extends Logging {
         associatedOTFTargetsImp,
         description = Some("associations on the fly"),
         arguments =
-          BIds :: indirectEvidences :: datasourceSettingsListArg :: facetFiltersListArg :: aggregationFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
+          BIds :: indirectEvidences :: datasourceSettingsListArg :: facetFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
         resolve = ctx =>
           ctx.ctx.getAssociationsDiseaseFixed(
             ctx.value,
             ctx arg datasourceSettingsListArg,
             ctx arg indirectEvidences getOrElse (true),
             ctx arg facetFiltersListArg getOrElse (Seq.empty),
-            ctx arg aggregationFiltersListArg getOrElse (Seq.empty),
             ctx arg BIds map (_.toSet) getOrElse (Set.empty),
             ctx arg BFilterString,
             (ctx arg scoreSorting) map (_.split(" ").take(2).toList match {
@@ -1059,13 +1057,6 @@ object Objects extends Logging {
     deriveObjectType[Backend, HarmonicSettings]()
   implicit val clickhouseSettingsImp: ObjectType[Backend, ClickhouseSettings] =
     deriveObjectType[Backend, ClickhouseSettings]()
-
-  implicit lazy val aggregationImp: ObjectType[Backend, Aggregation] =
-    deriveObjectType[Backend, Aggregation]()
-  implicit lazy val namedAggregationImp: ObjectType[Backend, NamedAggregation] =
-    deriveObjectType[Backend, NamedAggregation]()
-  implicit lazy val aggregationsImp: ObjectType[Backend, Aggregations] =
-    deriveObjectType[Backend, Aggregations]()
   implicit val evidenceSourceImp: ObjectType[Backend, EvidenceSource] =
     deriveObjectType[Backend, EvidenceSource]()
 
