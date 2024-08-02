@@ -4,6 +4,7 @@ import play.api.Logging
 import play.api.libs.json._
 import sangria.schema._
 import entities._
+import models.entities.CredibleSet.credibleSetImp
 import models.entities.GwasIndex.gwasImp
 import sangria.execution.deferred._
 
@@ -153,7 +154,7 @@ object GQLSchema {
       ),
       Field(
         "credibleSet",
-        OptionType(credSetImp),
+        OptionType(credibleSetImp),
         description = None,
         arguments = credibleSetId :: Nil,
         resolve = ctx => credSetFetcher.deferOpt(ctx.arg(credibleSetId))

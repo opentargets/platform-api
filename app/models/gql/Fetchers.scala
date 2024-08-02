@@ -129,16 +129,18 @@ object Fetchers extends Logging {
     }
   )
 
-  implicit val credSetFetcherId: HasId[CredibleSet, String] =
-    HasId[CredibleSet, String](_.studyLocusId)
   val credSetFetcherCache = FetcherCache.simple
-  val credSetFetcher: Fetcher[Backend, CredibleSet, CredibleSet, String] = Fetcher(
-    config =
-      FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(credSetFetcherCache),
-    fetch = (ctx: Backend, ids: Seq[String]) => {
-      ctx.getCredSet(ids)
-    }
-  )
+  val credSetFetcher: Fetcher[Backend, JsValue, JsValue, String] = {
+    implicit val credSetFetcherId: HasId[JsValue, String] =
+      HasId[JsValue, String](js => (js \ "studyLocusId").as[String])
+    Fetcher(
+      config =
+        FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(credSetFetcherCache),
+      fetch = (ctx: Backend, ids: Seq[String]) => {
+        ctx.getCredSet(ids)
+      }
+    )
+  }
 
   val gwasFetcherCache = FetcherCache.simple
   val gwasFetcher: Fetcher[Backend, JsValue, JsValue, String] = {
