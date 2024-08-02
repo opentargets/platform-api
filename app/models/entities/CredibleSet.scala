@@ -103,7 +103,6 @@ object CredibleSet extends Logging {
   implicit val ldSetF: OFormat[LdSet] = Json.format[LdSet]
   implicit val locusF: OFormat[Locus] = Json.format[Locus]
   implicit val strongestLocus2geneF: OFormat[StrongestLocus2gene] = Json.format[StrongestLocus2gene]
-//  implicit val credibleSetF: OFormat[CredibleSet] = Json.format[CredibleSet]
   val credibleSetImp: ObjectType[Backend, JsValue] = ObjectType(
     "credibleSet",
     "",
