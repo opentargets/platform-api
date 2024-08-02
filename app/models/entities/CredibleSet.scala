@@ -6,7 +6,16 @@ import models.gql.Fetchers.{gwasFetcher, targetsFetcher, variantFetcher}
 import models.gql.Objects.{logger, targetImp, variantIndexImp}
 import play.api.Logging
 import play.api.libs.json.{JsValue, Json, OFormat, OWrites}
-import sangria.schema.{Field, FloatType, IntType, ListType, ObjectType, OptionType, StringType, fields}
+import sangria.schema.{
+  Field,
+  FloatType,
+  IntType,
+  ListType,
+  ObjectType,
+  OptionType,
+  StringType,
+  fields
+}
 
 case class Locus(
     variantId: Option[String],
