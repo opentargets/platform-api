@@ -129,13 +129,13 @@ object Fetchers extends Logging {
     }
   )
 
-  implicit val credSetFetcherId: HasId[CredibleSet, Long] =
-    HasId[CredibleSet, Long](_.studyLocusId)
+  implicit val credSetFetcherId: HasId[CredibleSet, String] =
+    HasId[CredibleSet, String](_.studyLocusId)
   val credSetFetcherCache = FetcherCache.simple
-  val credSetFetcher: Fetcher[Backend, CredibleSet, CredibleSet, Long] = Fetcher(
+  val credSetFetcher: Fetcher[Backend, CredibleSet, CredibleSet, String] = Fetcher(
     config =
       FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(credSetFetcherCache),
-    fetch = (ctx: Backend, ids: Seq[Long]) => {
+    fetch = (ctx: Backend, ids: Seq[String]) => {
       ctx.getCredSet(ids)
     }
   )
