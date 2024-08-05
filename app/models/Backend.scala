@@ -279,7 +279,7 @@ class Backend @Inject() (implicit
           .getOrElse(Map())
       )
 
-    getFilteredEvidences(datasourceIds, targetIds, filters, orderBy, sizeLimit, cursor)
+    getFilteredEvidences(datasourceIds, filters, orderBy, sizeLimit, cursor)
   }
 
   // TODO CHECK RESULTS ARE SIZE 0 OR OPTIMISE FIELDS TO BRING BACK
@@ -287,7 +287,6 @@ class Backend @Inject() (implicit
   /** get evidences by multiple parameters */
   private def getFilteredEvidences(
       datasourceIds: Option[Seq[String]],
-      targetIds: Seq[String],
       filters: Map[String, Seq[String]],
       orderBy: Option[(String, String)],
       sizeLimit: Option[Int],
