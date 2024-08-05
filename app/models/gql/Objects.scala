@@ -131,12 +131,13 @@ object Objects extends Logging {
         "evidences",
         evidencesImp,
         description = Some("The complete list of all possible datasources"),
-        arguments = efoIds :: datasourceIdsArg :: pageSize :: cursor :: Nil,
+        arguments = efoIdsOpt :: variantIdOpt :: datasourceIdsArg :: pageSize :: cursor :: Nil,
         resolve = ctx => {
           ctx.ctx.getEvidences(
             ctx arg datasourceIdsArg,
             Seq(ctx.value.id),
-            ctx arg efoIds,
+            ctx arg efoIdsOpt,
+            ctx arg variantIdOpt,
             Some(("score", "desc")),
             ctx arg pageSize,
             ctx arg cursor
@@ -372,18 +373,22 @@ object Objects extends Logging {
         evidencesImp,
         description = Some("The complete list of all possible datasources"),
         arguments =
-          ensemblIds :: indirectEvidences :: datasourceIdsArg :: pageSize :: cursor :: Nil,
+          ensemblIdsOpt :: variantIdOpt :: indirectEvidences :: datasourceIdsArg :: pageSize :: cursor :: Nil,
         resolve = ctx => {
           val indirects = ctx.arg(indirectEvidences).getOrElse(true)
           val efos = if (indirects) ctx.value.id +: ctx.value.descendants else ctx.value.id +: Nil
+
           ctx.ctx.getEvidences(
-            ctx arg datasourceIdsArg,
-            ctx arg ensemblIds,
-            efos,
-            Some(("score", "desc")),
-            ctx arg pageSize,
-            ctx arg cursor
-          )
+              ctx arg datasourceIdsArg,
+              ctx arg ensemblIds,
+              Some(efos),
+              ctx arg variantIdOpt,
+              Some(("score", "desc")),
+              ctx arg pageSize,
+              ctx arg cursor
+            )
+
+
         }
       ),
       Field(

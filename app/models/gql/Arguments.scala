@@ -55,15 +55,20 @@ object Arguments {
   val efoId: Argument[String] = Argument("efoId", StringType, description = "EFO ID")
   val efoIds: Argument[Seq[String with tag.Tagged[FromInput.CoercedScalaResult]]] =
     Argument("efoIds", ListInputType(StringType), description = "EFO ID")
+  val efoIdsOpt: Argument[Option[Seq[String]]] =
+    Argument("efoIds", OptionInputType(ListInputType(StringType)), description = "EFO ID")
   val ensemblId: Argument[String] = Argument("ensemblId", StringType, description = "Ensembl ID")
   val ensemblIds: Argument[Seq[String with tag.Tagged[FromInput.CoercedScalaResult]]] =
     Argument("ensemblIds", ListInputType(StringType), description = "List of Ensembl IDs")
+  val ensemblIdsOpt: Argument[Option[Seq[String]]] =
+    Argument("ensemblIds", OptionInputType(ListInputType(StringType)), description = "List of Ensembl IDs")
   val chemblId: Argument[String] = Argument("chemblId", StringType, description = "Chembl ID")
   val chemblIds: Argument[Seq[String with tag.Tagged[FromInput.CoercedScalaResult]]] =
     Argument("chemblIds", ListInputType(StringType), description = "List of Chembl IDs")
   val goIds: Argument[Seq[String with tag.Tagged[FromInput.CoercedScalaResult]]] =
     Argument("goIds", ListInputType(StringType), description = "List of GO IDs, eg. GO:0005515")
   val variantId: Argument[String] = Argument("variantId", StringType, description = "Variant ID")
+  val variantIdOpt: Argument[Option[String]] = Argument("variantId", OptionInputType(StringType), description = "Variant ID")
   val studyId: Argument[String] = Argument("studyId", StringType, description = "Study ID")
   val credibleSetId: Argument[String] =
     Argument("credibleSetId", StringType, description = "Credible Set ID")
