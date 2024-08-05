@@ -379,15 +379,14 @@ object Objects extends Logging {
           val efos = if (indirects) ctx.value.id +: ctx.value.descendants else ctx.value.id +: Nil
 
           ctx.ctx.getEvidences(
-              ctx arg datasourceIdsArg,
-              ctx arg ensemblIds,
-              Some(efos),
-              ctx arg variantIdOpt,
-              Some(("score", "desc")),
-              ctx arg pageSize,
-              ctx arg cursor
-            )
-
+            ctx arg datasourceIdsArg,
+            ctx arg ensemblIds,
+            Some(efos),
+            ctx arg variantIdOpt,
+            Some(("score", "desc")),
+            ctx arg pageSize,
+            ctx arg cursor
+          )
 
         }
       ),

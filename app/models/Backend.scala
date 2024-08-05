@@ -253,90 +253,42 @@ class Backend @Inject() (implicit
   }
 
   def getEvidences(
-                    datasourceIds: Option[Seq[String]],
-                    targetIds: Seq[String],
-                    diseaseIds: Option[Seq[String]],
-                    variantId: Option[String],
-                    orderBy: Option[(String, String)],
-                    sizeLimit: Option[Int],
-                    cursor: Option[String]
-                  ): Future[Evidences] = {
-    def getByVariant(variantId: String): Future[Evidences] = {
-      getEvidencesByVariant(
-        datasourceIds,
-        targetIds,
-        variantId,
-        orderBy,
-        sizeLimit,
-        cursor
-      )
-    }
-
-    def getByDisease(diseaseId: Seq[String]): Future[Evidences] = {
-      getEvidencesByDisease(
-        datasourceIds,
-        targetIds,
-        diseaseId,
-        orderBy,
-        sizeLimit,
-        cursor
-      )
-    }
-
-    variantId.map(getByVariant).
-      getOrElse(diseaseIds.map(getByDisease)
-        .getOrElse(Future.successful(Evidences.empty())))
-  }
-
-  private def getEvidencesByVariant(
-                    datasourceIds: Option[Seq[String]],
-                    targetIds: Seq[String],
-                    variantId: String,
-                    orderBy: Option[(String, String)],
-                    sizeLimit: Option[Int],
-                    cursor: Option[String]
-                  ): Future[Evidences] = {
-    val pag = sizeLimit.getOrElse(Pagination.sizeDefault)
-    val sortByField = orderBy.flatMap { p =>
-      ElasticRetriever.sortBy(p._1, if (p._2 == "desc") SortOrder.Desc else SortOrder.Asc)
-    }
-
-    val cbIndexPrefix = getIndexOrDefault("evidences", Some("evidence_datasource_"))
-
-    val cbIndex = datasourceIds
-      .map(_.map(cbIndexPrefix.concat).mkString(","))
-      .getOrElse(cbIndexPrefix.concat("*"))
-
-    val kv = Map(
+      datasourceIds: Option[Seq[String]],
+      targetIds: Seq[String],
+      diseaseIds: Option[Seq[String]],
+      variantId: Option[String],
+      orderBy: Option[(String, String)],
+      sizeLimit: Option[Int],
+      cursor: Option[String]
+  ): Future[Evidences] = {
+    def getByVariant(variantId: String): Map[String, Seq[String]] = Map(
       "targetId.keyword" -> targetIds,
       "variantId.keyword" -> Seq(variantId)
     )
 
-    esRetriever
-      .getByMustWithSearch(
-        cbIndex,
-        kv,
-        pag,
-        fromJsValue[JsValue],
-        Seq.empty,
-        sortByField,
-        Seq.empty,
-        cursor
+    def getByDisease(diseaseIds: Seq[String]): Map[String, Seq[String]] = Map(
+      "targetId.keyword" -> targetIds,
+      "diseaseId.keyword" -> diseaseIds
+    )
+
+    val filters: Map[String, Seq[String]] = variantId
+      .map(getByVariant)
+      .getOrElse(
+        diseaseIds
+          .map(getByDisease)
+          .getOrElse(Map())
       )
-      .map {
-        case (Seq(), n, _) => Evidences.empty(withTotal = n)
-        case (seq, n, nextCursor) =>
-          Evidences(n, nextCursor, seq)
-      }
+
+    getFilteredEvidences(datasourceIds, targetIds, filters, orderBy, sizeLimit, cursor)
   }
 
   // TODO CHECK RESULTS ARE SIZE 0 OR OPTIMISE FIELDS TO BRING BACK
 
   /** get evidences by multiple parameters */
-  private def getEvidencesByDisease(
+  private def getFilteredEvidences(
       datasourceIds: Option[Seq[String]],
       targetIds: Seq[String],
-      diseaseIds: Seq[String],
+      filters: Map[String, Seq[String]],
       orderBy: Option[(String, String)],
       sizeLimit: Option[Int],
       cursor: Option[String]
@@ -353,15 +305,10 @@ class Backend @Inject() (implicit
       .map(_.map(cbIndexPrefix.concat).mkString(","))
       .getOrElse(cbIndexPrefix.concat("*"))
 
-    val kv = Map(
-      "targetId.keyword" -> targetIds,
-      "diseaseId.keyword" -> diseaseIds
-    )
-
     esRetriever
       .getByMustWithSearch(
         cbIndex,
-        kv,
+        filters,
         pag,
         fromJsValue[JsValue],
         Seq.empty,
