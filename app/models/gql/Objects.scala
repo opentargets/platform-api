@@ -131,13 +131,12 @@ object Objects extends Logging {
         "evidences",
         evidencesImp,
         description = Some("The complete list of all possible datasources"),
-        arguments = efoIdsOpt :: variantIdOpt :: datasourceIdsArg :: pageSize :: cursor :: Nil,
+        arguments = efoIds :: datasourceIdsArg :: pageSize :: cursor :: Nil,
         resolve = ctx => {
-          ctx.ctx.getEvidences(
+          ctx.ctx.getEvidencesByEfoId(
             ctx arg datasourceIdsArg,
             Seq(ctx.value.id),
-            ctx arg efoIdsOpt,
-            ctx arg variantIdOpt,
+            ctx arg efoIds,
             Some(("score", "desc")),
             ctx arg pageSize,
             ctx arg cursor
@@ -373,21 +372,19 @@ object Objects extends Logging {
         evidencesImp,
         description = Some("The complete list of all possible datasources"),
         arguments =
-          ensemblIdsOpt :: variantIdOpt :: indirectEvidences :: datasourceIdsArg :: pageSize :: cursor :: Nil,
+          ensemblIds :: indirectEvidences :: datasourceIdsArg :: pageSize :: cursor :: Nil,
         resolve = ctx => {
           val indirects = ctx.arg(indirectEvidences).getOrElse(true)
           val efos = if (indirects) ctx.value.id +: ctx.value.descendants else ctx.value.id +: Nil
 
-          ctx.ctx.getEvidences(
+          ctx.ctx.getEvidencesByEfoId(
             ctx arg datasourceIdsArg,
             ctx arg ensemblIds,
-            Some(efos),
-            ctx arg variantIdOpt,
+            efos,
             Some(("score", "desc")),
             ctx arg pageSize,
             ctx arg cursor
           )
-
         }
       ),
       Field(
@@ -1341,6 +1338,23 @@ object Objects extends Logging {
               .replace("_", ":")
             logger.debug(s"Finding variant functional consequence: $soId")
             soTermsFetcher.deferOpt(soId)
+          }
+        )
+      ),
+      AddFields(
+        Field(
+          "evidences",
+          evidencesImp,
+          description = Some("The complete list of all possible datasources"),
+          arguments = variantId :: datasourceIdsArg :: pageSize :: cursor :: Nil,
+          resolve = ctx => {
+            ctx.ctx.getEvidencesByVariantId(
+              ctx arg datasourceIdsArg,
+              ctx arg variantId,
+              Some(("score", "desc")),
+              ctx arg pageSize,
+              ctx arg cursor
+            )
           }
         )
       )

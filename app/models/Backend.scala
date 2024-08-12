@@ -252,32 +252,34 @@ class Backend @Inject() (implicit
       }
   }
 
-  def getEvidences(
+  def getEvidencesByVariantId(
       datasourceIds: Option[Seq[String]],
-      targetIds: Seq[String],
-      diseaseIds: Option[Seq[String]],
-      variantId: Option[String],
+      variantId: String,
       orderBy: Option[(String, String)],
       sizeLimit: Option[Int],
       cursor: Option[String]
   ): Future[Evidences] = {
-    def getByVariant(variantId: String): Map[String, Seq[String]] = Map(
-      "targetId.keyword" -> targetIds,
+
+    val filters: Map[String, Seq[String]] = Map(
       "variantId.keyword" -> Seq(variantId)
     )
 
-    def getByDisease(diseaseIds: Seq[String]): Map[String, Seq[String]] = Map(
+    getFilteredEvidences(datasourceIds, filters, orderBy, sizeLimit, cursor)
+  }
+
+  def getEvidencesByEfoId(
+                           datasourceIds: Option[Seq[String]],
+                           targetIds: Seq[String],
+                           diseaseIds: Seq[String],
+                           orderBy: Option[(String, String)],
+                           sizeLimit: Option[Int],
+                           cursor: Option[String]
+                         ): Future[Evidences] = {
+
+    val filters: Map[String, Seq[String]] = Map(
       "targetId.keyword" -> targetIds,
       "diseaseId.keyword" -> diseaseIds
     )
-
-    val filters: Map[String, Seq[String]] = variantId
-      .map(getByVariant)
-      .getOrElse(
-        diseaseIds
-          .map(getByDisease)
-          .getOrElse(Map())
-      )
 
     getFilteredEvidences(datasourceIds, filters, orderBy, sizeLimit, cursor)
   }
