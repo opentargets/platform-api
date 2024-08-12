@@ -268,13 +268,13 @@ class Backend @Inject() (implicit
   }
 
   def getEvidencesByEfoId(
-                           datasourceIds: Option[Seq[String]],
-                           targetIds: Seq[String],
-                           diseaseIds: Seq[String],
-                           orderBy: Option[(String, String)],
-                           sizeLimit: Option[Int],
-                           cursor: Option[String]
-                         ): Future[Evidences] = {
+      datasourceIds: Option[Seq[String]],
+      targetIds: Seq[String],
+      diseaseIds: Seq[String],
+      orderBy: Option[(String, String)],
+      sizeLimit: Option[Int],
+      cursor: Option[String]
+  ): Future[Evidences] = {
 
     val filters: Map[String, Seq[String]] = Map(
       "targetId.keyword" -> targetIds,
