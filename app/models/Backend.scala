@@ -21,6 +21,7 @@ import models.entities.MousePhenotypes._
 import models.entities.Pharmacogenomics._
 import models.entities.SearchFacetsResults._
 import models.entities._
+import models.gql.Arguments.variantId
 import org.apache.http.impl.nio.reactor.IOReactorConfig
 import play.api.cache.AsyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
@@ -251,13 +252,44 @@ class Backend @Inject() (implicit
       }
   }
 
-  // TODO CHECK RESULTS ARE SIZE 0 OR OPTIMISE FIELDS TO BRING BACK
+  def getEvidencesByVariantId(
+      datasourceIds: Option[Seq[String]],
+      variantId: String,
+      orderBy: Option[(String, String)],
+      sizeLimit: Option[Int],
+      cursor: Option[String]
+  ): Future[Evidences] = {
 
-  /** get evidences by multiple parameters */
-  def getEvidences(
+    val filters: Map[String, Seq[String]] = Map(
+      "variantId.keyword" -> Seq(variantId)
+    )
+
+    getFilteredEvidences(datasourceIds, filters, orderBy, sizeLimit, cursor)
+  }
+
+  def getEvidencesByEfoId(
       datasourceIds: Option[Seq[String]],
       targetIds: Seq[String],
       diseaseIds: Seq[String],
+      orderBy: Option[(String, String)],
+      sizeLimit: Option[Int],
+      cursor: Option[String]
+  ): Future[Evidences] = {
+
+    val filters: Map[String, Seq[String]] = Map(
+      "targetId.keyword" -> targetIds,
+      "diseaseId.keyword" -> diseaseIds
+    )
+
+    getFilteredEvidences(datasourceIds, filters, orderBy, sizeLimit, cursor)
+  }
+
+  // TODO CHECK RESULTS ARE SIZE 0 OR OPTIMISE FIELDS TO BRING BACK
+
+  /** get evidences by multiple parameters */
+  private def getFilteredEvidences(
+      datasourceIds: Option[Seq[String]],
+      filters: Map[String, Seq[String]],
       orderBy: Option[(String, String)],
       sizeLimit: Option[Int],
       cursor: Option[String]
@@ -274,15 +306,10 @@ class Backend @Inject() (implicit
       .map(_.map(cbIndexPrefix.concat).mkString(","))
       .getOrElse(cbIndexPrefix.concat("*"))
 
-    val kv = Map(
-      "targetId.keyword" -> targetIds,
-      "diseaseId.keyword" -> diseaseIds
-    )
-
     esRetriever
       .getByMustWithSearch(
         cbIndex,
-        kv,
+        filters,
         pag,
         fromJsValue[JsValue],
         Seq.empty,
