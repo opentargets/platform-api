@@ -61,6 +61,11 @@ object Arguments {
   val ensemblId: Argument[String] = Argument("ensemblId", StringType, description = "Ensembl ID")
   val ensemblIds: Argument[Seq[String with tag.Tagged[FromInput.CoercedScalaResult]]] =
     Argument("ensemblIds", ListInputType(StringType), description = "List of Ensembl IDs")
+  val ensemblIdsOpt: Argument[Option[Seq[String]]] =
+    Argument("ensemblIds",
+             OptionInputType(ListInputType(StringType)),
+             description = "List of Ensembl IDs"
+    )
   val chemblId: Argument[String] = Argument("chemblId", StringType, description = "Chembl ID")
   val chemblIds: Argument[Seq[String with tag.Tagged[FromInput.CoercedScalaResult]]] =
     Argument("chemblIds", ListInputType(StringType), description = "List of Chembl IDs")
