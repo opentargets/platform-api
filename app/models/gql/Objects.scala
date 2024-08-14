@@ -1367,6 +1367,15 @@ object Objects extends Logging {
             r.ctx.getCredibleSets(credSetQueryArgs, r.arg(pageArg))
           }
         )
+      ),
+      AddFields(
+        Field(
+          "pharmacogenomics",
+          ListType(pharmacogenomicsImp),
+          description = Some("Pharmoacogenomics"),
+          arguments = pageArg :: Nil,
+          resolve = ctx => ctx.ctx.getPharmacogenomicsByVariant(ctx.value.variantId)
+        )
       )
     )
 
