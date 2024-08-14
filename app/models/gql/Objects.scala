@@ -134,7 +134,7 @@ object Objects extends Logging {
         description = Some("The complete list of all possible datasources"),
         arguments = efoIds :: datasourceIdsArg :: pageSize :: cursor :: Nil,
         resolve = ctx => {
-          ctx.ctx.getEvidences(
+          ctx.ctx.getEvidencesByEfoId(
             ctx arg datasourceIdsArg,
             Seq(ctx.value.id),
             ctx arg efoIds,
@@ -377,7 +377,8 @@ object Objects extends Logging {
         resolve = ctx => {
           val indirects = ctx.arg(indirectEvidences).getOrElse(true)
           val efos = if (indirects) ctx.value.id +: ctx.value.descendants else ctx.value.id +: Nil
-          ctx.ctx.getEvidences(
+
+          ctx.ctx.getEvidencesByEfoId(
             ctx arg datasourceIdsArg,
             ctx arg ensemblIds,
             efos,
@@ -1375,6 +1376,21 @@ object Objects extends Logging {
           description = Some("Pharmoacogenomics"),
           arguments = pageArg :: Nil,
           resolve = ctx => ctx.ctx.getPharmacogenomicsByVariant(ctx.value.variantId)
+        ),
+        Field(
+          "evidences",
+          evidencesImp,
+          description = Some("The complete list of all possible datasources"),
+          arguments = datasourceIdsArg :: pageSize :: cursor :: Nil,
+          resolve = ctx => {
+            ctx.ctx.getEvidencesByVariantId(
+              ctx arg datasourceIdsArg,
+              ctx.value.variantId,
+              Some(("score", "desc")),
+              ctx arg pageSize,
+              ctx arg cursor
+            )
+          }
         )
       )
     )
