@@ -1343,6 +1343,13 @@ object Objects extends Logging {
       ),
       AddFields(
         Field(
+          "pharmacogenomics",
+          ListType(pharmacogenomicsImp),
+          description = Some("Pharmoacogenomics"),
+          arguments = pageArg :: Nil,
+          resolve = ctx => ctx.ctx.getPharmacogenomicsByVariant(ctx.value.variantId)
+        ),
+        Field(
           "evidences",
           evidencesImp,
           description = Some("The complete list of all possible datasources"),
