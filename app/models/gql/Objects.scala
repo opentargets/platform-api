@@ -1346,11 +1346,11 @@ object Objects extends Logging {
           "evidences",
           evidencesImp,
           description = Some("The complete list of all possible datasources"),
-          arguments = variantId :: datasourceIdsArg :: pageSize :: cursor :: Nil,
+          arguments = datasourceIdsArg :: pageSize :: cursor :: Nil,
           resolve = ctx => {
             ctx.ctx.getEvidencesByVariantId(
               ctx arg datasourceIdsArg,
-              ctx arg variantId,
+              ctx.value.variantId,
               Some(("score", "desc")),
               ctx arg pageSize,
               ctx arg cursor
