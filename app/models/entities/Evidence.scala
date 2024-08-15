@@ -885,10 +885,10 @@ object Evidence extends Logging {
         resolve = js => (js.value \ "directionOnTrait").asOpt[String]
       ),
       Field(
-        "assessment",
-        OptionType(StringType),
-        description = Some("Assessment"),
-        resolve = js => (js.value \ "assessment").asOpt[String]
+        "assessments",
+        OptionType(ListType(StringType)),
+        description = Some("Assessments"),
+        resolve = js => (js.value \ "assessments").asOpt[Seq[String]]
       ),
       Field(
         "primaryProjectHit",
