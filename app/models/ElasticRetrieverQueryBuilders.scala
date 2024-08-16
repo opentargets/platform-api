@@ -37,6 +37,11 @@ trait ElasticRetrieverQueryBuilders extends QueryApi with Logging {
   ): SearchRequest =
     getByIndexQueryBuilder(indexQuery, should)
 
+  def IndexTermsMust[V](
+      indexQuery: IndexQuery[V]
+  ): SearchRequest =
+    getByIndexTermsBuilder(indexQuery, must)
+
   def getByIndexQueryBuilder[V](
       indexQuery: IndexQuery[V],
       f: Iterable[Query] => BoolQuery
@@ -52,6 +57,29 @@ trait ElasticRetrieverQueryBuilders extends QueryApi with Logging {
       }
     }
     val boolQuery: BoolQuery = f(query).filter(indexQuery.filters)
+    search(indexQuery.esIndex)
+      .bool(boolQuery)
+      .start(limitClause._1)
+      .limit(limitClause._2)
+      .aggs(indexQuery.aggs)
+      .trackTotalHits(true)
+      .sourceExclude(indexQuery.excludedFields)
+  }
+
+  def getByIndexTermsBuilder[V](
+      indexQuery: IndexQuery[V],
+      f: Iterable[Query] => BoolQuery
+  ): SearchRequest = {
+    val limitClause = indexQuery.pagination.toES
+    val query: Iterable[Query] = {
+      val querySeq = indexQuery.kv.toSeq
+      querySeq.flatMap { it =>
+        val terms = it._2.asInstanceOf[Iterable[String]]
+        Iterable(should(termsQuery(it._1, terms)))
+      }
+    }
+    val boolQuery: BoolQuery = f(query).filter(indexQuery.filters)
+    logger.info(s"Query: $boolQuery")
     search(indexQuery.esIndex)
       .bool(boolQuery)
       .start(limitClause._1)

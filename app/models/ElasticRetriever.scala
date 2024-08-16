@@ -162,6 +162,26 @@ class ElasticRetriever @Inject() (
     getByIndexedQuery(searchRequest, sortByField, buildF)
   }
 
+  def getByIndexedTermsMust[A, V](
+      esIndex: String,
+      kv: Map[String, V],
+      pagination: Pagination,
+      buildF: JsValue => Option[A],
+      aggs: Iterable[AbstractAggregation] = Iterable.empty,
+      sortByField: Option[sort.FieldSort] = None,
+      excludedFields: Seq[String] = Seq.empty
+  ): Future[(IndexedSeq[A], JsValue)] = {
+    // just log and execute the query
+    val indexQuery: IndexQuery[V] = IndexQuery(esIndex = esIndex,
+                                               kv = kv,
+                                               pagination = pagination,
+                                               aggs = aggs,
+                                               excludedFields = excludedFields
+    )
+    val searchRequest: SearchRequest = IndexTermsMust(indexQuery)
+    getByIndexedQuery(searchRequest, sortByField, buildF)
+  }
+
   /** This fn represents a query where each kv from the map is used in
     * a bool 'should'. Based on the query asked by `getByIndexedQuery` and aggregation is applied
     */
@@ -209,7 +229,7 @@ class ElasticRetriever @Inject() (
         case None    => searchRequest
       }
 
-      logger.debug(s"Elasticsearch query: ${client.show(sortedSearchRequest)}")
+      logger.info(s"Elasticsearch query: ${client.show(sortedSearchRequest)}")
       sortedSearchRequest
     }
 

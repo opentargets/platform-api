@@ -13,6 +13,7 @@ import models.entities.Interaction._
 import models.gql.Objects._
 import models.gql.Arguments._
 import models.gql.Fetchers._
+import org.checkerframework.checker.units.qual.C
 
 trait GQLEntities extends Logging {}
 
@@ -29,8 +30,7 @@ object GQLSchema {
     indicationFetcher,
     goFetcher,
     variantFetcher,
-    gwasFetcher,
-    credSetFetcher
+    gwasFetcher
   )
 
   val query: ObjectType[Backend, Unit] = ObjectType(
@@ -153,11 +153,20 @@ object GQLSchema {
         resolve = ctx => gwasFetcher.deferOpt(ctx.arg(studyId))
       ),
       Field(
-        "credibleSet",
-        OptionType(credibleSetImp),
+        "credibleSets",
+        ListType(credibleSetImp),
         description = None,
-        arguments = credibleSetId :: Nil,
-        resolve = ctx => credSetFetcher.deferOpt(ctx.arg(credibleSetId))
+        arguments = credibleSetIds :: studyIds :: diseaseIds :: variantIds :: studyTypes :: regions :: Nil,
+        resolve = ctx => {
+          val credSetIdSeq = ctx.arg(credibleSetIds).getOrElse(Seq.empty)
+          val studyIdSeq = ctx.arg(studyIds).getOrElse(Seq.empty)
+          val diseaseIdSeq = ctx.arg(diseaseIds).getOrElse(Seq.empty)
+          val variantIdSeq = ctx.arg(variantIds).getOrElse(Seq.empty)
+          val studyTypesSeq = ctx.arg(studyTypes).getOrElse(Seq.empty)
+          val regionsSeq = ctx.arg(regions).getOrElse(Seq.empty)
+          val credSetQueryArgs = CredibleSetQueryArgs(credSetIdSeq, studyIdSeq, diseaseIdSeq, variantIdSeq, studyTypesSeq, regionsSeq)
+          ctx.ctx.getCredibleSets(credSetQueryArgs)
+        }
       )
     )
   )
