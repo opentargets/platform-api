@@ -144,7 +144,6 @@ object Fetchers extends Logging {
   //   )
   // }
 
-
   val gwasFetcherCache = FetcherCache.simple
   val gwasFetcher: Fetcher[Backend, JsValue, JsValue, String] = {
     implicit val gwasFetcherId: HasId[JsValue, String] =

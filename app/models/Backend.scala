@@ -158,20 +158,19 @@ class Backend @Inject() (implicit
       "traitFromSourceId.keyword" -> queryArgs.diseaseId,
       "study_type.keyword" -> queryArgs.study_type,
       "region.keyword" -> queryArgs.region
-      ).filter(_._2.nonEmpty)
+    ).filter(_._2.nonEmpty)
     logger.info(s"Querying credible sets for: $termsQuery")
-    val retriever = {
-        esRetriever
-          .getByIndexedTermsMust(
+    val retriever =
+      esRetriever
+        .getByIndexedTermsMust(
           indexName,
           termsQuery,
           Pagination(0, Pagination.sizeMax),
           fromJsValue[JsValue]
-          )
-          .map(_._1)
-        }
-      retriever
-    }
+        )
+        .map(_._1)
+    retriever
+  }
 
   def getGwasIndexes(ids: Seq[String]): Future[IndexedSeq[JsValue]] = {
     val indexName = getIndexOrDefault("gwas_index")

@@ -68,7 +68,10 @@ object Arguments {
   val studyIds: Argument[Option[Seq[String]]] =
     Argument("studyIds", OptionInputType(ListInputType(StringType)), description = "Study IDs")
   val credibleSetIds: Argument[Option[Seq[String]]] =
-    Argument("credibleSetIds", OptionInputType(ListInputType(StringType)), description = "Credible Set IDs")
+    Argument("credibleSetIds",
+             OptionInputType(ListInputType(StringType)),
+             description = "Credible Set IDs"
+    )
 
   val indirectEvidences: Argument[Option[Boolean]] = Argument(
     "enableIndirect",
