@@ -1339,15 +1339,15 @@ object Objects extends Logging {
             soTermsFetcher.deferOpt(soId)
           }
         )
-      // ),
-      // AddFields(
-      //   Field(
-      //     "credibleSets",
-      //     ListType(credibleSetImp),
-      //     description = Some("Credible sets"),
-      //     arguments = pageSize ::  Nil,
-      //     resolve = r => r.ctx.getCredSetByVariant(Seq(r.value.variantId))
-      // )
+        // ),
+        // AddFields(
+        //   Field(
+        //     "credibleSets",
+        //     ListType(credibleSetImp),
+        //     description = Some("Credible sets"),
+        //     arguments = pageSize ::  Nil,
+        //     resolve = r => r.ctx.getCredSetByVariant(Seq(r.value.variantId))
+        // )
       )
     )
 
