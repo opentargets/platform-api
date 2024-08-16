@@ -156,7 +156,7 @@ class Backend @Inject() (implicit
       "studyId.keyword" -> queryArgs.studyIds,
       "locus.variantId.keyword" -> queryArgs.variantId,
       "traitFromSourceId.keyword" -> queryArgs.diseaseId,
-      "study_type.keyword" -> queryArgs.study_type,
+      "studyType.keyword" -> queryArgs.study_type,
       "region.keyword" -> queryArgs.region
     ).filter(_._2.nonEmpty)
     logger.info(s"Querying credible sets for: $termsQuery")
