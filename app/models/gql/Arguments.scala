@@ -67,8 +67,10 @@ object Arguments {
     Argument("goIds", ListInputType(StringType), description = "List of GO IDs, eg. GO:0005515")
   val variantId: Argument[String] = Argument("variantId", StringType, description = "Variant ID")
   val studyId: Argument[String] = Argument("studyId", StringType, description = "Study ID")
-  val credibleSetId: Argument[String] =
-    Argument("credibleSetId", StringType, description = "Credible Set ID")
+  val studyIds: Argument[Option[Seq[String]]] =
+    Argument("studyIds", OptionInputType(ListInputType(StringType)), description = "Study IDs")
+  val credibleSetIds: Argument[Option[Seq[String]]] =
+    Argument("credibleSetIds", OptionInputType(ListInputType(StringType)), description = "Credible Set IDs")
 
   val indirectEvidences: Argument[Option[Boolean]] = Argument(
     "enableIndirect",
