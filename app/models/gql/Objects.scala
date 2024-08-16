@@ -17,6 +17,7 @@ import sangria.schema._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
+import models.entities.CredibleSet.credibleSetImp
 
 object Objects extends Logging {
   implicit val metaDataVersionImp: ObjectType[Backend, DataVersion] =
@@ -697,7 +698,6 @@ object Objects extends Logging {
         )
       )
     )
-
   implicit val diseaseHPOImp: ObjectType[Backend, DiseaseHPO] =
     deriveObjectType[Backend, DiseaseHPO](
       ObjectTypeDescription("Disease and phenotypes annotations"),
@@ -1339,6 +1339,15 @@ object Objects extends Logging {
             soTermsFetcher.deferOpt(soId)
           }
         )
+        // ),
+        // AddFields(
+        //   Field(
+        //     "credibleSets",
+        //     ListType(credibleSetImp),
+        //     description = Some("Credible sets"),
+        //     arguments = pageSize ::  Nil,
+        //     resolve = r => r.ctx.getCredSetByVariant(Seq(r.value.variantId))
+        // )
       )
     )
 

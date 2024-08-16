@@ -129,18 +129,20 @@ object Fetchers extends Logging {
     }
   )
 
-  val credSetFetcherCache = FetcherCache.simple
-  val credSetFetcher: Fetcher[Backend, JsValue, JsValue, String] = {
-    implicit val credSetFetcherId: HasId[JsValue, String] =
-      HasId[JsValue, String](js => (js \ "studyLocusId").as[String])
-    Fetcher(
-      config =
-        FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(credSetFetcherCache),
-      fetch = (ctx: Backend, ids: Seq[String]) => {
-        ctx.getCredSet(ids)
-      }
-    )
-  }
+  // val credSetByStudy = Relation[JsValue, String]("credSetByStudy", c => (c \ "studyId").as[String])
+  // val credSetFetcherCache = FetcherCache.simple
+  // val credSetFetcher: Fetcher[Backend, JsValue, JsValue, String] = {
+  //   implicit val credSetFetcherId: HasId[JsValue, String] =
+  //     HasId[JsValue, String](js => (js \ "studyLocusId").as[String])
+  //   Fetcher.rel(
+  //     config =
+  //       FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(credSetFetcherCache),
+  //     fetch = (ctx: Backend, ids: Seq[String]) => ctx.getCredSet(Left(ids)),
+  //     fetchRel = {
+  //       (ctx: Backend, ids) => ctx.getCredSetByStudy(ids)
+  //     }
+  //   )
+  // }
 
   val gwasFetcherCache = FetcherCache.simple
   val gwasFetcher: Fetcher[Backend, JsValue, JsValue, String] = {
@@ -180,8 +182,7 @@ object Fetchers extends Logging {
       reactomeFetcherCache,
       expressionFetcherCache,
       otarProjectsFetcherCache,
-      soTermsFetcherCache,
-      credSetFetcherCache
+      soTermsFetcherCache
     )
     fetchers.foreach(_.clear())
   }
