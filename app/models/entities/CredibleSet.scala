@@ -67,6 +67,15 @@ case class CredibleSet(studyLocusId: String,
                        qtlGeneId: Option[String]
 )
 
+case class CredibleSetQueryArgs(
+    ids: Seq[String] = Seq.empty,
+    studyIds: Seq[String] = Seq.empty,
+    diseaseId: Seq[String] = Seq.empty,
+    variantId: Seq[String] = Seq.empty,
+    study_type: Seq[String] = Seq.empty,
+    region: Seq[String] = Seq.empty
+)
+
 object CredibleSet extends Logging {
   import sangria.macros.derive._
 
