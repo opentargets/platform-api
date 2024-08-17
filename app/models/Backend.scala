@@ -149,17 +149,18 @@ class Backend @Inject() (implicit
   //   getCredibleSets(Right(queryTerm))
   // }
 
+  // TODO: add pagination
   def getCredibleSets(queryArgs: CredibleSetQueryArgs): Future[IndexedSeq[JsValue]] = {
     val indexName = getIndexOrDefault("credible_set")
     val termsQuery = Map(
       "studyLocusId.keyword" -> queryArgs.ids,
       "studyId.keyword" -> queryArgs.studyIds,
       "locus.variantId.keyword" -> queryArgs.variantIds,
-      "traitFromSourceId.keyword" -> queryArgs.diseaseIds,
+      "traitFromSourceMappedIds.keyword" -> queryArgs.diseaseIds,
       "studyType.keyword" -> queryArgs.studyTypes,
       "region.keyword" -> queryArgs.regions
     ).filter(_._2.nonEmpty)
-    logger.info(s"Querying credible sets for: $termsQuery")
+    logger.debug(s"Querying credible sets for: $termsQuery")
     val retriever =
       esRetriever
         .getByIndexedTermsMust(
