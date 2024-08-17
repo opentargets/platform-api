@@ -4,6 +4,7 @@ import models.Backend
 import models.gql.Fetchers.{diseasesFetcher, targetsFetcher}
 import play.api.Logging
 import play.api.libs.json.{JsValue, Json, OFormat}
+import models.entities.CredibleSet.credibleSetImp
 import models.gql.Objects.{diseaseImp, targetImp}
 import sangria.schema.{
   BooleanType,
@@ -198,6 +199,16 @@ object GwasIndex extends Logging {
         OptionType(ListType(StringType)),
         description = Some(""),
         resolve = js => (js.value \ "analysisFlags").asOpt[Seq[String]]
+      // ),
+      // Field(
+      //   "credibleSets",
+      //   OptionType(ListType(credibleSetImp)),
+      //   description = Some("Credible sets"),
+      //   resolve = js => {
+      //     val studyIdSeq = Seq((js.value \ "studyId").as[String])
+      //     val credSetQueryArgs = CredibleSetQueryArgs(studyIds = studyIdSeq)
+      //     js.ctx.getCredibleSets(credSetQueryArgs)
+      //     }
       )
     )
   )
