@@ -1339,15 +1339,20 @@ object Objects extends Logging {
             soTermsFetcher.deferOpt(soId)
           }
         )
-        // ),
-        // AddFields(
-        //   Field(
-        //     "credibleSets",
-        //     ListType(credibleSetImp),
-        //     description = Some("Credible sets"),
-        //     arguments = pageSize ::  Nil,
-        //     resolve = r => r.ctx.getCredSetByVariant(Seq(r.value.variantId))
-        // )
+        ),
+        AddFields(
+          Field(
+            "credibleSets",
+            ListType(credibleSetImp),
+            description = Some("Credible sets"),
+            arguments = pageSize :: studyTypes :: Nil,
+            resolve = r => {
+              val studyTypesSeq = r.arg(studyTypes).getOrElse(Seq.empty)
+              val variantIdSeq = Seq(r.value.variantId)
+              val credSetQueryArgs = CredibleSetQueryArgs(variantIds = variantIdSeq, studyTypes = studyTypesSeq)
+              r.ctx.getCredibleSets(credSetQueryArgs)
+            }
+        )
       )
     )
 
