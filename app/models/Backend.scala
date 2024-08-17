@@ -154,10 +154,10 @@ class Backend @Inject() (implicit
     val termsQuery = Map(
       "studyLocusId.keyword" -> queryArgs.ids,
       "studyId.keyword" -> queryArgs.studyIds,
-      "locus.variantId.keyword" -> queryArgs.variantId,
-      "traitFromSourceId.keyword" -> queryArgs.diseaseId,
-      "studyType.keyword" -> queryArgs.study_type,
-      "region.keyword" -> queryArgs.region
+      "locus.variantId.keyword" -> queryArgs.variantIds,
+      "traitFromSourceId.keyword" -> queryArgs.diseaseIds,
+      "studyType.keyword" -> queryArgs.studyTypes,
+      "region.keyword" -> queryArgs.regions
     ).filter(_._2.nonEmpty)
     logger.info(s"Querying credible sets for: $termsQuery")
     val retriever =

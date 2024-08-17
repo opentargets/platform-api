@@ -70,10 +70,10 @@ case class CredibleSet(studyLocusId: String,
 case class CredibleSetQueryArgs(
     ids: Seq[String] = Seq.empty,
     studyIds: Seq[String] = Seq.empty,
-    diseaseId: Seq[String] = Seq.empty,
-    variantId: Seq[String] = Seq.empty,
-    study_type: Seq[String] = Seq.empty,
-    region: Seq[String] = Seq.empty
+    diseaseIds: Seq[String] = Seq.empty,
+    variantIds: Seq[String] = Seq.empty,
+    studyTypes: Seq[String] = Seq.empty,
+    regions: Seq[String] = Seq.empty
 )
 
 object CredibleSet extends Logging {
