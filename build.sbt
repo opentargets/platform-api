@@ -47,9 +47,9 @@ libraryDependencies += "ru.yandex.clickhouse" % "clickhouse-jdbc" % "0.3.2"
 libraryDependencies += "org.sangria-graphql" %% "sangria" % sangriaVersion
 libraryDependencies += "org.sangria-graphql" %% "sangria-play-json" % "2.0.2"
 
-libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.10"
+libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.12"
 
-lazy val catsVersion = "2.9.0"
+lazy val catsVersion = "2.12.0"
 lazy val cats = Seq(
   "org.typelevel" %% "cats-core" % catsVersion,
   "org.typelevel" %% "cats-laws" % catsVersion,
@@ -58,7 +58,7 @@ lazy val cats = Seq(
 )
 libraryDependencies ++= cats
 
-val s4sVersion = "8.5.3"
+val s4sVersion = "8.11.3"
 libraryDependencies ++= Seq(
   "com.sksamuel.elastic4s" %% "elastic4s-core" % s4sVersion exclude ("org.slf4j", "slf4j-api"),
   "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % s4sVersion exclude ("org.slf4j", "slf4j-api"),
