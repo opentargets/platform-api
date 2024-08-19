@@ -42,7 +42,7 @@ libraryDependencies += "com.typesafe.play" %% "play-json" % "2.9.4"
 libraryDependencies += "com.typesafe.play" %% "play-streams" % playVersion
 libraryDependencies += "com.typesafe.play" %% "play-slick" % "5.1.0"
 
-val sangriaVersion = "3.5.3"
+val sangriaVersion = "4.1.1"
 libraryDependencies += "ru.yandex.clickhouse" % "clickhouse-jdbc" % "0.3.2"
 libraryDependencies += "org.sangria-graphql" %% "sangria" % sangriaVersion
 libraryDependencies += "org.sangria-graphql" %% "sangria-play-json" % "2.0.2"
