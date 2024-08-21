@@ -16,6 +16,9 @@ import sangria.schema.{
   StringType,
   fields
 }
+import models.entities.CredibleSet.credibleSetWithoutStudyImp
+import models.entities.CredibleSet.StudyType
+import models.gql.Arguments.pageArg
 
 object GwasIndex extends Logging {
   import sangria.macros.derive._
@@ -31,11 +34,7 @@ object GwasIndex extends Logging {
   implicit val ldPopulationStructureImp: ObjectType[Backend, LdPopulationStructure] =
     deriveObjectType[Backend, LdPopulationStructure]()
   implicit val sampleImp: ObjectType[Backend, Sample] = deriveObjectType[Backend, Sample]()
-
-  val gwasImp: ObjectType[Backend, JsValue] = ObjectType(
-    "Gwas",
-    "A genome-wide association study",
-    fields[Backend, JsValue](
+  val gwasFields: Seq[Field[Backend, JsValue]] = Seq(
       Field(
         "studyId",
         StringType,
@@ -50,9 +49,9 @@ object GwasIndex extends Logging {
       ),
       Field(
         "studyType",
-        OptionType(StringType),
+        OptionType(StudyType),
         description = Some("The study type"),
-        resolve = js => (js.value \ "studyType").asOpt[String]
+        resolve = js => (js.value \ "studyType").asOpt[String].map(e => StudyTypeEnum.withName(e))
       ),
       Field(
         "traitFromSource",
@@ -199,17 +198,33 @@ object GwasIndex extends Logging {
         OptionType(ListType(StringType)),
         description = Some(""),
         resolve = js => (js.value \ "analysisFlags").asOpt[Seq[String]]
-      // ),
-      // Field(
-      //   "credibleSets",
-      //   OptionType(ListType(credibleSetImp)),
-      //   description = Some("Credible sets"),
-      //   resolve = js => {
-      //     val studyIdSeq = Seq((js.value \ "studyId").as[String])
-      //     val credSetQueryArgs = CredibleSetQueryArgs(studyIds = studyIdSeq)
-      //     js.ctx.getCredibleSets(credSetQueryArgs)
-      //     }
       )
+  )
+  lazy val credibleSetField: Field[Backend, JsValue] =
+      Field(
+        "credibleSets",
+        OptionType(ListType(credibleSetWithoutStudyImp)),
+        arguments = pageArg :: Nil,
+        description = Some("Credible sets"),
+        resolve = js => {
+          val studyIdSeq = Seq((js.value \ "studyId").as[String])
+          val credSetQueryArgs = CredibleSetQueryArgs(studyIds = studyIdSeq)
+          js.ctx.getCredibleSets(credSetQueryArgs, js.arg(pageArg))
+        }
+      )
+  lazy val gwasImp: ObjectType[Backend, JsValue] = ObjectType(
+    "Gwas",
+    "A genome-wide association study",
+    fields[Backend, JsValue](
+      gwasFields ++ Seq(credibleSetField): _*
     )
   )
+  val gwasWithoutCredSetsImp: ObjectType[Backend, JsValue] = ObjectType(
+    "GwasWithoutCredSets",
+    "A genome-wide association study without credible sets",
+    fields[Backend, JsValue](
+      gwasFields: _*
+    )
+  )
+
 }

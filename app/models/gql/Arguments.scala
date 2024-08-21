@@ -8,6 +8,7 @@ import sangria.schema._
 import sangria.marshalling.playJson._
 import sangria.marshalling.FromInput
 import sangria.util.tag
+import models.entities.CredibleSet.{StudyType}
 
 object Arguments {
 
@@ -69,7 +70,7 @@ object Arguments {
   val studyIds: Argument[Option[Seq[String]]] =
     Argument("studyIds", OptionInputType(ListInputType(StringType)), description = "Study IDs")
   val diseaseIds: Argument[Option[Seq[String]]] = Argument("diseaseIds", OptionInputType(ListInputType(StringType)), description = "Disease IDs")
-  val studyTypes: Argument[Option[Seq[String]]] = Argument("studyTypes", OptionInputType(ListInputType(StringType)), description = "Study typess")
+  val studyTypes = Argument("studyTypes", OptionInputType(ListInputType(StudyType)), description = "Study types")
   val regions: Argument[Option[Seq[String]]] = Argument("regions", OptionInputType(ListInputType(StringType)), description = "Regions")
   val credibleSetIds: Argument[Option[Seq[String]]] =
     Argument("credibleSetIds",

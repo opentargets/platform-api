@@ -140,23 +140,17 @@ class Backend @Inject() (implicit
     esRetriever.getByIds(indexName, ids, fromJsValue[VariantIndex])
   }
 
-  // def getCredSetByStudy(ids: Seq[String]): Future[IndexedSeq[JsValue]] = {
-  //   val queryTerm = Map("studyId.keyword" -> ids)
-  //   getCredibleSets(Right(queryTerm))
-  // }
-  // def getCredSetByVariant(ids: Seq[String]): Future[IndexedSeq[JsValue]] = {
-  //   val queryTerm = Map("locus.variantId.keyword" -> ids)
-  //   getCredibleSets(Right(queryTerm))
-  // }
-
-  // TODO: add pagination
-  def getCredibleSets(queryArgs: CredibleSetQueryArgs): Future[IndexedSeq[JsValue]] = {
+  def getCredibleSets(
+    queryArgs: CredibleSetQueryArgs,
+    pagination: Option[Pagination]
+   ): Future[IndexedSeq[JsValue]] = {
+    val pag = pagination.getOrElse(Pagination.mkDefault)
     val indexName = getIndexOrDefault("credible_set")
     val termsQuery = Map(
       "studyLocusId.keyword" -> queryArgs.ids,
       "studyId.keyword" -> queryArgs.studyIds,
       "locus.variantId.keyword" -> queryArgs.variantIds,
-      "traitFromSourceMappedIds.keyword" -> queryArgs.diseaseIds,
+      "diseaseIds.keyword" -> queryArgs.diseaseIds,
       "studyType.keyword" -> queryArgs.studyTypes,
       "region.keyword" -> queryArgs.regions
     ).filter(_._2.nonEmpty)
@@ -166,7 +160,7 @@ class Backend @Inject() (implicit
         .getByIndexedTermsMust(
           indexName,
           termsQuery,
-          Pagination(0, Pagination.sizeMax),
+          pag,
           fromJsValue[JsValue]
         )
         .map(_._1)
