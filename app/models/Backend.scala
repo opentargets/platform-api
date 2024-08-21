@@ -141,9 +141,9 @@ class Backend @Inject() (implicit
   }
 
   def getCredibleSets(
-    queryArgs: CredibleSetQueryArgs,
-    pagination: Option[Pagination]
-   ): Future[IndexedSeq[JsValue]] = {
+      queryArgs: CredibleSetQueryArgs,
+      pagination: Option[Pagination]
+  ): Future[IndexedSeq[JsValue]] = {
     val pag = pagination.getOrElse(Pagination.mkDefault)
     val indexName = getIndexOrDefault("credible_set")
     val termsQuery = Map(
