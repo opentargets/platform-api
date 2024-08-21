@@ -1,7 +1,7 @@
 package models.entities
 
 import models.Backend
-import models.entities.GwasIndex.gwasImp
+import models.entities.GwasIndex.{gwasImp, gwasWithoutCredSetsImp}
 import models.gql.Fetchers.{gwasFetcher, targetsFetcher, variantFetcher}
 import models.gql.Objects.{logger, targetImp, variantIndexImp}
 import play.api.Logging
@@ -62,7 +62,7 @@ case class CredibleSet(studyLocusId: String,
                        sampleSize: Option[Int],
                        strongestLocus2gene: Option[StrongestLocus2gene],
                        ldSet: Option[Seq[LdSet]],
-                       studyType: Option[String],
+                       studyType: Option[StudyTypeEnum.Value],
                        traitFromSourceMappedIds: Option[Seq[String]],
                        qtlGeneId: Option[String]
 )
@@ -72,12 +72,19 @@ case class CredibleSetQueryArgs(
     studyIds: Seq[String] = Seq.empty,
     diseaseIds: Seq[String] = Seq.empty,
     variantIds: Seq[String] = Seq.empty,
-    studyTypes: Seq[String] = Seq.empty,
+    studyTypes: Seq[StudyTypeEnum.Value] = Seq.empty,
     regions: Seq[String] = Seq.empty
 )
 
+object StudyTypeEnum extends Enumeration {
+  type StudyType = Value
+  val gwas, tuqtl, eqtl, pqtl, sqtl = Value
+}
+
 object CredibleSet extends Logging {
   import sangria.macros.derive._
+
+  implicit val StudyType = deriveEnumType[StudyTypeEnum.Value]()
 
   implicit val strongestLocus2geneImp: ObjectType[Backend, StrongestLocus2gene] =
     deriveObjectType[Backend, StrongestLocus2gene](
@@ -112,10 +119,7 @@ object CredibleSet extends Logging {
   implicit val ldSetF: OFormat[LdSet] = Json.format[LdSet]
   implicit val locusF: OFormat[Locus] = Json.format[Locus]
   implicit val strongestLocus2geneF: OFormat[StrongestLocus2gene] = Json.format[StrongestLocus2gene]
-  val credibleSetImp: ObjectType[Backend, JsValue] = ObjectType(
-    "credibleSet",
-    "",
-    fields[Backend, JsValue](
+  val credibleSetFields: Seq[Field[Backend, JsValue]] = Seq(
       Field(
         "studyLocusId",
         StringType,
@@ -149,16 +153,6 @@ object CredibleSet extends Logging {
         OptionType(StringType),
         description = None,
         resolve = js => (js.value \ "region").asOpt[String]
-      ),
-      Field(
-        "study",
-        OptionType(gwasImp),
-        description = Some("Gwas study"),
-        resolve = js => {
-          val studyId = (js.value \ "studyId").asOpt[String]
-          logger.debug(s"Finding gwas study: $studyId")
-          gwasFetcher.deferOpt(studyId)
-        }
       ),
       Field(
         "beta",
@@ -276,9 +270,9 @@ object CredibleSet extends Logging {
       ),
       Field(
         "studyType",
-        OptionType(StringType),
+        OptionType(StudyType),
         description = None,
-        resolve = js => (js.value \ "studyType").asOpt[String]
+        resolve = js => (js.value \ "studyType").asOpt[String].map(e => StudyTypeEnum.withName(e))
       ),
       Field(
         "traitFromSourceMappedIds",
@@ -291,7 +285,29 @@ object CredibleSet extends Logging {
         OptionType(StringType),
         description = None,
         resolve = js => (js.value \ "qtlGeneId").asOpt[String]
+      ))
+  val studyField: Field[Backend, JsValue] = Field(
+        "study",
+        OptionType(gwasWithoutCredSetsImp),
+        description = Some("Gwas study"),
+        resolve = js => {
+          val studyId = (js.value \ "studyId").asOpt[String]
+          logger.debug(s"Finding gwas study: $studyId")
+          gwasFetcher.deferOpt(studyId)
+        }
       )
-    )
+  val credibleSetImp: ObjectType[Backend, JsValue] = ObjectType(
+    "credibleSet",
+    "",
+    fields[Backend, JsValue](
+      credibleSetFields ++ Seq(studyField) : _*
+      )
+  )
+  val credibleSetWithoutStudyImp: ObjectType[Backend, JsValue] = ObjectType(
+    "credibleSetWithoutStudy",
+    "",
+    fields[Backend, JsValue](
+      credibleSetFields: _*
+      )
   )
 }
