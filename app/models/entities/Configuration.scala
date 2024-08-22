@@ -43,7 +43,7 @@ object Configuration {
 
   case class DiseaseSettings(associations: DbTableSettings)
 
-  case class DatasourceSettings(id: String, weight: Double, propagate: Boolean)
+  case class DatasourceSettings(id: String, weight: Double, propagate: Boolean, required: Boolean = false)
 
   case class HarmonicSettings(pExponent: Int, datasources: Seq[DatasourceSettings])
 

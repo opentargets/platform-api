@@ -471,8 +471,8 @@ class Backend @Inject() (implicit
   ): Future[Associations] = {
     val page = pagination.getOrElse(Pagination.mkDefault)
     val dss = datasources.getOrElse(defaultOTSettings.clickhouse.harmonic.datasources)
-
     val weights = dss.map(s => (s.id, s.weight))
+    val mustIncludeDatasources = dss.withFilter(_.required).map(_.id).toSet
     val dontPropagate = dss.withFilter(!_.propagate).map(_.id).toSet
     val aotfQ = QAOTF(
       defaultOTSettings.clickhouse.disease.associations.name,
@@ -482,6 +482,7 @@ class Backend @Inject() (implicit
       filter,
       orderBy,
       weights,
+      mustIncludeDatasources,
       dontPropagate,
       page.offset,
       page.size
@@ -694,7 +695,7 @@ class Backend @Inject() (implicit
   ): Future[Associations] = {
     val page = pagination.getOrElse(Pagination.mkDefault)
     val dss = datasources.getOrElse(defaultOTSettings.clickhouse.harmonic.datasources)
-
+    val mustIncludeDatasources = dss.withFilter(_.required).map(_.id).toSet
     val weights = dss.map(s => (s.id, s.weight))
     val dontPropagate = dss.withFilter(!_.propagate).map(_.id).toSet
     val aotfQ = QAOTF(
@@ -705,6 +706,7 @@ class Backend @Inject() (implicit
       filter,
       orderBy,
       weights,
+      mustIncludeDatasources,
       dontPropagate,
       page.offset,
       page.size

@@ -34,6 +34,7 @@ case class QAOTF(
     BFilter: Option[String],
     orderScoreBy: Option[(String, String)],
     datasourceWeights: Seq[(String, Double)],
+    mustIncludeDatasources: Set[String],
     nonPropagatedDatasources: Set[String],
     offset: Int,
     size: Int
@@ -89,12 +90,11 @@ case class QAOTF(
     } else {
       expressionLeft
     }
-    val DSRequired = Set("eva") // TODO: read this from a "required" request parameter
     val expressionLeftRighWithFilters = {
       val expressionLeftRightWithBFilter =
         BFilterQ.map(f => F.and(f, expressionLeftRight)).getOrElse(expressionLeftRight)
-      if (DSRequired.nonEmpty) {
-        F.and(expressionLeftRightWithBFilter, F.in(DS, F.set(DSRequired.map(literal).toSeq)))
+      if (mustIncludeDatasources.nonEmpty) {
+        F.and(expressionLeftRightWithBFilter, F.in(DS, F.set(mustIncludeDatasources.map(literal).toSeq)))
       } else {
         expressionLeftRightWithBFilter
       }
