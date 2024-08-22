@@ -1,14 +1,19 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE configuration>
+
 <configuration>
+    <import class="ch.qos.logback.classic.encoder.PatternLayoutEncoder"/>
+    <import class="ch.qos.logback.classic.AsyncAppender"/>
+    <import class="ch.qos.logback.core.hook.DelayingShutdownHook"/>
+    <import class="ch.qos.logback.core.ConsoleAppender"/>
 
-    <conversionRule conversionWord="coloredLevel" converterClass="play.api.libs.logback.ColoredLevel" />
-
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>%coloredLevel %logger{15} - %message%n%xException{10}</pattern>
+    <appender name="STDOUT" class="ConsoleAppender">
+        <encoder class="PatternLayoutEncoder">
+            <pattern>%highlight(%-5level) %logger{15} - %message%n%xException{10}</pattern>
         </encoder>
     </appender>
 
-    <appender name="ASYNCSTDOUT" class="ch.qos.logback.classic.AsyncAppender">
+    <appender name="ASYNCSTDOUT" class="AsyncAppender">
         <appender-ref ref="STDOUT"/>
     </appender>
 
@@ -18,8 +23,6 @@
     <logger name="httpclient" level="WARN"/>
     <logger name="models" level="INFO"/>
     <logger name="controllers" level="DEBUG"/>
-
-    <!-- Off these ones as they are annoying, and anyway we manage configuration ourselves -->
     <logger name="com.avaje.ebean.config.PropertyMapLoader" level="OFF"/>
     <logger name="com.avaje.ebeaninternal.server.core.XmlConfigLoader" level="OFF"/>
     <logger name="com.avaje.ebeaninternal.server.lib.BackgroundThread" level="OFF"/>
@@ -27,15 +30,10 @@
     <logger name="ru.yandex.clickhouse.ClickHouseDriver" level="OFF"/>
     <logger name="com.zaxxer.hikari.pool.HikariPool" level="OFF"/>
     <logger name="com.sksamuel.elastic4s.http.ResponseHandler" level="INFO"/>
-    <!-- Set logging for all Akka library classes to INFO -->
-    <logger name="akka" level="ERROR" />
-    <!-- Set a specific actor to DEBUG -->
-    <!--logger name="actors.MyActor" level="DEBUG" /-->
+    <logger name="akka" level="ERROR"/>
 
     <root level="INFO">
-        <appender-ref ref="ASYNCSTDOUT" />
+        <appender-ref ref="ASYNCSTDOUT"/>
     </root>
-
-    <shutdownHook class="ch.qos.logback.core.hook.DelayingShutdownHook"/>
-
+    <shutdownHook class="DelayingShutdownHook"/>
 </configuration>
