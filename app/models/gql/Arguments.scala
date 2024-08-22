@@ -73,7 +73,7 @@ object Arguments {
     Argument("goIds", ListInputType(StringType), description = "List of GO IDs, eg. GO:0005515")
   val variantId: Argument[String] = Argument("variantId", StringType, description = "Variant ID")
   val variantIds: Argument[Option[Seq[String]]] =
-    Argument("variantId", OptionInputType(ListInputType(StringType)), description = "Variant IDs")
+    Argument("variantIds", OptionInputType(ListInputType(StringType)), description = "Variant IDs")
   val studyId: Argument[String] = Argument("studyId", StringType, description = "Study ID")
   val studyIds: Argument[Option[Seq[String]]] =
     Argument("studyIds", OptionInputType(ListInputType(StringType)), description = "Study IDs")
