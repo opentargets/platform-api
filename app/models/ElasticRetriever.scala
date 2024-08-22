@@ -229,7 +229,7 @@ class ElasticRetriever @Inject() (
         case None    => searchRequest
       }
 
-      logger.info(s"Elasticsearch query: ${client.show(sortedSearchRequest)}")
+      logger.debug(s"Elasticsearch query: ${client.show(sortedSearchRequest)}")
       sortedSearchRequest
     }
 
