@@ -94,7 +94,9 @@ case class QAOTF(
       val expressionLeftRightWithBFilter =
         BFilterQ.map(f => F.and(f, expressionLeftRight)).getOrElse(expressionLeftRight)
       if (mustIncludeDatasources.nonEmpty) {
-        F.and(expressionLeftRightWithBFilter, F.in(DS, F.set(mustIncludeDatasources.map(literal).toSeq)))
+        F.and(expressionLeftRightWithBFilter,
+              F.in(DS, F.set(mustIncludeDatasources.map(literal).toSeq))
+        )
       } else {
         expressionLeftRightWithBFilter
       }
