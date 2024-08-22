@@ -63,7 +63,7 @@ case class CredibleSet(studyLocusId: String,
                        strongestLocus2gene: Option[StrongestLocus2gene],
                        ldSet: Option[Seq[LdSet]],
                        studyType: Option[StudyTypeEnum.Value],
-                       traitFromSourceMappedIds: Option[Seq[String]],
+                       diseaseIds: Option[Seq[String]],
                        qtlGeneId: Option[String]
 )
 
@@ -275,10 +275,10 @@ object CredibleSet extends Logging {
       resolve = js => (js.value \ "studyType").asOpt[String].map(e => StudyTypeEnum.withName(e))
     ),
     Field(
-      "traitFromSourceMappedIds",
+      "diseaseIds",
       OptionType(ListType(StringType)),
       description = None,
-      resolve = js => (js.value \ "traitFromSourceMappedIds").asOpt[Seq[String]]
+      resolve = js => (js.value \ "diseaseIds").asOpt[Seq[String]]
     ),
     Field(
       "qtlGeneId",
