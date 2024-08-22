@@ -79,7 +79,7 @@ trait ElasticRetrieverQueryBuilders extends QueryApi with Logging {
       }
     }
     val boolQuery: BoolQuery = f(query).filter(indexQuery.filters)
-    logger.info(s"Query: $boolQuery")
+    logger.debug(s"Query: $boolQuery")
     search(indexQuery.esIndex)
       .bool(boolQuery)
       .start(limitClause._1)
