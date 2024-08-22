@@ -17,6 +17,7 @@ import sangria.schema._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
+import models.entities.CredibleSet.credibleSetImp
 
 object Objects extends Logging {
   implicit val metaDataVersionImp: ObjectType[Backend, DataVersion] =
@@ -438,6 +439,19 @@ object Objects extends Logging {
             }),
             ctx arg pageArg
           )
+      ),
+      Field(
+        "credibleSets",
+        OptionType(ListType(credibleSetImp)),
+        description = Some("Credible sets"),
+        arguments = pageArg :: studyTypes :: Nil,
+        resolve = r => {
+          val studyTypesSeq = r.arg(studyTypes).getOrElse(Seq.empty)
+          val diseaseIdSeq = Seq(r.value.id)
+          val credSetQueryArgs =
+            CredibleSetQueryArgs(diseaseIds = diseaseIdSeq, studyTypes = studyTypesSeq)
+          r.ctx.getCredibleSets(credSetQueryArgs, r.arg(pageArg))
+        }
       )
     )
   )
@@ -698,7 +712,6 @@ object Objects extends Logging {
         )
       )
     )
-
   implicit val diseaseHPOImp: ObjectType[Backend, DiseaseHPO] =
     deriveObjectType[Backend, DiseaseHPO](
       ObjectTypeDescription("Disease and phenotypes annotations"),
@@ -1362,6 +1375,19 @@ object Objects extends Logging {
               ctx arg pageSize,
               ctx arg cursor
             )
+          }
+        ),
+        Field(
+          "credibleSets",
+          OptionType(ListType(credibleSetImp)),
+          description = Some("Credible sets"),
+          arguments = pageArg :: studyTypes :: Nil,
+          resolve = r => {
+            val studyTypesSeq = r.arg(studyTypes).getOrElse(Seq.empty)
+            val variantIdSeq = Seq(r.value.variantId)
+            val credSetQueryArgs =
+              CredibleSetQueryArgs(variantIds = variantIdSeq, studyTypes = studyTypesSeq)
+            r.ctx.getCredibleSets(credSetQueryArgs, r.arg(pageArg))
           }
         )
       )

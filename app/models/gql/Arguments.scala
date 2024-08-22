@@ -8,6 +8,7 @@ import sangria.schema._
 import sangria.marshalling.playJson._
 import sangria.marshalling.FromInput
 import sangria.util.tag
+import models.entities.CredibleSet.{StudyType}
 
 object Arguments {
 
@@ -69,9 +70,22 @@ object Arguments {
   val goIds: Argument[Seq[String with tag.Tagged[FromInput.CoercedScalaResult]]] =
     Argument("goIds", ListInputType(StringType), description = "List of GO IDs, eg. GO:0005515")
   val variantId: Argument[String] = Argument("variantId", StringType, description = "Variant ID")
+  val variantIds: Argument[Option[Seq[String]]] =
+    Argument("variantId", OptionInputType(ListInputType(StringType)), description = "Variant IDs")
   val studyId: Argument[String] = Argument("studyId", StringType, description = "Study ID")
-  val credibleSetId: Argument[String] =
-    Argument("credibleSetId", StringType, description = "Credible Set ID")
+  val studyIds: Argument[Option[Seq[String]]] =
+    Argument("studyIds", OptionInputType(ListInputType(StringType)), description = "Study IDs")
+  val diseaseIds: Argument[Option[Seq[String]]] =
+    Argument("diseaseIds", OptionInputType(ListInputType(StringType)), description = "Disease IDs")
+  val studyTypes =
+    Argument("studyTypes", OptionInputType(ListInputType(StudyType)), description = "Study types")
+  val regions: Argument[Option[Seq[String]]] =
+    Argument("regions", OptionInputType(ListInputType(StringType)), description = "Regions")
+  val credibleSetIds: Argument[Option[Seq[String]]] =
+    Argument("credibleSetIds",
+             OptionInputType(ListInputType(StringType)),
+             description = "Credible Set IDs"
+    )
 
   val indirectEvidences: Argument[Option[Boolean]] = Argument(
     "enableIndirect",

@@ -141,10 +141,31 @@ class Backend @Inject() (implicit
     esRetriever.getByIds(indexName, ids, fromJsValue[VariantIndex])
   }
 
-  def getCredSet(ids: Seq[String]): Future[IndexedSeq[JsValue]] = {
+  def getCredibleSets(
+      queryArgs: CredibleSetQueryArgs,
+      pagination: Option[Pagination]
+  ): Future[IndexedSeq[JsValue]] = {
+    val pag = pagination.getOrElse(Pagination.mkDefault)
     val indexName = getIndexOrDefault("credible_set")
-
-    esRetriever.getByIds(indexName, ids, fromJsValue[JsValue])
+    val termsQuery = Map(
+      "studyLocusId.keyword" -> queryArgs.ids,
+      "studyId.keyword" -> queryArgs.studyIds,
+      "locus.variantId.keyword" -> queryArgs.variantIds,
+      "diseaseIds.keyword" -> queryArgs.diseaseIds,
+      "studyType.keyword" -> queryArgs.studyTypes,
+      "region.keyword" -> queryArgs.regions
+    ).filter(_._2.nonEmpty)
+    logger.debug(s"Querying credible sets for: $termsQuery")
+    val retriever =
+      esRetriever
+        .getByIndexedTermsMust(
+          indexName,
+          termsQuery,
+          pag,
+          fromJsValue[JsValue]
+        )
+        .map(_._1)
+    retriever
   }
 
   def getGwasIndexes(ids: Seq[String]): Future[IndexedSeq[JsValue]] = {
