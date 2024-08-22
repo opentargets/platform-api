@@ -68,7 +68,7 @@ object Arguments {
     Argument("chemblIds", ListInputType(StringType), description = "List of Chembl IDs")
   val goIds: Argument[Seq[String with tag.Tagged[FromInput.CoercedScalaResult]]] =
     Argument("goIds", ListInputType(StringType), description = "List of GO IDs, eg. GO:0005515")
-  val variantId: Argument[String] = Argument("variantId", StringType, description = "Variant ID")
+  val variantId: Argument[String] = Argument("id", StringType, description = "Variant ID")
   val studyId: Argument[String] = Argument("studyId", StringType, description = "Study ID")
   val credibleSetId: Argument[String] =
     Argument("credibleSetId", StringType, description = "Credible Set ID")

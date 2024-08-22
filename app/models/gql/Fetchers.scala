@@ -13,7 +13,7 @@ import models.entities.{
   OtarProjects,
   Reactome,
   Target,
-  VariantIndex
+  Variant
 }
 import models.{Backend, entities}
 import play.api.Logging
@@ -118,10 +118,10 @@ object Fetchers extends Logging {
     }
   )
 
-  implicit val variantFetcherId: HasId[VariantIndex, String] =
-    HasId[VariantIndex, String](_.variantId)
+  implicit val variantFetcherId: HasId[Variant, String] =
+    HasId[Variant, String](_.id)
   val variantFetcherCache = FetcherCache.simple
-  val variantFetcher: Fetcher[Backend, VariantIndex, VariantIndex, String] = Fetcher(
+  val variantFetcher: Fetcher[Backend, Variant, Variant, String] = Fetcher(
     config =
       FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(variantFetcherCache),
     fetch = (ctx: Backend, ids: Seq[String]) => {

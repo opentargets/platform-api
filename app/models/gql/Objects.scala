@@ -1163,7 +1163,7 @@ object Objects extends Logging {
     )
 
   lazy val mUnionType: UnionType[Backend] =
-    UnionType("EntityUnionType", types = List(targetImp, drugImp, diseaseImp, variantIndexImp))
+    UnionType("EntityUnionType", types = List(targetImp, drugImp, diseaseImp, variantImp))
 
   implicit val searchResultAggsCategoryImp: ObjectType[Backend, SearchResultAggCategory] =
     deriveObjectType[Backend, models.entities.SearchResultAggCategory]()
@@ -1325,8 +1325,8 @@ object Objects extends Logging {
   implicit val alleleFrequencyImp: ObjectType[Backend, AlleleFrequency] =
     deriveObjectType[Backend, AlleleFrequency]()
   implicit val dbXrefImp: ObjectType[Backend, DbXref] = deriveObjectType[Backend, DbXref]()
-  implicit val variantIndexImp: ObjectType[Backend, VariantIndex] =
-    deriveObjectType[Backend, VariantIndex](
+  implicit val variantImp: ObjectType[Backend, Variant] =
+    deriveObjectType[Backend, Variant](
       ReplaceField(
         "mostSevereConsequenceId",
         Field(
@@ -1347,7 +1347,7 @@ object Objects extends Logging {
           ListType(pharmacogenomicsImp),
           description = Some("Pharmoacogenomics"),
           arguments = pageArg :: Nil,
-          resolve = ctx => ctx.ctx.getPharmacogenomicsByVariant(ctx.value.variantId)
+          resolve = ctx => ctx.ctx.getPharmacogenomicsByVariant(ctx.value.id)
         ),
         Field(
           "evidences",
@@ -1357,7 +1357,7 @@ object Objects extends Logging {
           resolve = ctx => {
             ctx.ctx.getEvidencesByVariantId(
               ctx arg datasourceIdsArg,
-              ctx.value.variantId,
+              ctx.value.id,
               Some(("score", "desc")),
               ctx arg pageSize,
               ctx arg cursor

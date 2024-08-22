@@ -3,7 +3,7 @@ package models.entities
 import models.Backend
 import models.entities.GwasIndex.gwasImp
 import models.gql.Fetchers.{gwasFetcher, targetsFetcher, variantFetcher}
-import models.gql.Objects.{logger, targetImp, variantIndexImp}
+import models.gql.Objects.{logger, targetImp, variantImp}
 import play.api.Logging
 import play.api.libs.json.{JsValue, Json, OFormat, OWrites}
 import sangria.schema.{
@@ -89,7 +89,7 @@ object CredibleSet extends Logging {
       "variantId",
       Field(
         "variant",
-        OptionType(variantIndexImp),
+        OptionType(variantImp),
         description = None,
         resolve = r => {
           val variantId = (r.value.variantId)
@@ -115,7 +115,7 @@ object CredibleSet extends Logging {
       ),
       Field(
         "variant",
-        OptionType(variantIndexImp),
+        OptionType(variantImp),
         description = None,
         resolve = js => {
           val id = (js.value \ "variantId").asOpt[String]
