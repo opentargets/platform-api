@@ -277,7 +277,7 @@ case class QAOTF(
     val limitC = Limit(offset, size)
 
     val rootQ = Q(withScores, selectScores, fromAgg, groupByB, orderBySome, limitC)
-    logger.debug(rootQ.toString)
+    logger.info(rootQ.toString)
 
     rootQ
   }
