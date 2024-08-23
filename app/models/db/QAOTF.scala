@@ -34,6 +34,7 @@ case class QAOTF(
     BFilter: Option[String],
     orderScoreBy: Option[(String, String)],
     datasourceWeights: Seq[(String, Double)],
+    mustIncludeDatasources: Set[String],
     nonPropagatedDatasources: Set[String],
     offset: Int,
     size: Int
@@ -51,97 +52,22 @@ case class QAOTF(
   val maxHS: Column = literal(Harmonic.maxValue(100000, pExponentDefault, 1.0))
     .as(Some("max_hs_score"))
 
-  val BFilterQ: Option[Column] = BFilter flatMap { case matchStr =>
-    val tokens = matchStr
-      .split(" ")
-      .map { s =>
-        F.like(BData.name, F.lower(literal(s"%${s.toLowerCase.trim}%")))
+  val filterExpression: Column = {
+    val BFilterQ: Option[Column] = BFilter flatMap { case matchStr =>
+      val tokens = matchStr
+        .split(" ")
+        .map { s =>
+          F.like(BData.name, F.lower(literal(s"%${s.toLowerCase.trim}%")))
+        }
+        .toList
+
+      tokens match {
+        case h :: Nil         => Some(h)
+        case h1 :: h2 :: rest => Some(F.and(h1, h2, rest: _*))
+        case _                => None
       }
-      .toList
-
-    tokens match {
-      case h :: Nil         => Some(h)
-      case h1 :: h2 :: rest => Some(F.and(h1, h2, rest: _*))
-      case _                => None
     }
-  }
-
-  val DSScore: Column = F
-    .arraySum(
-      None,
-      F.arrayMap(
-        "(x, y) -> x / pow(y, 2)",
-        F.arrayReverseSort(None, F.groupArray(RowScore)),
-        F.arrayEnumerate(F.groupArray(RowScore))
-      )
-    )
-    .as(Some("score_datasource"))
-
-  val DSW: Column = F.ifNull(F.any(column("weight")), literal(1.0)).as(Some("datasource_weight"))
-
-  val queryGroupByDS: Query = {
-    val WC = F
-      .arrayJoin(F.array(datasourceWeights.map(s => F.tuple(literal(s._1), literal(s._2)))))
-      .as(Some("weightPair"))
-    val DSFieldWC = F.tupleElement(WC.name, literal(1)).as(Some("datasource_id"))
-    val WFieldWC = F.toNullable(F.tupleElement(WC.name, literal(2))).as(Some("weight"))
-
-    // transform weights vector into a table to extract each value of each tuple
-    val q = Q(
-      With(WC :: Nil),
-      Select(DSFieldWC :: WFieldWC :: Nil),
-      OrderBy(DSFieldWC.asc :: Nil)
-    )
-
     val leftIdsC = F.set((AIDs + AId).map(literal).toSeq)
-
-    val nonPP = F.set(nonPropagatedDatasources.map(literal).toSeq)
-    val expressionLeft = if (nonPropagatedDatasources.nonEmpty) {
-      F.or(
-        F.and(
-          F.in(A, leftIdsC),
-          F.notIn(DS, nonPP)
-        ),
-        F.equals(A, literal(AId))
-      )
-    } else
-      F.in(A, leftIdsC)
-
-    // in the case we also want to filter B set
-    val expressionLeftRight = if (BIDs.nonEmpty) {
-      val rightIdsC = F.set(BIDs.map(literal).toSeq)
-
-      F.and(expressionLeft, F.in(B, rightIdsC))
-    } else {
-      expressionLeft
-    }
-
-    val expressionLeftRightWithBFilter =
-      BFilterQ.map(f => F.and(f, expressionLeftRight)).getOrElse(expressionLeftRight)
-
-    val DTAny = F.any(DT).as(Some(DT.rep))
-
-    val withDT = With(DSScore :: DTAny :: DSW :: Nil)
-    val selectDSScores = Select(B :: DSW.name :: DTAny.name :: DS :: DSScore.name :: Nil)
-    val fromT = From(T, Some("l"))
-    val joinWeights =
-      Join(q.toColumn(None), Some("LEFT"), Some("OUTER"), false, Some("r"), DS :: Nil)
-    val preWhereQ = PreWhere(expressionLeftRightWithBFilter)
-    val groupByQ = GroupBy(B :: DS :: Nil)
-
-    Q(
-      withDT,
-      selectDSScores,
-      fromT,
-      Some(joinWeights),
-      Some(preWhereQ),
-      Some(groupByQ)
-    )
-  }
-
-  def simpleQuery(offset: Int, size: Int): Query = {
-    val leftIdsC = F.set((AIDs + AId).map(literal).toSeq)
-
     val nonPP = F.set(nonPropagatedDatasources.map(literal).toSeq)
     val expressionLeft = if (nonPropagatedDatasources.nonEmpty) {
       F.or(
@@ -164,16 +90,70 @@ case class QAOTF(
     } else {
       expressionLeft
     }
+    val expressionLeftRighWithFilters = {
+      val expressionLeftRightWithBFilter =
+        BFilterQ.map(f => F.and(f, expressionLeftRight)).getOrElse(expressionLeftRight)
+      if (mustIncludeDatasources.nonEmpty) {
+        F.and(expressionLeftRightWithBFilter,
+              F.in(DS, F.set(mustIncludeDatasources.map(literal).toSeq))
+        )
+      } else {
+        expressionLeftRightWithBFilter
+      }
+    }
+    expressionLeftRighWithFilters
+  }
 
-    val expressionLeftRightWithBFilter =
-      BFilterQ.map(f => F.and(f, expressionLeftRight)).getOrElse(expressionLeftRight)
+  val DSScore: Column = F
+    .arraySum(
+      None,
+      F.arrayMap(
+        "(x, y) -> x / pow(y, 2)",
+        F.arrayReverseSort(None, F.groupArray(RowScore)),
+        F.arrayEnumerate(F.groupArray(RowScore))
+      )
+    )
+    .as(Some("score_datasource"))
 
-    val DTAny = F.any(DT).as(Some(DT.rep))
+  val DSW: Column = F.ifNull(F.any(column("weight")), literal(1.0)).as(Some("datasource_weight"))
+  val DTAny = F.any(DT).as(Some(DT.rep))
 
+  val queryGroupByDS: Query = {
+    val WC = F
+      .arrayJoin(F.array(datasourceWeights.map(s => F.tuple(literal(s._1), literal(s._2)))))
+      .as(Some("weightPair"))
+    val DSFieldWC = F.tupleElement(WC.name, literal(1)).as(Some("datasource_id"))
+    val WFieldWC = F.toNullable(F.tupleElement(WC.name, literal(2))).as(Some("weight"))
+
+    // transform weights vector into a table to extract each value of each tuple
+    val q = Q(
+      With(WC :: Nil),
+      Select(DSFieldWC :: WFieldWC :: Nil),
+      OrderBy(DSFieldWC.asc :: Nil)
+    )
+    val withDT = With(DSScore :: DTAny :: DSW :: Nil)
+    val selectDSScores = Select(B :: DSW.name :: DTAny.name :: DS :: DSScore.name :: Nil)
+    val fromT = From(T, Some("l"))
+    val joinWeights =
+      Join(q.toColumn(None), Some("LEFT"), Some("OUTER"), false, Some("r"), DS :: Nil)
+    val preWhereQ = PreWhere(filterExpression)
+    val groupByQ = GroupBy(B :: DS :: Nil)
+
+    Q(
+      withDT,
+      selectDSScores,
+      fromT,
+      Some(joinWeights),
+      Some(preWhereQ),
+      Some(groupByQ)
+    )
+  }
+
+  def simpleQuery(offset: Int, size: Int): Query = {
     val withDT = With(DTAny :: Nil)
     val selectDSScores = Select(B :: DTAny.name :: DS :: Nil)
     val fromT = From(T, Some("l"))
-    val preWhereQ = PreWhere(expressionLeftRightWithBFilter)
+    val preWhereQ = PreWhere(filterExpression)
     val groupByQ = GroupBy(B :: DS :: Nil)
 
     val aggDSQ = Q(
@@ -297,7 +277,7 @@ case class QAOTF(
     val limitC = Limit(offset, size)
 
     val rootQ = Q(withScores, selectScores, fromAgg, groupByB, orderBySome, limitC)
-    logger.debug(rootQ.toString)
+    logger.info(rootQ.toString)
 
     rootQ
   }
