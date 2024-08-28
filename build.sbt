@@ -1,4 +1,3 @@
-import com.typesafe.sbt.packager.MappingsHelper._
 import scala.language.postfixOps
 import scala.sys.process._
 import sbt._
@@ -10,37 +9,26 @@ version := "latest"
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala, PlayLogback)
 
-scalaVersion := "2.13.10"
+scalaVersion := "2.13.14"
 maintainer := "ops@opentargets.org"
 
 javacOptions ++= Seq("-encoding", "UTF-8")
-
-scalacOptions in ThisBuild ++= Seq(
-  "-language:_",
-  "-Xfatal-warnings"
-)
-scalacOptions in Compile += "-deprecation"
-
-// include resources into the unversal zipped package
-mappings in Universal ++= directory(baseDirectory.value / "resources")
-
-resolvers += Resolver.sonatypeRepo("releases")
 
 libraryDependencies ++= Seq(
   guice,
   caffeine,
   "com.typesafe.slick" %% "slick" % "3.4.1",
-  "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test,
+  "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.1" % Test,
   "org.scalatestplus" %% "scalacheck-1-15" % "3.2.11.0" % Test
 )
 
-val playVersion = "2.9.5"
-libraryDependencies += "com.typesafe.play" %% "play" % playVersion
-libraryDependencies += "com.typesafe.play" %% "filters-helpers" % "2.8.21"
-libraryDependencies += "com.typesafe.play" %% "play-logback" % playVersion
-libraryDependencies += "com.typesafe.play" %% "play-json" % "2.10.5"
-libraryDependencies += "com.typesafe.play" %% "play-streams" % playVersion
-libraryDependencies += "com.typesafe.play" %% "play-slick" % "5.1.0"
+val playVersion = "3.0.4"
+libraryDependencies += "org.playframework" %% "play" % playVersion
+libraryDependencies += "org.playframework" %% "play-filters-helpers" % "3.0.4"
+libraryDependencies += "org.playframework" %% "play-logback" % playVersion
+libraryDependencies += "org.playframework" %% "play-json" % "3.0.3"
+libraryDependencies += "org.playframework" %% "play-streams" % playVersion
+libraryDependencies += "org.playframework" %% "play-slick" % "6.0.0"
 
 val sangriaVersion = "4.1.1"
 libraryDependencies += "com.clickhouse" % "clickhouse-jdbc" % "0.3.2"

@@ -30,7 +30,7 @@
     <logger name="ru.yandex.clickhouse.ClickHouseDriver" level="OFF"/>
     <logger name="com.zaxxer.hikari.pool.HikariPool" level="OFF"/>
     <logger name="com.sksamuel.elastic4s.http.ResponseHandler" level="INFO"/>
-    <logger name="akka" level="ERROR"/>
+    <logger name="org.apache.pekko" level="ERROR"/>
 
     <root level="INFO">
         <appender-ref ref="ASYNCSTDOUT"/>

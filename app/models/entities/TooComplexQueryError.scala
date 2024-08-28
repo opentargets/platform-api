@@ -1,6 +1,6 @@
 package models.entities
 
-import akka.http.scaladsl.model.DateTime
+import org.apache.pekko.http.scaladsl.model.DateTime
 import models.entities.Violations.InputParameterCheckError
 import models.gql.validators.InvalidQueryTerms
 import play.api.Logging

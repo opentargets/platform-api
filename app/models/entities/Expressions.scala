@@ -3,6 +3,7 @@ package models.entities
 import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
+import play.api.libs.json.JsonConfiguration.Aux
 import play.api.libs.json.JsonNaming.SnakeCase
 
 case class Tissue(id: String, label: String, anatomicalSystems: Seq[String], organs: Seq[String])
@@ -18,7 +19,7 @@ case class Expression(tissue: Tissue, rna: RNAExpression, protein: ProteinExpres
 case class Expressions(id: String, rows: Seq[Expression])
 
 object Expressions {
-  implicit val config = JsonConfiguration(SnakeCase)
+  implicit val config: Aux[Json.MacroOptions] = JsonConfiguration(SnakeCase)
 
   implicit val tissueW: OWrites[Tissue] = Json.writes[Tissue]
   implicit val rnaExpressionW: OWrites[RNAExpression] = Json.writes[RNAExpression]
