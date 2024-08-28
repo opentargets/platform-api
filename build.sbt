@@ -22,11 +22,11 @@ libraryDependencies ++= Seq(
   "org.scalatestplus" %% "scalacheck-1-15" % "3.2.11.0" % Test
 )
 
-val playVersion = "3.0.4"
+val playVersion = "3.0.5"
 libraryDependencies += "org.playframework" %% "play" % playVersion
-libraryDependencies += "org.playframework" %% "play-filters-helpers" % "3.0.4"
+libraryDependencies += "org.playframework" %% "play-filters-helpers" % "3.0.5"
 libraryDependencies += "org.playframework" %% "play-logback" % playVersion
-libraryDependencies += "org.playframework" %% "play-json" % "3.0.3"
+libraryDependencies += "org.playframework" %% "play-json" % "3.0.4"
 libraryDependencies += "org.playframework" %% "play-streams" % playVersion
 libraryDependencies += "org.playframework" %% "play-slick" % "6.0.0"
 
