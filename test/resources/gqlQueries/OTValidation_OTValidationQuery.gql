@@ -14,8 +14,6 @@ query ValidationQuery($ensemblId: String!, $efoId: String!, $size: Int!) {
           name
         }
         projectId
-        projectDescription
-        contrast
         studyOverview
         diseaseCellLines {
           id
@@ -28,8 +26,15 @@ query ValidationQuery($ensemblId: String!, $efoId: String!, $size: Int!) {
           name
           description
         }
-        confidence
         releaseVersion
+        primaryProjectId
+        primaryProjectHit
+        assessment
+        assays {
+          description
+          isHit
+          shortName
+        }
       }
     }
   }

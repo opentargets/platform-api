@@ -16,8 +16,8 @@ query CancerBiomarkersQuery($ensemblId: String!, $efoId: String!, $size: Int!) {
         diseaseFromSource
         biomarkerName
         biomarkers {
-          variant {
-            variantId: id
+          geneticVariation {
+            geneticVariationId: id
             name
             functionalConsequenceId {
               id

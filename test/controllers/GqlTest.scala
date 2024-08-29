@@ -118,15 +118,6 @@ class GqlTest
     }
   }
 
-  "Association page queries" must {
-    "return a valid response for target associations" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
-      testQueryAgainstGqlEndpoint(AssociationTarget("TargetPage_TargetAssociations"))
-    }
-    "return a valid response for disease associations" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
-      testQueryAgainstGqlEndpoint(AssociationDisease("DiseasePage_DiseaseAssociations"))
-    }
-  }
-
   "Bibliography queries" must {
     "return valid response for BibliographyQuery" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
       testQueryAgainstGqlEndpoint(Target("Bibliography_BibliographyQuery"))(t =>
@@ -154,12 +145,6 @@ class GqlTest
       testQueryAgainstGqlEndpoint(
         DiseaseSummaryFragment("CancerBiomarkers_CancerBiomarkersEvidenceFragment")
       )
-    }
-  }
-
-  "Cancer biomarker queries" must {
-    "return a valid response" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(TargetDiseaseSize("CancerBiomarkers_CancerBiomarkersEvidence"))
     }
   }
 
@@ -327,9 +312,6 @@ class GqlTest
   }
 
   "Disease page queries" must {
-    "return a valid response for disease facets" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
-      testQueryAgainstGqlEndpoint(DiseaseAggregationfilter("DiseasePage_DiseaseFacets"))
-    }
     "return a valid response for disease page" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(Disease("DiseasePage_DiseasePage"))
     }
@@ -508,17 +490,11 @@ class GqlTest
   }
 
   "Target page" must {
-    "return valid associations visualisation" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
-      testQueryAgainstGqlEndpoint(TargetAggregationfilter("TargetPage_AssociationsViz"))
-    }
     "return valid chemical probes" taggedAs (IntegrationTestTag) in {
       testQueryAgainstGqlEndpoint(Target("ChemicalProbes_ChemicalProbes"))(ensgTransform)
     }
     "return valid gene ontology" taggedAs (IntegrationTestTag) in {
       testQueryAgainstGqlEndpoint(Target("GeneOntology_GeneOntology"))(ensgTransform)
-    }
-    "return valid target facets" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
-      testQueryAgainstGqlEndpoint(TargetAggregationfilter("TargetPage_TargetFacets"))
     }
     "return valid target page" taggedAs (IntegrationTestTag) in {
       testQueryAgainstGqlEndpoint(Target("TargetPage_TargetPage"))

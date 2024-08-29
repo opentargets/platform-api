@@ -1,16 +1,11 @@
-query ClinvarQuery(
-  $ensemblId: String!
-  $efoId: String!
-  $size: Int!
-  $cursor: String
-) {
+query ClinvarQuery($ensemblId: String!, $efoId: String!, $size: Int!, $cursor: String) {
   target(ensemblId: $ensemblId) {
     approvedSymbol
   }
   disease(efoId: $efoId) {
     id
     name
-    evidences(
+    eva: evidences(
       ensemblIds: [$ensemblId]
       enableIndirect: true
       datasourceIds: ["eva"]
@@ -24,6 +19,8 @@ query ClinvarQuery(
           id
           name
         }
+        variantEffect
+        directionOnTrait
         diseaseFromSource
         variantId
         variantRsId

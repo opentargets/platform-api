@@ -1,5 +1,5 @@
 fragment ChemblSummaryFragment on Disease {
-  chemblSummary: evidences(
+  chembl: evidences(
     ensemblIds: [$ensgId]
     enableIndirect: true
     datasourceIds: ["chembl"]

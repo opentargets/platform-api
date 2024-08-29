@@ -1,11 +1,14 @@
-query impcQuery($ensemblId: String!, $efoId: String!) {
+query impcQuery($ensemblId: String!, $efoId: String!, $size: Int!, $cursor: String) {
   disease(efoId: $efoId) {
     id
     impc: evidences(
       ensemblIds: [$ensemblId]
       enableIndirect: true
       datasourceIds: ["impc"]
+      size: $size
+      cursor: $cursor
     ) {
+      cursor
       count
       rows {
         disease {
@@ -16,6 +19,8 @@ query impcQuery($ensemblId: String!, $efoId: String!) {
           id
           approvedSymbol
         }
+        variantEffect
+        directionOnTrait
         diseaseFromSource
         biologicalModelGeneticBackground
         biologicalModelAllelicComposition

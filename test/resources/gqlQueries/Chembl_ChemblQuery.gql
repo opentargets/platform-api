@@ -1,11 +1,14 @@
-query ChemblQuery($ensemblId: String!, $efoId: String!) {
+query ChemblQuery($ensemblId: String!, $efoId: String!, $size: Int!, $cursor: String) {
   disease(efoId: $efoId) {
     id
-    chemblSummary: evidences(
+    chembl: evidences(
       ensemblIds: [$ensemblId]
       enableIndirect: true
       datasourceIds: ["chembl"]
+      size: $size
+      cursor: $cursor
     ) {
+      cursor
       count
       rows {
         disease {
@@ -30,6 +33,8 @@ query ChemblQuery($ensemblId: String!, $efoId: String!) {
             }
           }
         }
+        variantEffect
+        directionOnTrait
         targetFromSourceId
         clinicalPhase
         clinicalStatus
