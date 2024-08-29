@@ -1,6 +1,6 @@
 package controllers
 
-import akka.util.Timeout
+import org.apache.pekko.util.Timeout
 import controllers.GqlTest.{createRequest, generateQueryString, getQueryFromFile}
 import controllers.api.v4.graphql.GraphQLController
 import inputs._
