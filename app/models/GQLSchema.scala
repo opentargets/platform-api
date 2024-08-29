@@ -140,7 +140,7 @@ object GQLSchema {
       ),
       Field(
         "variant",
-        OptionType(variantIndexImp),
+        OptionType(variantImp),
         description = Some("Return a Variant"),
         arguments = variantId :: Nil,
         resolve = ctx => variantFetcher.deferOpt(ctx.arg(variantId))
