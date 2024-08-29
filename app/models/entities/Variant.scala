@@ -31,25 +31,25 @@ case class DbXref(id: Option[String], source: Option[String])
 
 case class AlleleFrequency(populationName: Option[String], alleleFrequency: Option[Double])
 
-case class VariantIndex(variantId: String,
-                        chromosome: String,
-                        position: Int,
-                        referenceAllele: String,
-                        alternateAllele: String,
-                        inSilicoPredictors: Option[Seq[InSilicoPredictor]],
-                        mostSevereConsequenceId: String,
-                        transcriptConsequences: Option[Seq[TranscriptConsequence]],
-                        rsIds: Option[Seq[String]],
-                        dbXrefs: Option[Seq[DbXref]],
-                        alleleFrequencies: Option[Seq[AlleleFrequency]],
-                        hgvsId: String
+case class Variant(id: String,
+                   chromosome: String,
+                   position: Int,
+                   referenceAllele: String,
+                   alternateAllele: String,
+                   inSilicoPredictors: Option[Seq[InSilicoPredictor]],
+                   mostSevereConsequenceId: String,
+                   transcriptConsequences: Option[Seq[TranscriptConsequence]],
+                   rsIds: Option[Seq[String]],
+                   dbXrefs: Option[Seq[DbXref]],
+                   alleleFrequencies: Option[Seq[AlleleFrequency]],
+                   hgvsId: String
 )
 
-object VariantIndex extends Logging {
+object Variant extends Logging {
   implicit val inSilicoPredictorF: OFormat[InSilicoPredictor] = Json.format[InSilicoPredictor]
   implicit val transcriptConsequenceF: OFormat[TranscriptConsequence] =
     Json.format[TranscriptConsequence]
   implicit val dbXrefF: OFormat[DbXref] = Json.format[DbXref]
   implicit val alleleFrequencyF: OFormat[AlleleFrequency] = Json.format[AlleleFrequency]
-  implicit val variantIndexF: OFormat[VariantIndex] = Json.format[VariantIndex]
+  implicit val variantIndexF: OFormat[Variant] = Json.format[Variant]
 }
