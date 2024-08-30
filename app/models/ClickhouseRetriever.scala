@@ -73,7 +73,6 @@ class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: O
       pagination: Pagination
   ): Future[Vector[Association]] = {
     val weights = datasourceSettings.map(s => (s.id, s.weight))
-    val mustIncludeDatasources = datasourceSettings.withFilter(_.required).map(_.id).toSet
     val dontPropagate = datasourceSettings.withFilter(!_.propagate).map(_.id).toSet
     val aotfQ = QAOTF(
       tableName,
@@ -83,7 +82,6 @@ class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: O
       BFilter,
       None,
       weights,
-      mustIncludeDatasources,
       dontPropagate,
       pagination.offset,
       pagination.size
