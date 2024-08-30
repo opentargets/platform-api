@@ -34,7 +34,6 @@ case class QAOTF(
     BFilter: Option[String],
     orderScoreBy: Option[(String, String)],
     datasourceWeights: Seq[(String, Double)],
-    mustIncludeDatasources: Set[String],
     nonPropagatedDatasources: Set[String],
     offset: Int,
     size: Int
@@ -90,18 +89,7 @@ case class QAOTF(
     } else {
       expressionLeft
     }
-    val expressionLeftRighWithFilters = {
-      val expressionLeftRightWithBFilter =
-        BFilterQ.map(f => F.and(f, expressionLeftRight)).getOrElse(expressionLeftRight)
-      if (mustIncludeDatasources.nonEmpty) {
-        F.and(expressionLeftRightWithBFilter,
-              F.in(DS, F.set(mustIncludeDatasources.map(literal).toSeq))
-        )
-      } else {
-        expressionLeftRightWithBFilter
-      }
-    }
-    expressionLeftRighWithFilters
+    BFilterQ.map(f => F.and(f, expressionLeftRight)).getOrElse(expressionLeftRight)
   }
 
   val DSScore: Column = F

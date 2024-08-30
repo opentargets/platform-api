@@ -485,7 +485,6 @@ class Backend @Inject() (implicit
       filter,
       orderBy,
       weights,
-      mustIncludeDatasources,
       dontPropagate,
       page.offset,
       page.size
@@ -498,7 +497,17 @@ class Backend @Inject() (implicit
 
       if (assocIdSet.nonEmpty) {
         dbRetriever.executeQuery[Association, Query](fullQ) map { case assocs =>
-          Associations(dss, assocIdSet.size, assocs)
+          val filteredAssocs = {
+            if (mustIncludeDatasources.isEmpty) {
+              assocs
+            } else {
+              assocs.flatMap { assoc =>
+                val filteredDS = assoc.datasourceScores.filter(ds => mustIncludeDatasources.contains(ds.id))
+                Some(assoc.copy(datasourceScores = filteredDS))
+              }
+            }
+          }
+          Associations(dss, assocIdSet.size, filteredAssocs)
         }
       } else {
         Future.successful(Associations(dss, assocIdSet.size, Vector.empty))
