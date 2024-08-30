@@ -1340,6 +1340,7 @@ object Objects extends Logging {
   implicit val dbXrefImp: ObjectType[Backend, DbXref] = deriveObjectType[Backend, DbXref]()
   implicit val variantIndexImp: ObjectType[Backend, VariantIndex] =
     deriveObjectType[Backend, VariantIndex](
+      ObjectTypeName("Variant"),
       ReplaceField(
         "mostSevereConsequenceId",
         Field(
@@ -1390,7 +1391,8 @@ object Objects extends Logging {
             )
           }
         )
-      )
+      ),
+      RenameField("variantId", "id")
     )
 
 }
