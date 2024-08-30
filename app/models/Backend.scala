@@ -135,10 +135,10 @@ class Backend @Inject() (implicit
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[GeneOntologyTerm])
   }
 
-  def getVariants(ids: Seq[String]): Future[IndexedSeq[Variant]] = {
-    val indexName = getIndexOrDefault("variant")
+  def getVariants(ids: Seq[String]): Future[IndexedSeq[VariantIndex]] = {
+    val indexName = getIndexOrDefault("variant_index")
 
-    esRetriever.getByIds(indexName, ids, fromJsValue[Variant])
+    esRetriever.getByIds(indexName, ids, fromJsValue[VariantIndex])
   }
 
   def getCredibleSets(
