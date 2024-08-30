@@ -81,10 +81,10 @@ object Arguments {
     Argument("studyTypes", OptionInputType(ListInputType(StudyType)), description = "Study types")
   val regions: Argument[Option[Seq[String]]] =
     Argument("regions", OptionInputType(ListInputType(StringType)), description = "Regions")
-  val credibleSetIds: Argument[Option[Seq[String]]] =
-    Argument("credibleSetIds",
+  val studyLocusIds: Argument[Option[Seq[String]]] =
+    Argument("studyLocusIds",
              OptionInputType(ListInputType(StringType)),
-             description = "Credible Set IDs"
+             description = "Study-locus IDs"
     )
 
   val indirectEvidences: Argument[Option[Boolean]] = Argument(
