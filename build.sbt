@@ -1,6 +1,6 @@
 import scala.language.postfixOps
-import scala.sys.process._
-import sbt._
+import scala.sys.process.*
+import sbt.*
 
 name := """ot-platform-api"""
 organization := "io.opentargets"
@@ -33,7 +33,7 @@ libraryDependencies += "org.playframework" %% "play-streams" % playVersion
 libraryDependencies += "org.playframework" %% "play-slick" % "6.0.0"
 
 val sangriaVersion = "4.1.1"
-libraryDependencies += "com.clickhouse" % "clickhouse-jdbc" % "0.3.2"
+libraryDependencies += "com.clickhouse" % "clickhouse-jdbc" % "0.6.4"
 libraryDependencies += "org.sangria-graphql" %% "sangria" % sangriaVersion
 libraryDependencies += "org.sangria-graphql" %% "sangria-play-json" % "2.0.2"
 
