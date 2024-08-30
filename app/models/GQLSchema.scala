@@ -157,15 +157,15 @@ object GQLSchema {
         ListType(credibleSetImp),
         description = None,
         arguments =
-          pageArg :: credibleSetIds :: studyIds :: diseaseIds :: variantIds :: studyTypes :: regions :: Nil,
+          pageArg :: studyLocusIds :: studyIds :: diseaseIds :: variantIds :: studyTypes :: regions :: Nil,
         resolve = ctx => {
-          val credSetIdSeq = ctx.arg(credibleSetIds).getOrElse(Seq.empty)
+          val studyLocusIdSeq = ctx.arg(studyLocusIds).getOrElse(Seq.empty)
           val studyIdSeq = ctx.arg(studyIds).getOrElse(Seq.empty)
           val diseaseIdSeq = ctx.arg(diseaseIds).getOrElse(Seq.empty)
           val variantIdSeq = ctx.arg(variantIds).getOrElse(Seq.empty)
           val studyTypesSeq = ctx.arg(studyTypes).getOrElse(Seq.empty)
           val regionsSeq = ctx.arg(regions).getOrElse(Seq.empty)
-          val credSetQueryArgs = CredibleSetQueryArgs(credSetIdSeq,
+          val credSetQueryArgs = CredibleSetQueryArgs(studyLocusIdSeq,
                                                       studyIdSeq,
                                                       diseaseIdSeq,
                                                       variantIdSeq,
