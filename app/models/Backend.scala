@@ -502,7 +502,8 @@ class Backend @Inject() (implicit
               assocs
             } else {
               assocs.flatMap { assoc =>
-                val filteredDS = assoc.datasourceScores.filter(ds => mustIncludeDatasources.contains(ds.id))
+                val filteredDS =
+                  assoc.datasourceScores.filter(ds => mustIncludeDatasources.contains(ds.id))
                 Some(assoc.copy(datasourceScores = filteredDS))
               }
             }
