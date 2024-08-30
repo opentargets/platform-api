@@ -7,6 +7,8 @@ organization := "io.opentargets"
 
 version := "latest"
 
+scalacOptions ++= Seq("-deprecation", "-feature")
+
 lazy val root = (project in file(".")).enablePlugins(PlayScala, PlayLogback)
 
 scalaVersion := "2.13.14"

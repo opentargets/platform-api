@@ -9,10 +9,11 @@ import models.entities.Configuration.{DatasourceSettings, OTSettings}
 import models.entities._
 import play.api.Logging
 import slick.basic.DatabaseConfig
-import slick.jdbc.{GetResult, SQLActionBuilder}
+import slick.jdbc.{GetResult, JdbcBackend, SQLActionBuilder}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.language.implicitConversions
 import scala.util.{Failure, Success}
 
 class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: OTSettings)
@@ -22,7 +23,7 @@ class ClickhouseRetriever(dbConfig: DatabaseConfig[ClickHouseProfile], config: O
 
   implicit private def toSQL(q: Q): SQLActionBuilder = sql"""#${q.rep}"""
 
-  val db = dbConfig.db
+  val db: JdbcBackend#DatabaseDef = dbConfig.db
   val chSettings = config.clickhouse
 
   def getUniqList[A](of: Seq[String], from: String)(implicit

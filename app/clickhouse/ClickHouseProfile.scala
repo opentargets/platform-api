@@ -14,6 +14,8 @@ import slick.ast.ScalaBaseType.longType
 import slick.ast.{BaseTypedType, FieldSymbol, Insert, Library, Node, TypedType}
 import slick.jdbc.{JdbcCapabilities, JdbcModelBuilder, JdbcProfile}
 
+import scala.language.implicitConversions
+
 object CHLibrary {
   val Uniq = new SqlAggregateFunction("uniq")
   val Any = new SqlAggregateFunction("any")

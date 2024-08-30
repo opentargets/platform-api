@@ -1,5 +1,6 @@
 package clickhouse.rep
 
+import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
 /** Clickhouse supports Array of elements from different types and this is an approximation
