@@ -147,10 +147,18 @@ object GQLSchema {
       ),
       Field(
         "gwasStudy",
-        OptionType(gwasImp),
+        ListType(gwasImp),
         description = Some("Return a Gwas Index Study"),
-        arguments = studyId :: Nil,
-        resolve = ctx => gwasFetcher.deferOpt(ctx.arg(studyId))
+        arguments = pageArg :: studyId :: diseaseId :: Nil,
+        resolve = ctx => {
+          val studyIdSeq = if (ctx.arg(studyId).isDefined) Seq(ctx.arg(studyId).get).filter(_ != "") else Seq.empty
+          val diseaseIdSeq = if (ctx.arg(diseaseId).isDefined) Seq(ctx.arg(diseaseId).get).filter(_ != "") else Seq.empty
+          val studyQueryArgs = StudyQueryArgs(
+            studyIdSeq,
+            diseaseIdSeq
+            )
+          ctx.ctx.getStudies(studyQueryArgs, ctx.arg(pageArg))
+        }
       ),
       Field(
         "credibleSets",
@@ -159,18 +167,12 @@ object GQLSchema {
         arguments =
           pageArg :: studyLocusIds :: studyIds :: diseaseIds :: variantIds :: studyTypes :: regions :: Nil,
         resolve = ctx => {
-          val studyLocusIdSeq = ctx.arg(studyLocusIds).getOrElse(Seq.empty)
-          val studyIdSeq = ctx.arg(studyIds).getOrElse(Seq.empty)
-          val diseaseIdSeq = ctx.arg(diseaseIds).getOrElse(Seq.empty)
-          val variantIdSeq = ctx.arg(variantIds).getOrElse(Seq.empty)
-          val studyTypesSeq = ctx.arg(studyTypes).getOrElse(Seq.empty)
-          val regionsSeq = ctx.arg(regions).getOrElse(Seq.empty)
-          val credSetQueryArgs = CredibleSetQueryArgs(studyLocusIdSeq,
-                                                      studyIdSeq,
-                                                      diseaseIdSeq,
-                                                      variantIdSeq,
-                                                      studyTypesSeq,
-                                                      regionsSeq
+          val credSetQueryArgs = CredibleSetQueryArgs(ctx.arg(studyLocusIds).getOrElse(Seq.empty),
+                                                      ctx.arg(studyIds).getOrElse(Seq.empty),
+                                                      ctx.arg(diseaseIds).getOrElse(Seq.empty),
+                                                      ctx.arg(variantIds).getOrElse(Seq.empty),
+                                                      ctx.arg(studyTypes).getOrElse(Seq.empty),
+                                                      ctx.arg(regions).getOrElse(Seq.empty)
           )
           ctx.ctx.getCredibleSets(credSetQueryArgs, ctx.arg(pageArg))
         }
