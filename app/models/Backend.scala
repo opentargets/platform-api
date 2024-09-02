@@ -141,6 +141,26 @@ class Backend @Inject() (implicit
     esRetriever.getByIds(indexName, ids, fromJsValue[VariantIndex])
   }
 
+  def getStudies(queryArgs: StudyQueryArgs, pagination: Option[Pagination]): Future[IndexedSeq[JsValue]] = {
+    val pag = pagination.getOrElse(Pagination.mkDefault)
+    val indexName = getIndexOrDefault("gwas_index")
+    val termsQuery = Map(
+      "studyId.keyword" -> queryArgs.id,
+      "traitFromSourceMappedIds.keyword" -> queryArgs.diseaseId
+    ).filter(_._2.nonEmpty)
+    logger.info(s"Querying studies for: $termsQuery")
+    val retriever = 
+      esRetriever
+        .getByIndexedTermsMust(
+          indexName,
+          termsQuery,
+          pag,
+          fromJsValue[JsValue]
+        )
+        .map(_._1)
+    retriever
+  }
+
   def getCredibleSets(
       queryArgs: CredibleSetQueryArgs,
       pagination: Option[Pagination]

@@ -72,9 +72,11 @@ object Arguments {
   val variantId: Argument[String] = Argument("variantId", StringType, description = "Variant ID")
   val variantIds: Argument[Option[Seq[String]]] =
     Argument("variantIds", OptionInputType(ListInputType(StringType)), description = "Variant IDs")
-  val studyId: Argument[String] = Argument("studyId", StringType, description = "Study ID")
+  val studyId: Argument[Option[String]] = Argument("studyId", OptionInputType(StringType), description = "Study ID")
   val studyIds: Argument[Option[Seq[String]]] =
     Argument("studyIds", OptionInputType(ListInputType(StringType)), description = "Study IDs")
+  val diseaseId: Argument[Option[String]] =
+    Argument("diseaseId", OptionInputType(StringType), description = "Disease ID")
   val diseaseIds: Argument[Option[Seq[String]]] =
     Argument("diseaseIds", OptionInputType(ListInputType(StringType)), description = "Disease IDs")
   val studyTypes =

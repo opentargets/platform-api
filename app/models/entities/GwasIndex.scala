@@ -20,6 +20,11 @@ import models.entities.CredibleSet.credibleSetWithoutStudyImp
 import models.entities.CredibleSet.StudyType
 import models.gql.Arguments.pageArg
 
+case class StudyQueryArgs(
+    id: Seq[String] = Seq.empty,
+    diseaseId: Seq[String] = Seq.empty
+)
+
 object GwasIndex extends Logging {
   import sangria.macros.derive._
 
