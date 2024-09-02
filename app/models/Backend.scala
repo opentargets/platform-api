@@ -485,15 +485,16 @@ class Backend @Inject() (implicit
       filter,
       orderBy,
       weights,
+      _,
       dontPropagate,
       page.offset,
       page.size
     )
-    val simpleQ = aotfQ(indirectIds, bIds).simpleQuery(0, 100000)
+    val simpleQ = aotfQ(indirectIds, bIds, mustIncludeDatasources).simpleQuery(0, 100000)
 
     (dbRetriever.executeQuery[String, Query](simpleQ)) flatMap { case assocIds =>
       val assocIdSet = assocIds.toSet
-      val fullQ = aotfQ(indirectIds, assocIdSet).query
+      val fullQ = aotfQ(indirectIds, assocIdSet, Set.empty).query
 
       if (assocIdSet.nonEmpty) {
         dbRetriever.executeQuery[Association, Query](fullQ) map { case assocs =>
@@ -505,7 +506,7 @@ class Backend @Inject() (implicit
                 val filteredDS =
                   assoc.datasourceScores.filter(ds => mustIncludeDatasources.contains(ds.id))
                 if (filteredDS.isEmpty) None
-                else Some(assoc.copy(datasourceScores = filteredDS))
+                else Some(assoc)
               }
             }
           }
