@@ -149,14 +149,18 @@ object GQLSchema {
         "gwasStudy",
         ListType(gwasImp),
         description = Some("Return a Gwas Index Study"),
-        arguments = pageArg :: studyId :: diseaseId :: Nil,
+        arguments = pageArg :: studyId :: diseaseId :: enableIndirect :: Nil,
         resolve = ctx => {
-          val studyIdSeq = if (ctx.arg(studyId).isDefined) Seq(ctx.arg(studyId).get).filter(_ != "") else Seq.empty
-          val diseaseIdSeq = if (ctx.arg(diseaseId).isDefined) Seq(ctx.arg(diseaseId).get).filter(_ != "") else Seq.empty
+          val studyIdSeq =
+            if (ctx.arg(studyId).isDefined) Seq(ctx.arg(studyId).get).filter(_ != "") else Seq.empty
+          val diseaseIdSeq =
+            if (ctx.arg(diseaseId).isDefined) Seq(ctx.arg(diseaseId).get).filter(_ != "")
+            else Seq.empty
           val studyQueryArgs = StudyQueryArgs(
             studyIdSeq,
-            diseaseIdSeq
-            )
+            diseaseIdSeq,
+            ctx.arg(enableIndirect).getOrElse(false)
+          )
           ctx.ctx.getStudies(studyQueryArgs, ctx.arg(pageArg))
         }
       ),
@@ -167,12 +171,13 @@ object GQLSchema {
         arguments =
           pageArg :: studyLocusIds :: studyIds :: diseaseIds :: variantIds :: studyTypes :: regions :: Nil,
         resolve = ctx => {
-          val credSetQueryArgs = CredibleSetQueryArgs(ctx.arg(studyLocusIds).getOrElse(Seq.empty),
-                                                      ctx.arg(studyIds).getOrElse(Seq.empty),
-                                                      ctx.arg(diseaseIds).getOrElse(Seq.empty),
-                                                      ctx.arg(variantIds).getOrElse(Seq.empty),
-                                                      ctx.arg(studyTypes).getOrElse(Seq.empty),
-                                                      ctx.arg(regions).getOrElse(Seq.empty)
+          val credSetQueryArgs = CredibleSetQueryArgs(
+            ctx.arg(studyLocusIds).getOrElse(Seq.empty),
+            ctx.arg(studyIds).getOrElse(Seq.empty),
+            ctx.arg(diseaseIds).getOrElse(Seq.empty),
+            ctx.arg(variantIds).getOrElse(Seq.empty),
+            ctx.arg(studyTypes).getOrElse(Seq.empty),
+            ctx.arg(regions).getOrElse(Seq.empty)
           )
           ctx.ctx.getCredibleSets(credSetQueryArgs, ctx.arg(pageArg))
         }
