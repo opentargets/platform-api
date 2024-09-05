@@ -141,15 +141,27 @@ class Backend @Inject() (implicit
     esRetriever.getByIds(indexName, ids, fromJsValue[VariantIndex])
   }
 
-  def getStudies(queryArgs: StudyQueryArgs, pagination: Option[Pagination]): Future[IndexedSeq[JsValue]] = {
+  def getStudies(queryArgs: StudyQueryArgs,
+                 pagination: Option[Pagination]
+  ): Future[IndexedSeq[JsValue]] = {
     val pag = pagination.getOrElse(Pagination.mkDefault)
     val indexName = getIndexOrDefault("gwas_index")
+    val diseaseIds: Seq[String] = {
+      if (queryArgs.enableIndirect) {
+        val diseases = getDiseases(queryArgs.diseaseId)
+        val descendantEfos = diseases.map(_.map(_.descendants).flatten).await
+        descendantEfos ++: queryArgs.diseaseId
+      } else {
+        queryArgs.diseaseId
+      }
+    }
     val termsQuery = Map(
       "studyId.keyword" -> queryArgs.id,
-      "traitFromSourceMappedIds.keyword" -> queryArgs.diseaseId
+      "traitFromSourceMappedIds.keyword" -> diseaseIds
     ).filter(_._2.nonEmpty)
-    logger.info(s"Querying studies for: $termsQuery")
-    val retriever = 
+    if (termsQuery.isEmpty) {
+      Future.successful(IndexedSeq.empty)
+    } else {
       esRetriever
         .getByIndexedTermsMust(
           indexName,
@@ -158,7 +170,7 @@ class Backend @Inject() (implicit
           fromJsValue[JsValue]
         )
         .map(_._1)
-    retriever
+    }
   }
 
   def getCredibleSets(
