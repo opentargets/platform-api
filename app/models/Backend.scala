@@ -183,7 +183,6 @@ class Backend @Inject() (implicit
       "studyLocusId.keyword" -> queryArgs.ids,
       "studyId.keyword" -> queryArgs.studyIds,
       "locus.variantId.keyword" -> queryArgs.variantIds,
-      "diseaseIds.keyword" -> queryArgs.diseaseIds,
       "studyType.keyword" -> queryArgs.studyTypes,
       "region.keyword" -> queryArgs.regions
     ).filter(_._2.nonEmpty)
