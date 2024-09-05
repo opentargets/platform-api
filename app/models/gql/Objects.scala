@@ -439,19 +439,6 @@ object Objects extends Logging {
             }),
             ctx arg pageArg
           )
-      ),
-      Field(
-        "credibleSets",
-        OptionType(ListType(credibleSetImp)),
-        description = Some("Credible sets"),
-        arguments = pageArg :: studyTypes :: Nil,
-        resolve = r => {
-          val studyTypesSeq = r.arg(studyTypes).getOrElse(Seq.empty)
-          val diseaseIdSeq = Seq(r.value.id)
-          val credSetQueryArgs =
-            CredibleSetQueryArgs(diseaseIds = diseaseIdSeq, studyTypes = studyTypesSeq)
-          r.ctx.getCredibleSets(credSetQueryArgs, r.arg(pageArg))
-        }
       )
     )
   )

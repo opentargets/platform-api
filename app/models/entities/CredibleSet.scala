@@ -63,14 +63,12 @@ case class CredibleSet(studyLocusId: String,
                        strongestLocus2gene: Option[StrongestLocus2gene],
                        ldSet: Option[Seq[LdSet]],
                        studyType: Option[StudyTypeEnum.Value],
-                       diseaseIds: Option[Seq[String]],
                        qtlGeneId: Option[String]
 )
 
 case class CredibleSetQueryArgs(
     ids: Seq[String] = Seq.empty,
     studyIds: Seq[String] = Seq.empty,
-    diseaseIds: Seq[String] = Seq.empty,
     variantIds: Seq[String] = Seq.empty,
     studyTypes: Seq[StudyTypeEnum.Value] = Seq.empty,
     regions: Seq[String] = Seq.empty
@@ -273,12 +271,6 @@ object CredibleSet extends Logging {
       OptionType(StudyType),
       description = None,
       resolve = js => (js.value \ "studyType").asOpt[String].map(e => StudyTypeEnum.withName(e))
-    ),
-    Field(
-      "diseaseIds",
-      OptionType(ListType(StringType)),
-      description = None,
-      resolve = js => (js.value \ "diseaseIds").asOpt[Seq[String]]
     ),
     Field(
       "qtlGeneId",
