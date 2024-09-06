@@ -444,7 +444,8 @@ class Backend @Inject() (implicit
   def searchFacets(
       qString: String,
       pagination: Option[Pagination],
-      entityNames: Seq[String]
+      entityNames: Seq[String],
+      category: Option[String]
   ): Future[SearchFacetsResults] = {
     val entities = for {
       e <- defaultESSettings.entities
@@ -452,7 +453,8 @@ class Backend @Inject() (implicit
     } yield e
     esRetriever.getSearchFacetsResultSet(entities,
                                          qString,
-                                         pagination.getOrElse(Pagination.mkDefault)
+                                         pagination.getOrElse(Pagination.mkDefault),
+                                         category
     )
   }
 
