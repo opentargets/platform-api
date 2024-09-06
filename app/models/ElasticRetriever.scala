@@ -571,7 +571,8 @@ class ElasticRetriever @Inject() (
   def getSearchFacetsResultSet(
       entities: Seq[ElasticsearchEntity],
       qString: String,
-      pagination: Pagination
+      pagination: Pagination,
+      category: Option[String]
   ): Future[SearchFacetsResults] = {
     val limitClause = pagination.toES
     val esIndices = entities.withFilter(_.facetSearchIndex.isDefined).map(_.facetSearchIndex.get)
@@ -590,8 +591,19 @@ class ElasticRetriever @Inject() (
       .field("datasourceId", 70d)
       .operator(Operator.OR)
 
-    val filterQueries = boolQuery().must() :: Nil
-    val fnQueries = boolQuery().should(Seq(fuzzyQueryFn) ++ exactQueryFn) :: Nil
+    val cateoryFilter = category match {
+      case Some(cat) => termQuery("category.keyword", cat)
+      case None      => matchAllQuery()
+    }
+
+    val filterQueries = boolQuery().must(cateoryFilter) :: Nil
+    val fnQueries = {
+      if (qString == "*") {
+        matchAllQuery() :: Nil
+      } else {
+        boolQuery().should(Seq(fuzzyQueryFn) ++ exactQueryFn) :: Nil
+      }
+    }
     val mainQuery = boolQuery().must(fnQueries ::: filterQueries)
     val aggQuery = termsAgg("categories", "category.keyword").size(1000)
 

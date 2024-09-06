@@ -46,6 +46,8 @@ object Arguments {
     Argument("sourceDatabase", OptionInputType(StringType), description = "Database name")
   val queryString: Argument[String] =
     Argument("queryString", StringType, description = "Query string")
+  val category: Argument[Option[String]] =
+    Argument("category", OptionInputType(StringType), description = "Category")
   val queryTerms: Argument[Seq[String with tag.Tagged[FromInput.CoercedScalaResult]]] =
     Argument("queryTerms", ListInputType(StringType), description = "List of query terms to map")
   val optQueryString: Argument[Option[String]] =
