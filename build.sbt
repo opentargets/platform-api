@@ -34,6 +34,7 @@ libraryDependencies += "org.playframework" %% "play-slick" % "6.0.0"
 
 val sangriaVersion = "4.1.1"
 libraryDependencies += "com.clickhouse" % "clickhouse-jdbc" % "0.6.4"
+libraryDependencies += "org.apache.httpcomponents.client5" % "httpclient5" % "5.3.1"
 libraryDependencies += "org.sangria-graphql" %% "sangria" % sangriaVersion
 libraryDependencies += "org.sangria-graphql" %% "sangria-play-json" % "2.0.2"
 
