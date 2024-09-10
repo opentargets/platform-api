@@ -591,12 +591,12 @@ class ElasticRetriever @Inject() (
       .field("datasourceId", 70d)
       .operator(Operator.OR)
 
-    val cateoryFilter = category match {
-      case Some(cat) => termQuery("category.keyword", cat)
+    val categoryFilter = category match {
+      case Some(categoryName) => termQuery("category.keyword", categoryName)
       case None      => matchAllQuery()
     }
 
-    val filterQueries = boolQuery().must(cateoryFilter) :: Nil
+    val filterQueries = boolQuery().must(categoryFilter) :: Nil
     val fnQueries = {
       if (qString == "*") {
         matchAllQuery() :: Nil
