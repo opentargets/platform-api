@@ -28,16 +28,15 @@ import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
 import play.api.{Configuration, Environment, Logging}
 import play.db.NamedDatabase
-import sangria.execution.HandledException
+import slick.basic.DatabaseConfig
 
 import java.time.LocalDate
 import scala.collection.immutable.ArraySeq
 import scala.concurrent._
-import scala.util.{Failure, Success}
 
 class Backend @Inject() (implicit
     ec: ExecutionContext,
-    @NamedDatabase("default") protected val dbConfigProvider: DatabaseConfigProvider,
+    @NamedDatabase("default") dbConfigProvider: DatabaseConfigProvider,
     config: Configuration,
     env: Environment,
     cache: AsyncCacheApi
@@ -45,6 +44,7 @@ class Backend @Inject() (implicit
 
   implicit val defaultOTSettings: OTSettings = loadConfigurationObject[OTSettings]("ot", config)
   implicit val defaultESSettings: ElasticsearchSettings = defaultOTSettings.elasticsearch
+  implicit val dbConfig: DatabaseConfig[ClickHouseProfile] = dbConfigProvider.get[ClickHouseProfile]
 
   /** return meta information loaded from ot.meta settings */
   lazy val getMeta: Meta = defaultOTSettings.meta
@@ -59,8 +59,10 @@ class Backend @Inject() (implicit
     .withFilter(_.searchIndex.isDefined)
     .map(_.searchIndex.get)
 
+  val test = dbConfigProvider.get[ClickHouseProfile]
+
   implicit lazy val dbRetriever: ClickhouseRetriever =
-    new ClickhouseRetriever(dbConfigProvider.get[ClickHouseProfile], defaultOTSettings)
+    new ClickhouseRetriever(defaultOTSettings)
 
   def getStatus(isOk: Boolean): HealthCheck =
     if (isOk) HealthCheck(true, "All good!")

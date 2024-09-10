@@ -19,7 +19,7 @@ javacOptions ++= Seq("-encoding", "UTF-8")
 libraryDependencies ++= Seq(
   guice,
   caffeine,
-  "com.typesafe.slick" %% "slick" % "3.4.1",
+  "com.typesafe.slick" %% "slick" % "3.5.0",
   "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.1" % Test,
   "org.scalatestplus" %% "scalacheck-1-15" % "3.2.11.0" % Test
 )
@@ -30,7 +30,7 @@ libraryDependencies += "org.playframework" %% "play-filters-helpers" % "3.0.5"
 libraryDependencies += "org.playframework" %% "play-logback" % playVersion
 libraryDependencies += "org.playframework" %% "play-json" % "3.0.4"
 libraryDependencies += "org.playframework" %% "play-streams" % playVersion
-libraryDependencies += "org.playframework" %% "play-slick" % "6.0.0"
+libraryDependencies += "org.playframework" %% "play-slick" % "6.1.1"
 
 val sangriaVersion = "4.1.1"
 libraryDependencies += "com.clickhouse" % "clickhouse-jdbc" % "0.6.4"
