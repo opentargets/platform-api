@@ -592,8 +592,8 @@ class ElasticRetriever @Inject() (
       .operator(Operator.OR)
 
     val categoryFilter = category match {
-      case Some(categoryName) => termQuery("category.keyword", categoryName)
-      case None               => matchAllQuery()
+      case None | Some("") | Some("*") => matchAllQuery()
+      case Some(categoryName)          => termQuery("category.keyword", categoryName)
     }
 
     val filterQueries = boolQuery().must(categoryFilter) :: Nil
