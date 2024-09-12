@@ -8,10 +8,17 @@ import sangria.schema._
 import sangria.marshalling.playJson._
 import sangria.marshalling.FromInput
 import sangria.util.tag
-import models.entities.CredibleSet.{StudyType}
+
+object StudyTypeEnum extends Enumeration {
+
+  type StudyType = Value
+  val gwas, tuqtl, eqtl, pqtl, sqtl = Value
+}
 
 object Arguments {
+  import sangria.macros.derive._
 
+  implicit val StudyType = deriveEnumType[StudyTypeEnum.Value]()
   val paginationGQLImp: InputObjectType[Pagination] = deriveInputObjectType[Pagination]()
 
   val datasourceSettingsInputImp: InputObjectType[DatasourceSettings] =

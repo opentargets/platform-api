@@ -1324,6 +1324,24 @@ object Objects extends Logging {
     )
   implicit val alleleFrequencyImp: ObjectType[Backend, AlleleFrequency] =
     deriveObjectType[Backend, AlleleFrequency]()
+  implicit val colocalisationImp: ObjectType[Backend, Colocalisation] =
+    deriveObjectType[Backend, Colocalisation](
+      ReplaceField(
+        "otherStudyLocusId",
+        Field(
+          "otherStudyLocus",
+          OptionType(credibleSetImp),
+          Some("Credible set"),
+          resolve = r => {
+            val studyLocusId = r.value.otherStudyLocusId.getOrElse("")
+            logger.info(s"Finding colocalisation credible set: $studyLocusId")
+            val credSetQueryArgs = CredibleSetQueryArgs(ids = Seq(studyLocusId))
+            r.ctx.getCredibleSets(credSetQueryArgs, None).map(_.headOption)
+          }
+        )
+      ),
+      ExcludeFields("leftStudyLocusId", "rightStudyLocusId")
+    )
   implicit val dbXrefImp: ObjectType[Backend, DbXref] = deriveObjectType[Backend, DbXref]()
   implicit val variantIndexImp: ObjectType[Backend, VariantIndex] =
     deriveObjectType[Backend, VariantIndex](

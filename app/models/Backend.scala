@@ -22,6 +22,7 @@ import models.entities.Pharmacogenomics._
 import models.entities.SearchFacetsResults._
 import models.entities._
 import models.gql.Arguments.variantId
+import models.gql.StudyTypeEnum
 import org.apache.http.impl.nio.reactor.IOReactorConfig
 import play.api.cache.AsyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
@@ -171,6 +172,36 @@ class Backend @Inject() (implicit
         )
         .map(_._1)
     }
+  }
+
+  def getColocalisation(studyLocusId: String,
+                        studyTypes: Option[Seq[StudyTypeEnum.Value]]
+  ): Future[IndexedSeq[Colocalisation]] = {
+    val indexName = getIndexOrDefault("colocalisation")
+    val colocs = esRetriever
+      .getByIndexedQueryShould(indexName,
+                               Map("leftStudyLocusId.keyword" -> studyLocusId,
+                                   "rightStudyLocusId.keyword" -> studyLocusId
+                               ),
+                               Pagination.mkDefault,
+                               fromJsValue[Colocalisation]
+      )
+      .map(_._1)
+    val colocsFilteredByStudyType = if (studyTypes.isDefined) {
+      colocs.map(
+        _.filter(coloc => studyTypes.get.contains(StudyTypeEnum.withName(coloc.rightStudyType)))
+      )
+    } else {
+      colocs
+    }
+    colocsFilteredByStudyType.map(_.map { coloc =>
+      val otherStudyLocusId: String = if (coloc.leftStudyLocusId != studyLocusId) {
+        coloc.leftStudyLocusId
+      } else {
+        coloc.rightStudyLocusId
+      }
+      coloc.copy(otherStudyLocusId = Some(otherStudyLocusId))
+    })
   }
 
   def getCredibleSets(
