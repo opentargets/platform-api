@@ -17,8 +17,8 @@ import sangria.schema.{
   fields
 }
 import models.entities.CredibleSet.credibleSetWithoutStudyImp
-import models.entities.CredibleSet.StudyType
-import models.gql.Arguments.pageArg
+import models.gql.StudyTypeEnum
+import models.gql.Arguments.{pageArg, StudyType}
 
 case class StudyQueryArgs(
     id: Seq[String] = Seq.empty,
