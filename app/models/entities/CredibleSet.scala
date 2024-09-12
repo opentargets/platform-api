@@ -1,9 +1,11 @@
 package models.entities
 
 import models.Backend
+import models.gql.StudyTypeEnum
+import models.gql.Arguments.StudyType
 import models.entities.GwasIndex.{gwasImp, gwasWithoutCredSetsImp}
 import models.gql.Fetchers.{gwasFetcher, targetsFetcher, variantFetcher}
-import models.gql.Objects.{logger, targetImp, variantIndexImp}
+import models.gql.Objects.{logger, targetImp, variantIndexImp, colocalisationImp}
 import play.api.Logging
 import play.api.libs.json.{JsValue, Json, OFormat, OWrites}
 import sangria.schema.{
@@ -16,6 +18,7 @@ import sangria.schema.{
   StringType,
   fields
 }
+import models.gql.Arguments.studyTypes
 
 case class Locus(
     variantId: Option[String],
@@ -74,15 +77,8 @@ case class CredibleSetQueryArgs(
     regions: Seq[String] = Seq.empty
 )
 
-object StudyTypeEnum extends Enumeration {
-  type StudyType = Value
-  val gwas, tuqtl, eqtl, pqtl, sqtl = Value
-}
-
 object CredibleSet extends Logging {
   import sangria.macros.derive._
-
-  implicit val StudyType = deriveEnumType[StudyTypeEnum.Value]()
 
   implicit val strongestLocus2geneImp: ObjectType[Backend, StrongestLocus2gene] =
     deriveObjectType[Backend, StrongestLocus2gene](
@@ -117,6 +113,7 @@ object CredibleSet extends Logging {
   implicit val ldSetF: OFormat[LdSet] = Json.format[LdSet]
   implicit val locusF: OFormat[Locus] = Json.format[Locus]
   implicit val strongestLocus2geneF: OFormat[StrongestLocus2gene] = Json.format[StrongestLocus2gene]
+
   val credibleSetFields: Seq[Field[Backend, JsValue]] = Seq(
     Field(
       "studyLocusId",
@@ -277,6 +274,16 @@ object CredibleSet extends Logging {
       OptionType(StringType),
       description = None,
       resolve = js => (js.value \ "qtlGeneId").asOpt[String]
+    ),
+    Field(
+      "colocalisation",
+      OptionType(ListType(colocalisationImp)),
+      description = None,
+      arguments = studyTypes :: Nil,
+      resolve = js => {
+        val id = (js.value \ "studyLocusId").as[String]
+        js.ctx.getColocalisation(id, js.arg(studyTypes))
+      }
     )
   )
   val studyField: Field[Backend, JsValue] = Field(
