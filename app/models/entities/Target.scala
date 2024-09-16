@@ -116,31 +116,31 @@ case class ReactomePathway(pathway: String, pathwayId: String, topLevelTerm: Str
 
 case class Target(
     id: String,
-    alternativeGenes: Seq[String],
+    alternativeGenes: Seq[String] = Seq.empty,
     approvedSymbol: String,
     approvedName: String,
     biotype: String,
-    chemicalProbes: Seq[ChemicalProbe],
-    dbXrefs: Seq[IdAndSource],
-    functionDescriptions: Seq[String],
-    geneticConstraint: Seq[Constraint],
+    chemicalProbes: Seq[ChemicalProbe] = Seq.empty,
+    dbXrefs: Seq[IdAndSource] = Seq.empty,
+    functionDescriptions: Seq[String] = Seq.empty,
+    constraint: Seq[Constraint] = Seq.empty,
     genomicLocation: GenomicLocation,
-    geneOntology: Seq[GeneOntology],
+    go: Seq[GeneOntology] = Seq.empty,
     hallmarks: Option[Hallmarks],
-    homologues: Seq[Homologue],
-    pathways: Seq[ReactomePathway],
-    proteinIds: Seq[IdAndSource],
-    safetyLiabilities: Seq[SafetyLiability],
-    subcellularLocations: Seq[LocationAndSource],
-    synonyms: Seq[LabelAndSource], // double check, this is name and symbol
-    symbolSynonyms: Seq[LabelAndSource],
-    nameSynonyms: Seq[LabelAndSource],
-    obsoleteSymbols: Seq[LabelAndSource],
-    obsoleteNames: Seq[LabelAndSource],
-    targetClass: Seq[TargetClass],
+    homologues: Seq[Homologue] = Seq.empty,
+    pathways: Seq[ReactomePathway] = Seq.empty,
+    proteinIds: Seq[IdAndSource] = Seq.empty,
+    safetyLiabilities: Seq[SafetyLiability] = Seq.empty,
+    subcellularLocations: Seq[LocationAndSource] = Seq.empty,
+    synonyms: Seq[LabelAndSource] = Seq.empty, // double check, this is name and symbol
+    symbolSynonyms: Seq[LabelAndSource] = Seq.empty,
+    nameSynonyms: Seq[LabelAndSource] = Seq.empty,
+    obsoleteSymbols: Seq[LabelAndSource] = Seq.empty,
+    obsoleteNames: Seq[LabelAndSource] = Seq.empty,
+    targetClass: Seq[TargetClass] = Seq.empty,
     tep: Option[Tep],
-    tractability: Seq[Tractability],
-    transcriptIds: Seq[String]
+    tractability: Seq[Tractability] = Seq.empty,
+    transcriptIds: Seq[String] = Seq.empty
 )
 
 object Target extends Logging {

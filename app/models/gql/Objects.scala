@@ -61,9 +61,9 @@ object Objects extends Logging {
     DocumentField("biotype", "Molecule biotype"),
     DocumentField("dbXrefs", "Database cross references"),
     DocumentField("functionDescriptions", "..."), // todo
-    DocumentField("geneticConstraint", "Symbol synonyms"),
+    DocumentField("constraint", "Symbol synonyms"),
     DocumentField("genomicLocation", "Chromosomic location"),
-    DocumentField("geneOntology", "Gene Ontology annotations"),
+    DocumentField("go", "Gene Ontology annotations"),
     DocumentField(
       "hallmarks",
       "Target-modulated essential alterations in cell physiology that dictate " +
@@ -85,6 +85,8 @@ object Objects extends Logging {
     DocumentField("tractability", "Target druggability assessment"),
     DocumentField("transcriptIds", "Ensembl transcript IDs"),
     DocumentField("pathways", "Reactome pathways"),
+    RenameField("go", "geneOntology"),
+    RenameField("constraint", "geneticConstraint"),
     AddFields(
       Field(
         "similarEntities",
