@@ -61,7 +61,7 @@ case class QAOTF(
 
     tokens match {
       case h :: Nil         => Some(h)
-      case h1 :: h2 :: rest => Some(F.and(h1, h2, rest: _*))
+      case h1 :: h2 :: rest => Some(F.and(h1, h2, rest*))
       case _                => None
     }
   }

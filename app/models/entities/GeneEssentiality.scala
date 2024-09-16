@@ -35,23 +35,23 @@ object TargetEssentiality extends Logging {
       (__ \ "diseaseFromSource").readNullable[String] and
       (__ \ "expression").readNullable[Double] and
       (__ \ "geneEffect").readNullable[Double] and
-      (__ \ "mutation").readNullable[String])(GeneEssentialityScreen.apply _)
+      (__ \ "mutation").readNullable[String])(GeneEssentialityScreen.apply)
 
   implicit val depMapEssentialityImpW: OWrites[DepMapEssentiality] =
     Json.writes[models.entities.DepMapEssentiality]
   implicit val depMapEssentialityImpR: Reads[models.entities.DepMapEssentiality] =
     ((__ \ "screens").readWithDefault[Seq[GeneEssentialityScreen]](Seq.empty) and
       (__ \ "tissueId").readNullable[String] and
-      (__ \ "tissueName").readNullable[String])(DepMapEssentiality.apply _)
+      (__ \ "tissueName").readNullable[String])(DepMapEssentiality.apply)
 
   implicit val geneEssentialityImpW: OWrites[GeneEssentiality] = Json.writes[GeneEssentiality]
   implicit val geneEssentialityImpR: Reads[GeneEssentiality] =
     ((__ \ "isEssential").readNullable[Boolean] and
-      (__ \ "depMapEssentiality").read[Seq[DepMapEssentiality]])(GeneEssentiality.apply _)
+      (__ \ "depMapEssentiality").read[Seq[DepMapEssentiality]])(GeneEssentiality.apply)
 
   implicit val targetEssentialityImpW: OWrites[TargetEssentiality] = Json.writes[TargetEssentiality]
   implicit val targetEssentialityImpR: Reads[TargetEssentiality] =
     ((__ \ "id").readNullable[String] and
-      (__ \ "geneEssentiality").read[Seq[GeneEssentiality]])(TargetEssentiality.apply _)
+      (__ \ "geneEssentiality").read[Seq[GeneEssentiality]])(TargetEssentiality.apply)
 
 }

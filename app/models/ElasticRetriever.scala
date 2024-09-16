@@ -230,7 +230,7 @@ class ElasticRetriever @Inject() (
       val qq = sortByFields match {
         case Nil => q
         case _ =>
-          q.sortBy(sortByFields: _*)
+          q.sortBy(sortByFields*)
 
       }
 

@@ -7,8 +7,6 @@ import play.api.Logging
 import sangria.execution.{ExceptionHandler, HandledException, MaxQueryDepthReachedError}
 import sangria.marshalling.ResultMarshaller
 
-import scala.reflect.runtime.universe.typeOf
-
 case object TooComplexQueryError extends Exception("Query is too expensive.") with Logging {
 
   private def handleExceptionWithCode(message: String,
@@ -17,9 +15,9 @@ case object TooComplexQueryError extends Exception("Query is too expensive.") wi
   ) = {
     val additionalFields: Map[String, ResultMarshaller#Node] =
       Map(
-        "code" -> marshaller.scalarNode(code, typeOf[String].toString(), Set()),
+        "code" -> marshaller.scalarNode(code, classOf[String].toString, Set()),
         "timestamp" -> marshaller.scalarNode(DateTime.now.toString(),
-                                             typeOf[String].toString(),
+                                             classOf[String].toString,
                                              Set()
         )
       )

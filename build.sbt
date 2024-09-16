@@ -7,11 +7,11 @@ organization := "io.opentargets"
 
 version := "latest"
 
-scalacOptions ++= Seq("-deprecation", "-feature")
+scalacOptions ++= Seq("-feature")
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala, PlayLogback)
 
-scalaVersion := "2.13.14"
+scalaVersion := "3.4.2"
 maintainer := "ops@opentargets.org"
 
 javacOptions ++= Seq("-encoding", "UTF-8")
@@ -37,8 +37,6 @@ libraryDependencies += "com.clickhouse" % "clickhouse-jdbc" % "0.6.4"
 libraryDependencies += "org.apache.httpcomponents.client5" % "httpclient5" % "5.3.1"
 libraryDependencies += "org.sangria-graphql" %% "sangria" % sangriaVersion
 libraryDependencies += "org.sangria-graphql" %% "sangria-play-json" % "2.0.2"
-
-libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.12"
 
 lazy val catsVersion = "2.12.0"
 lazy val cats = Seq(

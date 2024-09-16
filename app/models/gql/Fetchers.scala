@@ -14,7 +14,8 @@ import models.entities.{
 }
 import models.{Backend, entities}
 import play.api.Logging
-import play.api.libs.json.JsValue
+import play.api.libs.functional.syntax._
+import play.api.libs.json._
 import sangria.execution.deferred.{Fetcher, FetcherCache, FetcherConfig, HasId, SimpleFetcherCache}
 
 object Fetchers extends Logging {
@@ -116,7 +117,7 @@ object Fetchers extends Logging {
   )
 
   def buildFetcher(index: String): Fetcher[Backend, JsValue, JsValue, String] = {
-    implicit val soTermHasId = HasId[JsValue, String](el => (el \ "id").as[String])
+    implicit val soTermHasId: HasId[JsValue, String] = HasId[JsValue, String](el => (el \ "id").as[String])
     Fetcher(
       config =
         FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(soTermsFetcherCache),

@@ -18,7 +18,7 @@ case class Pagination(index: Int, size: Int) {
     case (0, s) => s"LIMIT $s"
     case (i, 0) => s"LIMIT ${i * Pagination.sizeDefault}, ${Pagination.sizeDefault}"
     case (i, s) => s"LIMIT ${i * s} , $s"
-    case _      => s"LIMIT ${Pagination.indexDefault}, ${Pagination.sizeDefault}"
+    case null   => s"LIMIT ${Pagination.indexDefault}, ${Pagination.sizeDefault}"
   }
 
   val toES: (Int, Int) = (index, size) match {
@@ -26,7 +26,7 @@ case class Pagination(index: Int, size: Int) {
     case (0, s) => (0, s)
     case (i, 0) => (i * Pagination.sizeDefault, Pagination.sizeDefault)
     case (i, s) => (i * s, s)
-    case _      => (0, Pagination.sizeDefault)
+    case null   => (0, Pagination.sizeDefault)
   }
 }
 

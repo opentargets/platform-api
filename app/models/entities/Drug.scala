@@ -90,7 +90,7 @@ object Drug {
     (JsPath \ "ref_id").read[String] and
       (JsPath \ "ref_type").read[String] and
       (JsPath \ "ref_url").read[String]
-  )(DrugWarningReference.apply _)
+  )(DrugWarningReference.apply)
   implicit val drugWarningReferenceImpW: OWrites[DrugWarningReference] =
     Json.writes[DrugWarningReference]
   implicit val drugWarningImpW: OWrites[models.entities.DrugWarning] = Json.writes[DrugWarning]
@@ -106,7 +106,7 @@ object Drug {
       (JsPath \ "efo_term").readNullable[String] and
       (JsPath \ "efo_id").readNullable[String] and
       (JsPath \ "efo_id_for_warning_class").readNullable[String]
-  )(DrugWarning.apply _)
+  )(DrugWarning.apply)
   implicit val referenceImpW: OFormat[Reference] = Json.format[models.entities.Reference]
   implicit val mechanismOfActionRowImpW: OFormat[MechanismOfActionRow] =
     Json.format[models.entities.MechanismOfActionRow]

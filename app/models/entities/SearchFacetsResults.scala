@@ -41,7 +41,7 @@ object SearchFacetsResults {
   implicit val searchFacetsCategoryImpR: Reads[SearchFacetsCategory] = (
     (__ \ "key").read[String] and
       (__ \ "doc_count").read[Long]
-  )(SearchFacetsCategory.apply _)
+  )(SearchFacetsCategory.apply)
 
   implicit val searchFacetsResultImpR: Reads[models.entities.SearchFacetsResult] =
     ((__ \ "_id").read[String] and
@@ -56,7 +56,7 @@ object SearchFacetsResults {
             s <- m.flatMap(_._2)
           } yield s).toSeq.distinct
         case None => Seq.empty[String]
-      })(SearchFacetsResult.apply _)
+      })(SearchFacetsResult.apply)
 
   implicit val searchFacetsResultsImpW: OFormat[SearchFacetsResults] =
     Json.format[models.entities.SearchFacetsResults]

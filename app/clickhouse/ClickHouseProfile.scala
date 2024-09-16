@@ -35,7 +35,7 @@ final class OptionCHColumnExtensionMethods[B1](val c: Rep[Option[B1]])
     with OptionExtensionMethods[B1]
 
 /** Extension methods for Queries of a single column */
-final class CHSingleColumnQueryExtensionMethods[B1, P1, C[_]](val q: Query[Rep[P1], _, C])
+final class CHSingleColumnQueryExtensionMethods[B1, P1, C[_]](val q: Query[Rep[P1], ?, C])
     extends AnyVal {
   type OptionTM = TypedType[Option[B1]]
 
@@ -75,11 +75,11 @@ trait ClickHouseProfile extends JdbcProfile with JdbcActionComponent.MultipleRow
 
   override def createInsertBuilder(node: Insert): super.InsertBuilder = new InsertBuilderCH(node)
 
-  override def createTableDDLBuilder(table: Table[_]): TableDDLBuilderCH = new TableDDLBuilderCH(
+  override def createTableDDLBuilder(table: Table[?]): TableDDLBuilderCH = new TableDDLBuilderCH(
     table
   )
 
-  override def createColumnDDLBuilder(column: FieldSymbol, table: Table[_]): ColumnDDLBuilderCH =
+  override def createColumnDDLBuilder(column: FieldSymbol, table: Table[?]): ColumnDDLBuilderCH =
     new ColumnDDLBuilderCH(column)
 
   override def createInsertActionExtensionMethods[T](
@@ -98,7 +98,7 @@ trait ClickHouseProfile extends JdbcProfile with JdbcActionComponent.MultipleRow
 
   class InsertBuilderCH(ins: Insert) extends super.InsertBuilder(ins)
 
-  class TableDDLBuilderCH(table: Table[_]) extends super.TableDDLBuilder(table)
+  class TableDDLBuilderCH(table: Table[?]) extends super.TableDDLBuilder(table)
 
   class ColumnDDLBuilderCH(column: FieldSymbol) extends super.ColumnDDLBuilder(column)
 
@@ -110,12 +110,12 @@ trait ClickHouseProfile extends JdbcProfile with JdbcActionComponent.MultipleRow
     // https://virtuslab.com/blog/smooth-operator-with-slick-3/
 
     implicit def chSingleColumnQueryExtensionMethods[B1: BaseTypedType, C[_]](
-        q: Query[Rep[B1], _, C]
+        q: Query[Rep[B1], ?, C]
     ): CHSingleColumnQueryExtensionMethods[B1, B1, C] =
       new CHSingleColumnQueryExtensionMethods[B1, B1, C](q)
 
     implicit def chSingleOptionColumnQueryExtensionMethods[B1: BaseTypedType, C[_]](
-        q: Query[Rep[Option[B1]], _, C]
+        q: Query[Rep[Option[B1]], ?, C]
     ): CHSingleColumnQueryExtensionMethods[B1, Option[B1], C] =
       new CHSingleColumnQueryExtensionMethods[B1, Option[B1], C](q)
 

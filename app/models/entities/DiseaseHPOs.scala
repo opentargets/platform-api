@@ -41,15 +41,13 @@ object DiseaseHPOs {
       (JsPath \ "qualifierNot").read[Boolean] and
       (JsPath \ "references").readWithDefault[Seq[String]](Seq.empty) and
       (JsPath \ "sex").readNullable[String] and
-      (JsPath \ "resource").read[String])(DiseaseHPOEvidences.apply _)
+      (JsPath \ "resource").read[String])(DiseaseHPOEvidences.apply)
 
   implicit val diseaseHPOImpW: OWrites[DiseaseHPO] = Json.writes[models.entities.DiseaseHPO]
   implicit val diseaseHPOImpR: Reads[models.entities.DiseaseHPO] =
     ((JsPath \ "phenotype").read[String] and
       (JsPath \ "disease").read[String] and
-      (JsPath \ "evidence").readWithDefault[Seq[DiseaseHPOEvidences]](Seq.empty))(
-      DiseaseHPO.apply _
-    )
+      (JsPath \ "evidence").readWithDefault[Seq[DiseaseHPOEvidences]](Seq.empty))(DiseaseHPO.apply)
 
   implicit val diseaseHPOsImpF: OFormat[DiseaseHPOs] = Json.format[models.entities.DiseaseHPOs]
 }
