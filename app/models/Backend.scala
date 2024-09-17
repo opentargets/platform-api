@@ -148,11 +148,11 @@ class Backend @Inject() (implicit
     val indexName = getIndexOrDefault("gwas_index")
     val diseaseIds: Seq[String] = {
       if (queryArgs.enableIndirect) {
-        val diseases = getDiseases(queryArgs.diseaseId)
+        val diseases = getDiseases(queryArgs.diseaseIds)
         val descendantEfos = diseases.map(_.map(_.descendants).flatten).await
-        descendantEfos ++: queryArgs.diseaseId
+        descendantEfos ++: queryArgs.diseaseIds
       } else {
-        queryArgs.diseaseId
+        queryArgs.diseaseIds
       }
     }
     val termsQuery = Map(
