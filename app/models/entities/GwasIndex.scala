@@ -22,7 +22,7 @@ import models.gql.Arguments.pageArg
 
 case class StudyQueryArgs(
     id: Seq[String] = Seq.empty,
-    diseaseId: Seq[String] = Seq.empty,
+    diseaseIds: Seq[String] = Seq.empty,
     enableIndirect: Boolean = false
 )
 
