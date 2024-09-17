@@ -149,16 +149,14 @@ object GQLSchema {
         "gwasStudy",
         ListType(gwasImp),
         description = Some("Return a Gwas Index Study"),
-        arguments = pageArg :: studyId :: diseaseId :: enableIndirect :: Nil,
+        arguments = pageArg :: studyId :: diseaseIds :: enableIndirect :: Nil,
         resolve = ctx => {
           val studyIdSeq =
             if (ctx.arg(studyId).isDefined) Seq(ctx.arg(studyId).get).filter(_ != "") else Seq.empty
-          val diseaseIdSeq =
-            if (ctx.arg(diseaseId).isDefined) Seq(ctx.arg(diseaseId).get).filter(_ != "")
-            else Seq.empty
+          val diseaseIdsSeq = ctx.arg(diseaseIds).getOrElse(Seq.empty)
           val studyQueryArgs = StudyQueryArgs(
             studyIdSeq,
-            diseaseIdSeq,
+            diseaseIdsSeq,
             ctx.arg(enableIndirect).getOrElse(false)
           )
           ctx.ctx.getStudies(studyQueryArgs, ctx.arg(pageArg))
