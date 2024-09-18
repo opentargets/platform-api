@@ -11,7 +11,7 @@ scalacOptions ++= Seq("-feature")
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala, PlayLogback)
 
-scalaVersion := "3.4.2"
+scalaVersion := "3.5.0"
 maintainer := "ops@opentargets.org"
 
 javacOptions ++= Seq("-encoding", "UTF-8")
