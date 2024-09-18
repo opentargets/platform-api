@@ -327,9 +327,6 @@ class GqlTest
   }
 
   "Disease page queries" must {
-    "return a valid response for disease facets" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
-      testQueryAgainstGqlEndpoint(DiseaseAggregationfilter("DiseasePage_DiseaseFacets"))
-    }
     "return a valid response for disease page" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(Disease("DiseasePage_DiseasePage"))
     }
@@ -508,17 +505,11 @@ class GqlTest
   }
 
   "Target page" must {
-    "return valid associations visualisation" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
-      testQueryAgainstGqlEndpoint(TargetAggregationfilter("TargetPage_AssociationsViz"))
-    }
     "return valid chemical probes" taggedAs (IntegrationTestTag) in {
       testQueryAgainstGqlEndpoint(Target("ChemicalProbes_ChemicalProbes"))(ensgTransform)
     }
     "return valid gene ontology" taggedAs (IntegrationTestTag) in {
       testQueryAgainstGqlEndpoint(Target("GeneOntology_GeneOntology"))(ensgTransform)
-    }
-    "return valid target facets" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
-      testQueryAgainstGqlEndpoint(TargetAggregationfilter("TargetPage_TargetFacets"))
     }
     "return valid target page" taggedAs (IntegrationTestTag) in {
       testQueryAgainstGqlEndpoint(Target("TargetPage_TargetPage"))

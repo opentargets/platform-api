@@ -7,6 +7,7 @@ import com.sksamuel.elastic4s.requests.common.Operator
 import com.sksamuel.elastic4s.requests.searches._
 import com.sksamuel.elastic4s.requests.searches.aggs.AbstractAggregation
 import com.sksamuel.elastic4s.requests.searches.queries.NestedQuery
+import com.sksamuel.elastic4s.requests.searches.queries.Query
 import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
 import com.sksamuel.elastic4s.requests.searches.queries.funcscorer._
 import com.sksamuel.elastic4s.requests.searches.queries.matches.MultiMatchQueryBuilderType
@@ -25,6 +26,7 @@ import scala.util.Try
 import com.sksamuel.elastic4s.requests.searches.sort.FieldSort
 import com.sksamuel.elastic4s.requests.searches.term.TermQuery
 import com.sksamuel.elastic4s.handlers.index.Search
+import views.html.index.f
 
 class ElasticRetriever @Inject() (
     client: ElasticClient,
@@ -128,7 +130,35 @@ class ElasticRetriever @Inject() (
       excludedFields: Seq[String] = Seq.empty
   ): Future[(IndexedSeq[A], JsValue)] = {
     // just log and execute the query
-    val searchRequest: SearchRequest = IndexQueryMust(esIndex, kv, pagination, aggs, excludedFields)
+    val indexQuery: IndexQuery[V] = IndexQuery(esIndex = esIndex,
+                                               kv = kv,
+                                               pagination = pagination,
+                                               aggs = aggs,
+                                               excludedFields = excludedFields
+    )
+    val searchRequest: SearchRequest = IndexQueryMust(indexQuery)
+    getByIndexedQuery(searchRequest, sortByField, buildF)
+  }
+
+  def getByIndexedQueryMustWithFilters[A, V](
+      esIndex: String,
+      kv: Map[String, V],
+      filters: Seq[Query],
+      pagination: Pagination,
+      buildF: JsValue => Option[A],
+      aggs: Iterable[AbstractAggregation] = Iterable.empty,
+      sortByField: Option[sort.FieldSort] = None,
+      excludedFields: Seq[String] = Seq.empty
+  ): Future[(IndexedSeq[A], JsValue)] = {
+    // just log and execute the query
+    val indexQuery: IndexQuery[V] = IndexQuery(esIndex = esIndex,
+                                               kv = kv,
+                                               filters = filters,
+                                               pagination = pagination,
+                                               aggs = aggs,
+                                               excludedFields = excludedFields
+    )
+    val searchRequest: SearchRequest = IndexQueryMust(indexQuery)
     getByIndexedQuery(searchRequest, sortByField, buildF)
   }
 
@@ -144,8 +174,14 @@ class ElasticRetriever @Inject() (
       sortByField: Option[sort.FieldSort] = None,
       excludedFields: Seq[String] = Seq.empty
   ): Future[(IndexedSeq[A], JsValue)] = {
+    val indexQuery: IndexQuery[V] = IndexQuery(esIndex = esIndex,
+                                               kv = kv,
+                                               pagination = pagination,
+                                               aggs = aggs,
+                                               excludedFields = excludedFields
+    )
     val searchRequest: SearchRequest =
-      IndexQueryShould(esIndex, kv, pagination, aggs, excludedFields)
+      IndexQueryShould(indexQuery)
     // log and execute the query
     getByIndexedQuery(searchRequest, sortByField, buildF)
   }
@@ -535,7 +571,8 @@ class ElasticRetriever @Inject() (
   def getSearchFacetsResultSet(
       entities: Seq[ElasticsearchEntity],
       qString: String,
-      pagination: Pagination
+      pagination: Pagination,
+      category: Option[String]
   ): Future[SearchFacetsResults] = {
     val limitClause = pagination.toES
     val esIndices = entities.withFilter(_.facetSearchIndex.isDefined).map(_.facetSearchIndex.get)
@@ -554,8 +591,19 @@ class ElasticRetriever @Inject() (
       .field("datasourceId", 70d)
       .operator(Operator.OR)
 
-    val filterQueries = boolQuery().must() :: Nil
-    val fnQueries = boolQuery().should(Seq(fuzzyQueryFn) ++ exactQueryFn) :: Nil
+    val categoryFilter = category match {
+      case None | Some("") | Some("*") => matchAllQuery()
+      case Some(categoryName)          => termQuery("category.keyword", categoryName)
+    }
+
+    val filterQueries = boolQuery().must(categoryFilter) :: Nil
+    val fnQueries = {
+      if (qString == "*") {
+        matchAllQuery() :: Nil
+      } else {
+        boolQuery().should(Seq(fuzzyQueryFn) ++ exactQueryFn) :: Nil
+      }
+    }
     val mainQuery = boolQuery().must(fnQueries ::: filterQueries)
     val aggQuery = termsAgg("categories", "category.keyword").size(1000)
 
@@ -703,64 +751,6 @@ class ElasticRetriever @Inject() (
 }
 
 object ElasticRetriever extends Logging {
-
-  /** aggregationFilterProducer returns a tuple where the first element is the overall list
-    * of filters and the second is a map with the cartesian product of each aggregation with
-    * the complementary list of filters
-    */
-  def aggregationFilterProducer(
-      filters: Seq[AggregationFilter],
-      mappings: Map[String, AggregationMapping]
-  ): (BoolQuery, Map[String, BoolQuery]) = {
-    val filtersByName = filters
-      .groupBy(_.name)
-      .view
-      .filterKeys(mappings.contains)
-      .toMap
-      .map { case (facet, filters) =>
-        val mappedFacet = mappings(facet)
-        val ff = filters.foldLeft(BoolQuery()) { (b, filter) =>
-          val termKey = filter.path.zipWithIndex.last
-          val termLevel = mappedFacet.pathKeys.lift
-          val termPrefix = if (mappedFacet.nested) s"${mappedFacet.key}." else ""
-          val keyName = termPrefix + s"${termLevel(termKey._2).getOrElse(mappedFacet.key)}.keyword"
-          b.withShould(TermQuery(keyName, termKey._1))
-        }
-
-        if (mappedFacet.nested) {
-          facet -> NestedQuery(mappedFacet.key, ff)
-        } else {
-          facet -> ff
-        }
-
-      }
-      .withDefaultValue(BoolQuery())
-
-    val overallFilters = filtersByName.foldLeft(BoolQuery()) { case (b, f) =>
-      b.withMust(f._2)
-    }
-
-    val namesR = mappings.keys.toList.reverse
-    if (namesR.size > 1) {
-      val mappedMappgings =
-        mappings.map(p => p._1 -> filtersByName(p._1)).toList.combinations(namesR.size - 1).toList
-
-      val cartesianProd = (namesR zip mappedMappgings).toMap.view
-        .mapValues(_.foldLeft(BoolQuery()) { (b, q) =>
-          b.withMust(q._2)
-        })
-        .toMap
-
-      logger.debug(s"overall filters $overallFilters")
-      cartesianProd foreach { el =>
-        logger.debug(s"cartesian product ${el._1} -> ${el._2.toString}")
-      }
-
-      (overallFilters, cartesianProd)
-    } else {
-      (overallFilters, Map.empty[String, BoolQuery].withDefaultValue(BoolQuery()))
-    }
-  }
 
   /** *
     * SortBy case class use the `fieldName` to sort by and asc if `desc` is false

@@ -1,7 +1,7 @@
 package models.entities
 
 import com.sksamuel.elastic4s.ElasticApi.valueCountAgg
-import com.sksamuel.elastic4s.ElasticDsl.boolQuery
+import com.sksamuel.elastic4s.ElasticDsl.{boolQuery, rangeQuery, should, not, existsQuery}
 import com.sksamuel.elastic4s.requests.searches._
 import com.sksamuel.elastic4s.requests.searches.aggs.TermsAggregation
 import com.sksamuel.elastic4s.requests.searches.sort._
@@ -26,7 +26,11 @@ object Interactions extends Logging {
     )
   )
 
-  def find(id: String, dbName: Option[String], pagination: Option[Pagination])(implicit
+  def find(id: String,
+           scoreThreshold: Option[Double],
+           dbName: Option[String],
+           pagination: Option[Pagination]
+  )(implicit
       ec: ExecutionContext,
       esSettings: ElasticsearchSettings,
       esRetriever: ElasticRetriever
@@ -44,14 +48,22 @@ object Interactions extends Logging {
       dbName.map("sourceDatabase.keyword" -> _)
     ).flatten.toMap
 
+    val filters = Seq(
+      should(
+        rangeQuery("scoring").gte(scoreThreshold.getOrElse(0.0d)),
+        not(existsQuery("scoring"))
+      )
+    )
+
     val aggs = Seq(
       valueCountAgg("rowsCount", "targetA.keyword")
     )
 
     esRetriever
-      .getByIndexedQueryMust(
+      .getByIndexedQueryMustWithFilters(
         cbIndex,
         kv,
+        filters,
         pag,
         fromJsValue[JsValue],
         aggs,
