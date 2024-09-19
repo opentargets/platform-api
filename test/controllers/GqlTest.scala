@@ -119,20 +119,29 @@ class GqlTest
   }
 
   "Bibliography queries" must {
-    "return valid response for BibliographyQuery" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
+    "return valid response for BibliographyQuery" taggedAs (IntegrationTestTag,
+                                                            ClickhouseTestTag
+    ) in {
       testQueryAgainstGqlEndpoint(Target("Bibliography_BibliographyQuery"))(t =>
         t.replace("ensgId", "id")
       )
     }
-    "return valid response for BibliographySimilarEntities" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
+    "return valid response for BibliographySimilarEntities" taggedAs (IntegrationTestTag,
+                                                                      ClickhouseTestTag
+    ) in {
       testQueryAgainstGqlEndpoint(Target("Bibliography_SimilarEntities"))(t =>
         t.replace("ensgId", "id")
       )
     }
-    "return valid response for Bibliography summary fragment" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
+    "return valid response for Bibliography summary fragment" taggedAs (IntegrationTestTag,
+                                                                        ClickhouseTestTag
+    ) in {
       testQueryAgainstGqlEndpoint(DiseaseDrugFragment("Bibliography_BibliographySummaryFragment"))
     }
-    "return valid response for Bibliography similar entities summary fragment" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
+    "return valid response for Bibliography similar entities summary fragment" taggedAs (
+      IntegrationTestTag,
+      ClickhouseTestTag
+    ) in {
       testQueryAgainstGqlEndpoint(TargetFragment("Bibliography_SimilarEntitiesSummary"))
     }
   }

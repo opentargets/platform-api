@@ -156,7 +156,7 @@ class Backend @Inject() (implicit
       // Remove the targetId property
       val updatedObj: JsObject = myObj - "targetId"
 
-      //transform the object in a key value pair array
+      // transform the object in a key value pair array
       val properties = (updatedObj.keys).toSeq
       val keyValuePairs = properties.map { propName =>
         val value = (updatedObj \ propName).get
@@ -982,11 +982,11 @@ class Backend @Inject() (implicit
   }
 
   /** @param index
-    * key of index (name field) in application.conf
+    *   key of index (name field) in application.conf
     * @param default
-    * fallback index name
+    *   fallback index name
     * @return
-    * elasticsearch index name resolved from application.conf or default.
+    *   elasticsearch index name resolved from application.conf or default.
     */
   private def getIndexOrDefault(index: String, default: Option[String] = None): String =
     defaultESSettings.entities
@@ -996,7 +996,7 @@ class Backend @Inject() (implicit
 
   /** Get the entity ids for a given set of facet filters.
     * @return
-    * An indexed sequence of entity id sets.
+    *   An indexed sequence of entity id sets.
     */
   private def resolveEntityIdsFromFacets(facetFilters: Seq[String],
                                          index: String
@@ -1006,11 +1006,11 @@ class Backend @Inject() (implicit
     facets.await.map(_.entityIds.getOrElse(Seq.empty))
   }
 
-  /** Reduce a set of BIDs with the BIDs derived from the facets.
-    * If the set of BIDs is empty, the BIDs are derived from the facets.
-    * If the set of facets is empty, the BIDs are returned as is.
-    * If both the set of BIDs and the set of facets are not empty, the BIDs are intersected with the BIDs derived from the facets.
-    * If the intersection is empty, a Set of "" is returned to ensure that no ids are returned.
+  /** Reduce a set of BIDs with the BIDs derived from the facets. If the set of BIDs is empty, the
+    * BIDs are derived from the facets. If the set of facets is empty, the BIDs are returned as is.
+    * If both the set of BIDs and the set of facets are not empty, the BIDs are intersected with the
+    * BIDs derived from the facets. If the intersection is empty, a Set of "" is returned to ensure
+    * that no ids are returned.
     *
     * @param index
     * @param bIDs

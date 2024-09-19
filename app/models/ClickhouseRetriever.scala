@@ -16,8 +16,9 @@ import scala.concurrent.Future
 import scala.language.implicitConversions
 import scala.util.{Failure, Success}
 
-class ClickhouseRetriever(config: OTSettings)(implicit val dbConfig: DatabaseConfig[ClickHouseProfile])
-    extends Logging {
+class ClickhouseRetriever(config: OTSettings)(implicit
+    val dbConfig: DatabaseConfig[ClickHouseProfile]
+) extends Logging {
 
   import dbConfig.profile.api._
 

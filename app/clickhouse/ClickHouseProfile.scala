@@ -44,7 +44,9 @@ final class CHSingleColumnQueryExtensionMethods[B1, P1, C[_]](val q: Query[Rep[P
   def any(implicit tm: OptionTM): Rep[Option[B1]] = CHLibrary.Any.column[Option[B1]](q.toNode)
 }
 
-trait ClickHouseProfile extends JdbcProfile with JdbcActionComponent.MultipleRowsPerStatementSupport {
+trait ClickHouseProfile
+    extends JdbcProfile
+    with JdbcActionComponent.MultipleRowsPerStatementSupport {
   override protected def computeCapabilities: Set[Capability] =
     (super.computeCapabilities
       - RelationalCapabilities.foreignKeyActions

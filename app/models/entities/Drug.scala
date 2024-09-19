@@ -69,7 +69,7 @@ case class Drug(
     name: String,
     synonyms: Seq[String],
     tradeNames: Seq[String],
-    childChemblIds: Option[Seq[String]], //Gone?
+    childChemblIds: Option[Seq[String]], // Gone?
     yearOfFirstApproval: Option[Int],
     drugType: String,
     isApproved: Option[Boolean],
