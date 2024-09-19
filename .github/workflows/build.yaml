@@ -27,8 +27,8 @@ jobs:
         name: Install Scala
         uses: olafurpg/setup-scala@v11
         with:
-          scala-version: 2.13.10
-          java-version: openjdk@1.11
+          scala-version: 3.5.0
+          java-version: openjdk@21
 
       - id: cache
         name: Cache dependencies
