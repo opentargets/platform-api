@@ -104,7 +104,7 @@ class ElasticRetriever @Inject() (
 
     elems.map {
       case _: RequestFailure                       => JsNull
-      case results: RequestSuccess[SearchResponse] =>
+      case results =>
         // parse the full body response into JsValue
         // thus, we can apply Json Transformations from JSON Play
         val result = Json.parse(results.body.get)
@@ -187,7 +187,7 @@ class ElasticRetriever @Inject() (
         logger.debug(s"Request failure for query: $searchQuery")
         logger.error(s"Elasticsearch error: ${rf.error}")
         (IndexedSeq.empty, JsNull)
-      case results: RequestSuccess[SearchResponse] =>
+      case results =>
         // parse the full body response into JsValue
         val result = Json.parse(results.body.get)
 
@@ -240,7 +240,7 @@ class ElasticRetriever @Inject() (
 
     elems.map {
       case _: RequestFailure                       => (IndexedSeq.empty, 0, None)
-      case results: RequestSuccess[SearchResponse] =>
+      case results =>
         // parse the full body response into JsValue
         // thus, we can apply Json Transformations from JSON Play
         val result = Json.parse(results.body.get)
@@ -309,7 +309,7 @@ class ElasticRetriever @Inject() (
 
     elems.map {
       case _: RequestFailure                       => (IndexedSeq.empty, 0, None)
-      case results: RequestSuccess[SearchResponse] =>
+      case results =>
         // parse the full body response into JsValue
         // thus, we can apply Json Transformations from JSON Play
         val result = Json.parse(results.body.get)
@@ -395,7 +395,7 @@ class ElasticRetriever @Inject() (
 
     elems.map {
       case _: RequestFailure                       => (IndexedSeq.empty, JsNull, None)
-      case results: RequestSuccess[SearchResponse] =>
+      case results =>
         // parse the full body response into JsValue
         // thus, we can apply Json Transformations from JSON Play
         val result = Json.parse(results.body.get)
@@ -447,7 +447,7 @@ class ElasticRetriever @Inject() (
 
         elems.map {
           case _: RequestFailure                       => IndexedSeq.empty
-          case results: RequestSuccess[SearchResponse] =>
+          case results =>
             // parse the full body response into JsValue
             // thus, we can apply Json Transformations from JSON Play
             val result = Json.parse(results.body.get)
