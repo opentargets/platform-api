@@ -15,18 +15,19 @@ import play.api.mvc.{Request, Result}
 import play.api.test.Helpers.{POST, contentAsString}
 import play.api.test.{FakeRequest, Injecting}
 import test_configuration.{ClickhouseTestTag, IntegrationTestTag}
+import scala.io.Source
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.Future
-import scala.reflect.io.File
 
 object GqlTest {
 
   /** Retrieves filename from target resources and returns query as string with quotes escaped.
     */
-  def getQueryFromFile(filename: String): String =
-    File(this.getClass.getResource(s"/gqlQueries/$filename.gql").getPath)
-      .lines()
+  def getQueryFromFile(filename: String): String = {
+    val queryFile = Source.fromFile(this.getClass.getResource(s"/gqlQueries/$filename.gql").getPath)
+    queryFile
+      .getLines()
       .withFilter(_.nonEmpty)
       .map(str =>
         str.flatMap {
@@ -35,6 +36,7 @@ object GqlTest {
         }
       )
       .mkString("\\n")
+  }
 
   def generateQueryString(query: String, variables: String): JsValue =
     Json.parse(s"""{"query": "$query" , $variables }""")
