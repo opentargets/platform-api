@@ -7,13 +7,17 @@ import scala.io.{BufferedSource, Source}
 
 trait GqlItTestInputs {
 
-  val geneFile: BufferedSource = Source.fromFile(this.getClass.getResource(s"/gqlInputs/genes.txt").getPath)
+  val geneFile: BufferedSource =
+    Source.fromFile(this.getClass.getResource(s"/gqlInputs/genes.txt").getPath)
   lazy val geneInputs: Seq[String] = geneFile.getLines().toList
-  val efoFile: BufferedSource = Source.fromFile(this.getClass.getResource(s"/gqlInputs/efos.txt").getPath)
+  val efoFile: BufferedSource =
+    Source.fromFile(this.getClass.getResource(s"/gqlInputs/efos.txt").getPath)
   lazy val diseaseInputs: Seq[String] = efoFile.getLines().toList
-  val drugFile: BufferedSource = Source.fromFile(this.getClass.getResource(s"/gqlInputs/drugs.txt").getPath)
+  val drugFile: BufferedSource =
+    Source.fromFile(this.getClass.getResource(s"/gqlInputs/drugs.txt").getPath)
   lazy val drugInputs: Seq[String] = drugFile.getLines().toList
-  val goFile: BufferedSource = Source.fromFile(this.getClass.getResource(s"/gqlInputs/goIds.txt").getPath)
+  val goFile: BufferedSource =
+    Source.fromFile(this.getClass.getResource(s"/gqlInputs/goIds.txt").getPath)
   lazy val goInputs: Seq[String] = goFile.getLines().toList
 
   val aggregationFilterMap: Map[String, Seq[String]] = Map(
