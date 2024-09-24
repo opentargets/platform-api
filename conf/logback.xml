@@ -27,7 +27,7 @@
     <logger name="com.avaje.ebeaninternal.server.core.XmlConfigLoader" level="OFF"/>
     <logger name="com.avaje.ebeaninternal.server.lib.BackgroundThread" level="OFF"/>
     <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF"/>
-    <logger name="ru.yandex.clickhouse.ClickHouseDriver" level="OFF"/>
+    <logger name="com.clickhouse.jdbc.ClickHouseDriver" level="OFF"/>
     <logger name="com.zaxxer.hikari.pool.HikariPool" level="OFF"/>
     <logger name="com.sksamuel.elastic4s.http.ResponseHandler" level="INFO"/>
     <logger name="org.apache.pekko" level="ERROR"/>
