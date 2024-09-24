@@ -36,7 +36,7 @@ val sangriaVersion = "4.1.1"
 libraryDependencies += "com.clickhouse" % "clickhouse-jdbc" % "0.6.4"
 libraryDependencies += "org.apache.httpcomponents.client5" % "httpclient5" % "5.3.1"
 libraryDependencies += "org.sangria-graphql" %% "sangria" % sangriaVersion
-libraryDependencies += "org.sangria-graphql" %% "sangria-play-json" % "2.0.2"
+libraryDependencies += "org.sangria-graphql" %% "sangria-play-json-play30" % "2.0.3"
 
 lazy val catsVersion = "2.12.0"
 lazy val cats = Seq(
