@@ -5,7 +5,7 @@ import models.gql.Fetchers.{diseasesFetcher, targetsFetcher}
 import play.api.Logging
 import play.api.libs.json.{JsValue, Json, OFormat}
 import models.entities.CredibleSet.credibleSetImp
-import models.gql.Objects.{diseaseImp, targetImp}
+import models.gql.Objects.{diseaseImp, targetImp, biosampleImp}
 import sangria.schema.{
   BooleanType,
   Field,
@@ -76,10 +76,14 @@ object GwasIndex extends Logging {
       }
     ),
     Field(
-      "biosampleFromSourceId",
-      OptionType(StringType),
-      description = Some(""),
-      resolve = js => (js.value \ "biosampleFromSourceId").asOpt[String]
+      "biosample",
+      OptionType(biosampleImp),
+      Some("Biosample"),
+      resolve = js => {
+        val biosampleId = (js.value \ "biosampleFromSourceId").asOpt[String].getOrElse("")
+        logger.info(s"Finding biosample: $biosampleId")
+        js.ctx.getBiosample(biosampleId)
+      }
     ),
     Field(
       "nSamples",

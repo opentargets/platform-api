@@ -14,6 +14,7 @@ import models.Helpers._
 import models.db.{QAOTF, QLITAGG, QW2V, SentenceQuery}
 import models.entities.Publication._
 import models.entities.Associations._
+import models.entities.Biosample._
 import models.entities.Configuration._
 import models.entities.DiseaseHPOs._
 import models.entities.Drug._
@@ -140,6 +141,22 @@ class Backend @Inject() (implicit
     val indexName = getIndexOrDefault("variant_index")
 
     esRetriever.getByIds(indexName, ids, fromJsValue[VariantIndex])
+  }
+
+  def getBiosample(id: String): Future[Option[Biosample]] = {
+    val indexName = getIndexOrDefault("biosample", Some("biosample"))
+    esRetriever
+      .getByIndexedTermsMust(
+        indexName,
+        Map("biosampleId.keyword" -> Seq(id)),
+        Pagination.mkDefault,
+        fromJsValue[Biosample]
+      )
+      .map {
+        case (Seq(), _) => None
+        case (hits, aggs) =>
+          Some(hits.head)
+      }
   }
 
   def getStudies(queryArgs: StudyQueryArgs,
