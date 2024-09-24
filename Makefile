@@ -13,10 +13,10 @@ run: ## Runs API
 debug: ## Debugs API
 	@sbt -jvm-debug 9999 run
 
-run_log: ## Runs API using the logback file specified in logfile eg: make run logfile=./conf/logback.xml
+run_log: ## Runs API using the logback file specified in logfile eg: make run_log logfile=./conf/logback.xml
 	@sbt run -Dlogback.configurationFile=${logfile}
 
-debug_log: ## Debugs API using the logback file specified in logfile eg: make run logfile=./conf/logback.xml
+debug_log: ## Debugs API using the logback file specified in logfile eg: make debug_log logfile=./conf/logback.xml
 	@sbt -jvm-debug 9999 run -Dlogback.configurationFile=${logfile}
 
 es_tunnel: ## Create tunnel connection to ElasticSearch eg make es_tunnel zone europe-west1-d instance trnplt-es-0-esearch-fl6c
