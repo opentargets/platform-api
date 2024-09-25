@@ -64,42 +64,4 @@ class ClickhouseRetriever(config: OTSettings)(implicit
         Vector.empty
     }
   }
-
-  def getAssociationsOTF(
-      tableName: String,
-      AId: String,
-      AIDs: Set[String],
-      BIDs: Set[String],
-      BFilter: Option[String],
-      datasourceSettings: Seq[DatasourceSettings],
-      pagination: Pagination
-  ): Future[Vector[Association]] = {
-    val weights = datasourceSettings.map(s => (s.id, s.weight))
-    val dontPropagate = datasourceSettings.withFilter(!_.propagate).map(_.id).toSet
-    val aotfQ = QAOTF(
-      tableName,
-      AId,
-      AIDs,
-      BIDs,
-      BFilter,
-      None,
-      weights,
-      dontPropagate,
-      pagination.offset,
-      pagination.size
-    ).query.as[Association]
-
-    logger.debug(aotfQ.statements.mkString(" "))
-
-    db.run(aotfQ.asTry).map {
-      case Success(v) => v
-      case Failure(ex) =>
-        logger.error(ex.toString)
-        logger.error(
-          "harmonic associations query failed " +
-            s"with query: ${aotfQ.statements.mkString(" ")}"
-        )
-        Vector.empty
-    }
-  }
 }

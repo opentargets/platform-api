@@ -12,17 +12,12 @@ import sangria.util.tag.@@
 
 object Arguments {
 
-  import Aggregations._
-
   val paginationGQLImp: InputObjectType[Pagination] = deriveInputObjectType[Pagination]()
 
   val datasourceSettingsInputImp: InputObjectType[DatasourceSettings] =
     deriveInputObjectType[DatasourceSettings](
       InputObjectTypeName("DatasourceSettingsInput")
     )
-
-  val aggregationFilterImp: InputObjectType[AggregationFilter] =
-    deriveInputObjectType[AggregationFilter]()
 
   val entityNames: Argument[Option[Seq[String]]] = Argument(
     "entityNames",
@@ -43,10 +38,17 @@ object Arguments {
   )
   val pageSize: Argument[Option[Int]] = Argument("size", OptionInputType(IntType))
   val cursor: Argument[Option[String]] = Argument("cursor", OptionInputType(StringType))
+  val scoreThreshold: Argument[Option[Double]] = Argument(
+    "scoreThreshold",
+    OptionInputType(FloatType),
+    description = "Threshold similarity between 0 and 1"
+  )
   val databaseName: Argument[Option[String]] =
     Argument("sourceDatabase", OptionInputType(StringType), description = "Database name")
   val queryString: Argument[String] =
     Argument("queryString", StringType, description = "Query string")
+  val category: Argument[Option[String]] =
+    Argument("category", OptionInputType(StringType), description = "Category")
   val queryTerms: Argument[Seq[String @@ FromInput.CoercedScalaResult]] =
     Argument("queryTerms", ListInputType(StringType), description = "List of query terms to map")
   val optQueryString: Argument[Option[String]] =
@@ -140,15 +142,9 @@ object Arguments {
              description = "List of datasource settings"
     )
 
-  val aggregationFiltersListArg: Argument[Option[Seq[AggregationFilter]]] =
-    Argument("aggregationFilters",
-             OptionInputType(ListInputType(aggregationFilterImp)),
-             description = "List of the facets to aggregate by"
-    )
-
   val facetFiltersListArg: Argument[Option[Seq[String]]] = Argument(
     "facetFilters",
     OptionInputType(ListInputType(StringType)),
-    description = "List of the facet IDs to filter by (using OR)"
+    description = "List of the facet IDs to filter by (using AND)"
   )
 }

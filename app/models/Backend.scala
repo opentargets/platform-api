@@ -13,7 +13,6 @@ import gql.validators.QueryTermsValidator._
 import models.Helpers._
 import models.db.{QAOTF, QLITAGG, QW2V, SentenceQuery}
 import models.entities.Publication._
-import models.entities.Aggregations._
 import models.entities.Associations._
 import models.entities.Configuration._
 import models.entities.DiseaseHPOs._
@@ -447,7 +446,8 @@ class Backend @Inject() (implicit
   def searchFacets(
       qString: String,
       pagination: Option[Pagination],
-      entityNames: Seq[String]
+      entityNames: Seq[String],
+      category: Option[String]
   ): Future[SearchFacetsResults] = {
     val entities = for {
       e <- defaultESSettings.entities
@@ -455,7 +455,8 @@ class Backend @Inject() (implicit
     } yield e
     esRetriever.getSearchFacetsResultSet(entities,
                                          qString,
-                                         pagination.getOrElse(Pagination.mkDefault)
+                                         pagination.getOrElse(Pagination.mkDefault),
+                                         category
     )
   }
 
@@ -465,227 +466,85 @@ class Backend @Inject() (implicit
       defaultOTSettings.clickhouse.disease.associations.name
     )
 
-  def getAssociationsDiseaseFixed(
-      disease: Disease,
+  def getAssociationsEntityFixed(
+      tableName: String,
       datasources: Option[Seq[DatasourceSettings]],
-      indirect: Boolean,
-      facetFilters: Seq[String],
-      aggregationFilters: Seq[AggregationFilter],
-      targetSet: Set[String],
+      fixedEntityId: String,
+      indirectIds: Set[String],
+      bIds: Set[String],
       filter: Option[String],
       orderBy: Option[(String, String)],
       pagination: Option[Pagination]
   ): Future[Associations] = {
     val page = pagination.getOrElse(Pagination.mkDefault)
     val dss = datasources.getOrElse(defaultOTSettings.clickhouse.harmonic.datasources)
-
     val weights = dss.map(s => (s.id, s.weight))
+    val mustIncludeDatasources = dss.withFilter(_.required).map(_.id).toSet
     val dontPropagate = dss.withFilter(!_.propagate).map(_.id).toSet
     val aotfQ = QAOTF(
-      defaultOTSettings.clickhouse.disease.associations.name,
-      disease.id,
+      tableName,
+      fixedEntityId,
       _,
       _,
       filter,
       orderBy,
       weights,
+      _,
       dontPropagate,
       page.offset,
       page.size
     )
+    val simpleQ = aotfQ(indirectIds, bIds, mustIncludeDatasources).simpleQuery(0, 100000)
 
+    (dbRetriever.executeQuery[String, Query](simpleQ)) flatMap { case assocIds =>
+      val assocIdSet = assocIds.toSet
+      val fullQ = aotfQ(indirectIds, assocIdSet, Set.empty).query
+
+      if (assocIdSet.nonEmpty) {
+        dbRetriever.executeQuery[Association, Query](fullQ) map { case assocs =>
+          val filteredAssocs = {
+            if (mustIncludeDatasources.isEmpty) {
+              assocs
+            } else {
+              assocs.flatMap { assoc =>
+                val filteredDS =
+                  assoc.datasourceScores.filter(ds => mustIncludeDatasources.contains(ds.id))
+                if (filteredDS.isEmpty) None
+                else Some(assoc)
+              }
+            }
+          }
+          Associations(dss, assocIdSet.size, filteredAssocs)
+        }
+      } else {
+        Future.successful(Associations(dss, assocIdSet.size, Vector.empty))
+      }
+    }
+  }
+
+  def getAssociationsDiseaseFixed(
+      disease: Disease,
+      datasources: Option[Seq[DatasourceSettings]],
+      indirect: Boolean,
+      facetFilters: Seq[String],
+      targetSet: Set[String],
+      filter: Option[String],
+      orderBy: Option[(String, String)],
+      pagination: Option[Pagination]
+  ): Future[Associations] = {
     logger.debug(s"get disease id ${disease.name}")
     val indirectIDs = if (indirect) disease.descendants.toSet + disease.id else Set.empty[String]
     val targetIds = applyFacetFiltersToBIDs("facet_search_target", targetSet, facetFilters)
-    val simpleQ = aotfQ(indirectIDs, targetIds).simpleQuery(0, 100000)
-
-    val evidencesIndexName = defaultESSettings.entities
-      .find(_.name == "evidences_aotf")
-      .map(_.index)
-      .getOrElse("evidences_aotf")
-
-    val tractabilityMappings =
-      List("SmallMolecule", "Antibody", "Protac", "OtherModalities").map { t =>
-        s"tractability$t" -> AggregationMapping(
-          s"facet_tractability_${t.toLowerCase}",
-          IndexedSeq.empty,
-          nested = false
-        )
-      }.toMap
-    val mappings = Map(
-      "dataTypes" -> AggregationMapping(
-        "datatype_id",
-        IndexedSeq("datatype_id", "datasource_id"),
-        false
-      ),
-      "pathwayTypes" -> AggregationMapping("facet_reactome", IndexedSeq("l1", "l2"), true),
-      "targetClasses" -> AggregationMapping("facet_classes", IndexedSeq("l1", "l2"), true)
-    ) ++ tractabilityMappings
-
-    val queries = ElasticRetriever.aggregationFilterProducer(aggregationFilters, mappings)
-    val filtersMap = queries._2
-
-    val uniqueTargetsAgg =
-      CardinalityAggregation("uniques", Some("target_id.keyword"), precisionThreshold = Some(40000))
-    val reverseTargetsAgg = ReverseNestedAggregation("uniques", None, Seq(uniqueTargetsAgg))
-
-    val queryAggs = Seq(
-      FilterAggregation(
-        "uniques",
-        queries._1,
-        subaggs = Seq(
-          uniqueTargetsAgg,
-          TermsAggregation("ids", field = Some("target_id.keyword"), size = Some(40000))
-        )
-      ),
-      FilterAggregation(
-        "dataTypes",
-        filtersMap("dataTypes"),
-        subaggs = Seq(
-          uniqueTargetsAgg,
-          TermsAggregation(
-            "aggs",
-            Some("datatype_id.keyword"),
-            size = Some(100),
-            subaggs = Seq(
-              uniqueTargetsAgg,
-              TermsAggregation(
-                "aggs",
-                Some("datasource_id.keyword"),
-                size = Some(100),
-                subaggs = Seq(
-                  uniqueTargetsAgg
-                )
-              )
-            )
-          )
-        )
-      ),
-      FilterAggregation(
-        "pathwayTypes",
-        filtersMap("pathwayTypes"),
-        subaggs = Seq(
-          uniqueTargetsAgg,
-          NestedAggregation(
-            "aggs",
-            path = "facet_reactome",
-            subaggs = Seq(
-              TermsAggregation(
-                "aggs",
-                Some("facet_reactome.l1.keyword"),
-                size = Some(100),
-                subaggs = Seq(
-                  TermsAggregation(
-                    "aggs",
-                    Some("facet_reactome.l2.keyword"),
-                    size = Some(100),
-                    subaggs = Seq(reverseTargetsAgg)
-                  ),
-                  reverseTargetsAgg
-                )
-              ),
-              reverseTargetsAgg
-            )
-          )
-        )
-      ),
-      FilterAggregation(
-        "targetClasses",
-        filtersMap("targetClasses"),
-        subaggs = Seq(
-          uniqueTargetsAgg,
-          NestedAggregation(
-            "aggs",
-            path = "facet_classes",
-            subaggs = Seq(
-              TermsAggregation(
-                "aggs",
-                Some("facet_classes.l1.keyword"),
-                size = Some(100),
-                subaggs = Seq(
-                  TermsAggregation(
-                    "aggs",
-                    Some("facet_classes.l2.keyword"),
-                    size = Some(100),
-                    subaggs = Seq(reverseTargetsAgg)
-                  ),
-                  reverseTargetsAgg
-                )
-              ),
-              reverseTargetsAgg
-            )
-          )
-        )
-      )
-    ) ++ tractabilityMappings.map { kv =>
-      FilterAggregation(
-        kv._1,
-        ElasticRetriever.aggregationFilterProducer(aggregationFilters, Map(kv))._1,
-        subaggs = Seq(
-          uniqueTargetsAgg,
-          TermsAggregation(
-            "aggs",
-            Some(s"${kv._2.key}.keyword"),
-            size = Some(100),
-            subaggs = Seq(
-              uniqueTargetsAgg
-            )
-          )
-        )
-      )
-    }
-
-    val esQ = esRetriever.getAggregationsByQuery(
-      evidencesIndexName,
-      boolQuery()
-        .withShould(
-          boolQuery()
-            .withMust(termsQuery("disease_id.keyword", indirectIDs))
-            .withMust(not(termsQuery("datasource_id.keyword", dontPropagate)))
-        )
-        .withShould(
-          boolQuery()
-            .withMust(termQuery("disease_id.keyword", disease.id))
-        ),
-      queryAggs
-    ) map {
-      case obj: JsObject =>
-        logger.trace(Json.prettyPrint(obj))
-
-        val ids = (obj \ "uniques" \ "ids" \ "buckets" \\ "key").map(_.as[String]).toSet
-        val uniques = (obj \ "uniques" \\ "value").head.as[Long]
-        val restAggs: Seq[NamedAggregation] = ((obj - "uniques").fields map { pair =>
-          NamedAggregation(
-            pair._1,
-            (pair._2 \ "uniques" \\ "value").headOption.map(jv => jv.as[Long]),
-            ArraySeq.unsafeWrapArray((pair._2 \\ "buckets").head.as[Array[entities.Aggregation]])
-          )
-        }).to(Seq)
-
-        Some((Aggregations(uniques, restAggs), ids))
-
-      case _ => None
-    }
-
-    // TODO use option to enable or disable the computation of each of the sides
-    (dbRetriever.executeQuery[String, Query](simpleQ) zip esQ) flatMap { case (tIDs, esR) =>
-      val tids = esR.map(_._2 intersect tIDs.toSet).getOrElse(tIDs.toSet)
-      val fullQ = aotfQ(indirectIDs, tids).query
-
-      logger.debug(
-        s"disease fixed get simpleQ n ${tIDs.size} " +
-          s"agg n ${esR.map(_._2.size).getOrElse(-1)} " +
-          s"inter n ${tids.size}"
-      )
-
-      if (tids.nonEmpty) {
-        dbRetriever.executeQuery[Association, Query](fullQ) map { case assocs =>
-          Associations(dss, esR.map(_._1), tids.size, assocs)
-        }
-      } else {
-        Future.successful(Associations(dss, esR.map(_._1), tids.size, Vector.empty))
-      }
-    }
+    getAssociationsEntityFixed(
+      defaultOTSettings.clickhouse.disease.associations.name,
+      datasources,
+      disease.id,
+      indirectIDs,
+      targetIds,
+      filter,
+      orderBy,
+      pagination
+    )
   }
 
   def getAssociationsTargetFixed(
@@ -693,171 +552,37 @@ class Backend @Inject() (implicit
       datasources: Option[Seq[DatasourceSettings]],
       indirect: Boolean,
       facetFilters: Seq[String],
-      aggregationFilters: Seq[AggregationFilter],
       diseaseSet: Set[String],
       filter: Option[String],
       orderBy: Option[(String, String)],
       pagination: Option[Pagination]
   ): Future[Associations] = {
-    val page = pagination.getOrElse(Pagination.mkDefault)
-    val dss = datasources.getOrElse(defaultOTSettings.clickhouse.harmonic.datasources)
-
-    val weights = dss.map(s => (s.id, s.weight))
-    val dontPropagate = dss.withFilter(!_.propagate).map(_.id).toSet
-    val aotfQ = QAOTF(
-      defaultOTSettings.clickhouse.target.associations.name,
-      target.id,
-      _,
-      _,
-      filter,
-      orderBy,
-      weights,
-      dontPropagate,
-      page.offset,
-      page.size
-    )
-
     logger.debug(s"get target id ${target.approvedSymbol} ACTUALLY DISABLED!")
     val indirectIDs = if (indirect) {
       val interactions =
-        Interactions.find(target.id, None, pagination = Some(Pagination(0, 10000))) map {
+        Interactions.find(target.id, None, None, pagination = Some(Pagination(0, 10000))) map {
           case Some(ints) =>
             ints.rows
               .flatMap(int => (int \ ("targetB")).asOpt[String].filter(_.startsWith("ENSG")))
               .toSet + target.id
           case None => Set.empty + target.id
         }
-
       interactions.await
-
     } else Set.empty[String]
 
     val diseaseIds =
       applyFacetFiltersToBIDs("facet_search_disease", diseaseSet, facetFilters)
-    val simpleQ = aotfQ(indirectIDs, diseaseIds).simpleQuery(0, 100000)
 
-    val evidencesIndexName = defaultESSettings.entities
-      .find(_.name == "evidences_aotf")
-      .map(_.index)
-      .getOrElse("evidences_aotf")
-
-    val mappings = Map(
-      "dataTypes" -> AggregationMapping(
-        "datatype_id",
-        IndexedSeq("datatype_id", "datasource_id"),
-        false
-      ),
-      "therapeuticAreas" -> AggregationMapping("facet_therapeuticAreas", IndexedSeq.empty, false)
+    getAssociationsEntityFixed(
+      defaultOTSettings.clickhouse.target.associations.name,
+      datasources,
+      target.id,
+      indirectIDs,
+      diseaseIds,
+      filter,
+      orderBy,
+      pagination
     )
-
-    val queries = ElasticRetriever.aggregationFilterProducer(aggregationFilters, mappings)
-    val filtersMap = queries._2
-
-    val uniqueDiseasesAgg = CardinalityAggregation(
-      "uniques",
-      Some("disease_id.keyword"),
-      precisionThreshold = Some(40000)
-    )
-
-    val queryAggs = Seq(
-      FilterAggregation(
-        "uniques",
-        queries._1,
-        subaggs = Seq(
-          uniqueDiseasesAgg,
-          TermsAggregation("ids", field = Some("disease_id.keyword"), size = Some(40000))
-        )
-      ),
-      FilterAggregation(
-        "dataTypes",
-        filtersMap("dataTypes"),
-        subaggs = Seq(
-          uniqueDiseasesAgg,
-          TermsAggregation(
-            "aggs",
-            Some("datatype_id.keyword"),
-            size = Some(100),
-            subaggs = Seq(
-              uniqueDiseasesAgg,
-              TermsAggregation(
-                "aggs",
-                Some("datasource_id.keyword"),
-                size = Some(100),
-                subaggs = Seq(
-                  uniqueDiseasesAgg
-                )
-              )
-            )
-          )
-        )
-      ),
-      FilterAggregation(
-        "therapeuticAreas",
-        filtersMap("therapeuticAreas"),
-        subaggs = Seq(
-          uniqueDiseasesAgg,
-          TermsAggregation(
-            "aggs",
-            Some("facet_therapeuticAreas.keyword"),
-            size = Some(100),
-            subaggs = Seq(
-              uniqueDiseasesAgg
-            )
-          )
-        )
-      )
-    )
-
-    val esQ = esRetriever.getAggregationsByQuery(
-      evidencesIndexName,
-      boolQuery()
-        .withShould(
-          boolQuery()
-            .withMust(termsQuery("target_id.keyword", indirectIDs))
-            .withMust(not(termsQuery("datasource_id.keyword", dontPropagate)))
-        )
-        .withShould(
-          boolQuery()
-            .withMust(termQuery("target_id.keyword", target.id))
-        ),
-      queryAggs
-    ) map {
-      case obj: JsObject =>
-        logger.trace(Json.prettyPrint(obj))
-
-        val ids = (obj \ "uniques" \ "ids" \ "buckets" \\ "key").map(_.as[String]).toSet
-        val uniques = (obj \ "uniques" \\ "value").head.as[Long]
-        val restAggs = (obj - "uniques").fields map { pair =>
-          NamedAggregation(
-            pair._1,
-            (pair._2 \ "uniques" \\ "value").headOption.map(jv => jv.as[Long]),
-            ArraySeq.unsafeWrapArray((pair._2 \\ "buckets").head.as[Array[entities.Aggregation]])
-          )
-        }
-
-        Some((Aggregations(uniques, restAggs.to(Seq)), ids))
-
-      case _ => None
-    }
-
-    (dbRetriever.executeQuery[String, Query](simpleQ) zip esQ) flatMap { case (dIDs, esR) =>
-      val dids = esR.map(_._2 intersect dIDs.toSet).getOrElse(dIDs.toSet)
-      val fullQ = aotfQ(indirectIDs, dids).query
-
-      logger.debug(
-        s"target fixed get simpleQ n ${dIDs.size} " +
-          s"agg n ${esR.map(_._2.size).getOrElse(-1)} " +
-          s"inter n ${dids.size}"
-      )
-
-      if (dids.nonEmpty) {
-        dbRetriever.executeQuery[Association, Query](fullQ) map { case assocs =>
-          Associations(dss, esR.map(_._1), dids.size, assocs)
-        }
-      } else {
-        Future.successful(Associations(dss, esR.map(_._1), dids.size, Vector.empty))
-      }
-    }
   }
 
   def getSimilarW2VEntities(
@@ -996,14 +721,16 @@ class Backend @Inject() (implicit
 
   /** Get the entity ids for a given set of facet filters.
     * @return
-    *   An indexed sequence of entity id sets.
+    * A sequence of entity id sets.
     */
   private def resolveEntityIdsFromFacets(facetFilters: Seq[String],
                                          index: String
-  ): IndexedSeq[Seq[String]] = {
+  ): Seq[Set[String]] = {
     val facets =
       esRetriever.getByIds(getIndexOrDefault(index), facetFilters, fromJsValue[Facet])
-    facets.await.map(_.entityIds.getOrElse(Seq.empty))
+    val entityIdsGroupedByCategory =
+      facets.await.groupMap(_.category)(_.entityIds.getOrElse(Set.empty))
+    entityIdsGroupedByCategory.map(_._2.flatten.toSet).toSeq
   }
 
   /** Reduce a set of BIDs with the BIDs derived from the facets. If the set of BIDs is empty, the
@@ -1024,11 +751,11 @@ class Backend @Inject() (implicit
     if (facetFilters.isEmpty) {
       bIDs
     } else {
-      val entityIdsFromFacets: IndexedSeq[Seq[String]] =
+      val entityIdsFromFacets: Seq[Set[String]] =
         resolveEntityIdsFromFacets(facetFilters, index)
       val entityIdsFromFacetsIntersect: Set[String] =
         if (entityIdsFromFacets.isEmpty) Set.empty
-        else entityIdsFromFacets.map(_.toSet).reduce(_ intersect _)
+        else entityIdsFromFacets.reduce(_ intersect _)
       if (bIDs.isEmpty) emptySetToSetOfEmptyString(entityIdsFromFacetsIntersect)
       else emptySetToSetOfEmptyString(bIDs.intersect(entityIdsFromFacetsIntersect))
     }

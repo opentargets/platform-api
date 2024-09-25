@@ -21,7 +21,6 @@ case class Association(
 
 case class Associations(
     datasources: Seq[DatasourceSettings],
-    aggregations: Option[Aggregations],
     count: Long,
     rows: Vector[Association]
 )
@@ -29,7 +28,7 @@ case class Associations(
 case class EvidenceSource(datasource: String, datatype: String)
 
 object Associations {
-  val empty: Associations = Associations(Seq.empty, None, 0, Vector.empty)
+  val empty: Associations = Associations(Seq.empty, 0, Vector.empty)
 
   implicit val getAssociationOTFRowFromDB: GetResult[Association] =
     GetResult { r =>
