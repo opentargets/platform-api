@@ -502,7 +502,7 @@ class Backend @Inject() (implicit
 
       if (assocIdSet.nonEmpty) {
         dbRetriever.executeQuery[Association, Query](fullQ) map { case assocs =>
-          val filteredAssocs = {
+          val filteredAssocs =
             if (mustIncludeDatasources.isEmpty) {
               assocs
             } else {
@@ -513,7 +513,6 @@ class Backend @Inject() (implicit
                 else Some(assoc)
               }
             }
-          }
           Associations(dss, assocIdSet.size, filteredAssocs)
         }
       } else {
@@ -721,7 +720,7 @@ class Backend @Inject() (implicit
 
   /** Get the entity ids for a given set of facet filters.
     * @return
-    * A sequence of entity id sets.
+    *   A sequence of entity id sets.
     */
   private def resolveEntityIdsFromFacets(facetFilters: Seq[String],
                                          index: String

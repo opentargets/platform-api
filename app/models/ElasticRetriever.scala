@@ -175,10 +175,10 @@ class ElasticRetriever @Inject() (
       excludedFields: Seq[String] = Seq.empty
   ): Future[(IndexedSeq[A], JsValue)] = {
     val indexQuery: IndexQuery[V] = IndexQuery(esIndex = esIndex,
-      kv = kv,
-      pagination = pagination,
-      aggs = aggs,
-      excludedFields = excludedFields
+                                               kv = kv,
+                                               pagination = pagination,
+                                               aggs = aggs,
+                                               excludedFields = excludedFields
     )
     val searchRequest: SearchRequest = IndexQueryMust(indexQuery)
     getByIndexedQuery(searchRequest, sortByField, buildF)
@@ -594,13 +594,12 @@ class ElasticRetriever @Inject() (
     }
 
     val filterQueries = boolQuery().must(categoryFilter) :: Nil
-    val fnQueries = {
+    val fnQueries =
       if (qString == "*") {
         matchAllQuery() :: Nil
       } else {
         boolQuery().should(Seq(fuzzyQueryFn) ++ exactQueryFn) :: Nil
       }
-    }
     val mainQuery = boolQuery().must(fnQueries ::: filterQueries)
     val aggQuery = termsAgg("categories", "category.keyword").size(1000)
 
@@ -749,9 +748,7 @@ class ElasticRetriever @Inject() (
 
 object ElasticRetriever extends Logging {
 
-  /** *
-    * SortBy case class use the `fieldName` to sort by and asc if `desc` is false
-    * otherwise desc
+  /** * SortBy case class use the `fieldName` to sort by and asc if `desc` is false otherwise desc
     */
   def sortByAsc(fieldName: String): Some[FieldSort] = Some(sort.FieldSort(fieldName).asc())
 

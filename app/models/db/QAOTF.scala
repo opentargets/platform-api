@@ -70,12 +70,12 @@ case class QAOTF(
         }
         .toList
 
-    tokens match {
-      case h :: Nil         => Some(h)
-      case h1 :: h2 :: rest => Some(F.and(h1, h2, rest:_*))
-      case _                => None
+      tokens match {
+        case h :: Nil         => Some(h)
+        case h1 :: h2 :: rest => Some(F.and(h1, h2, rest*))
+        case _                => None
+      }
     }
-  }
     val leftIdsC = F.set((AIDs + AId).map(literal).toSeq)
     val nonPP = F.set(nonPropagatedDatasources.map(literal).toSeq)
     val expressionLeft = if (nonPropagatedDatasources.nonEmpty) {
