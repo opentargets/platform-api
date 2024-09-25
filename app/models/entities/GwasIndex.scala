@@ -81,8 +81,11 @@ object GwasIndex extends Logging {
       Some("Biosample"),
       resolve = js => {
         val biosampleId = (js.value \ "biosampleFromSourceId").asOpt[String].getOrElse("")
-        logger.info(s"Finding biosample: $biosampleId")
-        js.ctx.getBiosample(biosampleId)
+        if (biosampleId.isEmpty) {
+          None
+        } else {
+          js.ctx.getBiosample(biosampleId)
+        }
       }
     ),
     Field(
