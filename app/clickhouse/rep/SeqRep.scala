@@ -57,7 +57,7 @@ object SeqRep {
         from.length match {
           case n if n > minLenTokensForStr =>
             val offset: Int = minLenTokensForStr / 2
-            from.slice(offset, n - offset).split("\\),\\(").map(f(_)).toVector
+            from.slice(offset, n - offset).split("\\], \\[").map(f(_)).toVector
           case _ => Vector.empty
         }
       } else
