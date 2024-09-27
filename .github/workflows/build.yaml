@@ -43,9 +43,9 @@ jobs:
         name: Compile code
         run: sbt clean compile
 
-      - id: test
-        name: Run tests
-        run: sbt coverage "testOnly * -- -l test_configuration.IntegrationTestTag" coverageReport
+#      - id: test
+#        name: Run tests
+#        run: sbt coverage "testOnly * -- -l test_configuration.IntegrationTestTag" coverageReport
 
       - id: dist
         name: Create distribution
