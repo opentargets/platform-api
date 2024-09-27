@@ -1,6 +1,5 @@
 package inputs
 
-import models.entities.AggregationFilter
 import org.scalacheck.Gen
 
 import scala.io.{BufferedSource, Source}

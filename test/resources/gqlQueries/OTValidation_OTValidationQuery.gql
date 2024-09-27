@@ -29,7 +29,7 @@ query ValidationQuery($ensemblId: String!, $efoId: String!, $size: Int!) {
         releaseVersion
         primaryProjectId
         primaryProjectHit
-        assessment
+        assessments
         assays {
           description
           isHit
