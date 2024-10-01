@@ -44,7 +44,7 @@ object Associations {
           tuples1,
           tuple => {
             val tokens = tuple.split(",")
-            val left = parseFastString(tokens(0))
+            val left = tokens(0)
             val right = tokens(1).toDouble
             ScoredComponent(left, right)
           }
@@ -53,7 +53,7 @@ object Associations {
           tuples2,
           tuple => {
             val tokens = tuple.split(",")
-            val left = parseFastString(tokens(0))
+            val left = tokens(0)
             val right = tokens(1).toDouble
             ScoredComponent(left, right)
           }

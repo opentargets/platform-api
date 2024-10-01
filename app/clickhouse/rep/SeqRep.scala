@@ -17,6 +17,7 @@ sealed abstract class SeqRep[T, C[_]](val from: String) {
 }
 
 object SeqRep {
+  // TODO: might need to be deleted in next release 25.x.x. This is no longer needed due to update in the driver
   def parseFastString(str: String): String = str.slice(1, str.length - 1)
 
   sealed abstract class NumSeqRep[T](override val from: String, val f: String => T)(implicit
