@@ -169,16 +169,40 @@ class ElasticRetriever @Inject() (
       buildF: JsValue => Option[A],
       aggs: Iterable[AbstractAggregation] = Iterable.empty,
       sortByField: Option[sort.FieldSort] = None,
-      excludedFields: Seq[String] = Seq.empty
+      excludedFields: Seq[String] = Seq.empty,
+      filter: Seq[Query] = Seq.empty
   ): Future[(IndexedSeq[A], JsValue)] = {
     // just log and execute the query
     val indexQuery: IndexQuery[V] = IndexQuery(esIndex = esIndex,
                                                kv = kv,
+                                               filters = filter,
                                                pagination = pagination,
                                                aggs = aggs,
                                                excludedFields = excludedFields
     )
     val searchRequest: SearchRequest = IndexTermsMust(indexQuery)
+    getByIndexedQuery(searchRequest, sortByField, buildF)
+  }
+
+  def getByIndexedTermsShould[A, V](
+      esIndex: String,
+      kv: Map[String, V],
+      pagination: Pagination,
+      buildF: JsValue => Option[A],
+      aggs: Iterable[AbstractAggregation] = Iterable.empty,
+      sortByField: Option[sort.FieldSort] = None,
+      excludedFields: Seq[String] = Seq.empty,
+      filter: Seq[Query] = Seq.empty
+  ): Future[(IndexedSeq[A], JsValue)] = {
+    // just log and execute the query
+    val indexQuery: IndexQuery[V] = IndexQuery(esIndex = esIndex,
+                                               kv = kv,
+                                               filters = filter,
+                                               pagination = pagination,
+                                               aggs = aggs,
+                                               excludedFields = excludedFields
+    )
+    val searchRequest: SearchRequest = IndexTermsShould(indexQuery)
     getByIndexedQuery(searchRequest, sortByField, buildF)
   }
 
@@ -229,7 +253,7 @@ class ElasticRetriever @Inject() (
         case None    => searchRequest
       }
 
-      logger.debug(s"Elasticsearch query: ${client.show(sortedSearchRequest)}")
+      logger.info(s"Elasticsearch query: ${client.show(sortedSearchRequest)}")
       sortedSearchRequest
     }
 
