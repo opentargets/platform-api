@@ -18,7 +18,7 @@ import sangria.schema.{
   StringType,
   fields
 }
-import models.gql.Arguments.studyTypes
+import models.gql.Arguments.{studyTypes, pageArg}
 
 case class Locus(
     variantId: Option[String],
@@ -279,10 +279,10 @@ object CredibleSet extends Logging {
       "colocalisation",
       OptionType(ListType(colocalisationImp)),
       description = None,
-      arguments = studyTypes :: Nil,
+      arguments = studyTypes :: pageArg :: Nil,
       resolve = js => {
         val id = (js.value \ "studyLocusId").as[String]
-        js.ctx.getColocalisation(id, js.arg(studyTypes))
+        js.ctx.getColocalisation(id, js.arg(studyTypes), js.arg(pageArg))
       }
     )
   )
