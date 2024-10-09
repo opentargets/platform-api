@@ -192,26 +192,21 @@ class Backend @Inject() (implicit
   }
 
   def getColocalisation(studyLocusId: String,
-                        studyTypes: Option[Seq[StudyTypeEnum.Value]]
+                        studyTypes: Option[Seq[StudyTypeEnum.Value]],
+                        pagination: Option[Pagination]
   ): Future[IndexedSeq[Colocalisation]] = {
     val indexName = getIndexOrDefault("colocalisation")
+    val pag = pagination.getOrElse(Pagination.mkDefault)
+    val terms = Map("leftStudyLocusId.keyword" -> Seq(studyLocusId),
+                    "rightStudyLocusId.keyword" -> Seq(studyLocusId)
+    ).filter(_._2.nonEmpty)
+    val filter = Seq(
+      termsQuery("rightStudyType.keyword", studyTypes.getOrElse(StudyTypeEnum.values))
+    )
     val colocs = esRetriever
-      .getByIndexedQueryShould(indexName,
-                               Map("leftStudyLocusId.keyword" -> studyLocusId,
-                                   "rightStudyLocusId.keyword" -> studyLocusId
-                               ),
-                               Pagination.mkDefault,
-                               fromJsValue[Colocalisation]
-      )
+      .getByIndexedTermsShould(indexName, terms, pag, fromJsValue[Colocalisation], filter = filter)
       .map(_._1)
-    val colocsFilteredByStudyType = if (studyTypes.isDefined) {
-      colocs.map(
-        _.filter(coloc => studyTypes.get.contains(StudyTypeEnum.withName(coloc.rightStudyType)))
-      )
-    } else {
-      colocs
-    }
-    colocsFilteredByStudyType.map(_.map { coloc =>
+    colocs.map(_.map { coloc =>
       val otherStudyLocusId: String = if (coloc.leftStudyLocusId != studyLocusId) {
         coloc.leftStudyLocusId
       } else {
