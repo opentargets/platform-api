@@ -66,7 +66,8 @@ case class CredibleSet(studyLocusId: String,
                        strongestLocus2gene: Option[StrongestLocus2gene],
                        ldSet: Option[Seq[LdSet]],
                        studyType: Option[StudyTypeEnum.Value],
-                       qtlGeneId: Option[String]
+                       qtlGeneId: Option[String],
+                       confidence: Option[String]
 )
 
 case class CredibleSetQueryArgs(
@@ -284,6 +285,12 @@ object CredibleSet extends Logging {
         val id = (js.value \ "studyLocusId").as[String]
         js.ctx.getColocalisation(id, js.arg(studyTypes), js.arg(pageArg))
       }
+    ),
+    Field(
+      "confidence",
+      OptionType(StringType),
+      description = None,
+      resolve = js => (js.value \ "confidence").asOpt[String]
     )
   )
   val studyField: Field[Backend, JsValue] = Field(
