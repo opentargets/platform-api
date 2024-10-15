@@ -33,13 +33,17 @@ object GwasIndex extends Logging {
 
   case class LdPopulationStructure(ldPopulation: Option[String], relativeSampleSize: Option[Double])
 
+  case class SumStatQC(QCCheckName: Option[String], QCCheckValue: Option[Double])
+
   implicit val sampleF: OFormat[Sample] = Json.format[Sample]
   implicit val ldPopulationStructureF: OFormat[LdPopulationStructure] =
     Json.format[LdPopulationStructure]
+  implicit val sumStatQCF: OFormat[SumStatQC] = Json.format[SumStatQC]
 
   implicit val ldPopulationStructureImp: ObjectType[Backend, LdPopulationStructure] =
     deriveObjectType[Backend, LdPopulationStructure]()
   implicit val sampleImp: ObjectType[Backend, Sample] = deriveObjectType[Backend, Sample]()
+  implicit val SumStatQCImp: ObjectType[Backend, SumStatQC] = deriveObjectType[Backend, SumStatQC]()
   val gwasFields: Seq[Field[Backend, JsValue]] = Seq(
     Field(
       "studyId",
@@ -59,7 +63,7 @@ object GwasIndex extends Logging {
       description = Some("The study type"),
       resolve = js => (js.value \ "studyType").asOpt[String].map(e => StudyTypeEnum.withName(e))
     ),
-    Field(
+    Field(  
       "traitFromSource",
       OptionType(StringType),
       description = Some(""),
@@ -211,6 +215,18 @@ object GwasIndex extends Logging {
       OptionType(ListType(StringType)),
       description = Some(""),
       resolve = js => (js.value \ "analysisFlags").asOpt[Seq[String]]
+    ),
+    Field(
+      "sumStatQCPerformed",
+      OptionType(BooleanType),
+      description = Some(""),
+      resolve = js => (js.value \ "sumStatQCPerformed").asOpt[Boolean]
+    ),
+    Field(
+      "sumStatQCValues",
+      OptionType(ListType(StringType)),
+      description = Some(""),
+      resolve = js => (js.value \ "sumStatQCValues").asOpt[Seq[SumStatQC]]
     )
   )
   lazy val credibleSetField: Field[Backend, JsValue] =
