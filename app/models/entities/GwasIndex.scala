@@ -63,7 +63,7 @@ object GwasIndex extends Logging {
       description = Some("The study type"),
       resolve = js => (js.value \ "studyType").asOpt[String].map(e => StudyTypeEnum.withName(e))
     ),
-    Field(  
+    Field(
       "traitFromSource",
       OptionType(StringType),
       description = Some(""),
