@@ -43,7 +43,7 @@ object GwasIndex extends Logging {
   implicit val ldPopulationStructureImp: ObjectType[Backend, LdPopulationStructure] =
     deriveObjectType[Backend, LdPopulationStructure]()
   implicit val sampleImp: ObjectType[Backend, Sample] = deriveObjectType[Backend, Sample]()
-  implicit val SumStatQCImp: ObjectType[Backend, SumStatQC] = deriveObjectType[Backend, SumStatQC]()
+  implicit val sumStatQCImp: ObjectType[Backend, SumStatQC] = deriveObjectType[Backend, SumStatQC]()
   val gwasFields: Seq[Field[Backend, JsValue]] = Seq(
     Field(
       "studyId",
@@ -224,7 +224,7 @@ object GwasIndex extends Logging {
     ),
     Field(
       "sumStatQCValues",
-      OptionType(ListType(StringType)),
+      OptionType(ListType(sumStatQCImp)),
       description = Some(""),
       resolve = js => (js.value \ "sumStatQCValues").asOpt[Seq[SumStatQC]]
     )
