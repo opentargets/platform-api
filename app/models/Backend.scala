@@ -141,7 +141,13 @@ class Backend @Inject() (implicit
     val indexName = getIndexOrDefault("variant_index")
 
     //esRetriever.getByIds(indexName, ids, fromJsValue[VariantIndex])
-    esRetriever.getByIndexedTermsMust(indexName, Map("variantId.keyword" -> ids), Pagination.mkDefault, fromJsValue[VariantIndex]).map(_._1)
+    esRetriever
+      .getByIndexedTermsMust(indexName,
+                             Map("variantId.keyword" -> ids),
+                             Pagination.mkDefault,
+                             fromJsValue[VariantIndex]
+      )
+      .map(_._1)
   }
 
   def getBiosample(id: String): Future[Option[Biosample]] = {
