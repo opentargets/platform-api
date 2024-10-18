@@ -140,7 +140,8 @@ class Backend @Inject() (implicit
   def getVariants(ids: Seq[String]): Future[IndexedSeq[VariantIndex]] = {
     val indexName = getIndexOrDefault("variant_index")
 
-    esRetriever.getByIds(indexName, ids, fromJsValue[VariantIndex])
+    //esRetriever.getByIds(indexName, ids, fromJsValue[VariantIndex])
+    esRetriever.getByIndexedTermsMust(indexName, Map("variantId.keyword" -> ids), Pagination.mkDefault, fromJsValue[VariantIndex]).map(_._1)
   }
 
   def getBiosample(id: String): Future[Option[Biosample]] = {
@@ -240,12 +241,6 @@ class Backend @Inject() (implicit
         )
         .map(_._1)
     retriever
-  }
-
-  def getGwasIndexes(ids: Seq[String]): Future[IndexedSeq[JsValue]] = {
-    val indexName = getIndexOrDefault("gwas_index")
-
-    esRetriever.getByIds(indexName, ids, fromJsValue[JsValue])
   }
 
   def getTargetEssentiality(ids: Seq[String]): Future[IndexedSeq[TargetEssentiality]] = {
