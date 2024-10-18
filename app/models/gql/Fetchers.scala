@@ -2,7 +2,6 @@ package models.gql
 
 import models.Helpers.fromJsValue
 import models.entities.{
-  CredibleSet,
   Disease,
   Drug,
   Expressions,
@@ -137,7 +136,7 @@ object Fetchers extends Logging {
       config =
         FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(gwasFetcherCache),
       fetch = (ctx: Backend, ids: Seq[String]) => {
-        ctx.getGwasIndexes(ids)
+        ctx.getStudies(entities.StudyQueryArgs(id = ids), None)
       }
     )
   }
