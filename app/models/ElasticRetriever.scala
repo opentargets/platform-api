@@ -162,6 +162,9 @@ class ElasticRetriever @Inject() (
     getByIndexedQuery(searchRequest, sortByField, buildF)
   }
 
+  /** This fn represents a query where each kv from the map is used in
+    * a bool 'must' (AND) with optional filters that are 'must' (AND).
+    */
   def getByIndexedTermsMust[A, V](
       esIndex: String,
       kv: Map[String, V],
@@ -184,6 +187,9 @@ class ElasticRetriever @Inject() (
     getByIndexedQuery(searchRequest, sortByField, buildF)
   }
 
+  /** This fn represents a query where each kv from the map is used in
+    * a bool 'should' (OR) with optional filters that are 'must' (AND).
+    */
   def getByIndexedTermsShould[A, V](
       esIndex: String,
       kv: Map[String, V],
