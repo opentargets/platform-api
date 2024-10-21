@@ -78,12 +78,12 @@ trait ElasticRetrieverQueryBuilders extends QueryApi with Logging {
     val limitClause = indexQuery.pagination.toES
     val query: Iterable[Query] = {
       val querySeq = indexQuery.kv.toSeq
-      querySeq.flatMap { it =>
+      Iterable(f(querySeq.map { it =>
         val terms = it._2.asInstanceOf[Iterable[String]]
-        Iterable(should(termsQuery(it._1, terms)))
-      }
+        termsQuery(it._1, terms)
+      }))
     }
-    val boolQuery: BoolQuery = f(query).filter(indexQuery.filters)
+    val boolQuery: BoolQuery = must(query).filter(indexQuery.filters)
     logger.debug(s"Query: $boolQuery")
     search(indexQuery.esIndex)
       .bool(boolQuery)
