@@ -137,6 +137,22 @@ class Backend @Inject() (implicit
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[GeneOntologyTerm])
   }
 
+  def getL2GPredictions(id: String,
+                        pagination: Option[Pagination]
+  ): Future[IndexedSeq[L2GPredictions]] = {
+    val indexName = getIndexOrDefault("l2g_predictions")
+    val pag = pagination.getOrElse(Pagination.mkDefault)
+
+    esRetriever
+      .getByIndexedTermsMust(indexName,
+                             Map("studyLocusId.keyword" -> Seq(id)),
+                             pag,
+                             fromJsValue[L2GPredictions],
+                             sortByField = ElasticRetriever.sortBy("score", SortOrder.Desc)
+      )
+      .map(_._1)
+  }
+
   def getVariants(ids: Seq[String]): Future[IndexedSeq[VariantIndex]] = {
     val indexName = getIndexOrDefault("variant_index")
 
