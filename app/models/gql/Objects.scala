@@ -1326,7 +1326,17 @@ object Objects extends Logging {
     deriveObjectType[Backend, AlleleFrequency]()
   implicit val biosampleImp: ObjectType[Backend, Biosample] = deriveObjectType[Backend, Biosample]()
   implicit val l2gPredictionsImp: ObjectType[Backend, L2GPredictions] =
-    deriveObjectType[Backend, L2GPredictions]()
+    deriveObjectType[Backend, L2GPredictions](
+      ReplaceField(
+        "geneId",
+        Field(
+          "target",
+          OptionType(targetImp),
+          Some("Target"),
+          resolve = r => targetsFetcher.deferOpt(r.value.geneId)
+        )
+      )
+    )
   implicit val colocalisationImp: ObjectType[Backend, Colocalisation] =
     deriveObjectType[Backend, Colocalisation](
       ReplaceField(
