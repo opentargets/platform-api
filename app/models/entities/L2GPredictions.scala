@@ -10,5 +10,5 @@ case class L2GPredictions(
 )
 
 object L2GPredictions extends Logging {
-  implicit val colocalisationF: OFormat[L2GPredictions] = Json.format[L2GPredictions]
+  implicit val l2GPredictionsF: OFormat[L2GPredictions] = Json.format[L2GPredictions]
 }
