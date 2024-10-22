@@ -5,7 +5,7 @@ import models.gql.StudyTypeEnum
 import models.gql.Arguments.StudyType
 import models.entities.GwasIndex.{gwasImp, gwasWithoutCredSetsImp}
 import models.gql.Fetchers.{gwasFetcher, targetsFetcher, variantFetcher}
-import models.gql.Objects.{logger, targetImp, variantIndexImp, colocalisationImp}
+import models.gql.Objects.{logger, targetImp, variantIndexImp, colocalisationImp, l2gPredictionsImp}
 import play.api.Logging
 import play.api.libs.json.{JsValue, Json, OFormat, OWrites}
 import sangria.schema.{
@@ -130,6 +130,16 @@ object CredibleSet extends Logging {
         val id = (js.value \ "variantId").asOpt[String]
         logger.debug(s"Finding variant for id: $id")
         variantFetcher.deferOpt(id)
+      }
+    ),
+    Field(
+      "l2Gpredictions",
+      OptionType(ListType(l2gPredictionsImp)),
+      description = None,
+      arguments = pageArg :: Nil,
+      resolve = js => {
+        val id = (js.value \ "studyLocusId").as[String]
+        js.ctx.getL2GPredictions(id, js.arg(pageArg))
       }
     ),
     Field(
