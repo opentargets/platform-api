@@ -101,12 +101,12 @@ object CredibleSet extends Logging {
       "variantId",
       Field(
         "variant",
-        variantIndexImp,
+        OptionType(variantIndexImp),
         description = None,
         resolve = r => {
           val variantId = r.value.variantId.getOrElse("")
           logger.debug(s"Finding variant index: $variantId")
-          DeferredValue(variantFetcher.defer(variantId))
+          DeferredValue(variantFetcher.deferOpt(variantId))
         }
       )
     )
@@ -128,9 +128,9 @@ object CredibleSet extends Logging {
       OptionType(variantIndexImp),
       description = None,
       resolve = js => {
-        val id = (js.value \ "variantId").as[String]
+        val id = (js.value \ "variantId").asOpt[String]
         logger.debug(s"Finding variant for id: $id")
-        DeferredValue(variantFetcher.defer(id))
+        DeferredValue(variantFetcher.deferOpt(id))
       }
     ),
     Field(

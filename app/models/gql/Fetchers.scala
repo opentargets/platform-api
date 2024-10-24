@@ -21,6 +21,7 @@ import models.{Backend, entities}
 import play.api.Logging
 import play.api.libs.json.{JsValue, __}
 import sangria.execution.deferred.{Fetcher, FetcherCache, FetcherConfig, HasId, SimpleFetcherCache}
+import models.gql.Arguments.studyId
 
 object Fetchers extends Logging {
   val soTermsFetcherCache = FetcherCache.simple
@@ -151,6 +152,20 @@ object Fetchers extends Logging {
         .caching(credibleSetFetcherCache),
       fetch = (ctx: Backend, ids: Seq[String]) => {
         ctx.getCredibleSets(entities.CredibleSetQueryArgs(ids = ids), None)
+      }
+    )
+  }
+
+  val credibleSetByStudyFetcherCache = FetcherCache.simple
+  val credibleSetByStudyFetcher: Fetcher[Backend, JsValue, JsValue, String] = {
+    implicit val credibleSetByStudyFetcherId: HasId[JsValue, String] =
+      HasId[JsValue, String](js => (js \ "studyId").as[String])
+    Fetcher(
+      config = FetcherConfig
+        .maxBatchSize(entities.Configuration.batchSize)
+        .caching(credibleSetByStudyFetcherCache),
+      fetch = (ctx: Backend, ids: Seq[String]) => {
+        ctx.getCredibleSets(entities.CredibleSetQueryArgs(studyIds = ids), None)
       }
     )
   }

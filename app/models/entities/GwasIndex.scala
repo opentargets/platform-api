@@ -1,7 +1,12 @@
 package models.entities
 
 import models.Backend
-import models.gql.Fetchers.{biosamplesFetcher, credibleSetFetcher, diseasesFetcher, targetsFetcher}
+import models.gql.Fetchers.{
+  biosamplesFetcher,
+  credibleSetByStudyFetcher,
+  diseasesFetcher,
+  targetsFetcher
+}
 import play.api.Logging
 import play.api.libs.json.{JsValue, Json, OFormat}
 import models.entities.CredibleSet.{credibleSetImp, credibleSetWithoutStudyImp}
@@ -234,7 +239,7 @@ object GwasIndex extends Logging {
       description = Some("Credible sets"),
       resolve = js => {
         val studyIdSeq = Seq((js.value \ "studyId").as[String])
-        DeferredValue(credibleSetFetcher.deferSeqOpt(studyIdSeq))
+        DeferredValue(credibleSetByStudyFetcher.deferSeqOpt(studyIdSeq))
       }
     )
   lazy val gwasImp: ObjectType[Backend, JsValue] = ObjectType(
