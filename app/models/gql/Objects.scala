@@ -1290,7 +1290,7 @@ object Objects extends Logging {
           "target",
           OptionType(targetImp),
           Some("Target"),
-          resolve = r => targetsFetcher.deferOpt(r.value.targetId)
+          resolve = r => DeferredValue(targetsFetcher.deferOpt(r.value.targetId))
         )
       )
     )
@@ -1301,7 +1301,7 @@ object Objects extends Logging {
         Field("target",
               OptionType(targetImp),
               Some("Target"),
-              resolve = r => targetsFetcher.deferOpt(r.value.targetId)
+              resolve = r => DeferredValue(targetsFetcher.deferOpt(r.value.targetId))
         )
       ),
       ReplaceField(
@@ -1333,7 +1333,7 @@ object Objects extends Logging {
           "target",
           OptionType(targetImp),
           Some("Target"),
-          resolve = r => targetsFetcher.deferOpt(r.value.geneId)
+          resolve = r => DeferredValue(targetsFetcher.deferOpt(r.value.geneId))
         )
       )
     )
@@ -1369,7 +1369,7 @@ object Objects extends Logging {
             val soId = (r.value.mostSevereConsequenceId)
               .replace("_", ":")
             logger.debug(s"Finding variant functional consequence: $soId")
-            soTermsFetcher.deferOpt(soId)
+            DeferredValue(soTermsFetcher.deferOpt(soId))
           }
         )
       ),

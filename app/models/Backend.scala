@@ -137,26 +137,21 @@ class Backend @Inject() (implicit
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[GeneOntologyTerm])
   }
 
-  def getL2GPredictions(id: String,
-                        pagination: Option[Pagination]
-  ): Future[IndexedSeq[L2GPredictions]] = {
+  def getL2GPredictions(ids: Seq[String]): Future[IndexedSeq[L2GPredictions]] = {
     val indexName = getIndexOrDefault("l2g_predictions")
-    val pag = pagination.getOrElse(Pagination.mkDefault)
-
     esRetriever
-      .getByIndexedTermsMust(indexName,
-                             Map("studyLocusId.keyword" -> Seq(id)),
-                             pag,
-                             fromJsValue[L2GPredictions],
-                             sortByField = ElasticRetriever.sortBy("score", SortOrder.Desc)
+      .getByIndexedTermsMust(
+        indexName,
+        Map("studyLocusId.keyword" -> ids),
+        Pagination(Pagination.indexDefault, Pagination.sizeMax),
+        fromJsValue[L2GPredictions],
+        sortByField = ElasticRetriever.sortBy("score", SortOrder.Desc)
       )
       .map(_._1)
   }
 
   def getVariants(ids: Seq[String]): Future[IndexedSeq[VariantIndex]] = {
     val indexName = getIndexOrDefault("variant_index")
-
-    //esRetriever.getByIds(indexName, ids, fromJsValue[VariantIndex])
     esRetriever
       .getByIndexedTermsMust(indexName,
                              Map("variantId.keyword" -> ids),
@@ -166,20 +161,16 @@ class Backend @Inject() (implicit
       .map(_._1)
   }
 
-  def getBiosample(id: String): Future[Option[Biosample]] = {
+  def getBiosamples(ids: Seq[String]): Future[IndexedSeq[Biosample]] = {
     val indexName = getIndexOrDefault("biosample", Some("biosample"))
     esRetriever
       .getByIndexedTermsMust(
         indexName,
-        Map("biosampleId.keyword" -> Seq(id)),
+        Map("biosampleId.keyword" -> ids),
         Pagination.mkDefault,
         fromJsValue[Biosample]
       )
-      .map {
-        case (Seq(), _) => None
-        case (hits, aggs) =>
-          Some(hits.head)
-      }
+      .map(_._1)
   }
 
   def getStudies(queryArgs: StudyQueryArgs,
@@ -243,7 +234,7 @@ class Backend @Inject() (implicit
       queryArgs: CredibleSetQueryArgs,
       pagination: Option[Pagination]
   ): Future[IndexedSeq[JsValue]] = {
-    val pag = pagination.getOrElse(Pagination.mkDefault)
+    val pag = pagination.getOrElse(Pagination(Pagination.indexDefault, Pagination.sizeMax))
     val indexName = getIndexOrDefault("credible_set")
     val termsQuery = Map(
       "studyLocusId.keyword" -> queryArgs.ids,

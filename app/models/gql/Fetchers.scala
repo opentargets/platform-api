@@ -2,6 +2,8 @@ package models.gql
 
 import models.Helpers.fromJsValue
 import models.entities.{
+  Biosample,
+  CredibleSet,
   Disease,
   Drug,
   Expressions,
@@ -9,6 +11,7 @@ import models.entities.{
   GwasIndex,
   HPO,
   Indications,
+  L2GPredictions,
   OtarProjects,
   Reactome,
   Target,
@@ -77,6 +80,16 @@ object Fetchers extends Logging {
     }
   )
 
+  implicit val biosampleHasId: HasId[Biosample, String] = HasId[Biosample, String](_.biosampleId)
+  val biosamplesFetcherCache = FetcherCache.simple
+  val biosamplesFetcher: Fetcher[Backend, Biosample, Biosample, String] = Fetcher(
+    config =
+      FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(biosamplesFetcherCache),
+    fetch = (ctx: Backend, ids: Seq[String]) => {
+      ctx.getBiosamples(ids)
+    }
+  )
+
   //hpo fetcher
   implicit val hpoHasId: HasId[HPO, String] = HasId[HPO, String](_.id)
 
@@ -128,6 +141,30 @@ object Fetchers extends Logging {
     }
   )
 
+  val credibleSetFetcherCache = FetcherCache.simple
+  val credibleSetFetcher: Fetcher[Backend, JsValue, JsValue, String] = {
+    implicit val credibleSetFetcherId: HasId[JsValue, String] =
+      HasId[JsValue, String](js => (js \ "studyLocusId").as[String])
+    Fetcher(
+      config = FetcherConfig
+        .maxBatchSize(entities.Configuration.batchSize)
+        .caching(credibleSetFetcherCache),
+      fetch = (ctx: Backend, ids: Seq[String]) => {
+        ctx.getCredibleSets(entities.CredibleSetQueryArgs(ids = ids), None)
+      }
+    )
+  }
+
+  implicit val l2gFetcherId: HasId[L2GPredictions, String] =
+    HasId[L2GPredictions, String](_.studyLocusId)
+  val l2gFetcherCache = FetcherCache.simple
+  val l2gFetcher: Fetcher[Backend, L2GPredictions, L2GPredictions, String] = Fetcher(
+    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(l2gFetcherCache),
+    fetch = (ctx: Backend, ids: Seq[String]) => {
+      ctx.getL2GPredictions(ids)
+    }
+  )
+
   val gwasFetcherCache = FetcherCache.simple
   val gwasFetcher: Fetcher[Backend, JsValue, JsValue, String] = {
     implicit val gwasFetcherId: HasId[JsValue, String] =
@@ -160,6 +197,13 @@ object Fetchers extends Logging {
   def resetCache(): Unit = {
     logger.info("Clearing all GraphQL caches.")
     val fetchers: List[SimpleFetcherCache] = List(
+      biosamplesFetcherCache,
+      credibleSetFetcherCache,
+      gwasFetcherCache,
+      hpoFetcherCache,
+      goFetcherCache,
+      variantFetcherCache,
+      l2gFetcherCache,
       targetsFetcherCache,
       drugsFetcherCache,
       diseasesFetcherCache,

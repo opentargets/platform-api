@@ -1,7 +1,7 @@
 package models.entities
 
 import models.Backend
-import models.gql.Fetchers.{diseasesFetcher, targetsFetcher}
+import models.gql.Fetchers.{biosamplesFetcher, diseasesFetcher, targetsFetcher}
 import play.api.Logging
 import play.api.libs.json.{JsValue, Json, OFormat}
 import models.entities.CredibleSet.credibleSetImp
@@ -14,7 +14,8 @@ import sangria.schema.{
   ObjectType,
   OptionType,
   StringType,
-  fields
+  fields,
+  DeferredValue
 }
 import models.entities.CredibleSet.credibleSetWithoutStudyImp
 import models.gql.StudyTypeEnum
@@ -44,6 +45,7 @@ object GwasIndex extends Logging {
     deriveObjectType[Backend, LdPopulationStructure]()
   implicit val sampleImp: ObjectType[Backend, Sample] = deriveObjectType[Backend, Sample]()
   implicit val sumStatQCImp: ObjectType[Backend, SumStatQC] = deriveObjectType[Backend, SumStatQC]()
+  implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
   val gwasFields: Seq[Field[Backend, JsValue]] = Seq(
     Field(
       "studyId",
@@ -76,19 +78,19 @@ object GwasIndex extends Logging {
       resolve = js => {
         val geneId = (js.value \ "geneId").asOpt[String]
         logger.debug(s"Finding target: $geneId")
-        targetsFetcher.deferOpt(geneId)
+        DeferredValue(targetsFetcher.deferOpt(geneId))
       }
     ),
     Field(
       "biosample",
       OptionType(biosampleImp),
-      Some("Biosample"),
+      Some("biosample"),
       resolve = js => {
         val biosampleId = (js.value \ "biosampleFromSourceId").asOpt[String].getOrElse("")
         if (biosampleId.isEmpty) {
           None
         } else {
-          js.ctx.getBiosample(biosampleId)
+          js.ctx.getBiosamples(Seq(biosampleId)).map(_.headOption)
         }
       }
     ),
@@ -129,7 +131,7 @@ object GwasIndex extends Logging {
       resolve = js => {
         val ids = (js.value \ "traitFromSourceMappedIds").asOpt[Seq[String]].getOrElse(Seq.empty)
         logger.debug(s"Finding diseases for ids: $ids")
-        diseasesFetcher.deferSeqOpt(ids)
+        DeferredValue(diseasesFetcher.deferSeqOpt(ids))
       }
     ),
     Field(
@@ -159,7 +161,7 @@ object GwasIndex extends Logging {
           .asOpt[Seq[String]]
           .getOrElse(Seq.empty)
         logger.debug(s"Finding diseases for ids: $ids")
-        diseasesFetcher.deferSeqOpt(ids)
+        DeferredValue(diseasesFetcher.deferSeqOpt(ids))
       }
     ),
     Field(

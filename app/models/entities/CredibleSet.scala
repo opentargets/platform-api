@@ -4,7 +4,7 @@ import models.Backend
 import models.gql.StudyTypeEnum
 import models.gql.Arguments.StudyType
 import models.entities.GwasIndex.{gwasImp, gwasWithoutCredSetsImp}
-import models.gql.Fetchers.{gwasFetcher, targetsFetcher, variantFetcher}
+import models.gql.Fetchers.{gwasFetcher, l2gFetcher, targetsFetcher, variantFetcher}
 import models.gql.Objects.{logger, targetImp, variantIndexImp, colocalisationImp, l2gPredictionsImp}
 import play.api.Logging
 import play.api.libs.json.{JsValue, Json, OFormat, OWrites}
@@ -16,7 +16,8 @@ import sangria.schema.{
   ObjectType,
   OptionType,
   StringType,
-  fields
+  fields,
+  DeferredValue
 }
 import models.gql.Arguments.{studyTypes, pageArg}
 
@@ -89,7 +90,7 @@ object CredibleSet extends Logging {
           "target",
           OptionType(targetImp),
           Some("Target"),
-          resolve = r => targetsFetcher.deferOpt(r.value.geneId)
+          resolve = r => DeferredValue(targetsFetcher.deferOpt(r.value.geneId))
         )
       )
     )
@@ -105,7 +106,7 @@ object CredibleSet extends Logging {
         resolve = r => {
           val variantId = (r.value.variantId)
           logger.debug(s"Finding variant index: $variantId")
-          variantFetcher.deferOpt(variantId)
+          DeferredValue(variantFetcher.deferOpt(variantId))
         }
       )
     )
@@ -129,17 +130,16 @@ object CredibleSet extends Logging {
       resolve = js => {
         val id = (js.value \ "variantId").asOpt[String]
         logger.debug(s"Finding variant for id: $id")
-        variantFetcher.deferOpt(id)
+        DeferredValue(variantFetcher.deferOpt(id))
       }
     ),
     Field(
       "l2Gpredictions",
-      OptionType(ListType(l2gPredictionsImp)),
+      OptionType(l2gPredictionsImp),
       description = None,
-      arguments = pageArg :: Nil,
       resolve = js => {
         val id = (js.value \ "studyLocusId").as[String]
-        js.ctx.getL2GPredictions(id, js.arg(pageArg))
+        DeferredValue(l2gFetcher.deferOpt(id))
       }
     ),
     Field(
@@ -310,7 +310,7 @@ object CredibleSet extends Logging {
     resolve = js => {
       val studyId = (js.value \ "studyId").asOpt[String]
       logger.debug(s"Finding gwas study: $studyId")
-      gwasFetcher.deferOpt(studyId)
+      DeferredValue(gwasFetcher.deferOpt(studyId))
     }
   )
   val credibleSetImp: ObjectType[Backend, JsValue] = ObjectType(
