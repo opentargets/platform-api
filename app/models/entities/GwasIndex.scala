@@ -1,10 +1,16 @@
 package models.entities
 
 import models.Backend
-import models.gql.Fetchers.{diseasesFetcher, targetsFetcher}
+import models.gql.Fetchers.{
+  biosamplesFetcher,
+  credibleSetFetcher,
+  credibleSetByStudyRel,
+  diseasesFetcher,
+  targetsFetcher
+}
 import play.api.Logging
 import play.api.libs.json.{JsValue, Json, OFormat}
-import models.entities.CredibleSet.credibleSetImp
+import models.entities.CredibleSet.{credibleSetImp, credibleSetWithoutStudyImp}
 import models.gql.Objects.{diseaseImp, targetImp, biosampleImp}
 import sangria.schema.{
   BooleanType,
@@ -16,7 +22,6 @@ import sangria.schema.{
   StringType,
   fields
 }
-import models.entities.CredibleSet.credibleSetWithoutStudyImp
 import models.gql.StudyTypeEnum
 import models.gql.Arguments.{pageArg, StudyType}
 
@@ -82,14 +87,10 @@ object GwasIndex extends Logging {
     Field(
       "biosample",
       OptionType(biosampleImp),
-      Some("Biosample"),
+      Some("biosample"),
       resolve = js => {
-        val biosampleId = (js.value \ "biosampleFromSourceId").asOpt[String].getOrElse("")
-        if (biosampleId.isEmpty) {
-          None
-        } else {
-          js.ctx.getBiosample(biosampleId)
-        }
+        val biosampleId = (js.value \ "biosampleFromSourceId").asOpt[String]
+        biosamplesFetcher.deferOpt(biosampleId)
       }
     ),
     Field(
@@ -232,13 +233,12 @@ object GwasIndex extends Logging {
   lazy val credibleSetField: Field[Backend, JsValue] =
     Field(
       "credibleSets",
-      OptionType(ListType(credibleSetWithoutStudyImp)),
+      OptionType(ListType(credibleSetImp)),
       arguments = pageArg :: Nil,
       description = Some("Credible sets"),
       resolve = js => {
-        val studyIdSeq = Seq((js.value \ "studyId").as[String])
-        val credSetQueryArgs = CredibleSetQueryArgs(studyIds = studyIdSeq)
-        js.ctx.getCredibleSets(credSetQueryArgs, js.arg(pageArg))
+        val studyId = (js.value \ "studyId").as[String]
+        credibleSetFetcher.deferRelSeq(credibleSetByStudyRel, studyId)
       }
     )
   lazy val gwasImp: ObjectType[Backend, JsValue] = ObjectType(
