@@ -19,6 +19,9 @@ trait GQLEntities extends Logging {}
 
 object GQLSchema {
   val resolvers: DeferredResolver[Backend] = DeferredResolver.fetchers(
+    biosamplesFetcher,
+    credibleSetFetcher,
+    l2gFetcher,
     targetsFetcher,
     drugsFetcher,
     diseasesFetcher,

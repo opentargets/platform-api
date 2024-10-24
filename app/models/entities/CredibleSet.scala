@@ -4,7 +4,13 @@ import models.Backend
 import models.gql.StudyTypeEnum
 import models.gql.Arguments.StudyType
 import models.entities.GwasIndex.{gwasImp, gwasWithoutCredSetsImp}
-import models.gql.Fetchers.{gwasFetcher, targetsFetcher, variantFetcher}
+import models.gql.Fetchers.{
+  gwasFetcher,
+  l2gFetcher,
+  l2gByStudyLocusIdRel,
+  targetsFetcher,
+  variantFetcher
+}
 import models.gql.Objects.{logger, targetImp, variantIndexImp, colocalisationImp, l2gPredictionsImp}
 import play.api.Logging
 import play.api.libs.json.{JsValue, Json, OFormat, OWrites}
@@ -103,7 +109,7 @@ object CredibleSet extends Logging {
         OptionType(variantIndexImp),
         description = None,
         resolve = r => {
-          val variantId = (r.value.variantId)
+          val variantId = r.value.variantId.getOrElse("")
           logger.debug(s"Finding variant index: $variantId")
           variantFetcher.deferOpt(variantId)
         }
@@ -127,7 +133,7 @@ object CredibleSet extends Logging {
       OptionType(variantIndexImp),
       description = None,
       resolve = js => {
-        val id = (js.value \ "variantId").asOpt[String]
+        val id = (js.value \ "variantId").as[String]
         logger.debug(s"Finding variant for id: $id")
         variantFetcher.deferOpt(id)
       }
@@ -136,10 +142,9 @@ object CredibleSet extends Logging {
       "l2Gpredictions",
       OptionType(ListType(l2gPredictionsImp)),
       description = None,
-      arguments = pageArg :: Nil,
       resolve = js => {
         val id = (js.value \ "studyLocusId").as[String]
-        js.ctx.getL2GPredictions(id, js.arg(pageArg))
+        l2gFetcher.deferRelSeq(l2gByStudyLocusIdRel, id)
       }
     ),
     Field(
