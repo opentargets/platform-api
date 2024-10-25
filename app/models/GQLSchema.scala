@@ -21,7 +21,6 @@ object GQLSchema {
   val resolvers: DeferredResolver[Backend] = DeferredResolver.fetchers(
     biosamplesFetcher,
     credibleSetFetcher,
-    credibleSetByStudyFetcher,
     l2gFetcher,
     targetsFetcher,
     drugsFetcher,

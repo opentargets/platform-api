@@ -3,7 +3,8 @@ package models.entities
 import models.Backend
 import models.gql.Fetchers.{
   biosamplesFetcher,
-  credibleSetByStudyFetcher,
+  credibleSetFetcher,
+  credibleSetByStudyRel,
   diseasesFetcher,
   targetsFetcher
 }
@@ -49,7 +50,6 @@ object GwasIndex extends Logging {
     deriveObjectType[Backend, LdPopulationStructure]()
   implicit val sampleImp: ObjectType[Backend, Sample] = deriveObjectType[Backend, Sample]()
   implicit val sumStatQCImp: ObjectType[Backend, SumStatQC] = deriveObjectType[Backend, SumStatQC]()
-  implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
   val gwasFields: Seq[Field[Backend, JsValue]] = Seq(
     Field(
       "studyId",
@@ -234,12 +234,12 @@ object GwasIndex extends Logging {
   lazy val credibleSetField: Field[Backend, JsValue] =
     Field(
       "credibleSets",
-      OptionType(ListType(credibleSetWithoutStudyImp)),
+      OptionType(ListType(credibleSetImp)),
       arguments = pageArg :: Nil,
       description = Some("Credible sets"),
       resolve = js => {
-        val studyIdSeq = Seq((js.value \ "studyId").as[String])
-        DeferredValue(credibleSetByStudyFetcher.deferSeqOpt(studyIdSeq))
+        val studyId = (js.value \ "studyId").as[String]
+        DeferredValue(credibleSetFetcher.deferRelSeq(credibleSetByStudyRel, studyId))
       }
     )
   lazy val gwasImp: ObjectType[Backend, JsValue] = ObjectType(
