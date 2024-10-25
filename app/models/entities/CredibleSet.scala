@@ -4,7 +4,13 @@ import models.Backend
 import models.gql.StudyTypeEnum
 import models.gql.Arguments.StudyType
 import models.entities.GwasIndex.{gwasImp, gwasWithoutCredSetsImp}
-import models.gql.Fetchers.{gwasFetcher, l2gFetcher, l2gByStudyLocusIdRel, targetsFetcher, variantFetcher}
+import models.gql.Fetchers.{
+  gwasFetcher,
+  l2gFetcher,
+  l2gByStudyLocusIdRel,
+  targetsFetcher,
+  variantFetcher
+}
 import models.gql.Objects.{logger, targetImp, variantIndexImp, colocalisationImp, l2gPredictionsImp}
 import play.api.Logging
 import play.api.libs.json.{JsValue, Json, OFormat, OWrites}

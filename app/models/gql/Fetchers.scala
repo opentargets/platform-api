@@ -171,9 +171,9 @@ object Fetchers extends Logging {
     )
   }
 
-
   val l2gFetcherCache = FetcherCache.simple
-  implicit val l2gHasId: HasId[L2GPredictions, String] = HasId[L2GPredictions, String](_.studyLocusId)
+  implicit val l2gHasId: HasId[L2GPredictions, String] =
+    HasId[L2GPredictions, String](_.studyLocusId)
   val l2gByStudyLocusIdRel =
     Relation[L2GPredictions, String]("byStudyLocus", l2g => Seq(l2g.studyLocusId))
   val l2gFetcher: Fetcher[Backend, L2GPredictions, L2GPredictions, String] = Fetcher.rel(
