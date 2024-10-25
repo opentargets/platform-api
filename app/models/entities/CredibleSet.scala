@@ -4,7 +4,7 @@ import models.Backend
 import models.gql.StudyTypeEnum
 import models.gql.Arguments.StudyType
 import models.entities.GwasIndex.{gwasImp, gwasWithoutCredSetsImp}
-import models.gql.Fetchers.{gwasFetcher, l2gFetcher, targetsFetcher, variantFetcher}
+import models.gql.Fetchers.{gwasFetcher, l2gFetcher, l2gByStudyLocusIdRel, targetsFetcher, variantFetcher}
 import models.gql.Objects.{logger, targetImp, variantIndexImp, colocalisationImp, l2gPredictionsImp}
 import play.api.Logging
 import play.api.libs.json.{JsValue, Json, OFormat, OWrites}
@@ -106,7 +106,7 @@ object CredibleSet extends Logging {
         resolve = r => {
           val variantId = r.value.variantId.getOrElse("")
           logger.debug(s"Finding variant index: $variantId")
-          DeferredValue(variantFetcher.deferOpt(variantId))
+          variantFetcher.deferOpt(variantId)
         }
       )
     )
@@ -128,18 +128,18 @@ object CredibleSet extends Logging {
       OptionType(variantIndexImp),
       description = None,
       resolve = js => {
-        val id = (js.value \ "variantId").asOpt[String]
+        val id = (js.value \ "variantId").as[String]
         logger.debug(s"Finding variant for id: $id")
-        DeferredValue(variantFetcher.deferOpt(id))
+        variantFetcher.deferOpt(id)
       }
     ),
     Field(
       "l2Gpredictions",
-      OptionType(l2gPredictionsImp),
+      OptionType(ListType(l2gPredictionsImp)),
       description = None,
       resolve = js => {
         val id = (js.value \ "studyLocusId").as[String]
-        DeferredValue(l2gFetcher.deferOpt(id))
+        l2gFetcher.deferRelSeq(l2gByStudyLocusIdRel, id)
       }
     ),
     Field(
@@ -310,7 +310,7 @@ object CredibleSet extends Logging {
     resolve = js => {
       val studyId = (js.value \ "studyId").asOpt[String]
       logger.debug(s"Finding gwas study: $studyId")
-      DeferredValue(gwasFetcher.deferOpt(studyId))
+      gwasFetcher.deferOpt(studyId)
     }
   )
   val credibleSetImp: ObjectType[Backend, JsValue] = ObjectType(

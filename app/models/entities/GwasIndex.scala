@@ -239,7 +239,7 @@ object GwasIndex extends Logging {
       description = Some("Credible sets"),
       resolve = js => {
         val studyId = (js.value \ "studyId").as[String]
-        DeferredValue(credibleSetFetcher.deferRelSeq(credibleSetByStudyRel, studyId))
+        credibleSetFetcher.deferRelSeq(credibleSetByStudyRel, studyId)
       }
     )
   lazy val gwasImp: ObjectType[Backend, JsValue] = ObjectType(

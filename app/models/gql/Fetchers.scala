@@ -171,13 +171,18 @@ object Fetchers extends Logging {
     )
   }
 
-  implicit val l2gFetcherId: HasId[L2GPredictions, String] =
-    HasId[L2GPredictions, String](_.studyLocusId)
+
   val l2gFetcherCache = FetcherCache.simple
-  val l2gFetcher: Fetcher[Backend, L2GPredictions, L2GPredictions, String] = Fetcher(
+  implicit val l2gHasId: HasId[L2GPredictions, String] = HasId[L2GPredictions, String](_.studyLocusId)
+  val l2gByStudyLocusIdRel =
+    Relation[L2GPredictions, String]("byStudyLocus", l2g => Seq(l2g.studyLocusId))
+  val l2gFetcher: Fetcher[Backend, L2GPredictions, L2GPredictions, String] = Fetcher.rel(
     config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(l2gFetcherCache),
     fetch = (ctx: Backend, ids: Seq[String]) => {
       ctx.getL2GPredictions(ids)
+    },
+    fetchRel = (ctx: Backend, ids: RelationIds[L2GPredictions]) => {
+      ctx.getL2GPredictions(ids(l2gByStudyLocusIdRel))
     }
   )
 

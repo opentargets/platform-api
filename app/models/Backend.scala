@@ -152,13 +152,15 @@ class Backend @Inject() (implicit
 
   def getVariants(ids: Seq[String]): Future[IndexedSeq[VariantIndex]] = {
     val indexName = getIndexOrDefault("variant_index")
-    esRetriever
+    val pag = Pagination(Pagination.indexDefault, Pagination.sizeMax)
+    val r = esRetriever
       .getByIndexedTermsMust(indexName,
                              Map("variantId.keyword" -> ids),
-                             Pagination.mkDefault,
+                             pag,
                              fromJsValue[VariantIndex]
       )
       .map(_._1)
+    r
   }
 
   def getBiosamples(ids: Seq[String]): Future[IndexedSeq[Biosample]] = {
