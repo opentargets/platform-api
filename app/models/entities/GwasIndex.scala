@@ -57,6 +57,12 @@ object GwasIndex extends Logging {
       resolve = js => (js.value \ "studyId").as[String]
     ),
     Field(
+      "condition",
+      OptionType(StringType),
+      description = Some("Condition"),
+      resolve = js => (js.value \ "condition").asOpt[String]
+    ),
+    Field(
       "projectId",
       OptionType(StringType),
       description = Some("The project identifier"),
