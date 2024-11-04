@@ -1,7 +1,9 @@
 package models.entities
 
 import models.Backend
+import models.entities.CredibleSet.credibleSetImp
 import models.gql.Fetchers.{
+  credibleSetFetcher,
   diseasesFetcher,
   drugsFetcher,
   goFetcher,
@@ -311,6 +313,15 @@ object Evidence extends Logging {
         OptionType(biomarkersImp),
         description = None,
         resolve = js => (js.value \ "biomarkers").asOpt[JsValue]
+      ),
+      Field(
+        "credibleSet",
+        OptionType(credibleSetImp),
+        description = None,
+        resolve = js => {
+          val studyLocusId = (js.value \ "studyLocusId").asOpt[String]
+          credibleSetFetcher.deferOpt(studyLocusId)
+        }
       ),
       Field(
         "diseaseCellLines",
