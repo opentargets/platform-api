@@ -22,9 +22,10 @@ import sangria.schema.{
   ObjectType,
   OptionType,
   StringType,
-  fields
+  fields,
+  DeferredValue
 }
-import models.gql.Arguments.{studyTypes, pageArg}
+import models.gql.Arguments.{studyTypes, pageArg, pageSize}
 
 case class Locus(
     variantId: Option[String],
@@ -142,9 +143,16 @@ object CredibleSet extends Logging {
       "l2Gpredictions",
       OptionType(ListType(l2gPredictionsImp)),
       description = None,
+      arguments = pageSize :: Nil,
       resolve = js => {
-        val id = (js.value \ "studyLocusId").as[String]
-        l2gFetcher.deferRelSeq(l2gByStudyLocusIdRel, id)
+        import scala.concurrent.ExecutionContext.Implicits.global
+        val id: String = (js.value \ "studyLocusId").as[String] 
+        js.arg(pageSize) match {
+          case Some(size) =>
+            DeferredValue(l2gFetcher.deferRelSeq(l2gByStudyLocusIdRel, id)).map(_.take(size))
+          case None => 
+            DeferredValue(l2gFetcher.deferRelSeq(l2gByStudyLocusIdRel, id))
+        }
       }
     ),
     Field(
