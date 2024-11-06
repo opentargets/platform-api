@@ -146,11 +146,11 @@ object CredibleSet extends Logging {
       arguments = pageSize :: Nil,
       resolve = js => {
         import scala.concurrent.ExecutionContext.Implicits.global
-        val id: String = (js.value \ "studyLocusId").as[String] 
+        val id: String = (js.value \ "studyLocusId").as[String]
         js.arg(pageSize) match {
           case Some(size) =>
             DeferredValue(l2gFetcher.deferRelSeq(l2gByStudyLocusIdRel, id)).map(_.take(size))
-          case None => 
+          case None =>
             DeferredValue(l2gFetcher.deferRelSeq(l2gByStudyLocusIdRel, id))
         }
       }
