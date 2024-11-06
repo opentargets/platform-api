@@ -45,8 +45,6 @@ case class LdSet(
     r2Overall: Option[Double]
 )
 
-case class StrongestLocus2gene(geneId: String, score: Double)
-
 case class CredibleSet(studyLocusId: String,
                        variantId: Option[String],
                        chromosome: Option[String],
@@ -70,7 +68,6 @@ case class CredibleSet(studyLocusId: String,
                        locusEnd: Option[Int],
                        locus: Option[Seq[Locus]],
                        sampleSize: Option[Int],
-                       strongestLocus2gene: Option[StrongestLocus2gene],
                        ldSet: Option[Seq[LdSet]],
                        studyType: Option[StudyTypeEnum.Value],
                        qtlGeneId: Option[String],
@@ -88,18 +85,6 @@ case class CredibleSetQueryArgs(
 object CredibleSet extends Logging {
   import sangria.macros.derive._
 
-  implicit val strongestLocus2geneImp: ObjectType[Backend, StrongestLocus2gene] =
-    deriveObjectType[Backend, StrongestLocus2gene](
-      ReplaceField(
-        "geneId",
-        Field(
-          "target",
-          OptionType(targetImp),
-          Some("Target"),
-          resolve = r => targetsFetcher.deferOpt(r.value.geneId)
-        )
-      )
-    )
   implicit val ldSetImp: ObjectType[Backend, LdSet] =
     deriveObjectType[Backend, LdSet]()
   implicit val locusImp: ObjectType[Backend, Locus] = deriveObjectType[Backend, Locus](
@@ -120,7 +105,6 @@ object CredibleSet extends Logging {
 
   implicit val ldSetF: OFormat[LdSet] = Json.format[LdSet]
   implicit val locusF: OFormat[Locus] = Json.format[Locus]
-  implicit val strongestLocus2geneF: OFormat[StrongestLocus2gene] = Json.format[StrongestLocus2gene]
 
   val credibleSetFields: Seq[Field[Backend, JsValue]] = Seq(
     Field(
@@ -274,12 +258,6 @@ object CredibleSet extends Logging {
       OptionType(IntType),
       description = None,
       resolve = js => (js.value \ "sampleSize").asOpt[Int]
-    ),
-    Field(
-      "strongestLocus2gene",
-      OptionType(strongestLocus2geneImp),
-      description = None,
-      resolve = js => (js.value \ "strongestLocus2gene").asOpt[StrongestLocus2gene]
     ),
     Field(
       "ldSet",
