@@ -13,6 +13,7 @@ case class Colocalisation(
     h3: Option[Double],
     h4: Option[Double],
     clpp: Option[Double],
+    betaRatioSignAverage: Option[Double],
     otherStudyLocusId: Option[String]
 )
 
