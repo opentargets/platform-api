@@ -20,7 +20,8 @@ import sangria.schema.{
   ObjectType,
   OptionType,
   StringType,
-  fields
+  fields,
+  DeferredValue
 }
 import models.gql.StudyTypeEnum
 import models.gql.Arguments.{pageArg, StudyType}
@@ -228,6 +229,17 @@ object GwasIndex extends Logging {
       OptionType(ListType(sumStatQCImp)),
       description = Some(""),
       resolve = js => (js.value \ "sumStatQCValues").asOpt[Seq[SumStatQC]]
+    ),
+    Field(
+      "credibleSetCount",
+      IntType,
+      description = Some(""),
+      resolve = js => {
+        import scala.concurrent.ExecutionContext.Implicits.global
+        val studyId = (js.value \ "studyId").as[String]
+        val credSets = credibleSetFetcher.deferRelSeq(credibleSetByStudyRel, studyId)
+        DeferredValue(credSets).map(_.size)
+      }
     )
   )
   lazy val credibleSetField: Field[Backend, JsValue] =
