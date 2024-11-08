@@ -136,27 +136,12 @@ object Drug {
     MechanismsOfAction(rows, uat, utt)
   }
 
-  implicit val DrugXRefImpF: OFormat[DrugReferences] = Json.format[models.entities.DrugReferences]
+  implicit val DrugXRefImpW: OWrites[DrugReferences] = Json.writes[DrugReferences]
+  implicit val DrugXRefImpR: Reads[DrugReferences] = (
+    (JsPath \ "key").read[String] and
+      (JsPath \ "value").read[Seq[String]]
+  )(DrugReferences.apply _)
 
-  private val drugTransformerXRef: Reads[JsObject] = __.json.update(
-    /*
-    The incoming Json has an array of cross reference objects with a struct of "key" for the source and "value" for the reference.
-    We don't know in advance which drug has which references.
-     */
-    __.read[JsObject]
-      .map { o =>
-        if (o.keys.contains("crossReferences")) {
-          val replaceKeys = o.value("crossReferences").as[JsArray].value.map { x =>
-            val source = x.as[JsObject].value("key").as[String]
-            val reference = x.as[JsObject].value("value")
-            JsObject(Seq("source" -> JsString(source), "reference" -> reference))
-          }
-          (o - "crossReferences") ++ Json.obj("crossReferences" -> replaceKeys)
-        } else {
-          o
-        }
-      }
-  )
-  implicit val drugImplicitR: Reads[Drug] = drugTransformerXRef.andThen(Json.reads[Drug])
+  implicit val drugImplicitR: Reads[Drug] = Json.reads[Drug]
   implicit val drugImplicitW: OWrites[Drug] = Json.writes[Drug]
 }
