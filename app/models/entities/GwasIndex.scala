@@ -21,6 +21,8 @@ import sangria.schema.{
 }
 import models.gql.StudyTypeEnum
 import models.gql.Arguments.{pageArg, StudyType}
+import play.api.libs.json._
+import play.api.libs.functional.syntax.toFunctionalBuilderOps
 
 case class StudyQueryArgs(
     id: Seq[String] = Seq.empty,
@@ -35,12 +37,16 @@ object GwasIndex extends Logging {
 
   case class LdPopulationStructure(ldPopulation: Option[String], relativeSampleSize: Option[Double])
 
-  case class SumStatQC(QCCheckName: Option[String], QCCheckValue: Option[Double])
+  case class SumStatQC(QCCheckName: String, QCCheckValue: Double)
 
   implicit val sampleF: OFormat[Sample] = Json.format[Sample]
   implicit val ldPopulationStructureF: OFormat[LdPopulationStructure] =
     Json.format[LdPopulationStructure]
-  implicit val sumStatQCF: OFormat[SumStatQC] = Json.format[SumStatQC]
+  implicit val sumStatQCW: OWrites[SumStatQC] = Json.writes[SumStatQC]
+  implicit val sumStatQCR: Reads[SumStatQC] = (
+    (JsPath \ "key").read[String] and
+      (JsPath \ "value").read[Double]
+  )(SumStatQC.apply _)
 
   implicit val ldPopulationStructureImp: ObjectType[Backend, LdPopulationStructure] =
     deriveObjectType[Backend, LdPopulationStructure]()
