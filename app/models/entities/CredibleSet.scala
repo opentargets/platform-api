@@ -25,7 +25,7 @@ import sangria.schema.{
   fields,
   DeferredValue
 }
-import models.gql.Arguments.{studyTypes, pageArg, pageSize}
+import models.gql.Arguments.{studyTypes, pageArg, pageSize, variantIds}
 
 case class Locus(
     variantId: Option[String],
@@ -131,11 +131,12 @@ object CredibleSet extends Logging {
       resolve = js => {
         import scala.concurrent.ExecutionContext.Implicits.global
         val id: String = (js.value \ "studyLocusId").as[String]
+        val l2gValues = DeferredValue(l2gFetcher.deferRelSeq(l2gByStudyLocusIdRel, id))
         js.arg(pageSize) match {
           case Some(size) =>
-            DeferredValue(l2gFetcher.deferRelSeq(l2gByStudyLocusIdRel, id)).map(_.take(size))
+            l2gValues.map(_.take(size))
           case None =>
-            DeferredValue(l2gFetcher.deferRelSeq(l2gByStudyLocusIdRel, id))
+            l2gValues
         }
       }
     ),
@@ -250,8 +251,18 @@ object CredibleSet extends Logging {
     Field(
       "locus",
       OptionType(ListType(locusImp)),
+      arguments = variantIds :: Nil,
       description = None,
-      resolve = js => (js.value \ "locus").asOpt[Seq[Locus]]
+      resolve = js => {
+        val locus = (js.value \ "locus").asOpt[Seq[Locus]]
+        locus.filter(_.nonEmpty).map { l =>
+          js.arg(variantIds) match {
+            case Some(ids) =>
+              l.filter(v => ids.contains(v.variantId.getOrElse("")))
+            case None => l
+          }
+        }
+      }
     ),
     Field(
       "sampleSize",
