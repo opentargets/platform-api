@@ -169,7 +169,7 @@ class Backend @Inject() (implicit
       .getByIndexedTermsMust(
         indexName,
         Map("biosampleId.keyword" -> ids),
-        Pagination.mkDefault,
+        Pagination(Pagination.indexDefault, Pagination.sizeMax),
         fromJsValue[Biosample]
       )
       .map(_._1)
