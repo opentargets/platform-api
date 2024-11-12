@@ -12,7 +12,7 @@ import sangria.util.tag
 object StudyTypeEnum extends Enumeration {
 
   type StudyType = Value
-  val gwas, tuqtl, eqtl, pqtl, sqtl = Value
+  val tuqtl, pqtl, eqtl, sqtl, sctuqtl, scpqtl, sceqtl, scsqtl, gwas = Value
 }
 
 object Arguments {
