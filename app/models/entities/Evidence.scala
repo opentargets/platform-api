@@ -860,12 +860,6 @@ object Evidence extends Logging {
         resolve = js => (js.value \ "studyCasesWithQualifyingVariants").asOpt[Long]
       ),
       Field(
-        "variantHgvsId",
-        OptionType(StringType),
-        description = Some("Identifier in HGVS notation of the disease-causing variant"),
-        resolve = js => (js.value \ "variantHgvsId").asOpt[String]
-      ),
-      Field(
         "releaseVersion",
         OptionType(StringType),
         description = Some("Release version"),
