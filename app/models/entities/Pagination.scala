@@ -31,7 +31,7 @@ case class Pagination(index: Int, size: Int) {
 }
 
 object Pagination {
-  val sizeMax: Int = 5000
+  val sizeMax: Int = 10000
   val sizeDefault: Int = 25
   val indexDefault: Int = 0
 
