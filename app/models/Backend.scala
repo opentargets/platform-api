@@ -178,7 +178,7 @@ class Backend @Inject() (implicit
   def getStudies(queryArgs: StudyQueryArgs,
                  pagination: Option[Pagination]
   ): Future[IndexedSeq[JsValue]] = {
-    val pag = pagination.getOrElse(Pagination(Pagination.indexDefault, Pagination.sizeMax))
+    val pag = pagination.getOrElse(Pagination.mkDefault)
     val indexName = getIndexOrDefault("gwas_index")
     val diseaseIds: Seq[String] = {
       if (queryArgs.enableIndirect) {
@@ -236,7 +236,7 @@ class Backend @Inject() (implicit
       queryArgs: CredibleSetQueryArgs,
       pagination: Option[Pagination]
   ): Future[IndexedSeq[JsValue]] = {
-    val pag = pagination.getOrElse(Pagination(Pagination.indexDefault, Pagination.sizeMax))
+    val pag = pagination.getOrElse(Pagination.mkDefault)
     val indexName = getIndexOrDefault("credible_set")
     val termsQuery = Map(
       "studyLocusId.keyword" -> queryArgs.ids,

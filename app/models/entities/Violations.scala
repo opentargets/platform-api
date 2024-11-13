@@ -4,11 +4,17 @@ import sangria.execution.{UserFacingError, WithViolations}
 import sangria.validation.{BaseViolation, Violation}
 
 object Violations {
-  val paginationErrorMsg: String =
-    "There was a pagination error. You used this size %d but the max value is %d"
+  val paginationSizeErrorMsg: String =
+    "There was a pagination error. You used size %d but the size must be between 0 and %d"
 
-  case class PaginationError(currentSize: Int, sizeMax: Int = Pagination.sizeMax)
-      extends BaseViolation(paginationErrorMsg format (currentSize, sizeMax))
+  case class PaginationSizeError(currentSize: Int, sizeMax: Int = Pagination.sizeMax)
+      extends BaseViolation(paginationSizeErrorMsg format (currentSize, sizeMax))
+
+  val paginationIndexErrorMsg: String =
+    "There was a pagination error. You used index %d but the index must be 0 or greater"
+
+  case class PaginationIndexError(currentIndex: Int)
+      extends BaseViolation(paginationIndexErrorMsg format (currentIndex))
 
   case class InputParameterCheckError(violations: Vector[Violation])
       extends Exception(
