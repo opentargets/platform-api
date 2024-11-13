@@ -13,6 +13,7 @@ import models.entities.{
   Indications,
   L2GPredictions,
   OtarProjects,
+  Pagination,
   Reactome,
   Target,
   VariantIndex
@@ -30,6 +31,7 @@ import sangria.execution.deferred.{
   SimpleFetcherCache
 }
 import models.gql.Arguments.studyId
+import scala.concurrent.java8.FuturesConvertersImpl.P
 
 object Fetchers extends Logging {
   val soTermsFetcherCache = FetcherCache.simple
@@ -161,11 +163,11 @@ object Fetchers extends Logging {
         .maxBatchSize(entities.Configuration.batchSize)
         .caching(credibleSetFetcherCache),
       fetch = (ctx: Backend, ids: Seq[String]) => {
-        ctx.getCredibleSets(entities.CredibleSetQueryArgs(ids = ids), None)
+        ctx.getCredibleSets(entities.CredibleSetQueryArgs(ids = ids), Some(Pagination.mkMax))
       },
       fetchRel = (ctx: Backend, ids: RelationIds[JsValue]) => {
         ctx.getCredibleSets(entities.CredibleSetQueryArgs(studyIds = ids(credibleSetByStudyRel)),
-                            None
+                            Some(Pagination.mkMax)
         )
       }
     )
@@ -194,7 +196,7 @@ object Fetchers extends Logging {
       config =
         FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(gwasFetcherCache),
       fetch = (ctx: Backend, ids: Seq[String]) => {
-        ctx.getStudies(entities.StudyQueryArgs(id = ids), None)
+        ctx.getStudies(entities.StudyQueryArgs(id = ids), Some(Pagination.mkMax))
       }
     )
   }
