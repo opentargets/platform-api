@@ -93,9 +93,9 @@ object Arguments {
     Argument("studyTypes", OptionInputType(ListInputType(StudyType)), description = "Study types")
   val regions: Argument[Option[Seq[String]]] =
     Argument("regions", OptionInputType(ListInputType(StringType)), description = "Regions")
-  val studyLocusIds: Argument[Option[Seq[String]]] =
+  val studyLocusIds: Argument[Seq[String with tag.Tagged[FromInput.CoercedScalaResult]]] =
     Argument("studyLocusIds",
-             OptionInputType(ListInputType(StringType)),
+             ListInputType(StringType),
              description = "Study-locus IDs"
     )
 
