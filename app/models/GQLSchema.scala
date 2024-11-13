@@ -173,7 +173,7 @@ object GQLSchema {
           pageArg :: studyLocusIds :: studyIds :: variantIds :: studyTypes :: regions :: Nil,
         resolve = ctx => {
           val credSetQueryArgs = CredibleSetQueryArgs(
-            ctx.arg(studyLocusIds).getOrElse(Seq.empty),
+            ctx.arg(studyLocusIds),
             ctx.arg(studyIds).getOrElse(Seq.empty),
             ctx.arg(variantIds).getOrElse(Seq.empty),
             ctx.arg(studyTypes).getOrElse(Seq.empty),
