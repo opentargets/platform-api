@@ -7,13 +7,14 @@ import entities._
 import models.entities.CredibleSet.credibleSetImp
 import models.entities.GwasIndex.gwasImp
 import sangria.execution.deferred._
-
+import gql.validators.QueryTermsValidator._
 import scala.concurrent.ExecutionContext.Implicits.global
 import models.entities.Interaction._
 import models.gql.Objects._
 import models.gql.Arguments._
 import models.gql.Fetchers._
-import org.checkerframework.checker.units.qual.C
+import scala.concurrent._
+import scala.util.{Try, Failure, Success}
 
 trait GQLEntities extends Logging {}
 
@@ -116,7 +117,10 @@ object GQLSchema {
         arguments = queryTerms :: entityNames :: Nil,
         resolve = ctx => {
           val entities = ctx.arg(entityNames).getOrElse(Seq.empty)
-          ctx.ctx.mapIds(ctx.arg(queryTerms), entities)
+          withQueryTermsNumberValidation(ctx.arg(queryTerms), Pagination.sizeMax) match {
+            case Success(terms) => ctx.ctx.mapIds(terms, entities)
+            case Failure(error) => Future.failed(error)
+          }
         }
       ),
       Field(
