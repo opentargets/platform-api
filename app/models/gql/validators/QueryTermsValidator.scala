@@ -1,21 +1,24 @@
 package models.gql.validators
 
 import scala.concurrent.Future
+import scala.util.{Try, Failure, Success}
 
 case class InvalidQueryTerms(msg: String) extends Exception(msg)
 
 object QueryTermsValidator {
-  def withQueryTermsNumberValidation[T](
+  def withQueryTermsNumberValidation(
       queryTerms: Seq[String],
       maxNumberOfTerms: Int
-  )(callback: => Future[T]): Future[T] =
+  ): Try[Seq[String]] =
     if (queryTerms.length > maxNumberOfTerms) {
-      Future.failed(
+
+      Failure(
         InvalidQueryTerms(
-          s"Invalid query Terms request. Number of terms must not exceed ${maxNumberOfTerms}"
+          s"Invalid request. Number of requested terms must not exceed ${maxNumberOfTerms}"
         )
       )
+
     } else {
-      callback
+      Success(queryTerms)
     }
 }
