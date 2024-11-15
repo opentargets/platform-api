@@ -27,6 +27,10 @@ import sangria.schema.{
 }
 import models.gql.Arguments.{studyTypes, pageArg, pageSize}
 
+case class Loci(
+    count: Int,
+    rows: Seq[Locus]
+)
 case class Locus(
     variantId: Option[String],
     posteriorProbability: Option[Double],
@@ -87,6 +91,9 @@ object CredibleSet extends Logging {
 
   implicit val ldSetImp: ObjectType[Backend, LdSet] =
     deriveObjectType[Backend, LdSet]()
+
+  implicit val lociImp: ObjectType[Backend, Loci] =
+    deriveObjectType[Backend, Loci]()
   implicit val locusImp: ObjectType[Backend, Locus] = deriveObjectType[Backend, Locus](
     ReplaceField(
       "variantId",
@@ -249,9 +256,21 @@ object CredibleSet extends Logging {
     ),
     Field(
       "locus",
-      OptionType(ListType(locusImp)),
+      lociImp,
+      arguments = variantIds :: Nil,
       description = None,
-      resolve = js => (js.value \ "locus").asOpt[Seq[Locus]]
+      resolve = js => {
+        val locus = (js.value \ "locus").asOpt[Seq[Locus]]
+        val count = locus.getOrElse(Seq.empty).size
+        val filtered = locus.filter(_.nonEmpty).map { l =>
+          js.arg(variantIds) match {
+            case Some(ids) =>
+              l.filter(v => ids.contains(v.variantId.getOrElse("")))
+            case None => l
+          }
+        }
+        Loci(count, filtered.getOrElse(Seq.empty))
+      }
     ),
     Field(
       "sampleSize",
