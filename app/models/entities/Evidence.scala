@@ -8,10 +8,11 @@ import models.gql.Fetchers.{
   drugsFetcher,
   goFetcher,
   soTermsFetcher,
-  targetsFetcher
+  targetsFetcher,
+  variantFetcher
 }
 import models.gql.Objects
-import models.gql.Objects.{diseaseImp, drugImp, geneOntologyTermImp, targetImp}
+import models.gql.Objects.{diseaseImp, drugImp, geneOntologyTermImp, targetImp, variantIndexImp}
 import play.api.Logging
 import play.api.libs.json._
 import sangria.schema.{
@@ -360,10 +361,14 @@ object Evidence extends Logging {
         resolve = js => (js.value \ "projectId").asOpt[String]
       ),
       Field(
-        "variantId",
-        OptionType(StringType),
-        description = Some("Variant evidence"),
-        resolve = js => (js.value \ "variantId").asOpt[String]
+        "variant",
+        OptionType(variantIndexImp),
+        description = None,
+        resolve = js => {
+          val id = (js.value \ "variantId").asOpt[String]
+          logger.debug(s"Finding variant for id: $id")
+          variantFetcher.deferOpt(id)
+        }
       ),
       Field(
         "variantRsId",
