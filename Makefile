@@ -13,6 +13,9 @@ run: ## Runs API
 debug: ## Debugs API
 	@sbt -jvm-debug 9999 run
 
+debug_with_standalone: ## Debugs API
+	@sbt -jvm-debug 9999 "run 8090" -DPLATFORM_API_IGNORE_CACHE=true
+
 run_log: ## Runs API using the logback file specified in logfile eg: make run_log logfile=./conf/logback.xml
 	@sbt run -Dlogback.configurationFile=${logfile}
 
