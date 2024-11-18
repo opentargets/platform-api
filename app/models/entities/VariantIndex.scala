@@ -42,7 +42,8 @@ case class VariantIndex(variantId: String,
                         rsIds: Option[Seq[String]],
                         dbXrefs: Option[Seq[DbXref]],
                         alleleFrequencies: Option[Seq[AlleleFrequency]],
-                        hgvsId: String
+                        hgvsId: String,
+                        variantDescription: String
 )
 
 object VariantIndex extends Logging {
