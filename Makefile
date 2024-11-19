@@ -22,6 +22,9 @@ run_log: ## Runs API using the logback file specified in logfile eg: make run_lo
 debug_log: ## Debugs API using the logback file specified in logfile eg: make debug_log logfile=./conf/logback.xml
 	@sbt -jvm-debug 9999 run -Dlogback.configurationFile=${logfile}
 
+debug_log_standalone: ## Debugs API using the logback file specified in logfile eg: make debug_log_standalone logfile=./conf/logback.xml
+	@sbt -jvm-debug 9999 "run 8090" -Dlogback.configurationFile=${logfile}
+
 es_tunnel: ## Create tunnel connection to ElasticSearch eg make es_tunnel zone europe-west1-d instance trnplt-es-0-esearch-fl6c
 	@echo "Connecting to ElasticSearch"
 	@gcloud compute ssh --zone "${zone}" ${instance} --tunnel-through-iap -- -L 9200:localhost:9200

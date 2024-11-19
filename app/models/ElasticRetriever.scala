@@ -180,7 +180,8 @@ class ElasticRetriever @Inject() (
                                                aggs = aggs,
                                                excludedFields = excludedFields
     )
-    val searchRequest: SearchRequest = IndexQueryMust(indexQuery)
+    val searchRequest: SearchRequest = IndexQueryShould(indexQuery)
+    // log and execute the query
     getByIndexedQuery(searchRequest, sortByField, buildF)
   }
 
