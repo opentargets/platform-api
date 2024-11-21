@@ -17,6 +17,7 @@ import sangria.schema._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
+import models.entities.CredibleSets.credibleSetsImp
 import models.entities.CredibleSet.credibleSetImp
 
 object Objects extends Logging {
@@ -1350,8 +1351,8 @@ object Objects extends Logging {
           resolve = r => {
             val studyLocusId = r.value.otherStudyLocusId.getOrElse("")
             logger.info(s"Finding colocalisation credible set: $studyLocusId")
-            val credSetQueryArgs = CredibleSetQueryArgs(ids = Seq(studyLocusId))
-            r.ctx.getCredibleSets(credSetQueryArgs, None).map(_.headOption)
+            // r.ctx.getCredibleSet(studyLocusId)
+            credibleSetFetcher.deferOpt(studyLocusId)
           }
         )
       ),
@@ -1378,7 +1379,7 @@ object Objects extends Logging {
       AddFields(
         Field(
           "credibleSets",
-          OptionType(ListType(credibleSetImp)),
+          credibleSetsImp,
           description = Some("Credible sets"),
           arguments = pageArg :: studyTypes :: Nil,
           resolve = r => {

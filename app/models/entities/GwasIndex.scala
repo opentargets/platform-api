@@ -1,16 +1,12 @@
 package models.entities
 
 import models.Backend
-import models.gql.Fetchers.{
-  biosamplesFetcher,
-  credibleSetFetcher,
-  credibleSetByStudyRel,
-  diseasesFetcher,
-  targetsFetcher
-}
+import models.gql.Fetchers.{biosamplesFetcher, credibleSetFetcher, diseasesFetcher, targetsFetcher}
 import play.api.Logging
 import play.api.libs.json.{JsValue, Json, OFormat}
 import models.entities.CredibleSet.{credibleSetImp, credibleSetWithoutStudyImp}
+import models.entities.CredibleSetQueryArgs
+import models.entities.CredibleSets.credibleSetsImp
 import models.gql.Objects.{diseaseImp, targetImp, biosampleImp}
 import sangria.schema.{
   BooleanType,
@@ -235,28 +231,29 @@ object GwasIndex extends Logging {
       OptionType(ListType(sumStatQCImp)),
       description = Some(""),
       resolve = js => (js.value \ "sumStatQCValues").asOpt[Seq[SumStatQC]]
-    ),
-    Field(
-      "credibleSetCount",
-      IntType,
-      description = Some(""),
-      resolve = js => {
-        import scala.concurrent.ExecutionContext.Implicits.global
-        val studyId = (js.value \ "studyId").as[String]
-        val credSets = credibleSetFetcher.deferRelSeq(credibleSetByStudyRel, studyId)
-        DeferredValue(credSets).map(_.size)
-      }
     )
+    // Field(
+    //   "credibleSetCount",
+    //   IntType,
+    //   description = Some(""),
+    //   resolve = js => {
+    //     import scala.concurrent.ExecutionContext.Implicits.global
+    //     val studyId = (js.value \ "studyId").as[String]
+    //     val credSets = credibleSetFetcher.deferRelSeq(credibleSetByStudyRel, studyId)
+    //     DeferredValue(credSets).map(_.size)
+    //   }
+    // )
   )
   lazy val credibleSetField: Field[Backend, JsValue] =
     Field(
       "credibleSets",
-      OptionType(ListType(credibleSetImp)),
+      credibleSetsImp,
       arguments = pageArg :: Nil,
       description = Some("Credible sets"),
       resolve = js => {
         val studyId = (js.value \ "studyId").as[String]
-        credibleSetFetcher.deferRelSeq(credibleSetByStudyRel, studyId)
+        val credSetQueryArgs = CredibleSetQueryArgs(studyIds = Seq(studyId))
+        js.ctx.getCredibleSets(credSetQueryArgs, js.arg(pageArg))
       }
     )
   lazy val gwasImp: ObjectType[Backend, JsValue] = ObjectType(

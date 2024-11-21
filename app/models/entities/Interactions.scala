@@ -70,8 +70,8 @@ object Interactions extends Logging {
         Some(sort.FieldSort("scoring", order = SortOrder.DESC))
       )
       .map {
-        case (Seq(), _) => None
-        case (seq, agg) =>
+        case (Seq(), _, _) => None
+        case (seq, agg, _) =>
           logger.debug(Json.prettyPrint(agg))
 
           val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
