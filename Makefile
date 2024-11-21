@@ -28,7 +28,7 @@ ch_tunnel: ## Create tunnel connection to Clickhouse eg. make ch_tunnel zone eur
 	@gcloud compute ssh ${instance} --zone="${zone}" --tunnel-through-iap -- -L 8123:localhost:8123
 
 run_with_standalone: ## Runs API with standalone platform
-	@sbt "run 8090" -J-Xms2g -J-Xmx7g -DELASTICSEARCH_HOST=elasticsearch -DSLICK_CLICKHOUSE_URL=jdbc:clickhouse://clickhouse:8123 -DPLATFORM_API_IGNORE_CACHE=true
+	@sbt "run 8090" -J-Xms2g -J-Xmx7g -J-XX:+UseG1GC -DELASTICSEARCH_HOST=elasticsearch -DSLICK_CLICKHOUSE_URL=jdbc:clickhouse://clickhouse:8123 -DPLATFORM_API_IGNORE_CACHE=true
 
 debug_with_standalone: ## Runs API with standalone platform
 	@sbt -jvm-debug 9999 run 8090 -DSLICK_CLICKHOUSE_URL=jdbc:clickhouse://clickhouse:8123 -DPLATFORM_API_IGNORE_CACHE=true
