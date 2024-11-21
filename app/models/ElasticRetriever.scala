@@ -128,7 +128,7 @@ class ElasticRetriever @Inject() (
       aggs: Iterable[AbstractAggregation] = Iterable.empty,
       sortByField: Option[sort.FieldSort] = None,
       excludedFields: Seq[String] = Seq.empty
-  ): Future[(IndexedSeq[A], JsValue)] = {
+  ): Future[(IndexedSeq[A], JsValue, Long)] = {
     // just log and execute the query
     val indexQuery: IndexQuery[V] = IndexQuery(esIndex = esIndex,
                                                kv = kv,
@@ -149,7 +149,7 @@ class ElasticRetriever @Inject() (
       aggs: Iterable[AbstractAggregation] = Iterable.empty,
       sortByField: Option[sort.FieldSort] = None,
       excludedFields: Seq[String] = Seq.empty
-  ): Future[(IndexedSeq[A], JsValue)] = {
+  ): Future[(IndexedSeq[A], JsValue, Long)] = {
     // just log and execute the query
     val indexQuery: IndexQuery[V] = IndexQuery(esIndex = esIndex,
                                                kv = kv,
@@ -174,7 +174,7 @@ class ElasticRetriever @Inject() (
       sortByField: Option[sort.FieldSort] = None,
       excludedFields: Seq[String] = Seq.empty,
       filter: Seq[Query] = Seq.empty
-  ): Future[(IndexedSeq[A], JsValue)] = {
+  ): Future[(IndexedSeq[A], JsValue, Long)] = {
     // just log and execute the query
     val indexQuery: IndexQuery[V] = IndexQuery(esIndex = esIndex,
                                                kv = kv,
@@ -199,7 +199,7 @@ class ElasticRetriever @Inject() (
       sortByField: Option[sort.FieldSort] = None,
       excludedFields: Seq[String] = Seq.empty,
       filter: Seq[Query] = Seq.empty
-  ): Future[(IndexedSeq[A], JsValue)] = {
+  ): Future[(IndexedSeq[A], JsValue, Long)] = {
     // just log and execute the query
     val indexQuery: IndexQuery[V] = IndexQuery(esIndex = esIndex,
                                                kv = kv,
@@ -223,7 +223,7 @@ class ElasticRetriever @Inject() (
       aggs: Iterable[AbstractAggregation] = Iterable.empty,
       sortByField: Option[sort.FieldSort] = None,
       excludedFields: Seq[String] = Seq.empty
-  ): Future[(IndexedSeq[A], JsValue)] = {
+  ): Future[(IndexedSeq[A], JsValue, Long)] = {
     val indexQuery: IndexQuery[V] = IndexQuery(esIndex = esIndex,
                                                kv = kv,
                                                pagination = pagination,
@@ -240,7 +240,7 @@ class ElasticRetriever @Inject() (
       searchRequest: SearchRequest,
       sortByField: Option[sort.FieldSort] = None,
       buildF: JsValue => Option[A]
-  ): Future[(IndexedSeq[A], JsValue)] = {
+  ): Future[(IndexedSeq[A], JsValue, Long)] = {
     // log and execute the query
     val searchResponse: Future[Response[SearchResponse]] = executeQuery(searchRequest, sortByField)
     // convert results into A
@@ -267,12 +267,12 @@ class ElasticRetriever @Inject() (
       searchResponse: Response[SearchResponse],
       searchQuery: SearchRequest,
       buildF: JsValue => Option[A]
-  ): (IndexedSeq[A], JsValue) =
+  ): (IndexedSeq[A], JsValue, Long) =
     searchResponse match {
       case rf: RequestFailure =>
         logger.debug(s"Request failure for query: $searchQuery")
         logger.error(s"Elasticsearch error: ${rf.error}")
-        (IndexedSeq.empty, JsNull)
+        (IndexedSeq.empty, JsNull, 0)
       case results: RequestSuccess[SearchResponse] =>
         // parse the full body response into JsValue
         val result = Json.parse(results.body.get)
@@ -280,6 +280,7 @@ class ElasticRetriever @Inject() (
         logger.trace(Json.prettyPrint(result))
         val hits = (result \ "hits" \ "hits").get.as[JsArray].value
         val aggs = (result \ "aggregations").getOrElse(JsNull)
+        val total = (result \ "hits" \ "total" \ "value").as[Long]
 
         val mappedHits = hits
           .map { jObj =>
@@ -288,7 +289,7 @@ class ElasticRetriever @Inject() (
           .withFilter(_.isDefined)
           .map(_.get)
           .to(IndexedSeq)
-        (mappedHits, aggs)
+        (mappedHits, aggs, total)
     }
 
   def getQ[A](

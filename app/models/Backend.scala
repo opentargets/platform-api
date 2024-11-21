@@ -15,6 +15,7 @@ import models.db.{QAOTF, QLITAGG, QW2V, SentenceQuery}
 import models.entities.Publication._
 import models.entities.Associations._
 import models.entities.Biosample._
+import models.entities.CredibleSet._
 import models.entities.Configuration._
 import models.entities.DiseaseHPOs._
 import models.entities.Drug._
@@ -100,10 +101,10 @@ class Backend @Inject() (implicit
         ElasticRetriever.sortByDesc("llr")
       )
       .map {
-        case (Seq(), _) =>
+        case (Seq(), _, _) =>
           logger.debug(s"No adverse event found for ${kv.toString}")
           None
-        case (seq, agg) =>
+        case (seq, agg, _) =>
           logger.trace(Json.prettyPrint(agg))
           val counts = (agg \ "eventCount" \ "value").as[Long]
           Some(AdverseEvents(counts, seq.head.criticalValue, seq))
@@ -123,8 +124,8 @@ class Backend @Inject() (implicit
     )
 
     esRetriever.getByIndexedQueryMust(cbIndex, kv, pag, fromJsValue[DiseaseHPO], aggs).map {
-      case (Seq(), _) => Some(DiseaseHPOs(0, Seq()))
-      case (seq, agg) =>
+      case (Seq(), _, _) => Some(DiseaseHPOs(0, Seq()))
+      case (seq, agg, _) =>
         logger.trace(Json.prettyPrint(agg))
         val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
         Some(DiseaseHPOs(rowsCount, seq))
@@ -196,14 +197,14 @@ class Backend @Inject() (implicit
     if (termsQuery.isEmpty) {
       Future.successful(IndexedSeq.empty)
     } else {
-      esRetriever
+      val r = esRetriever
         .getByIndexedTermsMust(
           indexName,
           termsQuery,
           pag,
           fromJsValue[JsValue]
         )
-        .map(_._1)
+      r.map(_._1)
     }
   }
 
@@ -232,10 +233,55 @@ class Backend @Inject() (implicit
     })
   }
 
+  def getLocus(ids: String,
+               variantIds: Option[Seq[String]],
+               sizeLimit: Option[Int]
+  ): Future[Option[Loci]] = {
+    val indexName = getIndexOrDefault("credible_setn")
+    val termsQuery = Map("studyLocusId.keyword" -> Seq(ids))
+    val retriever =
+      esRetriever
+        .getByIndexedTermsMust(
+          indexName,
+          termsQuery,
+          Pagination.mkDefault,
+          fromJsValue[JsValue],
+          excludedFields = Seq("ldSet")
+        )
+    retriever.map {
+      case (Seq(), _, _) => None
+      case (credset, _, _) =>
+        val loci = credset.flatMap(cs => (cs \ "locus").as[Seq[Locus]])
+        logger.info(s"loci: $loci")
+        val count = loci.size
+        val filteredLoci = variantIds match {
+          case Some(variantIds) => loci.filter(l => variantIds.contains(l.variantId.getOrElse("")))
+          case None             => loci
+        }
+        Some(Loci(count, filteredLoci.take(sizeLimit.getOrElse(Pagination.sizeDefault))))
+    }
+  }
+
+  def getCredibleSet(ids: Seq[String]): Future[IndexedSeq[JsValue]] = {
+    val pag = Pagination.mkDefault
+    val indexName = getIndexOrDefault("credible_setn")
+    val termsQuery = Map("studyLocusId.keyword" -> ids)
+    val retriever =
+      esRetriever
+        .getByIndexedTermsMust(
+          indexName,
+          termsQuery,
+          pag,
+          fromJsValue[JsValue],
+          excludedFields = Seq("locus", "ldSet")
+        )
+    retriever.map(_._1)
+  }
+
   def getCredibleSets(
       queryArgs: CredibleSetQueryArgs,
       pagination: Option[Pagination]
-  ): Future[IndexedSeq[JsValue]] = {
+  ): Future[CredibleSets] = {
     val pag = pagination.getOrElse(Pagination.mkDefault)
     val indexName = getIndexOrDefault("credible_set")
     val termsQuery = Map(
@@ -252,10 +298,14 @@ class Backend @Inject() (implicit
           indexName,
           termsQuery,
           pag,
-          fromJsValue[JsValue]
+          fromJsValue[JsValue],
+          excludedFields = Seq("locus", "ldSet")
         )
-        .map(_._1)
-    retriever
+    retriever.map {
+      case (Seq(), _, _) => CredibleSets.empty
+      case (credset, _, count) =>
+        CredibleSets(count, credset)
+    }
   }
 
   def getTargetEssentiality(ids: Seq[String]): Future[IndexedSeq[TargetEssentiality]] = {
@@ -520,7 +570,7 @@ class Backend @Inject() (implicit
     logger.debug(s"querying ES: getting mechanisms of action for $id")
     val index = getIndexOrDefault("drugMoA")
     val queryTerms = Map("chemblIds.keyword" -> id)
-    val mechanismsOfActionRaw: Future[(IndexedSeq[MechanismOfActionRaw], JsValue)] =
+    val mechanismsOfActionRaw: Future[(IndexedSeq[MechanismOfActionRaw], JsValue, Long)] =
       esRetriever.getByIndexedQueryShould(
         index,
         queryTerms,

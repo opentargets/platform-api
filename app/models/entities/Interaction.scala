@@ -279,8 +279,8 @@ object Interaction extends Logging {
     ) ++ interaction.targetB.map("targetB.keyword" -> _)
 
     esRetriever.getByIndexedQueryMust(cbIndex, kv.toMap, pag, fromJsValue[JsValue]).map {
-      case (Seq(), _) => IndexedSeq.empty
-      case (seq, _)   => seq
+      case (Seq(), _, _) => IndexedSeq.empty
+      case (seq, _, _)   => seq
     }
   }
 }

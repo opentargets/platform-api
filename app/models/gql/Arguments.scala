@@ -93,9 +93,13 @@ object Arguments {
     Argument("studyTypes", OptionInputType(ListInputType(StudyType)), description = "Study types")
   val regions: Argument[Option[Seq[String]]] =
     Argument("regions", OptionInputType(ListInputType(StringType)), description = "Regions")
-  val studyLocusIds: Argument[Seq[String with tag.Tagged[FromInput.CoercedScalaResult]]] =
-    Argument("studyLocusIds", ListInputType(StringType), description = "Study-locus IDs")
-
+  val studyLocusId: Argument[String] =
+    Argument("studyLocusId", StringType, description = "Study-locus ID")
+  val studyLocusIds: Argument[Option[Seq[String]]] =
+    Argument("studyLocusIds",
+             OptionInputType(ListInputType(StringType)),
+             description = "Study-locus IDs"
+    )
   val enableIndirect: Argument[Option[Boolean]] = Argument(
     "enableIndirect",
     OptionInputType(BooleanType),
