@@ -237,7 +237,7 @@ class Backend @Inject() (implicit
                variantIds: Option[Seq[String]],
                sizeLimit: Option[Int]
   ): Future[Option[Loci]] = {
-    val indexName = getIndexOrDefault("credible_setn")
+    val indexName = getIndexOrDefault("credible_set")
     val termsQuery = Map("studyLocusId.keyword" -> Seq(ids))
     val retriever =
       esRetriever
@@ -264,7 +264,7 @@ class Backend @Inject() (implicit
 
   def getCredibleSet(ids: Seq[String]): Future[IndexedSeq[JsValue]] = {
     val pag = Pagination.mkDefault
-    val indexName = getIndexOrDefault("credible_setn")
+    val indexName = getIndexOrDefault("credible_set")
     val termsQuery = Map("studyLocusId.keyword" -> ids)
     val retriever =
       esRetriever
