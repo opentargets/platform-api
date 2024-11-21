@@ -12,6 +12,7 @@ import models.entities.{
   HPO,
   Indications,
   L2GPredictions,
+  Loci,
   OtarProjects,
   Pagination,
   Reactome,
@@ -153,23 +154,22 @@ object Fetchers extends Logging {
   )
 
   val credibleSetFetcherCache = FetcherCache.simple
-  val credibleSetByStudyRel =
-    Relation[JsValue, String]("byStudy", js => Seq((js \ "studyId").as[String]))
+  // val credibleSetByStudyRel =
+  //   Relation[JsValue, String]("byStudy", js => Seq((js \ "studyId").as[String]))
   val credibleSetFetcher: Fetcher[Backend, JsValue, JsValue, String] = {
     implicit val credibleSetFetcherId: HasId[JsValue, String] =
       HasId[JsValue, String](js => (js \ "studyLocusId").as[String])
-    Fetcher.rel(
+    Fetcher(
       config = FetcherConfig
         .maxBatchSize(entities.Configuration.batchSize)
         .caching(credibleSetFetcherCache),
-      fetch = (ctx: Backend, ids: Seq[String]) => {
-        ctx.getCredibleSets(entities.CredibleSetQueryArgs(ids = ids), Some(Pagination.mkMax))
-      },
-      fetchRel = (ctx: Backend, ids: RelationIds[JsValue]) => {
-        ctx.getCredibleSets(entities.CredibleSetQueryArgs(studyIds = ids(credibleSetByStudyRel)),
-                            Some(Pagination.mkMax)
-        )
-      }
+      fetch = (ctx: Backend, ids: Seq[String]) => ctx.getCredibleSet(ids)
+      // },
+      // fetchRel = (ctx: Backend, ids: RelationIds[JsValue]) => {
+      //   ctx.getCredibleSets(entities.CredibleSetQueryArgs(studyIds = ids(credibleSetByStudyRel)),
+      //                       Some(Pagination.mkMax)
+      //   )
+      // }
     )
   }
 

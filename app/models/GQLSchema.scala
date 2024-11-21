@@ -5,6 +5,7 @@ import play.api.libs.json._
 import sangria.schema._
 import entities._
 import models.entities.CredibleSet.credibleSetImp
+import models.entities.CredibleSets.credibleSetsImp
 import models.entities.GwasIndex.gwasImp
 import sangria.execution.deferred._
 import gql.validators.QueryTermsValidator._
@@ -170,14 +171,21 @@ object GQLSchema {
         }
       ),
       Field(
+        "credibleSet",
+        OptionType(credibleSetImp),
+        description = Some("Return a Credible Set"),
+        arguments = studyLocusId :: Nil,
+        resolve = ctx => credibleSetFetcher.deferOpt(ctx.arg(studyLocusId))
+      ),
+      Field(
         "credibleSets",
-        ListType(credibleSetImp),
+        credibleSetsImp,
         description = None,
         arguments =
           pageArg :: studyLocusIds :: studyIds :: variantIds :: studyTypes :: regions :: Nil,
         resolve = ctx => {
           val credSetQueryArgs = CredibleSetQueryArgs(
-            ctx.arg(studyLocusIds),
+            ctx.arg(studyLocusIds).getOrElse(Seq.empty),
             ctx.arg(studyIds).getOrElse(Seq.empty),
             ctx.arg(variantIds).getOrElse(Seq.empty),
             ctx.arg(studyTypes).getOrElse(Seq.empty),

@@ -13,7 +13,9 @@ import models.gql.Fetchers.{
 }
 import models.gql.Objects.{logger, targetImp, variantIndexImp, colocalisationImp, l2gPredictionsImp}
 import play.api.Logging
-import play.api.libs.json.{JsValue, Json, OFormat, OWrites}
+import play.api.libs.json._
+import play.api.libs.json.{Reads, JsValue, Json, OFormat, OWrites}
+import play.api.libs.functional.syntax._
 import sangria.schema.{
   Field,
   FloatType,
@@ -38,6 +40,11 @@ case class Locus(
     is95CredibleSet: Option[Boolean],
     is99CredibleSet: Option[Boolean],
     r2Overall: Option[Double]
+)
+
+case class Loci(
+    count: Long,
+    rows: Seq[Locus]
 )
 
 case class LdSet(
@@ -103,8 +110,14 @@ object CredibleSet extends Logging {
     )
   )
 
+  implicit val lociImp: ObjectType[Backend, Loci] = deriveObjectType[Backend, Loci]()
   implicit val ldSetF: OFormat[LdSet] = Json.format[LdSet]
   implicit val locusF: OFormat[Locus] = Json.format[Locus]
+
+  implicit val lociR: Reads[Loci] = (
+    (JsPath \ "count").read[Long] and
+      (JsPath \ "locus").read[Seq[Locus]]
+  )(Loci.apply _)
 
   val credibleSetFields: Seq[Field[Backend, JsValue]] = Seq(
     Field(
@@ -250,18 +263,12 @@ object CredibleSet extends Logging {
     ),
     Field(
       "locus",
-      OptionType(ListType(locusImp)),
-      arguments = variantIds :: Nil,
+      OptionType(lociImp),
+      arguments = variantIds :: pageSize :: Nil,
       description = None,
       resolve = js => {
-        val locus = (js.value \ "locus").asOpt[Seq[Locus]]
-        locus.filter(_.nonEmpty).map { l =>
-          js.arg(variantIds) match {
-            case Some(ids) =>
-              l.filter(v => ids.contains(v.variantId.getOrElse("")))
-            case None => l
-          }
-        }
+        val id = (js.value \ "studyLocusId").as[String]
+        js.ctx.getLocus(id, js.arg(variantIds), js.arg(pageSize))
       }
     ),
     Field(
