@@ -37,6 +37,7 @@ import java.time.LocalDate
 import scala.collection.immutable.ArraySeq
 import scala.concurrent._
 import scala.util.{Failure, Success}
+import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
 
 class Backend @Inject() (implicit
     ec: ExecutionContext,
@@ -252,7 +253,6 @@ class Backend @Inject() (implicit
       case (Seq(), _, _) => None
       case (credset, _, _) =>
         val loci = credset.flatMap(cs => (cs \ "locus").asOpt[Seq[Locus]].getOrElse(Seq()))
-        logger.info(s"loci: $loci")
         val count = loci.size
         val filteredLoci = variantIds match {
           case Some(variantIds) => loci.filter(l => variantIds.contains(l.variantId.getOrElse("")))
@@ -283,20 +283,35 @@ class Backend @Inject() (implicit
       pagination: Option[Pagination]
   ): Future[CredibleSets] = {
     val pag = pagination.getOrElse(Pagination.mkDefault)
-    val indexName = getIndexOrDefault("credible_set")
-    val termsQuery = Map(
+    val indexName = getIndexOrDefault("credible_setn")
+    val termsQuerySeq = Map(
       "studyLocusId.keyword" -> queryArgs.ids,
       "studyId.keyword" -> queryArgs.studyIds,
-      "locus.variantId.keyword" -> queryArgs.variantIds,
       "studyType.keyword" -> queryArgs.studyTypes,
       "region.keyword" -> queryArgs.regions
-    ).filter(_._2.nonEmpty)
-    logger.debug(s"Querying credible sets for: $termsQuery")
+    ).filter(_._2.nonEmpty).toSeq
+    val termsQueryIter: Iterable[queries.Query] = Iterable(must(termsQuerySeq.map { it =>
+      val terms = it._2.asInstanceOf[Iterable[String]]
+      termsQuery(it._1, terms)
+    }))
+    val query: BoolQuery = {
+      if (queryArgs.variantIds.nonEmpty) {
+        val nestedTermsQuery = Map("locus.variantId.keyword" -> queryArgs.variantIds)
+        val nestedQueryIter = Iterable(nestedQuery("locus", must(nestedTermsQuery.map { it =>
+          val terms = it._2.asInstanceOf[Iterable[String]]
+          termsQuery(it._1, terms)
+        })))
+        must(termsQueryIter ++ nestedQueryIter)
+      } else {
+        must(termsQueryIter)
+      }
+    }
+    logger.info(s"Querying credible sets for: $query")
     val retriever =
       esRetriever
-        .getByIndexedTermsMust(
+        .getQ(
           indexName,
-          termsQuery,
+          query,
           pag,
           fromJsValue[JsValue],
           excludedFields = Seq("locus", "ldSet")
