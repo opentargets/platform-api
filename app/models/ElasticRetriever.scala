@@ -275,9 +275,9 @@ class ElasticRetriever @Inject() (
         (IndexedSeq.empty, JsNull, 0)
       case results: RequestSuccess[SearchResponse] =>
         // parse the full body response into JsValue
-        val result = Json.parse(results.body.get)
-
+        val result = Json.parse(results.body.get) 
         logger.trace(Json.prettyPrint(result))
+
         val hits = (result \ "hits" \ "hits").get.as[JsArray].value
         val aggs = (result \ "aggregations").getOrElse(JsNull)
         val total = (result \ "hits" \ "total" \ "value").as[Long]
@@ -289,6 +289,39 @@ class ElasticRetriever @Inject() (
           .withFilter(_.isDefined)
           .map(_.get)
           .to(IndexedSeq)
+        (mappedHits, aggs, total)
+    }
+
+  private def handleInnerSearchResponse[A](
+      searchResponse: Response[SearchResponse],
+      searchQuery: SearchRequest,
+      buildF: JsValue => Option[A],
+      innerHitsName: String
+  ): (IndexedSeq[IndexedSeq[A]], IndexedSeq[JsValue], IndexedSeq[Long]) =
+    searchResponse match {
+      case rf: RequestFailure =>
+        logger.debug(s"Request failure for query: $searchQuery")
+        logger.error(s"Elasticsearch error: ${rf.error}")
+        (IndexedSeq.empty, IndexedSeq.empty, IndexedSeq.empty)
+      case results: RequestSuccess[SearchResponse] =>
+        val result = Json.parse(results.body.get)
+        logger.info(Json.prettyPrint(result))
+        val hits = (result \ "hits" \ "hits").get.as[JsArray].value
+        val innerHits = hits.map { jObj =>
+          (jObj \ "inner_hits" \ innerHitsName \ "hits" \ "hits").get.as[JsArray].value        
+        }
+        val aggs = hits.map { jObj =>
+          (jObj \ "inner_hits" \ innerHitsName \"aggregations").getOrElse(JsNull)
+        }.to(IndexedSeq)
+        val total = hits.map { jObj =>
+          (jObj \ "inner_hits" \ innerHitsName \ "hits" \ "total" \ "value").as[Long]
+        }.to(IndexedSeq)
+        val mappedHits = innerHits
+          .map { jObj =>
+            jObj.map { innerJObj =>
+              buildF(innerJObj)
+            }.withFilter(_.isDefined).map(_.get).to(IndexedSeq)
+          }.to(IndexedSeq)
         (mappedHits, aggs, total)
     }
 
@@ -309,9 +342,35 @@ class ElasticRetriever @Inject() (
       .limit(limitClause._2)
       .aggs(aggs)
       .trackTotalHits(true)
+      .fetchSource(false)
       .sourceExclude(excludedFields)
     getByIndexedQuery(searchRequest, sortByField, buildF)
   }
+
+  def getInnerQ[A](
+      esIndex: String,
+      boolQ: BoolQuery,
+      pagination: Pagination,
+      buildF: JsValue => Option[A],
+      innerHitsName: String,
+      aggs: Iterable[AbstractAggregation] = Iterable.empty,
+      sortByField: Option[sort.FieldSort] = None,
+      excludedFields: Seq[String] = Seq.empty,
+  ): Future[(IndexedSeq[IndexedSeq[A]], IndexedSeq[JsValue], IndexedSeq[Long])] = {
+    val limitClause = pagination.toES
+    val searchRequest: SearchRequest = search(esIndex)
+      .bool(boolQ)
+      .start(limitClause._1)
+      .limit(limitClause._2)
+      .aggs(aggs)
+      .trackTotalHits(true)
+      .fetchSource(false)
+    val searchResponse: Future[Response[SearchResponse]] = executeQuery(searchRequest, sortByField)
+    searchResponse.map {
+      handleInnerSearchResponse(_, searchRequest, buildF, innerHitsName)
+    }
+  }
+
 
   def getByMustWithSearch[A](
       esIndex: String,

@@ -264,11 +264,11 @@ object CredibleSet extends Logging {
     Field(
       "locus",
       OptionType(lociImp),
-      arguments = variantIds :: pageSize :: Nil,
+      arguments = variantIds :: pageArg :: Nil,
       description = None,
       resolve = js => {
         val id = (js.value \ "studyLocusId").as[String]
-        js.ctx.getLocus(id, js.arg(variantIds), js.arg(pageSize))
+        js.ctx.getLocus(id, js.arg(variantIds), js.arg(pageArg))
       }
     ),
     Field(
