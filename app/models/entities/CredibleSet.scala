@@ -44,7 +44,7 @@ case class Locus(
 
 case class Loci(
     count: Long,
-    rows: Seq[Locus]
+    rows: Option[Seq[Locus]]
 )
 
 case class LdSet(
@@ -116,7 +116,7 @@ object CredibleSet extends Logging {
 
   implicit val lociR: Reads[Loci] = (
     (JsPath \ "count").read[Long] and
-      (JsPath \ "locus").read[Seq[Locus]]
+      (JsPath \ "locus").readNullable[Seq[Locus]]
   )(Loci.apply _)
 
   val credibleSetFields: Seq[Field[Backend, JsValue]] = Seq(
