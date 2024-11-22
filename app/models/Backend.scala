@@ -251,14 +251,14 @@ class Backend @Inject() (implicit
     retriever.map {
       case (Seq(), _, _) => None
       case (credset, _, _) =>
-        val loci = credset.flatMap(cs => (cs \ "locus").as[Seq[Locus]])
+        val loci = credset.flatMap(cs => (cs \ "locus").asOpt[Seq[Locus]].getOrElse(Seq()))
         logger.info(s"loci: $loci")
         val count = loci.size
         val filteredLoci = variantIds match {
           case Some(variantIds) => loci.filter(l => variantIds.contains(l.variantId.getOrElse("")))
           case None             => loci
         }
-        Some(Loci(count, filteredLoci.take(sizeLimit.getOrElse(Pagination.sizeDefault))))
+        Some(Loci(count, Some(filteredLoci.take(sizeLimit.getOrElse(Pagination.sizeDefault)))))
     }
   }
 
