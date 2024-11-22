@@ -234,31 +234,97 @@ class Backend @Inject() (implicit
     })
   }
 
+  /*
+  {
+  "query": {
+    "bool": {
+      "must": [
+        {
+          "bool": {
+            "must": [
+              {
+                "nested": {
+                  "path": "locus",
+                    "query": {
+                      "bool": {
+                        "must": [
+                          {"terms": {
+                            "locus.variantId.keyword": [
+                              "19_44884202_C_G"
+                            ]}
+                          }
+                        ]
+                      }
+                    },
+                    "inner_hits": {}
+                  }
+              },
+              {
+                "terms": {
+                  "studyLocusId": [
+                    "4169321711404929209"
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "from": 0,
+  "size": 1,
+  "track_total_hits": true
+}
+  */
   def getLocus(ids: String,
                variantIds: Option[Seq[String]],
-               sizeLimit: Option[Int]
+               pagination: Option[Pagination]
   ): Future[Option[Loci]] = {
     val indexName = getIndexOrDefault("credible_setn")
-    val termsQuery = Map("studyLocusId.keyword" -> Seq(ids))
+    val pag = pagination.getOrElse(Pagination.mkDefault)
+    val limitClause = pag.toES
+    val termsQuerySeq = Map("studyLocusId.keyword" -> Seq(ids)).toSeq
+    val termsQueryIter = Iterable(must(termsQuerySeq.map { it =>
+      val terms = it._2.asInstanceOf[Iterable[String]]
+      termsQuery(it._1, terms)
+    }))
+    def nestedQueryBuilder(path: String, query: BoolQuery) = {
+      nestedQuery(path, query).inner(innerHits("locus").size(limitClause._2).from(limitClause._1))
+    }
+    val nestedQueryIter = variantIds match {
+      case Some(variantIds) =>
+        Iterable(nestedQueryBuilder("locus",
+                    must(
+                      termsQuery("locus.variantId.keyword", variantIds)
+                    )
+        ))
+      case None =>
+        Iterable(nestedQueryBuilder("locus",
+                    must(
+                      matchAllQuery()
+                    )
+        ))
+    }
+    val query: BoolQuery = must(termsQueryIter ++ nestedQueryIter)
     val retriever =
       esRetriever
-        .getByIndexedTermsMust(
+        .getInnerQ(
           indexName,
-          termsQuery,
+          query,
           Pagination.mkDefault,
-          fromJsValue[JsValue],
-          excludedFields = Seq("ldSet")
+          fromJsValue[Locus],
+          "locus"
         )
     retriever.map {
-      case (Seq(), _, _) => None
-      case (credset, _, _) =>
-        val loci = credset.flatMap(cs => (cs \ "locus").asOpt[Seq[Locus]].getOrElse(Seq()))
-        val count = loci.size
-        val filteredLoci = variantIds match {
-          case Some(variantIds) => loci.filter(l => variantIds.contains(l.variantId.getOrElse("")))
-          case None             => loci
-        }
-        Some(Loci(count, Some(filteredLoci.take(sizeLimit.getOrElse(Pagination.sizeDefault)))))
+      case (IndexedSeq(), _, _) => None
+      case (credsets, _, count) =>
+        val loci = credsets.head //.flatMap(cs => (cs \ "locus").asOpt[Seq[Locus]].getOrElse(Seq()))
+        // val filteredLoci = variantIds match {
+        //   case Some(variantIds) => loci.filter(l => variantIds.contains(l.variantId.getOrElse("")))
+        //   case None             => loci
+        // }
+        Some(Loci(count.head, Some(loci)))
     }
   }
 
