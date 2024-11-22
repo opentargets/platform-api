@@ -292,69 +292,25 @@ class ElasticRetriever @Inject() (
         (mappedHits, aggs, total)
     }
 
+  /* Provide a specific Bool Query*/
   def getQ[A](
       esIndex: String,
       boolQ: BoolQuery,
-      pageSize: Int,
+      pagination: Pagination,
       buildF: JsValue => Option[A],
       aggs: Iterable[AbstractAggregation] = Iterable.empty,
-      sortByFields: List[sort.FieldSort] = Nil,
+      sortByField: Option[sort.FieldSort] = None,
       excludedFields: Seq[String] = Seq.empty,
-      searchAfter: Option[String] = None
-  ): Future[(IndexedSeq[A], Long, Option[String])] = {
-
-    val sa: Seq[Any] = decodeSearchAfter(searchAfter).toSeq
-    val q = search(esIndex)
+  ): Future[(IndexedSeq[A], JsValue, Long)] = {
+    val limitClause = pagination.toES
+    val searchRequest: SearchRequest = search(esIndex)
       .bool(boolQ)
-      .size(pageSize)
+      .start(limitClause._1)
+      .limit(limitClause._2)
       .aggs(aggs)
       .trackTotalHits(true)
       .sourceExclude(excludedFields)
-      .searchAfter(sa)
-
-    // just log and execute the query
-    val elems: Future[Response[SearchResponse]] = client.execute {
-      val qq = sortByFields match {
-        case Nil => q
-        case _ =>
-          q.sortBy(sortByFields: _*)
-
-      }
-
-      logger.debug(s"Elasticsearch query to execute: ${client.show(qq)}")
-      qq
-    }
-
-    elems.map {
-      case _: RequestFailure                       => (IndexedSeq.empty, 0, None)
-      case results: RequestSuccess[SearchResponse] =>
-        // parse the full body response into JsValue
-        // thus, we can apply Json Transformations from JSON Play
-        val result = Json.parse(results.body.get)
-
-        logger.trace(Json.prettyPrint(result))
-        val hits = (result \ "hits" \ "hits").get.as[JsArray].value
-        val totalHits = results.result.totalHits
-
-        val mappedHits = hits
-          .map { jObj =>
-            buildF(jObj)
-          }
-          .withFilter(_.isDefined)
-          .map(_.get)
-          .to(IndexedSeq)
-
-        val hasNext = !(hits.size < pageSize) && pageSize > 0
-
-        val seAf =
-          if (hasNext) {
-            val jsa = (hits.last \ "sort").toOption
-            encodeSearchAfter(jsa)
-          } else
-            None
-
-        (mappedHits, totalHits, seAf)
-    }
+    getByIndexedQuery(searchRequest, sortByField, buildF)
   }
 
   def getByMustWithSearch[A](
