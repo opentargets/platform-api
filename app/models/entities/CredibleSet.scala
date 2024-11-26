@@ -4,6 +4,7 @@ import models.Backend
 import models.gql.StudyTypeEnum
 import models.gql.Arguments.StudyType
 import models.entities.GwasIndex.{gwasImp, gwasWithoutCredSetsImp}
+import models.entities.Loci.lociImp
 import models.gql.Fetchers.{
   gwasFetcher,
   l2gFetcher,
@@ -11,6 +12,7 @@ import models.gql.Fetchers.{
   targetsFetcher,
   variantFetcher
 }
+import models.gql.LocusDeferred
 import models.gql.Objects.{logger, targetImp, variantIndexImp, colocalisationImp, l2gPredictionsImp}
 import play.api.Logging
 import play.api.libs.json._
@@ -25,27 +27,10 @@ import sangria.schema.{
   OptionType,
   StringType,
   fields,
-  DeferredValue
+  DeferredValue,
+  DeferredFutureValue
 }
 import models.gql.Arguments.{studyTypes, pageArg, pageSize, variantIds}
-
-case class Locus(
-    variantId: Option[String],
-    posteriorProbability: Option[Double],
-    pValueMantissa: Option[Double],
-    pValueExponent: Option[Int],
-    logBF: Option[Double],
-    beta: Option[Double],
-    standardError: Option[Double],
-    is95CredibleSet: Option[Boolean],
-    is99CredibleSet: Option[Boolean],
-    r2Overall: Option[Double]
-)
-
-case class Loci(
-    count: Long,
-    rows: Option[Seq[Locus]]
-)
 
 case class LdSet(
     tagVariantId: Option[String],
@@ -73,7 +58,7 @@ case class CredibleSet(studyLocusId: String,
                        purityMinR2: Option[Double],
                        locusStart: Option[Int],
                        locusEnd: Option[Int],
-                       locus: Option[Seq[Locus]],
+                       loci: Loci,
                        sampleSize: Option[Int],
                        ldSet: Option[Seq[LdSet]],
                        studyType: Option[StudyTypeEnum.Value],
@@ -94,30 +79,8 @@ object CredibleSet extends Logging {
 
   implicit val ldSetImp: ObjectType[Backend, LdSet] =
     deriveObjectType[Backend, LdSet]()
-  implicit val locusImp: ObjectType[Backend, Locus] = deriveObjectType[Backend, Locus](
-    ReplaceField(
-      "variantId",
-      Field(
-        "variant",
-        OptionType(variantIndexImp),
-        description = None,
-        resolve = r => {
-          val variantId = r.value.variantId.getOrElse("")
-          logger.debug(s"Finding variant index: $variantId")
-          variantFetcher.deferOpt(variantId)
-        }
-      )
-    )
-  )
 
-  implicit val lociImp: ObjectType[Backend, Loci] = deriveObjectType[Backend, Loci]()
   implicit val ldSetF: OFormat[LdSet] = Json.format[LdSet]
-  implicit val locusF: OFormat[Locus] = Json.format[Locus]
-
-  implicit val lociR: Reads[Loci] = (
-    (JsPath \ "count").read[Long] and
-      (JsPath \ "locus").readNullable[Seq[Locus]]
-  )(Loci.apply _)
 
   val credibleSetFields: Seq[Field[Backend, JsValue]] = Seq(
     Field(
@@ -145,12 +108,13 @@ object CredibleSet extends Logging {
         import scala.concurrent.ExecutionContext.Implicits.global
         val id: String = (js.value \ "studyLocusId").as[String]
         val l2gValues = DeferredValue(l2gFetcher.deferRelSeq(l2gByStudyLocusIdRel, id))
-        js.arg(pageSize) match {
+        val t = js.arg(pageSize) match {
           case Some(size) =>
             l2gValues.map(_.take(size))
           case None =>
             l2gValues
         }
+        t
       }
     ),
     Field(
@@ -263,12 +227,13 @@ object CredibleSet extends Logging {
     ),
     Field(
       "locus",
-      OptionType(lociImp),
+      lociImp,
       arguments = variantIds :: pageArg :: Nil,
       description = None,
       resolve = js => {
+        import scala.concurrent.ExecutionContext.Implicits.global
         val id = (js.value \ "studyLocusId").as[String]
-        js.ctx.getLocus(id, js.arg(variantIds), js.arg(pageArg))
+        LocusDeferred(id, js.arg(variantIds), js.arg(pageArg))
       }
     ),
     Field(

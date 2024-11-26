@@ -232,17 +232,6 @@ object GwasIndex extends Logging {
       description = Some(""),
       resolve = js => (js.value \ "sumStatQCValues").asOpt[Seq[SumStatQC]]
     )
-    // Field(
-    //   "credibleSetCount",
-    //   IntType,
-    //   description = Some(""),
-    //   resolve = js => {
-    //     import scala.concurrent.ExecutionContext.Implicits.global
-    //     val studyId = (js.value \ "studyId").as[String]
-    //     val credSets = credibleSetFetcher.deferRelSeq(credibleSetByStudyRel, studyId)
-    //     DeferredValue(credSets).map(_.size)
-    //   }
-    // )
   )
   lazy val credibleSetField: Field[Backend, JsValue] =
     Field(
