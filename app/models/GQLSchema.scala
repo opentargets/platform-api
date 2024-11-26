@@ -14,29 +14,14 @@ import models.entities.Interaction._
 import models.gql.Objects._
 import models.gql.Arguments._
 import models.gql.Fetchers._
+import models.gql.DeferredResolvers._
 import scala.concurrent._
 import scala.util.{Try, Failure, Success}
 
 trait GQLEntities extends Logging {}
 
 object GQLSchema {
-  val resolvers: DeferredResolver[Backend] = DeferredResolver.fetchers(
-    biosamplesFetcher,
-    credibleSetFetcher,
-    l2gFetcher,
-    targetsFetcher,
-    drugsFetcher,
-    diseasesFetcher,
-    hposFetcher,
-    reactomeFetcher,
-    expressionFetcher,
-    otarProjectsFetcher,
-    soTermsFetcher,
-    indicationFetcher,
-    goFetcher,
-    variantFetcher,
-    gwasFetcher
-  )
+  val resolvers: DeferredResolver[Backend] = deferredResolvers
 
   val query: ObjectType[Backend, Unit] = ObjectType(
     "Query",

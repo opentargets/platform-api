@@ -31,8 +31,8 @@ import sangria.execution.deferred.{
   HasId,
   SimpleFetcherCache
 }
+import scala.concurrent._
 import models.gql.Arguments.studyId
-import scala.concurrent.java8.FuturesConvertersImpl.P
 
 object Fetchers extends Logging {
   val soTermsFetcherCache = FetcherCache.simple
