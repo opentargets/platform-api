@@ -178,9 +178,22 @@ class Backend @Inject() (implicit
       .map(_._1)
   }
 
-  def getStudies(queryArgs: StudyQueryArgs,
-                 pagination: Option[Pagination]
-  ): Future[IndexedSeq[JsValue]] = {
+  def getStudy(ids: Seq[String]): Future[IndexedSeq[JsValue]] = {
+    val pag = Pagination.mkDefault
+    val indexName = getIndexOrDefault("gwas_index")
+    val termsQuery = Map("studyId.keyword" -> ids)
+    val retriever =
+      esRetriever
+        .getByIndexedTermsMust(
+          indexName,
+          termsQuery,
+          pag,
+          fromJsValue[JsValue]
+        )
+    retriever.map(_._1)
+  }
+
+  def getStudies(queryArgs: StudyQueryArgs, pagination: Option[Pagination]): Future[Studies] = {
     val pag = pagination.getOrElse(Pagination.mkDefault)
     val indexName = getIndexOrDefault("gwas_index")
     val diseaseIds: Seq[String] = {
@@ -197,16 +210,20 @@ class Backend @Inject() (implicit
       "traitFromSourceMappedIds.keyword" -> diseaseIds
     ).filter(_._2.nonEmpty)
     if (termsQuery.isEmpty) {
-      Future.successful(IndexedSeq.empty)
+      Future.successful(Studies.empty)
     } else {
-      val r = esRetriever
+      val retriever = esRetriever
         .getByIndexedTermsMust(
           indexName,
           termsQuery,
           pag,
           fromJsValue[JsValue]
         )
-      r.map(_._1)
+      retriever.map {
+        case (Seq(), _, _) => Studies.empty
+        case (studies, _, count) =>
+          Studies(count, studies)
+      }
     }
   }
 

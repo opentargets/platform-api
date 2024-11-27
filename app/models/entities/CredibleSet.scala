@@ -3,10 +3,10 @@ package models.entities
 import models.Backend
 import models.gql.StudyTypeEnum
 import models.gql.Arguments.StudyType
-import models.entities.GwasIndex.{gwasImp, gwasWithoutCredSetsImp}
+import models.entities.Study.{studyImp, studyWithoutCredSetsImp}
 import models.entities.Loci.lociImp
 import models.gql.Fetchers.{
-  gwasFetcher,
+  studyFetcher,
   l2gFetcher,
   l2gByStudyLocusIdRel,
   targetsFetcher,
@@ -279,12 +279,12 @@ object CredibleSet extends Logging {
   )
   val studyField: Field[Backend, JsValue] = Field(
     "study",
-    OptionType(gwasWithoutCredSetsImp),
+    OptionType(studyWithoutCredSetsImp),
     description = Some("Gwas study"),
     resolve = js => {
       val studyId = (js.value \ "studyId").asOpt[String]
       logger.debug(s"Finding gwas study: $studyId")
-      gwasFetcher.deferOpt(studyId)
+      studyFetcher.deferOpt(studyId)
     }
   )
   val credibleSetImp: ObjectType[Backend, JsValue] = ObjectType(
