@@ -227,16 +227,16 @@ object GwasIndex extends Logging {
       resolve = js => (js.value \ "analysisFlags").asOpt[Seq[String]]
     ),
     Field(
-      "sumStatQCPerformed",
+      "sumstatQCPerformed",
       OptionType(BooleanType),
       description = Some(""),
-      resolve = js => (js.value \ "sumStatQCPerformed").asOpt[Boolean]
+      resolve = js => (js.value \ "sumstatQCPerformed").asOpt[Boolean]
     ),
     Field(
-      "sumStatQCValues",
+      "sumstatQCValues",
       OptionType(ListType(sumStatQCImp)),
       description = Some(""),
-      resolve = js => (js.value \ "sumStatQCValues").asOpt[Seq[SumStatQC]]
+      resolve = js => (js.value \ "sumstatQCValues").asOpt[Seq[SumStatQC]]
     )
   )
   lazy val credibleSetField: Field[Backend, JsValue] =
