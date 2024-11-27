@@ -30,7 +30,7 @@ case class StudyQueryArgs(
     enableIndirect: Boolean = false
 )
 
-object GwasIndex extends Logging {
+object Study extends Logging {
   import sangria.macros.derive._
 
   case class Sample(ancestry: Option[String], sampleSize: Option[Int])
@@ -54,7 +54,7 @@ object GwasIndex extends Logging {
   implicit val sumStatQCImp: ObjectType[Backend, SumStatQC] = deriveObjectType[Backend, SumStatQC]()
   val gwasFields: Seq[Field[Backend, JsValue]] = Seq(
     Field(
-      "studyId",
+      "id",
       StringType,
       description = Some("The study identifier"),
       resolve = js => (js.value \ "studyId").as[String]
@@ -245,14 +245,14 @@ object GwasIndex extends Logging {
         js.ctx.getCredibleSets(credSetQueryArgs, js.arg(pageArg))
       }
     )
-  lazy val gwasImp: ObjectType[Backend, JsValue] = ObjectType(
+  lazy val studyImp: ObjectType[Backend, JsValue] = ObjectType(
     "Gwas",
     "A genome-wide association study",
     fields[Backend, JsValue](
       gwasFields ++ Seq(credibleSetField): _*
     )
   )
-  val gwasWithoutCredSetsImp: ObjectType[Backend, JsValue] = ObjectType(
+  val studyWithoutCredSetsImp: ObjectType[Backend, JsValue] = ObjectType(
     "GwasWithoutCredSets",
     "A genome-wide association study without credible sets",
     fields[Backend, JsValue](
