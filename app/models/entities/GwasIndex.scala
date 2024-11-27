@@ -227,12 +227,6 @@ object GwasIndex extends Logging {
       resolve = js => (js.value \ "analysisFlags").asOpt[Seq[String]]
     ),
     Field(
-      "sumstatQCPerformed",
-      OptionType(BooleanType),
-      description = Some(""),
-      resolve = js => (js.value \ "sumstatQCPerformed").asOpt[Boolean]
-    ),
-    Field(
       "sumstatQCValues",
       OptionType(ListType(sumStatQCImp)),
       description = Some(""),
