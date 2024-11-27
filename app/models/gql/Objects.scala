@@ -4,7 +4,7 @@ import models._
 import models.entities.Configuration._
 import models.entities.Evidence.sequenceOntologyTermImp
 import models.entities.Evidences._
-import models.entities.GwasIndex.gwasImp
+import models.entities.Study.studyImp
 import models.entities.Interactions._
 import models.entities.Publications.publicationsImp
 import models.entities._

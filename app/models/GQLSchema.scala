@@ -6,7 +6,8 @@ import sangria.schema._
 import entities._
 import models.entities.CredibleSet.credibleSetImp
 import models.entities.CredibleSets.credibleSetsImp
-import models.entities.GwasIndex.gwasImp
+import models.entities.Studies.studiesImp
+import models.entities.Study.studyImp
 import sangria.execution.deferred._
 import gql.validators.QueryTermsValidator._
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -139,9 +140,16 @@ object GQLSchema {
         resolve = ctx => variantFetcher.deferOpt(ctx.arg(variantId))
       ),
       Field(
-        "gwasStudy",
-        ListType(gwasImp),
-        description = Some("Return a Gwas Index Study"),
+        "study",
+        OptionType(studyImp),
+        description = Some("Return a Study"),
+        arguments = studyId :: Nil,
+        resolve = ctx => studyFetcher.deferOpt(ctx.arg(studyId))
+      ),
+      Field(
+        "studies",
+        studiesImp,
+        description = Some("Return a studies"),
         arguments = pageArg :: studyId :: diseaseIds :: enableIndirect :: Nil,
         resolve = ctx => {
           val studyIdSeq =

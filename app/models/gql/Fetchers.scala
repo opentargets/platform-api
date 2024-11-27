@@ -8,7 +8,6 @@ import models.entities.{
   Drug,
   Expressions,
   GeneOntologyTerm,
-  GwasIndex,
   HPO,
   Indications,
   L2GPredictions,
@@ -188,15 +187,15 @@ object Fetchers extends Logging {
     }
   )
 
-  val gwasFetcherCache = FetcherCache.simple
-  val gwasFetcher: Fetcher[Backend, JsValue, JsValue, String] = {
-    implicit val gwasFetcherId: HasId[JsValue, String] =
+  val studyFetcherCache = FetcherCache.simple
+  val studyFetcher: Fetcher[Backend, JsValue, JsValue, String] = {
+    implicit val studyFetcherId: HasId[JsValue, String] =
       HasId[JsValue, String](js => (js \ "studyId").as[String])
     Fetcher(
       config =
-        FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(gwasFetcherCache),
+        FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(studyFetcherCache),
       fetch = (ctx: Backend, ids: Seq[String]) => {
-        ctx.getStudies(entities.StudyQueryArgs(id = ids), Some(Pagination.mkMax))
+        ctx.getStudy(ids)
       }
     )
   }
@@ -222,7 +221,7 @@ object Fetchers extends Logging {
     val fetchers: List[SimpleFetcherCache] = List(
       biosamplesFetcherCache,
       credibleSetFetcherCache,
-      gwasFetcherCache,
+      studyFetcherCache,
       hpoFetcherCache,
       goFetcherCache,
       variantFetcherCache,
