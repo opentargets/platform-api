@@ -236,7 +236,7 @@ object GwasIndex extends Logging {
       "sumStatQCValues",
       OptionType(ListType(sumStatQCImp)),
       description = Some(""),
-      resolve = js => (js.value \ "sumStatQCValues").asOpt[Seq[SumStatQC]]
+      resolve = js => (js.value \ "sumstatQCValues").asOpt[Seq[SumStatQC]]
     )
     // Field(
     //   "credibleSetCount",
