@@ -9,6 +9,7 @@ import play.api.libs.json._
 import play.api.libs.json.{Reads, JsValue, Json, OFormat, OWrites}
 import play.api.libs.functional.syntax._
 import sangria.schema.{
+  DeferredValue,
   Field,
   FloatType,
   IntType,
@@ -16,10 +17,10 @@ import sangria.schema.{
   ObjectType,
   OptionType,
   StringType,
-  fields,
-  DeferredValue
+  fields
 }
 import models.gql.Arguments.{studyTypes, pageArg, pageSize, variantIds}
+import models.gql.TypeWithId
 
 case class Locus(
     variantId: Option[String],
@@ -37,8 +38,8 @@ case class Locus(
 case class Loci(
     count: Long,
     rows: Option[Seq[Locus]],
-    studyLocusId: String
-)
+    id: String
+) extends TypeWithId
 
 object Loci extends Logging {
   import sangria.macros.derive._
@@ -60,7 +61,9 @@ object Loci extends Logging {
     )
   )
 
-  implicit val lociImp: ObjectType[Backend, Loci] = deriveObjectType[Backend, Loci]()
+  implicit val lociImp: ObjectType[Backend, Loci] = deriveObjectType[Backend, Loci](
+    ExcludeFields("id")
+  )
   implicit val locusF: OFormat[Locus] = Json.format[Locus]
   implicit val lociR: Reads[Loci] = (
     (JsPath \ "count").read[Long] and
