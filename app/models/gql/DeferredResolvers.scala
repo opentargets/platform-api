@@ -4,43 +4,81 @@ import models.{Backend, entities}
 import play.api.Logging
 import sangria.execution.deferred.{Deferred, DeferredResolver}
 import scala.concurrent._
+import cats.syntax.group
+
+trait TypeWithId {
+  val id: String
+}
+
+case class GroupedResults[T](grouping: Product, results: Future[IndexedSeq[T]])
+
+abstract class DeferredMultiTerm[+T]() extends Deferred[T] {
+  val id: String
+  val grouping: Product
+  def empty(): T
+  def resolver(ctx: Backend): (Seq[String], Product) => Future[IndexedSeq[T]]
+}
 
 case class LocusDeferred(studyLocusId: String,
                          variantIds: Option[Seq[String]],
                          pagination: Option[Pagination]
-) extends Deferred[Loci]
+) extends DeferredMultiTerm[Loci] {
+  val id: String = studyLocusId
+  val grouping = (variantIds, pagination)
+  def empty(): Loci = Loci(0, None, "")
+  def resolver(ctx: Backend): (Seq[String], Product) => Future[IndexedSeq[Loci]] = {
+    case (s: Seq[String], options: Product) =>
+      options match {
+        case (v, p) =>
+          ctx.getLocus(s, v.asInstanceOf[Option[Seq[String]]], p.asInstanceOf[Option[Pagination]])
+      }
+  }
+}
 
-// TODO: Genericize this resolver to handle not just locus but other deferred types: hint - use the groupDeferred method
-class LocusResolver extends DeferredResolver[Backend] with Logging {
+/** A deferred resolver for cases where we can't use the Fetch API because we resolve the
+  * values on multiple terms/filters.
+  */
+class MultiTermResolver extends DeferredResolver[Backend] with Logging {
+  def groupResults[T](deferred: Vector[DeferredMultiTerm[T]],
+                      ctx: Backend
+  ): Map[Product, Future[IndexedSeq[T]]] = {
+    val grouped = deferred.groupBy(q => q.grouping)
+    val queries = grouped.map { case (grouping, queries) =>
+      val ids = queries.map(_.id)
+      val resolver = queries.head.resolver(ctx)
+      (ids, grouping, resolver)
+    }
+    val results = queries.map { case (ids, grouping, resolver) =>
+      val r = resolver(ids, grouping)
+      grouping -> r
+    }.toMap
+    results
+  }
+
+  def getResultForId[T](deferredQ: DeferredMultiTerm[T],
+                        results: Map[Product, Future[IndexedSeq[TypeWithId]]]
+  )(implicit ec: ExecutionContext): Future[T] = {
+    val group = results.get(deferredQ.grouping).get
+    val hit = group.map(_.filter(_.id == deferredQ.id))
+    hit.map(_.headOption.getOrElse(deferredQ.empty()).asInstanceOf[T])
+  }
+
   def resolve(deferred: Vector[Deferred[Any]], ctx: Backend, queryState: Any)(implicit
       ec: ExecutionContext
   ): Vector[Future[Any]] = {
     val lq = deferred collect { case q: LocusDeferred => q }
-    // group by variantIds and pagination so that we can use studyLocusId to fetch the loci
-    val groupedLq = lq.groupBy(q => (q.variantIds, q.pagination))
-    val locusQueries = groupedLq.map { case ((variantIds, pagination), queries) =>
-      val studyLocusIds = queries.map(_.studyLocusId)
-      (studyLocusIds, variantIds, pagination)
-    }
-    // results grouped by variantIds and pagination
-    val results = locusQueries.map { case (studyLocusIds, variantIds, pagination) =>
-      val r = ctx.getLocus(studyLocusIds, variantIds, pagination)
-      (variantIds, pagination) -> r
-    }.toMap
-    deferred.map { case LocusDeferred(studyLocusId, variantIds, pagination) =>
-      // lookup results based on the variantIds pagination group in the results
-      val group = results.get((variantIds, pagination)).get
-      val l = group.map(loci => loci.filter(studyLocusId == _.studyLocusId))
-      l.map(_.headOption.getOrElse(Loci.empty()))
+    val results = groupResults(lq, ctx)
+    deferred.map { case q: LocusDeferred =>
+      getResultForId(q, results)
     }
   }
 }
 
 object DeferredResolvers extends Logging {
-  val locusResolver = new LocusResolver()
+  val multiTermResolver = new MultiTermResolver()
   // add fetchers and locusResolver to the resolvers
   val deferredResolvers: DeferredResolver[Backend] = DeferredResolver.fetchersWithFallback(
-    locusResolver,
+    multiTermResolver,
     Fetchers.biosamplesFetcher,
     Fetchers.credibleSetFetcher,
     Fetchers.l2gFetcher,
@@ -55,6 +93,6 @@ object DeferredResolvers extends Logging {
     Fetchers.indicationFetcher,
     Fetchers.goFetcher,
     Fetchers.variantFetcher,
-    Fetchers.studyFetcher
+    Fetchers.gwasFetcher
   )
 }
