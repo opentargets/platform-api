@@ -17,7 +17,7 @@ import sangria.schema.{
   ObjectType,
   OptionType,
   StringType,
-  fields,
+  fields
 }
 import models.gql.Arguments.{studyTypes, pageArg, pageSize, variantIds}
 import models.gql.TypeWithId
@@ -39,7 +39,7 @@ case class Loci(
     count: Long,
     rows: Option[Seq[Locus]],
     id: String
-) extends TypeWithId 
+) extends TypeWithId
 
 object Loci extends Logging {
   import sangria.macros.derive._
@@ -62,7 +62,7 @@ object Loci extends Logging {
   )
 
   implicit val lociImp: ObjectType[Backend, Loci] = deriveObjectType[Backend, Loci](
-    ExcludeFields("id"),
+    ExcludeFields("id")
   )
   implicit val locusF: OFormat[Locus] = Json.format[Locus]
   implicit val lociR: Reads[Loci] = (
