@@ -249,6 +249,20 @@ class ElasticRetriever @Inject() (
     }
   }
 
+  private def getMultiByIndexedQuery[A](
+      searchRequest: MultiSearchRequest,
+      sortByField: Option[sort.FieldSort] = None,
+      buildF: JsValue => Option[A],
+      resolverField: Option[String]
+  ): Future[IndexedSeq[(IndexedSeq[A], JsValue, Long, JsValue)]] = {
+    // log and execute the query
+    val searchResponse: Future[Response[MultiSearchResponse]] = executeMultiQuery(searchRequest, sortByField)
+    // convert results into A
+    searchResponse.map {
+      handleMultiSearchResponse(_, searchRequest, buildF, resolverField)
+    }
+  }
+
   private def executeQuery(
       searchRequest: SearchRequest,
       sortByField: Option[sort.FieldSort]
@@ -259,6 +273,23 @@ class ElasticRetriever @Inject() (
         case None    => searchRequest
       }
 
+      logger.info(s"Elasticsearch query: ${client.show(sortedSearchRequest)}")
+      sortedSearchRequest
+    }
+
+  private def executeMultiQuery(
+      searchRequest: MultiSearchRequest,
+      sortByField: Option[sort.FieldSort]
+  ): Future[Response[MultiSearchResponse]] =
+    client.execute {
+      val sortedSearchRequest = sortByField match {
+        case Some(s) =>
+          val sortedSearches = searchRequest.searches.map { search =>
+            search.sortBy(s)
+          }
+          searchRequest.copy(searches = sortedSearches)
+        case None => searchRequest
+      }
       logger.info(s"Elasticsearch query: ${client.show(sortedSearchRequest)}")
       sortedSearchRequest
     }
@@ -292,6 +323,47 @@ class ElasticRetriever @Inject() (
         (mappedHits, aggs, total)
     }
 
+  private def handleMultiSearchResponse[A](
+      searchResponse: Response[MultiSearchResponse],
+      searchQuery: MultiSearchRequest,
+      buildF: JsValue => Option[A],
+      resolverField: Option[String]
+  ): IndexedSeq[(IndexedSeq[A], JsValue, Long, JsValue)] = {
+    searchResponse match {
+      case rf: RequestFailure =>
+        logger.debug(s"Request failure for query: $searchQuery")
+        logger.error(s"Elasticsearch error: ${rf.error}")
+        IndexedSeq.empty
+      case results: RequestSuccess[MultiSearchResponse] =>
+        val result = Json.parse(results.body.get)
+        logger.trace(Json.prettyPrint(result))
+        val responses = (result \ "responses").get.as[JsArray].value
+        responses.map { response =>
+          val hits = (response \ "hits" \ "hits").get.as[JsArray].value
+          val aggs = (response \ "aggregations").getOrElse(JsNull)
+          val total = (response \ "hits" \ "total" \ "value").as[Long]
+          val rf = resolverField match {
+            case Some(r) =>
+              hits
+                .map { jObj =>
+                  (jObj \ "_source" \ r).as[JsValue]
+                }
+                .headOption.getOrElse(JsNull)
+            case None => JsNull
+          }
+          val mappedHits = hits
+            .map { jObj =>
+              buildF(jObj)
+            }
+            .withFilter(_.isDefined)
+            .map(_.get)
+            .to(IndexedSeq)
+          (mappedHits, aggs, total, rf)
+        }.toIndexedSeq
+    }
+  }
+    
+  
   private def handleInnerSearchResponse[A](
       searchResponse: Response[SearchResponse],
       searchQuery: SearchRequest,
@@ -339,6 +411,16 @@ class ElasticRetriever @Inject() (
         (mappedHits, aggs, total, parentfields)
     }
 
+  def getMultiByIndexedTermsMust[V, A](
+      indexQueries: Seq[IndexQuery[V]],
+      buildF: JsValue => Option[A],
+      sortByField: Option[sort.FieldSort] = None,
+      resolverField: Option[String],
+  ): Future[IndexedSeq[(IndexedSeq[A], JsValue, Long, JsValue)]] = {
+    val searchRequest: MultiSearchRequest = MultiIndexTermsMust(indexQueries)
+    getMultiByIndexedQuery(searchRequest, sortByField, buildF, resolverField)
+  }
+  
   /* Provide a specific Bool Query*/
   def getQ[A](
       esIndex: String,
