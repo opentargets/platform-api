@@ -1350,7 +1350,7 @@ object Objects extends Logging {
           Some("Credible set"),
           resolve = r => {
             val studyLocusId = r.value.otherStudyLocusId.getOrElse("")
-            logger.info(s"Finding colocalisation credible set: $studyLocusId")
+            logger.debug(s"Finding colocalisation credible set: $studyLocusId")
             // r.ctx.getCredibleSet(studyLocusId)
             credibleSetFetcher.deferOpt(studyLocusId)
           }

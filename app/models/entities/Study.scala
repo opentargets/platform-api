@@ -20,6 +20,7 @@ import sangria.schema.{
   DeferredValue
 }
 import models.gql.StudyTypeEnum
+import models.gql.CredibleSetsByStudyDeferred
 import models.gql.Arguments.{pageArg, StudyType}
 import play.api.libs.json._
 import play.api.libs.functional.syntax.toFunctionalBuilderOps
@@ -241,8 +242,10 @@ object Study extends Logging {
       description = Some("Credible sets"),
       resolve = js => {
         val studyId = (js.value \ "studyId").as[String]
-        val credSetQueryArgs = CredibleSetQueryArgs(studyIds = Seq(studyId))
-        js.ctx.getCredibleSets(credSetQueryArgs, js.arg(pageArg))
+        //val credSetQueryArgs = CredibleSetQueryArgs(studyIds = Seq(studyId))
+        //js.ctx.getCredibleSets(credSetQueryArgs, js.arg(pageArg))
+        CredibleSetsByStudyDeferred(studyId, js.arg(pageArg))
+
       }
     )
   lazy val studyImp: ObjectType[Backend, JsValue] = ObjectType(

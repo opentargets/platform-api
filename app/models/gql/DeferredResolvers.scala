@@ -1,20 +1,25 @@
 package models.gql
-import models.entities.{Loci, Pagination}
+import models.entities.{Loci, Pagination, CredibleSets, CredibleSetQueryArgs}
 import models.{Backend, entities}
 import play.api.Logging
 import sangria.execution.deferred.{Deferred, DeferredResolver}
 import scala.concurrent._
-import cats.syntax.group
+import models.gql.Arguments.studyId
+import models.gql.Objects.locationAndSourceImp
+
 
 trait TypeWithId {
   val id: String
 }
 
-case class GroupedResults[T](grouping: Product, results: Future[IndexedSeq[T]])
 
+/** @param id The ID to resolve on
+  * @param grouping A tuple of the values that are used to group the deferred values
+  * @tparam T The type of the deferred value
+  */
 abstract class DeferredMultiTerm[+T]() extends Deferred[T] {
   val id: String
-  val grouping: Product
+  val grouping: Product  
   def empty(): T
   def resolver(ctx: Backend): (Seq[String], Product) => Future[IndexedSeq[T]]
 }
@@ -22,10 +27,10 @@ abstract class DeferredMultiTerm[+T]() extends Deferred[T] {
 case class LocusDeferred(studyLocusId: String,
                          variantIds: Option[Seq[String]],
                          pagination: Option[Pagination]
-) extends DeferredMultiTerm[Loci] {
+                         ) extends DeferredMultiTerm[Loci] {
   val id: String = studyLocusId
   val grouping = (variantIds, pagination)
-  def empty(): Loci = Loci(0, None, "")
+  def empty(): Loci = Loci.empty()
   def resolver(ctx: Backend): (Seq[String], Product) => Future[IndexedSeq[Loci]] = {
     case (s: Seq[String], options: Product) =>
       options match {
@@ -34,6 +39,21 @@ case class LocusDeferred(studyLocusId: String,
       }
   }
 }
+
+case class CredibleSetsByStudyDeferred(studyId: String, pagination: Option[Pagination]) extends DeferredMultiTerm[CredibleSets] {
+  val id: String = studyId
+  val grouping = (pagination)
+  def empty(): CredibleSets = CredibleSets.empty
+  def resolver(ctx: Backend): (Seq[String], Product) => Future[IndexedSeq[CredibleSets]] = {
+    case (s: Seq[String], options: Product) =>
+      options match {
+        case (p) => {
+            ctx.getCredibleSetsByStudy(s, p.asInstanceOf[Option[Pagination]])
+        }
+      }
+  }
+}
+
 
 /** A deferred resolver for cases where we can't use the Fetch API because we resolve the
   * values on multiple terms/filters.
@@ -66,10 +86,14 @@ class MultiTermResolver extends DeferredResolver[Backend] with Logging {
   def resolve(deferred: Vector[Deferred[Any]], ctx: Backend, queryState: Any)(implicit
       ec: ExecutionContext
   ): Vector[Future[Any]] = {
-    val lq = deferred collect { case q: LocusDeferred => q }
-    val results = groupResults(lq, ctx)
-    deferred.map { case q: LocusDeferred =>
-      getResultForId(q, results)
+    val deferredByType = deferred collect { 
+        case locus: LocusDeferred => locus
+        case credSetByStudy: CredibleSetsByStudyDeferred => credSetByStudy
+    }
+    val results = groupResults(deferredByType, ctx)
+    deferred.map { 
+        case locus: LocusDeferred => getResultForId(locus, results)
+        case credSetByStudy: CredibleSetsByStudyDeferred => getResultForId(credSetByStudy, results)
     }
   }
 }
@@ -93,6 +117,6 @@ object DeferredResolvers extends Logging {
     Fetchers.indicationFetcher,
     Fetchers.goFetcher,
     Fetchers.variantFetcher,
-    Fetchers.gwasFetcher
+    Fetchers.studyFetcher
   )
 }
