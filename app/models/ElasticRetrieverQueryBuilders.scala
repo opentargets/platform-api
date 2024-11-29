@@ -1,10 +1,10 @@
 package models
 
-import com.sksamuel.elastic4s.ElasticDsl.search
+import com.sksamuel.elastic4s.ElasticDsl.{search, multi}
 import com.sksamuel.elastic4s.api.QueryApi
 import com.sksamuel.elastic4s.requests.searches.aggs.AbstractAggregation
 import com.sksamuel.elastic4s.requests.searches.queries.Query
-import com.sksamuel.elastic4s.requests.searches.SearchRequest
+import com.sksamuel.elastic4s.requests.searches.{SearchRequest, MultiSearchRequest}
 import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
 import models.entities.Pagination
 import play.api.Logging
@@ -46,6 +46,11 @@ trait ElasticRetrieverQueryBuilders extends QueryApi with Logging {
       indexQuery: IndexQuery[V]
   ): SearchRequest =
     getByIndexTermsBuilder(indexQuery, should)
+
+  def MultiIndexTermsMust[V](
+      indexQueries: Seq[IndexQuery[V]]
+  ): MultiSearchRequest =
+    multiSearchTermsBuilder(indexQueries, must)
 
   def getByIndexQueryBuilder[V](
       indexQuery: IndexQuery[V],
@@ -92,5 +97,16 @@ trait ElasticRetrieverQueryBuilders extends QueryApi with Logging {
       .aggs(indexQuery.aggs)
       .trackTotalHits(true)
       .sourceExclude(indexQuery.excludedFields)
+  }
+
+  def multiSearchTermsBuilder[V](
+      indexQueries: Seq[IndexQuery[V]],
+      f: Iterable[Query] => BoolQuery
+  ): MultiSearchRequest = {
+    val searchRequests = indexQueries.map { query => {
+      getByIndexTermsBuilder(query, f)
+    }
+  }
+    multi(searchRequests)
   }
 }

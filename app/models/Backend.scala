@@ -288,15 +288,14 @@ class Backend @Inject() (implicit
         .getInnerQ(
           indexName,
           query,
-          Pagination.mkDefault,
+          Pagination.mkMax,
           fromJsValue[Locus],
           "locus",
           Some("studyLocusId")
         )
-    retriever.map { case (locus, _, counts, studyLocusIds) =>
-      // zip the credsets with the counts and studyLocusIds and locusQueries and return an indexed seq of loci
-      locus.zip(counts).zip(studyLocusIds).map { case ((locus, count), studyLocusId) =>
-        Loci(count, Some(locus), studyLocusId.as[String])
+    retriever.map { 
+      case (locus, _, counts, studyLocusIds) => locus.zip(counts).zip(studyLocusIds).map { 
+        case ((locus, count), studyLocusId) => Loci(count, Some(locus), studyLocusId.as[String])
       }
     }
   }
@@ -349,7 +348,6 @@ class Backend @Inject() (implicit
         must(termsQueryIter)
       }
     }
-    logger.info(s"Querying credible sets for: $query")
     val retriever =
       esRetriever
         .getQ(
@@ -364,6 +362,34 @@ class Backend @Inject() (implicit
       case (credset, _, count) =>
         CredibleSets(count, credset)
     }
+  }
+
+  def getCredibleSetsByStudy(studyIds: Seq[String], pagination: Option[Pagination]): Future[IndexedSeq[CredibleSets]] = {
+    val pag = pagination.getOrElse(Pagination.mkDefault)
+    val indexName = getIndexOrDefault("credible_setn")
+    val queries = studyIds.map { studyId => IndexQuery(
+        esIndex = indexName, 
+        kv = Map("studyId.keyword" -> Seq(studyId)),
+        filters = Seq.empty,
+        pagination = pag,
+        aggs = Seq.empty,
+        excludedFields = Seq("locus", "ldSet")
+        )
+      }
+    val retriever =
+      esRetriever
+        .getMultiByIndexedTermsMust(
+          queries,
+          fromJsValue[JsValue],
+          None,
+          Some("studyId")
+        )
+    retriever.map { 
+      case r => r.map { 
+        case (Seq(), _, _, _) => CredibleSets.empty
+        case (credsets, _, counts, studyId) => CredibleSets(counts, credsets, studyId.as[String])
+        }
+      }
   }
 
   def getTargetEssentiality(ids: Seq[String]): Future[IndexedSeq[TargetEssentiality]] = {
@@ -859,14 +885,14 @@ class Backend @Inject() (implicit
       size: Int
   ): Future[Vector[Similarity]] = {
     val table = defaultOTSettings.clickhouse.similarities
-    logger.info(s"query similarities in table ${table.name}")
+    logger.debug(s"query similarities in table ${table.name}")
 
     val jointLabels = labels + label
     val simQ = QW2V(table.name, categories, jointLabels, threshold, size)
     dbRetriever.executeQuery[Long, Query](simQ.existsLabel(label)).flatMap {
       case Vector(1) => dbRetriever.executeQuery[Similarity, Query](simQ.query)
       case _ =>
-        logger.info(
+        logger.debug(
           s"This case where the label asked ${label} to the model Word2Vec does not exist" +
             s" is ok but nice to capture though"
         )
@@ -911,7 +937,7 @@ class Backend @Inject() (implicit
   ): Future[Publications] = {
     val table = defaultOTSettings.clickhouse.literature
     val indexTable = defaultOTSettings.clickhouse.literatureIndex
-    logger.info(s"query literature ocurrences in table ${table.name}")
+    logger.debug(s"query literature ocurrences in table ${table.name}")
 
     val pag = Helpers.Cursor.to(cursor).flatMap(_.asOpt[Pagination]).getOrElse(Pagination.mkDefault)
 
@@ -948,12 +974,12 @@ class Backend @Inject() (implicit
           case Vector(year) =>
             runQuery(year, total)
           case _ =>
-            logger.info(s"Cannot find the earliest year for the publications.")
+            logger.debug(s"Cannot find the earliest year for the publications.")
             runQuery(1900, total)
         }
 
       case _ =>
-        logger.info(s"there is no publications with this set of ids $ids")
+        logger.debug(s"there is no publications with this set of ids $ids")
         Future.successful(Publications.empty())
     }
   }
