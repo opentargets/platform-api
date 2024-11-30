@@ -293,9 +293,9 @@ class Backend @Inject() (implicit
           "locus",
           Some("studyLocusId")
         )
-    retriever.map { 
-      case (locus, _, counts, studyLocusIds) => locus.zip(counts).zip(studyLocusIds).map { 
-        case ((locus, count), studyLocusId) => Loci(count, Some(locus), studyLocusId.as[String])
+    retriever.map { case (locus, _, counts, studyLocusIds) =>
+      locus.zip(counts).zip(studyLocusIds).map { case ((locus, count), studyLocusId) =>
+        Loci(count, Some(locus), studyLocusId.as[String])
       }
     }
   }
@@ -364,32 +364,80 @@ class Backend @Inject() (implicit
     }
   }
 
-  def getCredibleSetsByStudy(studyIds: Seq[String], pagination: Option[Pagination]): Future[IndexedSeq[CredibleSets]] = {
+  def getCredibleSetsByStudy(studyIds: Seq[String],
+                             pagination: Option[Pagination]
+  ): Future[IndexedSeq[CredibleSets]] = {
     val pag = pagination.getOrElse(Pagination.mkDefault)
-    val indexName = getIndexOrDefault("credible_setn")
-    val queries = studyIds.map { studyId => IndexQuery(
-        esIndex = indexName, 
+    val indexName = getIndexOrDefault("credible_set")
+    val queries = studyIds.map { studyId =>
+      IndexQuery(
+        esIndex = indexName,
         kv = Map("studyId.keyword" -> Seq(studyId)),
         filters = Seq.empty,
         pagination = pag,
         aggs = Seq.empty,
         excludedFields = Seq("locus", "ldSet")
-        )
-      }
+      )
+    }
     val retriever =
       esRetriever
         .getMultiByIndexedTermsMust(
           queries,
           fromJsValue[JsValue],
           None,
-          Some("studyId")
+          Some(ResolverField("studyId"))
         )
-    retriever.map { 
-      case r => r.map { 
-        case (Seq(), _, _, _) => CredibleSets.empty
+    retriever.map { case r =>
+      r.map {
+        case (Seq(), _, _, _)               => CredibleSets.empty
         case (credsets, _, counts, studyId) => CredibleSets(counts, credsets, studyId.as[String])
-        }
       }
+    }
+  }
+
+  def getCredibleSetsByVariant(variantIds: Seq[String],
+                               studyTypes: Option[Seq[StudyTypeEnum.Value]],
+                               pagination: Option[Pagination]
+  ): Future[IndexedSeq[CredibleSets]] = {
+    val pag = pagination.getOrElse(Pagination.mkDefault)
+    val indexName = getIndexOrDefault("credible_set")
+    val termsQueryIter: Option[Iterable[queries.Query]] = studyTypes match {
+      case Some(studyTypes) => Some(Iterable(must(termQuery("studyType.keyword", studyTypes))))
+      case None             => None
+    }
+    // nested query for each variant id in variantIds
+    val boolQueries: Seq[IndexBoolQuery] = variantIds.map { variantId =>
+      val query: BoolQuery = {
+        val nestedTermsQuery = termQuery("locus.variantId.keyword", variantId)
+        val nestedQueryIter =
+          Iterable(nestedQuery("locus", must(nestedTermsQuery)).inner(innerHits("locus").size(1)))
+        termsQueryIter match {
+          case None                 => must(nestedQueryIter)
+          case Some(termsQueryIter) => must(termsQueryIter ++ nestedQueryIter)
+        }
+      }.queryName(variantId)
+      IndexBoolQuery(
+        esIndex = indexName,
+        boolQuery = query,
+        pagination = pag,
+        excludedFields = Seq("ldSet", "locus")
+      )
+    }
+    val retriever =
+      esRetriever
+        .getMultiQ(
+          boolQueries,
+          fromJsValue[JsValue],
+          None,
+          Some(ResolverField(matched_queries = true))
+        )
+    retriever.map { case r =>
+      r.map {
+        case (Seq(), _, _, _) => CredibleSets.empty
+        case (credsets, _, counts, variantId) =>
+          CredibleSets(counts, credsets, variantId.as[String])
+      }
+    }
   }
 
   def getTargetEssentiality(ids: Seq[String]): Future[IndexedSeq[TargetEssentiality]] = {

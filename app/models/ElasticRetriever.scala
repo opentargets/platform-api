@@ -28,6 +28,12 @@ import com.sksamuel.elastic4s.requests.searches.term.TermQuery
 import com.sksamuel.elastic4s.handlers.index.Search
 import views.html.index.f
 
+case class ResolverField(fieldname: Option[String], matched_queries: Boolean = false)
+object ResolverField {
+  def apply(fieldname: String): ResolverField = ResolverField(Some(fieldname))
+  def apply(matched_queries: Boolean): ResolverField = ResolverField(None, matched_queries)
+}
+
 class ElasticRetriever @Inject() (
     client: ElasticClient,
     hlFields: Seq[String],
@@ -253,10 +259,11 @@ class ElasticRetriever @Inject() (
       searchRequest: MultiSearchRequest,
       sortByField: Option[sort.FieldSort] = None,
       buildF: JsValue => Option[A],
-      resolverField: Option[String]
+      resolverField: Option[ResolverField]
   ): Future[IndexedSeq[(IndexedSeq[A], JsValue, Long, JsValue)]] = {
     // log and execute the query
-    val searchResponse: Future[Response[MultiSearchResponse]] = executeMultiQuery(searchRequest, sortByField)
+    val searchResponse: Future[Response[MultiSearchResponse]] =
+      executeMultiQuery(searchRequest, sortByField)
     // convert results into A
     searchResponse.map {
       handleMultiSearchResponse(_, searchRequest, buildF, resolverField)
@@ -327,8 +334,8 @@ class ElasticRetriever @Inject() (
       searchResponse: Response[MultiSearchResponse],
       searchQuery: MultiSearchRequest,
       buildF: JsValue => Option[A],
-      resolverField: Option[String]
-  ): IndexedSeq[(IndexedSeq[A], JsValue, Long, JsValue)] = {
+      resolverField: Option[ResolverField]
+  ): IndexedSeq[(IndexedSeq[A], JsValue, Long, JsValue)] =
     searchResponse match {
       case rf: RequestFailure =>
         logger.debug(s"Request failure for query: $searchQuery")
@@ -343,13 +350,21 @@ class ElasticRetriever @Inject() (
           val aggs = (response \ "aggregations").getOrElse(JsNull)
           val total = (response \ "hits" \ "total" \ "value").as[Long]
           val rf = resolverField match {
-            case Some(r) =>
+            case Some(ResolverField(Some(r), false)) =>
               hits
                 .map { jObj =>
                   (jObj \ "_source" \ r).as[JsValue]
                 }
-                .headOption.getOrElse(JsNull)
-            case None => JsNull
+                .headOption
+                .getOrElse(JsNull)
+            case Some(ResolverField(None, true)) =>
+              hits
+                .map { jObj =>
+                  (jObj \ "matched_queries").as[JsArray].value.headOption.getOrElse(JsNull)
+                }
+                .headOption
+                .getOrElse(JsNull)
+            case _ => JsNull
           }
           val mappedHits = hits
             .map { jObj =>
@@ -361,9 +376,7 @@ class ElasticRetriever @Inject() (
           (mappedHits, aggs, total, rf)
         }.toIndexedSeq
     }
-  }
-    
-  
+
   private def handleInnerSearchResponse[A](
       searchResponse: Response[SearchResponse],
       searchQuery: SearchRequest,
@@ -415,12 +428,22 @@ class ElasticRetriever @Inject() (
       indexQueries: Seq[IndexQuery[V]],
       buildF: JsValue => Option[A],
       sortByField: Option[sort.FieldSort] = None,
-      resolverField: Option[String],
+      resolverField: Option[ResolverField]
   ): Future[IndexedSeq[(IndexedSeq[A], JsValue, Long, JsValue)]] = {
     val searchRequest: MultiSearchRequest = MultiIndexTermsMust(indexQueries)
     getMultiByIndexedQuery(searchRequest, sortByField, buildF, resolverField)
   }
-  
+
+  def getMultiQ[A](
+      indexQueries: Seq[IndexBoolQuery],
+      buildF: JsValue => Option[A],
+      sortByField: Option[sort.FieldSort] = None,
+      resolverField: Option[ResolverField]
+  ): Future[IndexedSeq[(IndexedSeq[A], JsValue, Long, JsValue)]] = {
+    val searchRequest: MultiSearchRequest = multiBoolQueryBuilder(indexQueries)
+    getMultiByIndexedQuery(searchRequest, sortByField, buildF, resolverField)
+  }
+
   /* Provide a specific Bool Query*/
   def getQ[A](
       esIndex: String,
@@ -431,15 +454,13 @@ class ElasticRetriever @Inject() (
       sortByField: Option[sort.FieldSort] = None,
       excludedFields: Seq[String] = Seq.empty
   ): Future[(IndexedSeq[A], JsValue, Long)] = {
-    val limitClause = pagination.toES
-    val searchRequest: SearchRequest = search(esIndex)
-      .bool(boolQ)
-      .start(limitClause._1)
-      .limit(limitClause._2)
-      .aggs(aggs)
-      .trackTotalHits(true)
-      .fetchSource(false)
-      .sourceExclude(excludedFields)
+    val indexQuery = IndexBoolQuery(esIndex = esIndex,
+                                    boolQuery = boolQ,
+                                    pagination = pagination,
+                                    aggs = aggs,
+                                    excludedFields = excludedFields
+    )
+    val searchRequest: SearchRequest = BoolQueryBuilder(indexQuery)
     getByIndexedQuery(searchRequest, sortByField, buildF)
   }
 
