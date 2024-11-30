@@ -6,7 +6,6 @@ import play.api.libs.json.JsValue
 import sangria.schema.{ObjectType, Field, ListType, LongType, fields}
 import models.gql.TypeWithId
 
-
 case class CredibleSets(
     count: Long,
     rows: IndexedSeq[JsValue],
