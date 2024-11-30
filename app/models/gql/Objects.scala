@@ -1351,7 +1351,6 @@ object Objects extends Logging {
           resolve = r => {
             val studyLocusId = r.value.otherStudyLocusId.getOrElse("")
             logger.debug(s"Finding colocalisation credible set: $studyLocusId")
-            // r.ctx.getCredibleSet(studyLocusId)
             credibleSetFetcher.deferOpt(studyLocusId)
           }
         )
@@ -1383,11 +1382,7 @@ object Objects extends Logging {
           description = Some("Credible sets"),
           arguments = pageArg :: studyTypes :: Nil,
           resolve = r => {
-            val studyTypesSeq = r.arg(studyTypes).getOrElse(Seq.empty)
-            val variantIdSeq = Seq(r.value.variantId)
-            val credSetQueryArgs =
-              CredibleSetQueryArgs(variantIds = variantIdSeq, studyTypes = studyTypesSeq)
-            r.ctx.getCredibleSets(credSetQueryArgs, r.arg(pageArg))
+            CredibleSetsByVariantDeferred(r.value.variantId, r.arg(studyTypes), r.arg(pageArg))
           }
         ),
         Field(
