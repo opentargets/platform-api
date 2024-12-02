@@ -1357,6 +1357,14 @@ object Objects extends Logging {
       ),
       ExcludeFields("leftStudyLocusId", "rightStudyLocusId")
     )
+  implicit val colocalisationsImp: ObjectType[Backend, Colocalisations] = ObjectType(
+    "Colocalisations",
+    "Colocalisations",
+    fields[Backend, Colocalisations](
+      Field("count", LongType, description = None, resolve = _.value.count),
+      Field("rows", ListType(colocalisationImp), description = None, resolve = _.value.rows)
+    )
+  )
   implicit val dbXrefImp: ObjectType[Backend, DbXref] = deriveObjectType[Backend, DbXref]()
   implicit val variantIndexImp: ObjectType[Backend, VariantIndex] =
     deriveObjectType[Backend, VariantIndex](

@@ -1,5 +1,5 @@
 package models.gql
-import models.entities.{Loci, Pagination, CredibleSets, CredibleSetQueryArgs}
+import models.entities.{Loci, Pagination, CredibleSets, CredibleSetQueryArgs, Colocalisations}
 import models.{Backend, entities}
 import play.api.Logging
 import sangria.execution.deferred.{Deferred, DeferredResolver}
@@ -71,6 +71,25 @@ case class CredibleSetsByVariantDeferred(variantId: String,
   }
 }
 
+case class ColocalisationsDeferred(studyLocusId: String,
+                                   studyTypes: Option[Seq[StudyTypeEnum.Value]],
+                                   pagination: Option[Pagination]
+) extends DeferredMultiTerm[Colocalisations] {
+  val id: String = studyLocusId
+  val grouping = (studyTypes, pagination)
+  def empty(): Colocalisations = Colocalisations.empty
+  def resolver(ctx: Backend): (Seq[String], Product) => Future[IndexedSeq[Colocalisations]] = {
+    case (s: Seq[String], options: Product) =>
+      options match {
+        case (st, p) =>
+          ctx.getColocalisations(s,
+                                 st.asInstanceOf[Option[Seq[StudyTypeEnum.Value]]],
+                                 p.asInstanceOf[Option[Pagination]]
+          )
+      }
+  }
+}
+
 /** A deferred resolver for cases where we can't use the Fetch API because we resolve the
   * values on multiple terms/filters.
   */
@@ -106,6 +125,7 @@ class MultiTermResolver extends DeferredResolver[Backend] with Logging {
       case locus: LocusDeferred                            => locus
       case credSetByStudy: CredibleSetsByStudyDeferred     => credSetByStudy
       case credSetByVariant: CredibleSetsByVariantDeferred => credSetByVariant
+      case colocalisations: ColocalisationsDeferred        => colocalisations
     }
     val results = groupResults(deferredByType, ctx)
     deferred.map {
@@ -113,6 +133,7 @@ class MultiTermResolver extends DeferredResolver[Backend] with Logging {
       case credSetByStudy: CredibleSetsByStudyDeferred => getResultForId(credSetByStudy, results)
       case credSetByVariant: CredibleSetsByVariantDeferred =>
         getResultForId(credSetByVariant, results)
+      case colocalisations: ColocalisationsDeferred => getResultForId(colocalisations, results)
     }
   }
 }
