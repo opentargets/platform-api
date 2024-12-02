@@ -148,7 +148,7 @@ class Backend @Inject() (implicit
       .getByIndexedTermsMust(
         indexName,
         Map("studyLocusId.keyword" -> ids),
-        Pagination(Pagination.indexDefault, Pagination.sizeMax),
+        Pagination.mkMax,
         fromJsValue[L2GPredictions],
         sortByField = ElasticRetriever.sortBy("score", SortOrder.Desc)
       )
@@ -157,11 +157,10 @@ class Backend @Inject() (implicit
 
   def getVariants(ids: Seq[String]): Future[IndexedSeq[VariantIndex]] = {
     val indexName = getIndexOrDefault("variant_index")
-    val pag = Pagination(Pagination.indexDefault, Pagination.sizeMax)
     val r = esRetriever
       .getByIndexedTermsMust(indexName,
                              Map("variantId.keyword" -> ids),
-                             pag,
+                             Pagination.mkMax,
                              fromJsValue[VariantIndex]
       )
       .map(_.mappedHits)
@@ -174,14 +173,13 @@ class Backend @Inject() (implicit
       .getByIndexedTermsMust(
         indexName,
         Map("biosampleId.keyword" -> ids),
-        Pagination(Pagination.indexDefault, Pagination.sizeMax),
+        Pagination.mkMax,
         fromJsValue[Biosample]
       )
       .map(_.mappedHits)
   }
 
   def getStudy(ids: Seq[String]): Future[IndexedSeq[JsValue]] = {
-    val pag = Pagination.mkDefault
     val indexName = getIndexOrDefault("gwas_index")
     val termsQuery = Map("studyId.keyword" -> ids)
     val retriever =
@@ -189,7 +187,7 @@ class Backend @Inject() (implicit
         .getByIndexedTermsMust(
           indexName,
           termsQuery,
-          pag,
+          Pagination.mkMax,
           fromJsValue[JsValue]
         )
     retriever.map(_.mappedHits)
@@ -303,7 +301,6 @@ class Backend @Inject() (implicit
   }
 
   def getCredibleSet(ids: Seq[String]): Future[IndexedSeq[JsValue]] = {
-    val pag = Pagination.mkDefault
     val indexName = getIndexOrDefault("credible_set")
     val termsQuery = Map("studyLocusId.keyword" -> ids)
     val retriever =
@@ -311,7 +308,7 @@ class Backend @Inject() (implicit
         .getByIndexedTermsMust(
           indexName,
           termsQuery,
-          pag,
+          Pagination.mkMax,
           fromJsValue[JsValue],
           excludedFields = Seq("locus", "ldSet")
         )
