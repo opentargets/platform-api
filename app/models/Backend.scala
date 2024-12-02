@@ -26,6 +26,8 @@ import models.entities.SearchFacetsResults._
 import models.entities._
 import models.gql.Arguments.variantId
 import models.gql.StudyTypeEnum
+import models.InnerResults
+import models.Results
 import org.apache.http.impl.nio.reactor.IOReactorConfig
 import play.api.cache.AsyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
@@ -103,10 +105,10 @@ class Backend @Inject() (implicit
         ElasticRetriever.sortByDesc("llr")
       )
       .map {
-        case (Seq(), _, _) =>
+        case Results(Seq(), _, _, _) =>
           logger.debug(s"No adverse event found for ${kv.toString}")
           None
-        case (seq, agg, _) =>
+        case Results(seq, agg, _, _) =>
           logger.trace(Json.prettyPrint(agg))
           val counts = (agg \ "eventCount" \ "value").as[Long]
           Some(AdverseEvents(counts, seq.head.criticalValue, seq))
@@ -126,8 +128,8 @@ class Backend @Inject() (implicit
     )
 
     esRetriever.getByIndexedQueryMust(cbIndex, kv, pag, fromJsValue[DiseaseHPO], aggs).map {
-      case (Seq(), _, _) => Some(DiseaseHPOs(0, Seq()))
-      case (seq, agg, _) =>
+      case Results(Seq(), _, _, _) => Some(DiseaseHPOs(0, Seq()))
+      case Results(seq, agg, _, _) =>
         logger.trace(Json.prettyPrint(agg))
         val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
         Some(DiseaseHPOs(rowsCount, seq))
@@ -150,7 +152,7 @@ class Backend @Inject() (implicit
         fromJsValue[L2GPredictions],
         sortByField = ElasticRetriever.sortBy("score", SortOrder.Desc)
       )
-      .map(_._1)
+      .map(_.mappedHits)
   }
 
   def getVariants(ids: Seq[String]): Future[IndexedSeq[VariantIndex]] = {
@@ -162,7 +164,7 @@ class Backend @Inject() (implicit
                              pag,
                              fromJsValue[VariantIndex]
       )
-      .map(_._1)
+      .map(_.mappedHits)
     r
   }
 
@@ -175,7 +177,7 @@ class Backend @Inject() (implicit
         Pagination(Pagination.indexDefault, Pagination.sizeMax),
         fromJsValue[Biosample]
       )
-      .map(_._1)
+      .map(_.mappedHits)
   }
 
   def getStudy(ids: Seq[String]): Future[IndexedSeq[JsValue]] = {
@@ -190,7 +192,7 @@ class Backend @Inject() (implicit
           pag,
           fromJsValue[JsValue]
         )
-    retriever.map(_._1)
+    retriever.map(_.mappedHits)
   }
 
   def getStudies(queryArgs: StudyQueryArgs, pagination: Option[Pagination]): Future[Studies] = {
@@ -220,8 +222,8 @@ class Backend @Inject() (implicit
           fromJsValue[JsValue]
         )
       retriever.map {
-        case (Seq(), _, _) => Studies.empty
-        case (studies, _, count) =>
+        case Results(Seq(), _, _, _) => Studies.empty
+        case Results(studies, _, count, _) =>
           Studies(count, studies)
       }
     }
@@ -241,7 +243,7 @@ class Backend @Inject() (implicit
     )
     val colocs = esRetriever
       .getByIndexedTermsShould(indexName, terms, pag, fromJsValue[Colocalisation], filter = filter)
-      .map(_._1)
+      .map(_.mappedHits)
     colocs.map(_.map { coloc =>
       val otherStudyLocusId: String = if (coloc.leftStudyLocusId != studyLocusId) {
         coloc.leftStudyLocusId
@@ -293,7 +295,7 @@ class Backend @Inject() (implicit
           "locus",
           Some("studyLocusId")
         )
-    retriever.map { case (locus, _, counts, studyLocusIds) =>
+    retriever.map { case InnerResults(locus, _, counts, studyLocusIds) =>
       locus.zip(counts).zip(studyLocusIds).map { case ((locus, count), studyLocusId) =>
         Loci(count, Some(locus), studyLocusId.as[String])
       }
@@ -313,7 +315,7 @@ class Backend @Inject() (implicit
           fromJsValue[JsValue],
           excludedFields = Seq("locus", "ldSet")
         )
-    retriever.map(_._1)
+    retriever.map(_.mappedHits)
   }
 
   def getCredibleSets(
@@ -358,8 +360,8 @@ class Backend @Inject() (implicit
           excludedFields = Seq("locus", "ldSet")
         )
     retriever.map {
-      case (Seq(), _, _) => CredibleSets.empty
-      case (credset, _, count) =>
+      case Results(Seq(), _, _, _) => CredibleSets.empty
+      case Results(credset, _, count, _) =>
         CredibleSets(count, credset)
     }
   }
@@ -389,8 +391,9 @@ class Backend @Inject() (implicit
         )
     retriever.map { case r =>
       r.map {
-        case (Seq(), _, _, _)               => CredibleSets.empty
-        case (credsets, _, counts, studyId) => CredibleSets(counts, credsets, studyId.as[String])
+        case Results(Seq(), _, _, _) => CredibleSets.empty
+        case Results(credsets, _, counts, studyId) =>
+          CredibleSets(counts, credsets, studyId.as[String])
       }
     }
   }
@@ -402,7 +405,7 @@ class Backend @Inject() (implicit
     val pag = pagination.getOrElse(Pagination.mkDefault)
     val indexName = getIndexOrDefault("credible_set")
     val termsQueryIter: Option[Iterable[queries.Query]] = studyTypes match {
-      case Some(studyTypes) => Some(Iterable(must(termQuery("studyType.keyword", studyTypes))))
+      case Some(studyTypes) => Some(Iterable(should(termsQuery("studyType.keyword", studyTypes))))
       case None             => None
     }
     // nested query for each variant id in variantIds
@@ -433,8 +436,8 @@ class Backend @Inject() (implicit
         )
     retriever.map { case r =>
       r.map {
-        case (Seq(), _, _, _) => CredibleSets.empty
-        case (credsets, _, counts, variantId) =>
+        case Results(Seq(), _, _, _) => CredibleSets.empty
+        case Results(credsets, _, counts, variantId) =>
           CredibleSets(counts, credsets, variantId.as[String])
       }
     }
@@ -631,7 +634,7 @@ class Backend @Inject() (implicit
         Pagination(0, Pagination.sizeMax),
         fromJsValue[MousePhenotype]
       )
-      .map(_._1)
+      .map(_.mappedHits)
   }
 
   def getPharmacogenomicsByDrug(id: String): Future[IndexedSeq[Pharmacogenomics]] = {
@@ -661,7 +664,7 @@ class Backend @Inject() (implicit
         Pagination(0, Pagination.sizeMax),
         fromJsValue[Pharmacogenomics]
       )
-      .map(_._1)
+      .map(_.mappedHits)
   }
 
   def getOtarProjects(ids: Seq[String]): Future[IndexedSeq[OtarProjects]] = {
@@ -694,7 +697,7 @@ class Backend @Inject() (implicit
     val queryTerm = Map("id.keyword" -> ids)
     esRetriever
       .getByIndexedQueryShould(drugIndexName, queryTerm, Pagination(0, ids.size), fromJsValue[Drug])
-      .map(_._1)
+      .map(_.mappedHits)
   }
 
   def getMechanismsOfAction(id: String): Future[MechanismsOfAction] = {
@@ -702,14 +705,14 @@ class Backend @Inject() (implicit
     logger.debug(s"querying ES: getting mechanisms of action for $id")
     val index = getIndexOrDefault("drugMoA")
     val queryTerms = Map("chemblIds.keyword" -> id)
-    val mechanismsOfActionRaw: Future[(IndexedSeq[MechanismOfActionRaw], JsValue, Long)] =
+    val mechanismsOfActionRaw: Future[Results[MechanismOfActionRaw]] =
       esRetriever.getByIndexedQueryShould(
         index,
         queryTerms,
         Pagination.mkDefault,
         fromJsValue[MechanismOfActionRaw]
       )
-    mechanismsOfActionRaw.map(i => Drug.mechanismOfActionRaw2MechanismOfAction(i._1))
+    mechanismsOfActionRaw.map(i => Drug.mechanismOfActionRaw2MechanismOfAction(i.mappedHits))
   }
 
   def getIndications(ids: Seq[String]): Future[IndexedSeq[Indications]] = {
@@ -719,7 +722,7 @@ class Backend @Inject() (implicit
 
     esRetriever
       .getByIndexedQueryShould(index, queryTerm, Pagination.mkDefault, fromJsValue[Indications])
-      .map(_._1)
+      .map(_.mappedHits)
   }
 
   def getDrugWarnings(id: String): Future[IndexedSeq[DrugWarning]] = {
@@ -734,7 +737,7 @@ class Backend @Inject() (implicit
       This work around relates to ticket opentargets/platform#1506
          */
         val drugWarnings =
-          results._1.foldLeft(Map.empty[(Option[Long]), DrugWarning]) { (dwMap, dw) =>
+          results.mappedHits.foldLeft(Map.empty[(Option[Long]), DrugWarning]) { (dwMap, dw) =>
             if (dwMap.contains((dw.id))) {
               val old = dwMap((dw.id))
               val newDW =
@@ -761,14 +764,6 @@ class Backend @Inject() (implicit
       if (entityNames.contains(e.name) && e.searchIndex.isDefined)
     } yield e
     esRetriever.getTermsResultsMapping(entities, queryTerms)
-
-    // withQueryTermsNumberValidation(queryTerms, defaultOTSettings.qValidationLimitNTerms) match {
-    //   case Success(terms) =>
-    //     esRetriever.getTermsResultsMapping(entities, terms)
-    //   case Failure(error) =>
-    //     Future.failed(error)
-    // }
-
   }
 
   def search(

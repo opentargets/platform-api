@@ -9,6 +9,7 @@ import models.Helpers.fromJsValue
 import models.{Backend, ElasticRetriever}
 import models.entities.Configuration.ElasticsearchSettings
 import models.entities.Interaction.interaction
+import models.Results
 import play.api.Logging
 import play.api.libs.json._
 import sangria.schema.{Field, ListType, LongType, ObjectType, fields}
@@ -70,8 +71,8 @@ object Interactions extends Logging {
         Some(sort.FieldSort("scoring", order = SortOrder.DESC))
       )
       .map {
-        case (Seq(), _, _) => None
-        case (seq, agg, _) =>
+        case Results(Seq(), _, _, _) => None
+        case Results(seq, agg, _, _) =>
           logger.debug(Json.prettyPrint(agg))
 
           val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
