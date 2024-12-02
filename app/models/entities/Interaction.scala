@@ -5,6 +5,7 @@ import models.Helpers.fromJsValue
 import models.entities.Configuration.ElasticsearchSettings
 import models.gql.Fetchers.targetsFetcher
 import models.gql.Objects.targetImp
+import models.Results
 import play.api.Logging
 import play.api.libs.json._
 import sangria.schema._
@@ -279,8 +280,8 @@ object Interaction extends Logging {
     ) ++ interaction.targetB.map("targetB.keyword" -> _)
 
     esRetriever.getByIndexedQueryMust(cbIndex, kv.toMap, pag, fromJsValue[JsValue]).map {
-      case (Seq(), _, _) => IndexedSeq.empty
-      case (seq, _, _)   => seq
+      case Results(Seq(), _, _, _) => IndexedSeq.empty
+      case Results(seq, _, _, _)   => seq
     }
   }
 }
