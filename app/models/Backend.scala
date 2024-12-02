@@ -227,29 +227,57 @@ class Backend @Inject() (implicit
     }
   }
 
-  def getColocalisation(studyLocusId: String,
-                        studyTypes: Option[Seq[StudyTypeEnum.Value]],
-                        pagination: Option[Pagination]
-  ): Future[IndexedSeq[Colocalisation]] = {
+  def getColocalisations(studyLocusIds: Seq[String],
+                         studyTypes: Option[Seq[StudyTypeEnum.Value]],
+                         pagination: Option[Pagination]
+  ): Future[IndexedSeq[Colocalisations]] = {
     val indexName = getIndexOrDefault("colocalisation")
     val pag = pagination.getOrElse(Pagination.mkDefault)
-    val terms = Map("leftStudyLocusId.keyword" -> Seq(studyLocusId),
-                    "rightStudyLocusId.keyword" -> Seq(studyLocusId)
-    ).filter(_._2.nonEmpty)
-    val filter = Seq(
-      termsQuery("rightStudyType.keyword", studyTypes.getOrElse(StudyTypeEnum.values))
+    val termsQueryIter: Iterable[queries.Query] = Iterable(
+      must(
+        termsQuery(
+          "rightStudyType.keyword",
+          studyTypes.getOrElse(StudyTypeEnum.values)
+        )
+      )
     )
-    val colocs = esRetriever
-      .getByIndexedTermsShould(indexName, terms, pag, fromJsValue[Colocalisation], filter = filter)
-      .map(_.mappedHits)
-    colocs.map(_.map { coloc =>
-      val otherStudyLocusId: String = if (coloc.leftStudyLocusId != studyLocusId) {
-        coloc.leftStudyLocusId
-      } else {
-        coloc.rightStudyLocusId
+    val boolQueries: Seq[IndexBoolQuery] = studyLocusIds.map { studyLocusId =>
+      val query: BoolQuery = {
+        val shouldTermQuery = should(
+          termQuery("leftStudyLocusId.keyword", studyLocusId),
+          termQuery("rightStudyLocusId.keyword", studyLocusId)
+        )
+        must(termsQueryIter ++ Iterable(shouldTermQuery))
+      }.queryName(studyLocusId)
+      IndexBoolQuery(
+        esIndex = indexName,
+        boolQuery = query,
+        pagination = pag
+      )
+    }
+    val retriever =
+      esRetriever
+        .getMultiQ(
+          boolQueries,
+          fromJsValue[Colocalisation],
+          None,
+          Some(ResolverField(matched_queries = true))
+        )
+    retriever.map { case r =>
+      r.map {
+        case Results(Seq(), _, _, _) => Colocalisations.empty
+        case Results(colocs, _, counts, studyLocusId) =>
+          val c = colocs.map { coloc =>
+            val otherStudyLocusId: String = if (coloc.leftStudyLocusId != studyLocusId) {
+              coloc.leftStudyLocusId
+            } else {
+              coloc.rightStudyLocusId
+            }
+            coloc.copy(otherStudyLocusId = Some(otherStudyLocusId))
+          }
+          Colocalisations(counts, c, studyLocusId.as[String])
       }
-      coloc.copy(otherStudyLocusId = Some(otherStudyLocusId))
-    })
+    }
   }
 
   def getLocus(studyLocusIds: Seq[String],
