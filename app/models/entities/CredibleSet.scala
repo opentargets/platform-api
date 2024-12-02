@@ -12,8 +12,15 @@ import models.gql.Fetchers.{
   targetsFetcher,
   variantFetcher
 }
+import models.gql.ColocalisationsDeferred
 import models.gql.LocusDeferred
-import models.gql.Objects.{logger, targetImp, variantIndexImp, colocalisationImp, l2gPredictionsImp}
+import models.gql.Objects.{
+  logger,
+  targetImp,
+  variantIndexImp,
+  colocalisationsImp,
+  l2gPredictionsImp
+}
 import play.api.Logging
 import play.api.libs.json._
 import play.api.libs.json.{Reads, JsValue, Json, OFormat, OWrites}
@@ -262,12 +269,12 @@ object CredibleSet extends Logging {
     ),
     Field(
       "colocalisation",
-      OptionType(ListType(colocalisationImp)),
+      colocalisationsImp,
       description = None,
       arguments = studyTypes :: pageArg :: Nil,
       resolve = js => {
         val id = (js.value \ "studyLocusId").as[String]
-        js.ctx.getColocalisation(id, js.arg(studyTypes), js.arg(pageArg))
+        ColocalisationsDeferred(id, js.arg(studyTypes), js.arg(pageArg))
       }
     ),
     Field(
