@@ -233,21 +233,28 @@ class Backend @Inject() (implicit
   ): Future[IndexedSeq[Colocalisations]] = {
     val indexName = getIndexOrDefault("colocalisation")
     val pag = pagination.getOrElse(Pagination.mkDefault)
-    val termsQueryIter: Iterable[queries.Query] = Iterable(
-      must(
-        termsQuery(
-          "rightStudyType.keyword",
-          studyTypes.getOrElse(StudyTypeEnum.values)
-        )
-      )
-    )
     val boolQueries: Seq[IndexBoolQuery] = studyLocusIds.map { studyLocusId =>
+      val leftStudyLocusQuery = must(
+        termQuery("leftStudyLocusId.keyword", studyLocusId),
+        termsQuery("rightStudyType.keyword", studyTypes.getOrElse(StudyTypeEnum.values))
+      )
+      // Get the coloc based on the right study locus only if the other (left) study type is gwas
+      // because left study locus is always gwas and the field is not represented.
+      val rightStudyLocusQuery = studyTypes match {
+        case Some(st) =>
+          if (st.contains(StudyTypeEnum.gwas)) {
+            Some(termQuery("rightStudyLocusId.keyword", studyLocusId))
+          } else {
+            None
+          }
+        case None => Some(termQuery("rightStudyLocusId.keyword", studyLocusId))
+      }
       val query: BoolQuery = {
-        val shouldTermQuery = should(
-          termQuery("leftStudyLocusId.keyword", studyLocusId),
-          termQuery("rightStudyLocusId.keyword", studyLocusId)
-        )
-        must(termsQueryIter ++ Iterable(shouldTermQuery))
+        rightStudyLocusQuery match {
+          case Some(rq) =>
+            should(leftStudyLocusQuery, rq)
+          case None => must(leftStudyLocusQuery)
+        }
       }.queryName(studyLocusId)
       IndexBoolQuery(
         esIndex = indexName,
