@@ -5,21 +5,16 @@ import models.gql.StudyTypeEnum
 import models.gql.Arguments.StudyType
 import models.entities.Study.{studyImp, studyWithoutCredSetsImp}
 import models.entities.Loci.lociImp
-import models.gql.Fetchers.{
-  studyFetcher,
-  l2gFetcher,
-  l2gByStudyLocusIdRel,
-  targetsFetcher,
-  variantFetcher
-}
+import models.gql.Fetchers.{studyFetcher, targetsFetcher, variantFetcher}
 import models.gql.ColocalisationsDeferred
 import models.gql.LocusDeferred
+import models.gql.L2GPredictionsDeferred
 import models.gql.Objects.{
   logger,
   targetImp,
   variantIndexImp,
   colocalisationsImp,
-  l2gPredictionsImp
+  l2GPredictionsImp
 }
 import play.api.Logging
 import play.api.libs.json._
@@ -107,21 +102,22 @@ object CredibleSet extends Logging {
       }
     ),
     Field(
-      "l2Gpredictions",
-      OptionType(ListType(l2gPredictionsImp)),
+      "l2GPredictions",
+      l2GPredictionsImp,
       description = None,
-      arguments = pageSize :: Nil,
+      arguments = pageArg :: Nil,
       resolve = js => {
-        import scala.concurrent.ExecutionContext.Implicits.global
+        //import scala.concurrent.ExecutionContext.Implicits.global
         val id: String = (js.value \ "studyLocusId").as[String]
-        val l2gValues = DeferredValue(l2gFetcher.deferRelSeq(l2gByStudyLocusIdRel, id))
-        val t = js.arg(pageSize) match {
-          case Some(size) =>
-            l2gValues.map(_.take(size))
-          case None =>
-            l2gValues
-        }
-        t
+        L2GPredictionsDeferred(id, js.arg(pageArg))
+        // val l2gValues = DeferredValue(l2gFetcher.deferRelSeq(l2gByStudyLocusIdRel, id))
+        // val t = js.arg(pageSize) match {
+        //   case Some(size) =>
+        //     l2gValues.map(_.take(size))
+        //   case None =>
+        //     l2gValues
+        // }
+        // t
       }
     ),
     Field(

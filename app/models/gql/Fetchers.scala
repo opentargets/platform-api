@@ -153,8 +153,6 @@ object Fetchers extends Logging {
   )
 
   val credibleSetFetcherCache = FetcherCache.simple
-  // val credibleSetByStudyRel =
-  //   Relation[JsValue, String]("byStudy", js => Seq((js \ "studyId").as[String]))
   val credibleSetFetcher: Fetcher[Backend, JsValue, JsValue, String] = {
     implicit val credibleSetFetcherId: HasId[JsValue, String] =
       HasId[JsValue, String](js => (js \ "studyLocusId").as[String])
@@ -163,29 +161,8 @@ object Fetchers extends Logging {
         .maxBatchSize(entities.Configuration.batchSize)
         .caching(credibleSetFetcherCache),
       fetch = (ctx: Backend, ids: Seq[String]) => ctx.getCredibleSet(ids)
-      // },
-      // fetchRel = (ctx: Backend, ids: RelationIds[JsValue]) => {
-      //   ctx.getCredibleSets(entities.CredibleSetQueryArgs(studyIds = ids(credibleSetByStudyRel)),
-      //                       Some(Pagination.mkMax)
-      //   )
-      // }
     )
   }
-
-  val l2gFetcherCache = FetcherCache.simple
-  implicit val l2gHasId: HasId[L2GPredictions, String] =
-    HasId[L2GPredictions, String](_.studyLocusId)
-  val l2gByStudyLocusIdRel =
-    Relation[L2GPredictions, String]("byStudyLocus", l2g => Seq(l2g.studyLocusId))
-  val l2gFetcher: Fetcher[Backend, L2GPredictions, L2GPredictions, String] = Fetcher.rel(
-    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(l2gFetcherCache),
-    fetch = (ctx: Backend, ids: Seq[String]) => {
-      ctx.getL2GPredictions(ids)
-    },
-    fetchRel = (ctx: Backend, ids: RelationIds[L2GPredictions]) => {
-      ctx.getL2GPredictions(ids(l2gByStudyLocusIdRel))
-    }
-  )
 
   val studyFetcherCache = FetcherCache.simple
   val studyFetcher: Fetcher[Backend, JsValue, JsValue, String] = {
@@ -225,7 +202,6 @@ object Fetchers extends Logging {
       hpoFetcherCache,
       goFetcherCache,
       variantFetcherCache,
-      l2gFetcherCache,
       targetsFetcherCache,
       drugsFetcherCache,
       diseasesFetcherCache,

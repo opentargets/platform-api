@@ -142,17 +142,34 @@ class Backend @Inject() (implicit
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[GeneOntologyTerm])
   }
 
-  def getL2GPredictions(ids: Seq[String]): Future[IndexedSeq[L2GPredictions]] = {
+  def getL2GPredictions(ids: Seq[String],
+                        pagination: Option[Pagination]
+  ): Future[IndexedSeq[L2GPredictions]] = {
     val indexName = getIndexOrDefault("l2g_predictions")
-    esRetriever
-      .getByIndexedTermsMust(
-        indexName,
-        Map("studyLocusId.keyword" -> ids),
-        Pagination.mkMax,
-        fromJsValue[L2GPredictions],
-        sortByField = ElasticRetriever.sortBy("score", SortOrder.Desc)
+    val pag = pagination.getOrElse(Pagination.mkDefault)
+    val queries = ids.map { studyLocusId =>
+      IndexQuery(
+        esIndex = indexName,
+        kv = Map("studyLocusId.keyword" -> Seq(studyLocusId)),
+        filters = Seq.empty,
+        pagination = pag
       )
-      .map(_.mappedHits)
+    }
+    val retriever =
+      esRetriever
+        .getMultiByIndexedTermsMust(
+          queries,
+          fromJsValue[L2GPrediction],
+          ElasticRetriever.sortBy("score", SortOrder.Desc),
+          Some(ResolverField("studyLocusId"))
+        )
+    retriever.map { case r =>
+      r.map {
+        case Results(Seq(), _, _, _) => L2GPredictions.empty
+        case Results(predictions, _, counts, studyLocusId) =>
+          L2GPredictions(counts, predictions, studyLocusId.as[String])
+      }
+    }
   }
 
   def getVariants(ids: Seq[String]): Future[IndexedSeq[VariantIndex]] = {
