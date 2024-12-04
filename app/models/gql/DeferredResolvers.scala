@@ -1,5 +1,5 @@
 package models.gql
-import models.entities.{Loci, Pagination, CredibleSets, CredibleSetQueryArgs, Colocalisations}
+import models.entities.{Loci, Pagination, CredibleSets, CredibleSetQueryArgs, Colocalisations, L2GPredictions}
 import models.{Backend, entities}
 import play.api.Logging
 import sangria.execution.deferred.{Deferred, DeferredResolver}
@@ -90,6 +90,20 @@ case class ColocalisationsDeferred(studyLocusId: String,
   }
 }
 
+case class L2GPredictionsDeferred(studyLocusId: String, pagination: Option[Pagination])
+    extends DeferredMultiTerm[L2GPredictions] {
+  val id: String = studyLocusId
+  val grouping = (pagination)
+  def empty(): L2GPredictions = L2GPredictions.empty
+  def resolver(ctx: Backend): (Seq[String], Product) => Future[IndexedSeq[L2GPredictions]] = {
+    case (s: Seq[String], options: Product) =>
+      options match {
+        case (p) =>
+          ctx.getL2GPredictions(s, p.asInstanceOf[Option[Pagination]])
+      }
+  }
+}
+
 /** A deferred resolver for cases where we can't use the Fetch API because we resolve the
   * values on multiple terms/filters.
   */
@@ -126,6 +140,7 @@ class MultiTermResolver extends DeferredResolver[Backend] with Logging {
       case credSetByStudy: CredibleSetsByStudyDeferred     => credSetByStudy
       case credSetByVariant: CredibleSetsByVariantDeferred => credSetByVariant
       case colocalisations: ColocalisationsDeferred        => colocalisations
+      case l2g: L2GPredictionsDeferred                     => l2g
     }
     val results = groupResults(deferredByType, ctx)
     deferred.map {
@@ -134,6 +149,7 @@ class MultiTermResolver extends DeferredResolver[Backend] with Logging {
       case credSetByVariant: CredibleSetsByVariantDeferred =>
         getResultForId(credSetByVariant, results)
       case colocalisations: ColocalisationsDeferred => getResultForId(colocalisations, results)
+      case l2g: L2GPredictionsDeferred => getResultForId(l2g, results)
     }
   }
 }
@@ -145,7 +161,6 @@ object DeferredResolvers extends Logging {
     multiTermResolver,
     Fetchers.biosamplesFetcher,
     Fetchers.credibleSetFetcher,
-    Fetchers.l2gFetcher,
     Fetchers.targetsFetcher,
     Fetchers.drugsFetcher,
     Fetchers.diseasesFetcher,

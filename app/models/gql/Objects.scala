@@ -1326,10 +1326,10 @@ object Objects extends Logging {
   implicit val alleleFrequencyImp: ObjectType[Backend, AlleleFrequency] =
     deriveObjectType[Backend, AlleleFrequency]()
   implicit val biosampleImp: ObjectType[Backend, Biosample] = deriveObjectType[Backend, Biosample]()
-  implicit val l2gFeatureImp: ObjectType[Backend, L2GFeature] =
+  implicit val l2GFeatureImp: ObjectType[Backend, L2GFeature] =
     deriveObjectType[Backend, L2GFeature]()
-  implicit val l2gPredictionsImp: ObjectType[Backend, L2GPredictions] =
-    deriveObjectType[Backend, L2GPredictions](
+  implicit val l2GPredictionImp: ObjectType[Backend, L2GPrediction] =
+    deriveObjectType[Backend, L2GPrediction](
       ReplaceField(
         "geneId",
         Field(
@@ -1340,6 +1340,8 @@ object Objects extends Logging {
         )
       )
     )
+  implicit val l2GPredictionsImp: ObjectType[Backend, L2GPredictions] =
+    deriveObjectType[Backend, L2GPredictions]()
   implicit val colocalisationImp: ObjectType[Backend, Colocalisation] =
     deriveObjectType[Backend, Colocalisation](
       ReplaceField(
