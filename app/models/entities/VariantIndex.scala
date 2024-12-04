@@ -7,7 +7,8 @@ case class InSilicoPredictor(method: Option[String],
                              assessment: Option[String],
                              score: Option[Double],
                              assessmentFlag: Option[String],
-                             targetId: Option[String]
+                             targetId: Option[String],
+                             normalisedScore: Option[Double],
 )
 
 case class TranscriptConsequence(variantFunctionalConsequenceIds: Option[Seq[String]],
