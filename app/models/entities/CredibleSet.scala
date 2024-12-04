@@ -107,17 +107,8 @@ object CredibleSet extends Logging {
       description = None,
       arguments = pageArg :: Nil,
       resolve = js => {
-        //import scala.concurrent.ExecutionContext.Implicits.global
         val id: String = (js.value \ "studyLocusId").as[String]
         L2GPredictionsDeferred(id, js.arg(pageArg))
-        // val l2gValues = DeferredValue(l2gFetcher.deferRelSeq(l2gByStudyLocusIdRel, id))
-        // val t = js.arg(pageSize) match {
-        //   case Some(size) =>
-        //     l2gValues.map(_.take(size))
-        //   case None =>
-        //     l2gValues
-        // }
-        // t
       }
     ),
     Field(
