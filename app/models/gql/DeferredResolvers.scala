@@ -1,5 +1,12 @@
 package models.gql
-import models.entities.{Loci, Pagination, CredibleSets, CredibleSetQueryArgs, Colocalisations, L2GPredictions}
+import models.entities.{
+  Loci,
+  Pagination,
+  CredibleSets,
+  CredibleSetQueryArgs,
+  Colocalisations,
+  L2GPredictions
+}
 import models.{Backend, entities}
 import play.api.Logging
 import sangria.execution.deferred.{Deferred, DeferredResolver}
@@ -149,7 +156,7 @@ class MultiTermResolver extends DeferredResolver[Backend] with Logging {
       case credSetByVariant: CredibleSetsByVariantDeferred =>
         getResultForId(credSetByVariant, results)
       case colocalisations: ColocalisationsDeferred => getResultForId(colocalisations, results)
-      case l2g: L2GPredictionsDeferred => getResultForId(l2g, results)
+      case l2g: L2GPredictionsDeferred              => getResultForId(l2g, results)
     }
   }
 }
