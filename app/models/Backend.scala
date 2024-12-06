@@ -291,15 +291,15 @@ class Backend @Inject() (implicit
       r.map {
         case Results(Seq(), _, _, _) => Colocalisations.empty
         case Results(colocs, _, counts, studyLocusId) =>
+          val idString = studyLocusId.as[String]
           val c = colocs.map { coloc =>
-            val otherStudyLocusId: String = if (coloc.leftStudyLocusId != studyLocusId) {
-              coloc.leftStudyLocusId
+            if (coloc.leftStudyLocusId == idString) {
+              coloc.copy(otherStudyLocusId = Some(coloc.rightStudyLocusId))
             } else {
-              coloc.rightStudyLocusId
+              coloc.copy(otherStudyLocusId = Some(coloc.leftStudyLocusId))
             }
-            coloc.copy(otherStudyLocusId = Some(otherStudyLocusId))
           }
-          Colocalisations(counts, c, studyLocusId.as[String])
+          Colocalisations(counts, c, idString)
       }
     }
   }
