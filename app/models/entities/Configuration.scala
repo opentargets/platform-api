@@ -5,7 +5,7 @@ import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 
 object Configuration {
-  val batchSize = 100
+  val batchSize = Pagination.sizeMax
 
   case class Logging(otHeader: String, ignoredQueries: Seq[String])
 

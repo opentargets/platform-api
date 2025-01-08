@@ -1,31 +1,28 @@
 package models
 
 import play.api.Logging
+import play.api.libs.json._
 import sangria.schema._
 import entities._
+import models.entities.CredibleSet.credibleSetImp
+import models.entities.CredibleSets.credibleSetsImp
+import models.entities.Studies.studiesImp
+import models.entities.Study.studyImp
 import sangria.execution.deferred._
-
+import gql.validators.QueryTermsValidator._
 import scala.concurrent.ExecutionContext.Implicits.global
 import models.entities.Interaction._
 import models.gql.Objects._
 import models.gql.Arguments._
 import models.gql.Fetchers._
+import models.gql.DeferredResolvers._
+import scala.concurrent._
+import scala.util.{Try, Failure, Success}
 
 trait GQLEntities extends Logging {}
 
 object GQLSchema {
-  val resolvers: DeferredResolver[Backend] = DeferredResolver.fetchers(
-    targetsFetcher,
-    drugsFetcher,
-    diseasesFetcher,
-    hposFetcher,
-    reactomeFetcher,
-    expressionFetcher,
-    otarProjectsFetcher,
-    soTermsFetcher,
-    indicationFetcher,
-    goFetcher
-  )
+  val resolvers: DeferredResolver[Backend] = deferredResolvers
 
   val query: ObjectType[Backend, Unit] = ObjectType(
     "Query",
@@ -107,7 +104,10 @@ object GQLSchema {
         arguments = queryTerms :: entityNames :: Nil,
         resolve = ctx => {
           val entities = ctx.arg(entityNames).getOrElse(Seq.empty)
-          ctx.ctx.mapIds(ctx.arg(queryTerms), entities)
+          withQueryTermsNumberValidation(ctx.arg(queryTerms), Pagination.sizeMax) match {
+            case Success(terms) => ctx.ctx.mapIds(terms, entities)
+            case Failure(error) => Future.failed(error)
+          }
         }
       ),
       Field(
@@ -131,6 +131,61 @@ object GQLSchema {
         description = Some("Gene ontology terms"),
         arguments = goIds :: Nil,
         resolve = ctx => goFetcher.deferSeqOptExplicit(ctx.arg(goIds))
+      ),
+      Field(
+        "variant",
+        OptionType(variantIndexImp),
+        description = Some("Return a Variant"),
+        arguments = variantId :: Nil,
+        resolve = ctx => variantFetcher.deferOpt(ctx.arg(variantId))
+      ),
+      Field(
+        "study",
+        OptionType(studyImp),
+        description = Some("Return a Study"),
+        arguments = studyId :: Nil,
+        resolve = ctx => studyFetcher.deferOpt(ctx.arg(studyId))
+      ),
+      Field(
+        "studies",
+        studiesImp,
+        description = Some("Return a studies"),
+        arguments = pageArg :: studyId :: diseaseIds :: enableIndirect :: Nil,
+        resolve = ctx => {
+          val studyIdSeq =
+            if (ctx.arg(studyId).isDefined) Seq(ctx.arg(studyId).get).filter(_ != "") else Seq.empty
+          val diseaseIdsSeq = ctx.arg(diseaseIds).getOrElse(Seq.empty)
+          val studyQueryArgs = StudyQueryArgs(
+            studyIdSeq,
+            diseaseIdsSeq,
+            ctx.arg(enableIndirect).getOrElse(false)
+          )
+          ctx.ctx.getStudies(studyQueryArgs, ctx.arg(pageArg))
+        }
+      ),
+      Field(
+        "credibleSet",
+        OptionType(credibleSetImp),
+        description = Some("Return a Credible Set"),
+        arguments = studyLocusId :: Nil,
+        resolve = ctx => credibleSetFetcher.deferOpt(ctx.arg(studyLocusId))
+      ),
+      Field(
+        "credibleSets",
+        credibleSetsImp,
+        description = None,
+        arguments =
+          pageArg :: studyLocusIds :: studyIds :: variantIds :: studyTypes :: regions :: Nil,
+        resolve = ctx => {
+          val credSetQueryArgs = CredibleSetQueryArgs(
+            ctx.arg(studyLocusIds).getOrElse(Seq.empty),
+            ctx.arg(studyIds).getOrElse(Seq.empty),
+            ctx.arg(variantIds).getOrElse(Seq.empty),
+            ctx.arg(studyTypes).getOrElse(Seq.empty),
+            ctx.arg(regions).getOrElse(Seq.empty)
+          )
+          ctx.ctx.getCredibleSets(credSetQueryArgs, ctx.arg(pageArg))
+        }
       )
     )
   )

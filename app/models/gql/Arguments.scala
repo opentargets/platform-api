@@ -10,8 +10,16 @@ import sangria.marshalling.FromInput
 import sangria.util.tag
 import sangria.util.tag.@@
 
-object Arguments {
+object StudyTypeEnum extends Enumeration {
 
+  type StudyType = Value
+  val tuqtl, pqtl, eqtl, sqtl, sctuqtl, scpqtl, sceqtl, scsqtl, gwas = Value
+}
+
+object Arguments {
+  import sangria.macros.derive._
+
+  implicit val StudyType: EnumType[StudyTypeEnum.Value] = deriveEnumType[StudyTypeEnum.Value]()
   val paginationGQLImp: InputObjectType[Pagination] = deriveInputObjectType[Pagination]()
 
   val datasourceSettingsInputImp: InputObjectType[DatasourceSettings] =
@@ -61,12 +69,43 @@ object Arguments {
   val ensemblId: Argument[String] = Argument("ensemblId", StringType, description = "Ensembl ID")
   val ensemblIds: Argument[Seq[String @@ FromInput.CoercedScalaResult]] =
     Argument("ensemblIds", ListInputType(StringType), description = "List of Ensembl IDs")
+  val ensemblIdsOpt: Argument[Option[Seq[String]]] =
+    Argument("ensemblIds",
+             OptionInputType(ListInputType(StringType)),
+             description = "List of Ensembl IDs"
+    )
   val chemblId: Argument[String] = Argument("chemblId", StringType, description = "Chembl ID")
   val chemblIds: Argument[Seq[String @@ FromInput.CoercedScalaResult]] =
     Argument("chemblIds", ListInputType(StringType), description = "List of Chembl IDs")
   val goIds: Argument[Seq[String @@ FromInput.CoercedScalaResult]] =
     Argument("goIds", ListInputType(StringType), description = "List of GO IDs, eg. GO:0005515")
-
+  val variantId: Argument[String] = Argument("variantId", StringType, description = "Variant ID")
+  val variantIds: Argument[Option[Seq[String]]] =
+    Argument("variantIds", OptionInputType(ListInputType(StringType)), description = "Variant IDs")
+  val studyId: Argument[Option[String]] =
+    Argument("studyId", OptionInputType(StringType), description = "Study ID")
+  val studyIds: Argument[Option[Seq[String]]] =
+    Argument("studyIds", OptionInputType(ListInputType(StringType)), description = "Study IDs")
+  val diseaseId: Argument[Option[String]] =
+    Argument("diseaseId", OptionInputType(StringType), description = "Disease ID")
+  val diseaseIds: Argument[Option[Seq[String]]] =
+    Argument("diseaseIds", OptionInputType(ListInputType(StringType)), description = "Disease IDs")
+  val studyTypes =
+    Argument("studyTypes", OptionInputType(ListInputType(StudyType)), description = "Study types")
+  val regions: Argument[Option[Seq[String]]] =
+    Argument("regions", OptionInputType(ListInputType(StringType)), description = "Regions")
+  val studyLocusId: Argument[String] =
+    Argument("studyLocusId", StringType, description = "Study-locus ID")
+  val studyLocusIds: Argument[Option[Seq[String]]] =
+    Argument("studyLocusIds",
+             OptionInputType(ListInputType(StringType)),
+             description = "Study-locus IDs"
+    )
+  val enableIndirect: Argument[Option[Boolean]] = Argument(
+    "enableIndirect",
+    OptionInputType(BooleanType),
+    "Use the disease ontology to retrieve all its descendants and capture all their associated studies."
+  )
   val indirectEvidences: Argument[Option[Boolean]] = Argument(
     "enableIndirect",
     OptionInputType(BooleanType),

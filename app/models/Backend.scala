@@ -14,13 +14,20 @@ import models.Helpers._
 import models.db.{QAOTF, QLITAGG, QW2V, SentenceQuery}
 import models.entities.Publication._
 import models.entities.Associations._
+import models.entities.Biosample._
+import models.entities.CredibleSet._
 import models.entities.Configuration._
 import models.entities.DiseaseHPOs._
 import models.entities.Drug._
+import models.entities.Loci._
 import models.entities.MousePhenotypes._
 import models.entities.Pharmacogenomics._
 import models.entities.SearchFacetsResults._
 import models.entities._
+import models.gql.Arguments.variantId
+import models.gql.StudyTypeEnum
+import models.InnerResults
+import models.Results
 import org.apache.http.impl.nio.reactor.IOReactorConfig
 import play.api.cache.AsyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
@@ -32,6 +39,8 @@ import slick.basic.DatabaseConfig
 import java.time.LocalDate
 import scala.collection.immutable.ArraySeq
 import scala.concurrent._
+import scala.util.{Failure, Success}
+import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
 
 class Backend @Inject() (implicit
     ec: ExecutionContext,
@@ -99,10 +108,10 @@ class Backend @Inject() (implicit
         ElasticRetriever.sortByDesc("llr")
       )
       .map {
-        case (Seq(), _) =>
+        case Results(Seq(), _, _, _) =>
           logger.debug(s"No adverse event found for ${kv.toString}")
           None
-        case (seq, agg) =>
+        case Results(seq, agg, _, _) =>
           logger.trace(Json.prettyPrint(agg))
           val counts = (agg \ "eventCount" \ "value").as[Long]
           Some(AdverseEvents(counts, seq.head.criticalValue, seq))
@@ -122,8 +131,8 @@ class Backend @Inject() (implicit
     )
 
     esRetriever.getByIndexedQueryMust(cbIndex, kv, pag, fromJsValue[DiseaseHPO], aggs).map {
-      case (Seq(), _) => Some(DiseaseHPOs(0, Seq()))
-      case (seq, agg) =>
+      case Results(Seq(), _, _, _) => Some(DiseaseHPOs(0, Seq()))
+      case Results(seq, agg, _, _) =>
         logger.trace(Json.prettyPrint(agg))
         val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
         Some(DiseaseHPOs(rowsCount, seq))
@@ -134,6 +143,356 @@ class Backend @Inject() (implicit
     val targetIndexName = getIndexOrDefault("go")
 
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[GeneOntologyTerm])
+  }
+
+  def getL2GPredictions(ids: Seq[String],
+                        pagination: Option[Pagination]
+  ): Future[IndexedSeq[L2GPredictions]] = {
+    val indexName = getIndexOrDefault("l2g_predictions")
+    val pag = pagination.getOrElse(Pagination.mkDefault)
+    val queries = ids.map { studyLocusId =>
+      IndexQuery(
+        esIndex = indexName,
+        kv = Map("studyLocusId.keyword" -> Seq(studyLocusId)),
+        filters = Seq.empty,
+        pagination = pag
+      )
+    }
+    val retriever =
+      esRetriever
+        .getMultiByIndexedTermsMust(
+          queries,
+          fromJsValue[L2GPrediction],
+          ElasticRetriever.sortBy("score", SortOrder.Desc),
+          Some(ResolverField("studyLocusId"))
+        )
+    retriever.map { case r =>
+      r.map {
+        case Results(Seq(), _, _, _) => L2GPredictions.empty
+        case Results(predictions, _, counts, studyLocusId) =>
+          L2GPredictions(counts, predictions, studyLocusId.as[String])
+      }
+    }
+  }
+
+  def getVariants(ids: Seq[String]): Future[IndexedSeq[VariantIndex]] = {
+    val indexName = getIndexOrDefault("variant_index")
+    val r = esRetriever
+      .getByIndexedTermsMust(indexName,
+                             Map("variantId.keyword" -> ids),
+                             Pagination.mkMax,
+                             fromJsValue[VariantIndex]
+      )
+      .map(_.mappedHits)
+    r
+  }
+
+  def getBiosamples(ids: Seq[String]): Future[IndexedSeq[Biosample]] = {
+    val indexName = getIndexOrDefault("biosample", Some("biosample"))
+    esRetriever
+      .getByIndexedTermsMust(
+        indexName,
+        Map("biosampleId.keyword" -> ids),
+        Pagination.mkMax,
+        fromJsValue[Biosample]
+      )
+      .map(_.mappedHits)
+  }
+
+  def getStudy(ids: Seq[String]): Future[IndexedSeq[JsValue]] = {
+    val indexName = getIndexOrDefault("gwas_index")
+    val termsQuery = Map("studyId.keyword" -> ids)
+    val retriever =
+      esRetriever
+        .getByIndexedTermsMust(
+          indexName,
+          termsQuery,
+          Pagination.mkMax,
+          fromJsValue[JsValue]
+        )
+    retriever.map(_.mappedHits)
+  }
+
+  def getStudies(queryArgs: StudyQueryArgs, pagination: Option[Pagination]): Future[Studies] = {
+    val pag = pagination.getOrElse(Pagination.mkDefault)
+    val indexName = getIndexOrDefault("gwas_index")
+    val diseaseIds: Seq[String] = {
+      if (queryArgs.enableIndirect) {
+        val diseases = getDiseases(queryArgs.diseaseIds)
+        val descendantEfos = diseases.map(_.map(_.descendants).flatten).await
+        descendantEfos ++: queryArgs.diseaseIds
+      } else {
+        queryArgs.diseaseIds
+      }
+    }
+    val termsQuery = Map(
+      "studyId.keyword" -> queryArgs.id,
+      "traitFromSourceMappedIds.keyword" -> diseaseIds
+    ).filter(_._2.nonEmpty)
+    if (termsQuery.isEmpty) {
+      Future.successful(Studies.empty)
+    } else {
+      val retriever = esRetriever
+        .getByIndexedTermsMust(
+          indexName,
+          termsQuery,
+          pag,
+          fromJsValue[JsValue]
+        )
+      retriever.map {
+        case Results(Seq(), _, _, _) => Studies.empty
+        case Results(studies, _, count, _) =>
+          Studies(count, studies)
+      }
+    }
+  }
+
+  def getColocalisations(studyLocusIds: Seq[String],
+                         studyTypes: Option[Seq[StudyTypeEnum.Value]],
+                         pagination: Option[Pagination]
+  ): Future[IndexedSeq[Colocalisations]] = {
+    val indexName = getIndexOrDefault("colocalisation")
+    val pag = pagination.getOrElse(Pagination.mkDefault)
+    val boolQueries: Seq[IndexBoolQuery] = studyLocusIds.map { studyLocusId =>
+      val leftStudyLocusQuery = must(
+        termQuery("leftStudyLocusId.keyword", studyLocusId),
+        termsQuery("rightStudyType.keyword", studyTypes.getOrElse(StudyTypeEnum.values))
+      )
+      // Get the coloc based on the right study locus only if the other (left) study type is gwas
+      // because left study locus is always gwas and the field is not represented.
+      val rightStudyLocusQuery = studyTypes match {
+        case Some(st) =>
+          if (st.contains(StudyTypeEnum.gwas)) {
+            Some(termQuery("rightStudyLocusId.keyword", studyLocusId))
+          } else {
+            None
+          }
+        case None => Some(termQuery("rightStudyLocusId.keyword", studyLocusId))
+      }
+      val query: BoolQuery = {
+        rightStudyLocusQuery match {
+          case Some(rq) =>
+            should(leftStudyLocusQuery, rq)
+          case None => must(leftStudyLocusQuery)
+        }
+      }.queryName(studyLocusId)
+      IndexBoolQuery(
+        esIndex = indexName,
+        boolQuery = query,
+        pagination = pag
+      )
+    }
+    val retriever =
+      esRetriever
+        .getMultiQ(
+          boolQueries,
+          fromJsValue[Colocalisation],
+          None,
+          Some(ResolverField(matched_queries = true))
+        )
+    retriever.map { case r =>
+      r.map {
+        case Results(Seq(), _, _, _) => Colocalisations.empty
+        case Results(colocs, _, counts, studyLocusId) =>
+          val idString = studyLocusId.as[String]
+          val c = colocs.map { coloc =>
+            if (coloc.leftStudyLocusId == idString) {
+              coloc.copy(otherStudyLocusId = Some(coloc.rightStudyLocusId))
+            } else {
+              coloc.copy(otherStudyLocusId = Some(coloc.leftStudyLocusId))
+            }
+          }
+          Colocalisations(counts, c, idString)
+      }
+    }
+  }
+
+  def getLocus(studyLocusIds: Seq[String],
+               variantIds: Option[Seq[String]],
+               pagination: Option[Pagination]
+  ): Future[IndexedSeq[Loci]] = {
+    val indexName = getIndexOrDefault("credible_set")
+    val limitClause = pagination.getOrElse(Pagination.mkDefault).toES
+    val termsQuerySeq = Seq(Map("studyLocusId.keyword" -> studyLocusIds))
+    val termsQueryIter = termsQuerySeq.map { termsQuerySeq =>
+      Iterable(must(termsQuerySeq.map { it =>
+        val terms = it._2.asInstanceOf[Iterable[String]]
+        termsQuery(it._1, terms)
+      }))
+    }
+    def nestedQueryBuilder(path: String, query: BoolQuery) =
+      nestedQuery(path, query).inner(innerHits("locus").size(limitClause._2).from(limitClause._1))
+    val nestedQueryIter = variantIds match {
+      case Some(variantIds) =>
+        Iterable(
+          nestedQueryBuilder("locus", must(termsQuery("locus.variantId.keyword", variantIds)))
+        )
+      case None =>
+        Iterable(
+          nestedQueryBuilder("locus",
+                             must(
+                               matchAllQuery()
+                             )
+          )
+        )
+
+    }
+    val query: BoolQuery = must(termsQueryIter.flatten ++ nestedQueryIter)
+    val retriever =
+      esRetriever
+        .getInnerQ(
+          indexName,
+          query,
+          Pagination.mkMax,
+          fromJsValue[Locus],
+          "locus",
+          Some("studyLocusId")
+        )
+    retriever.map { case InnerResults(locus, _, counts, studyLocusIds) =>
+      locus.zip(counts).zip(studyLocusIds).map { case ((locus, count), studyLocusId) =>
+        Loci(count, Some(locus), studyLocusId.as[String])
+      }
+    }
+  }
+
+  def getCredibleSet(ids: Seq[String]): Future[IndexedSeq[JsValue]] = {
+    val indexName = getIndexOrDefault("credible_set")
+    val termsQuery = Map("studyLocusId.keyword" -> ids)
+    val retriever =
+      esRetriever
+        .getByIndexedTermsMust(
+          indexName,
+          termsQuery,
+          Pagination.mkMax,
+          fromJsValue[JsValue],
+          excludedFields = Seq("locus", "ldSet")
+        )
+    retriever.map(_.mappedHits)
+  }
+
+  def getCredibleSets(
+      queryArgs: CredibleSetQueryArgs,
+      pagination: Option[Pagination]
+  ): Future[CredibleSets] = {
+    val pag = pagination.getOrElse(Pagination.mkDefault)
+    val indexName = getIndexOrDefault("credible_set")
+    val termsQuerySeq = Map(
+      "studyLocusId.keyword" -> queryArgs.ids,
+      "studyId.keyword" -> queryArgs.studyIds,
+      "studyType.keyword" -> queryArgs.studyTypes,
+      "region.keyword" -> queryArgs.regions
+    ).filter(_._2.nonEmpty).toSeq
+    val termsQueryIter: Iterable[queries.Query] = Iterable(must(termsQuerySeq.map { it =>
+      val terms = it._2.asInstanceOf[Iterable[String]]
+      termsQuery(it._1, terms)
+    }))
+    val query: BoolQuery = {
+      if (queryArgs.variantIds.nonEmpty) {
+        val nestedTermsQuery = Map("locus.variantId.keyword" -> queryArgs.variantIds)
+        val nestedQueryIter = Iterable(
+          nestedQuery("locus",
+                      must(nestedTermsQuery.map { it =>
+                        val terms = it._2.asInstanceOf[Iterable[String]]
+                        termsQuery(it._1, terms)
+                      })
+          )
+        )
+        must(termsQueryIter ++ nestedQueryIter)
+      } else {
+        must(termsQueryIter)
+      }
+    }
+    val retriever =
+      esRetriever
+        .getQ(
+          indexName,
+          query,
+          pag,
+          fromJsValue[JsValue],
+          excludedFields = Seq("locus", "ldSet")
+        )
+    retriever.map {
+      case Results(Seq(), _, _, _) => CredibleSets.empty
+      case Results(credset, _, count, _) =>
+        CredibleSets(count, credset)
+    }
+  }
+
+  def getCredibleSetsByStudy(studyIds: Seq[String],
+                             pagination: Option[Pagination]
+  ): Future[IndexedSeq[CredibleSets]] = {
+    val pag = pagination.getOrElse(Pagination.mkDefault)
+    val indexName = getIndexOrDefault("credible_set")
+    val queries = studyIds.map { studyId =>
+      IndexQuery(
+        esIndex = indexName,
+        kv = Map("studyId.keyword" -> Seq(studyId)),
+        filters = Seq.empty,
+        pagination = pag,
+        aggs = Seq.empty,
+        excludedFields = Seq("locus", "ldSet")
+      )
+    }
+    val retriever =
+      esRetriever
+        .getMultiByIndexedTermsMust(
+          queries,
+          fromJsValue[JsValue],
+          None,
+          Some(ResolverField("studyId"))
+        )
+    retriever.map { case r =>
+      r.map {
+        case Results(Seq(), _, _, _) => CredibleSets.empty
+        case Results(credsets, _, counts, studyId) =>
+          CredibleSets(counts, credsets, studyId.as[String])
+      }
+    }
+  }
+
+  def getCredibleSetsByVariant(variantIds: Seq[String],
+                               studyTypes: Option[Seq[StudyTypeEnum.Value]],
+                               pagination: Option[Pagination]
+  ): Future[IndexedSeq[CredibleSets]] = {
+    val pag = pagination.getOrElse(Pagination.mkDefault)
+    val indexName = getIndexOrDefault("credible_set")
+    val termsQueryIter: Option[Iterable[queries.Query]] = studyTypes match {
+      case Some(studyTypes) => Some(Iterable(should(termsQuery("studyType.keyword", studyTypes))))
+      case None             => None
+    }
+    // nested query for each variant id in variantIds
+    val boolQueries: Seq[IndexBoolQuery] = variantIds.map { variantId =>
+      val query: BoolQuery = {
+        val nestedTermsQuery = termQuery("locus.variantId.keyword", variantId)
+        val nestedQueryIter =
+          Iterable(nestedQuery("locus", must(nestedTermsQuery)).inner(innerHits("locus").size(1)))
+        termsQueryIter match {
+          case None                 => must(nestedQueryIter)
+          case Some(termsQueryIter) => must(termsQueryIter ++ nestedQueryIter)
+        }
+      }.queryName(variantId)
+      IndexBoolQuery(
+        esIndex = indexName,
+        boolQuery = query,
+        pagination = pag,
+        excludedFields = Seq("ldSet", "locus")
+      )
+    }
+    val retriever =
+      esRetriever
+        .getMultiQ(
+          boolQueries,
+          fromJsValue[JsValue],
+          None,
+          Some(ResolverField(matched_queries = true))
+        )
+    retriever.map { case r =>
+      r.map {
+        case Results(Seq(), _, _, _) => CredibleSets.empty
+        case Results(credsets, _, counts, variantId) =>
+          CredibleSets(counts, credsets, variantId.as[String])
+      }
+    }
   }
 
   def getTargetEssentiality(ids: Seq[String]): Future[IndexedSeq[TargetEssentiality]] = {
@@ -235,13 +594,44 @@ class Backend @Inject() (implicit
       }
   }
 
-  // TODO CHECK RESULTS ARE SIZE 0 OR OPTIMISE FIELDS TO BRING BACK
+  def getEvidencesByVariantId(
+      datasourceIds: Option[Seq[String]],
+      variantId: String,
+      orderBy: Option[(String, String)],
+      sizeLimit: Option[Int],
+      cursor: Option[String]
+  ): Future[Evidences] = {
 
-  /** get evidences by multiple parameters */
-  def getEvidences(
+    val filters: Map[String, Seq[String]] = Map(
+      "variantId.keyword" -> Seq(variantId)
+    )
+
+    getFilteredEvidences(datasourceIds, filters, orderBy, sizeLimit, cursor)
+  }
+
+  def getEvidencesByEfoId(
       datasourceIds: Option[Seq[String]],
       targetIds: Seq[String],
       diseaseIds: Seq[String],
+      orderBy: Option[(String, String)],
+      sizeLimit: Option[Int],
+      cursor: Option[String]
+  ): Future[Evidences] = {
+
+    val filters: Map[String, Seq[String]] = Map(
+      "targetId.keyword" -> targetIds,
+      "diseaseId.keyword" -> diseaseIds
+    )
+
+    getFilteredEvidences(datasourceIds, filters, orderBy, sizeLimit, cursor)
+  }
+
+  // TODO CHECK RESULTS ARE SIZE 0 OR OPTIMISE FIELDS TO BRING BACK
+
+  /** get evidences by multiple parameters */
+  private def getFilteredEvidences(
+      datasourceIds: Option[Seq[String]],
+      filters: Map[String, Seq[String]],
       orderBy: Option[(String, String)],
       sizeLimit: Option[Int],
       cursor: Option[String]
@@ -258,15 +648,10 @@ class Backend @Inject() (implicit
       .map(_.map(cbIndexPrefix.concat).mkString(","))
       .getOrElse(cbIndexPrefix.concat("*"))
 
-    val kv = Map(
-      "targetId.keyword" -> targetIds,
-      "diseaseId.keyword" -> diseaseIds
-    )
-
     esRetriever
       .getByMustWithSearch(
         cbIndex,
-        kv,
+        filters,
         pag,
         fromJsValue[JsValue],
         Seq.empty,
@@ -301,7 +686,7 @@ class Backend @Inject() (implicit
         Pagination(0, Pagination.sizeMax),
         fromJsValue[MousePhenotype]
       )
-      .map(_._1)
+      .map(_.mappedHits)
   }
 
   def getPharmacogenomicsByDrug(id: String): Future[IndexedSeq[Pharmacogenomics]] = {
@@ -311,6 +696,11 @@ class Backend @Inject() (implicit
 
   def getPharmacogenomicsByTarget(id: String): Future[IndexedSeq[Pharmacogenomics]] = {
     val queryTerm: Map[String, String] = Map("targetFromSourceId.keyword" -> id)
+    getPharmacogenomics(id, queryTerm)
+  }
+
+  def getPharmacogenomicsByVariant(id: String): Future[IndexedSeq[Pharmacogenomics]] = {
+    val queryTerm: Map[String, String] = Map("variantId.keyword" -> id)
     getPharmacogenomics(id, queryTerm)
   }
 
@@ -326,7 +716,7 @@ class Backend @Inject() (implicit
         Pagination(0, Pagination.sizeMax),
         fromJsValue[Pharmacogenomics]
       )
-      .map(_._1)
+      .map(_.mappedHits)
   }
 
   def getOtarProjects(ids: Seq[String]): Future[IndexedSeq[OtarProjects]] = {
@@ -359,7 +749,7 @@ class Backend @Inject() (implicit
     val queryTerm = Map("id.keyword" -> ids)
     esRetriever
       .getByIndexedQueryShould(drugIndexName, queryTerm, Pagination(0, ids.size), fromJsValue[Drug])
-      .map(_._1)
+      .map(_.mappedHits)
   }
 
   def getMechanismsOfAction(id: String): Future[MechanismsOfAction] = {
@@ -367,14 +757,14 @@ class Backend @Inject() (implicit
     logger.debug(s"querying ES: getting mechanisms of action for $id")
     val index = getIndexOrDefault("drugMoA")
     val queryTerms = Map("chemblIds.keyword" -> id)
-    val mechanismsOfActionRaw: Future[(IndexedSeq[MechanismOfActionRaw], JsValue)] =
+    val mechanismsOfActionRaw: Future[Results[MechanismOfActionRaw]] =
       esRetriever.getByIndexedQueryShould(
         index,
         queryTerms,
         Pagination.mkDefault,
         fromJsValue[MechanismOfActionRaw]
       )
-    mechanismsOfActionRaw.map(i => Drug.mechanismOfActionRaw2MechanismOfAction(i._1))
+    mechanismsOfActionRaw.map(i => Drug.mechanismOfActionRaw2MechanismOfAction(i.mappedHits))
   }
 
   def getIndications(ids: Seq[String]): Future[IndexedSeq[Indications]] = {
@@ -384,7 +774,7 @@ class Backend @Inject() (implicit
 
     esRetriever
       .getByIndexedQueryShould(index, queryTerm, Pagination.mkDefault, fromJsValue[Indications])
-      .map(_._1)
+      .map(_.mappedHits)
   }
 
   def getDrugWarnings(id: String): Future[IndexedSeq[DrugWarning]] = {
@@ -399,7 +789,7 @@ class Backend @Inject() (implicit
       This work around relates to ticket opentargets/platform#1506
          */
         val drugWarnings =
-          results._1.foldLeft(Map.empty[(Option[Long]), DrugWarning]) { (dwMap, dw) =>
+          results.mappedHits.foldLeft(Map.empty[(Option[Long]), DrugWarning]) { (dwMap, dw) =>
             if (dwMap.contains((dw.id))) {
               val old = dwMap((dw.id))
               val newDW =
@@ -425,10 +815,7 @@ class Backend @Inject() (implicit
       e <- defaultESSettings.entities
       if (entityNames.contains(e.name) && e.searchIndex.isDefined)
     } yield e
-    withQueryTermsNumberValidation(queryTerms, defaultOTSettings.qValidationLimitNTerms) {
-      esRetriever.getTermsResultsMapping(entities, queryTerms)
-    }
-
+    esRetriever.getTermsResultsMapping(entities, queryTerms)
   }
 
   def search(
@@ -592,14 +979,14 @@ class Backend @Inject() (implicit
       size: Int
   ): Future[Vector[Similarity]] = {
     val table = defaultOTSettings.clickhouse.similarities
-    logger.info(s"query similarities in table ${table.name}")
+    logger.debug(s"query similarities in table ${table.name}")
 
     val jointLabels = labels + label
     val simQ = QW2V(table.name, categories, jointLabels, threshold, size)
     dbRetriever.executeQuery[Long, Query](simQ.existsLabel(label)).flatMap {
       case Vector(1) => dbRetriever.executeQuery[Similarity, Query](simQ.query)
       case _ =>
-        logger.info(
+        logger.debug(
           s"This case where the label asked ${label} to the model Word2Vec does not exist" +
             s" is ok but nice to capture though"
         )
@@ -644,7 +1031,7 @@ class Backend @Inject() (implicit
   ): Future[Publications] = {
     val table = defaultOTSettings.clickhouse.literature
     val indexTable = defaultOTSettings.clickhouse.literatureIndex
-    logger.info(s"query literature ocurrences in table ${table.name}")
+    logger.debug(s"query literature ocurrences in table ${table.name}")
 
     val pag = Helpers.Cursor.to(cursor).flatMap(_.asOpt[Pagination]).getOrElse(Pagination.mkDefault)
 
@@ -681,12 +1068,12 @@ class Backend @Inject() (implicit
           case Vector(year) =>
             runQuery(year, total)
           case _ =>
-            logger.info(s"Cannot find the earliest year for the publications.")
+            logger.debug(s"Cannot find the earliest year for the publications.")
             runQuery(1900, total)
         }
 
       case _ =>
-        logger.info(s"there is no publications with this set of ids $ids")
+        logger.debug(s"there is no publications with this set of ids $ids")
         Future.successful(Publications.empty())
     }
   }

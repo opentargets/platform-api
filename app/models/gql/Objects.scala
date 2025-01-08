@@ -4,6 +4,7 @@ import models._
 import models.entities.Configuration._
 import models.entities.Evidence.sequenceOntologyTermImp
 import models.entities.Evidences._
+import models.entities.Study.studyImp
 import models.entities.Interactions._
 import models.entities.Publications.publicationsImp
 import models.entities._
@@ -16,6 +17,8 @@ import sangria.schema._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
+import models.entities.CredibleSets.credibleSetsImp
+import models.entities.CredibleSet.credibleSetImp
 
 object Objects extends Logging {
   implicit val metaDataVersionImp: ObjectType[Backend, DataVersion] =
@@ -134,7 +137,7 @@ object Objects extends Logging {
         description = Some("The complete list of all possible datasources"),
         arguments = efoIds :: datasourceIdsArg :: pageSize :: cursor :: Nil,
         resolve = ctx =>
-          ctx.ctx.getEvidences(
+          ctx.ctx.getEvidencesByEfoId(
             ctx arg datasourceIdsArg,
             Seq(ctx.value.id),
             ctx arg efoIds,
@@ -375,7 +378,8 @@ object Objects extends Logging {
         resolve = ctx => {
           val indirects = ctx.arg(indirectEvidences).getOrElse(true)
           val efos = if (indirects) ctx.value.id +: ctx.value.descendants else ctx.value.id +: Nil
-          ctx.ctx.getEvidences(
+
+          ctx.ctx.getEvidencesByEfoId(
             ctx arg datasourceIdsArg,
             ctx arg ensemblIds,
             efos,
@@ -692,7 +696,6 @@ object Objects extends Logging {
         )
       )
     )
-
   implicit val diseaseHPOImp: ObjectType[Backend, DiseaseHPO] =
     deriveObjectType[Backend, DiseaseHPO](
       ObjectTypeDescription("Disease and phenotypes annotations"),
@@ -1150,7 +1153,7 @@ object Objects extends Logging {
     )
 
   lazy val mUnionType: UnionType[Backend] =
-    UnionType("EntityUnionType", types = List(targetImp, drugImp, diseaseImp))
+    UnionType("EntityUnionType", types = List(targetImp, drugImp, diseaseImp, variantIndexImp))
 
   implicit val searchResultAggsCategoryImp: ObjectType[Backend, SearchResultAggCategory] =
     deriveObjectType[Backend, models.entities.SearchResultAggCategory]()
@@ -1169,6 +1172,7 @@ object Objects extends Logging {
             ctx.value.entity match {
               case "target"  => targetsFetcher.deferOpt(ctx.value.id)
               case "disease" => diseasesFetcher.deferOpt(ctx.value.id)
+              case "variant" => variantFetcher.deferOpt(ctx.value.id)
               case _         => drugsFetcher.deferOpt(ctx.value.id)
             }
         )
@@ -1265,4 +1269,137 @@ object Objects extends Logging {
       )
     )
   )
+
+  implicit val inSilicoPredictorImp: ObjectType[Backend, InSilicoPredictor] =
+    deriveObjectType[Backend, InSilicoPredictor](
+      ReplaceField(
+        "targetId",
+        Field(
+          "target",
+          OptionType(targetImp),
+          Some("Target"),
+          resolve = r => targetsFetcher.deferOpt(r.value.targetId)
+        )
+      )
+    )
+  implicit val transcriptConsequenceImp: ObjectType[Backend, TranscriptConsequence] =
+    deriveObjectType[Backend, TranscriptConsequence](
+      ReplaceField(
+        "targetId",
+        Field("target",
+              OptionType(targetImp),
+              Some("Target"),
+              resolve = r => targetsFetcher.deferOpt(r.value.targetId)
+        )
+      ),
+      ReplaceField(
+        "variantFunctionalConsequenceIds",
+        Field(
+          "variantConsequences",
+          ListType(sequenceOntologyTermImp),
+          description = Some("Most severe consequence sequence ontology"),
+          resolve = r =>
+            r.value.variantFunctionalConsequenceIds match {
+              case Some(ids) =>
+                val soIds = ids.map(_.replace("_", ":"))
+                logger.debug(s"Finding variant functional consequences: $soIds")
+                soTermsFetcher.deferSeqOpt(soIds)
+              case None => Future.successful(Seq.empty)
+            }
+        )
+      )
+    )
+  implicit val alleleFrequencyImp: ObjectType[Backend, AlleleFrequency] =
+    deriveObjectType[Backend, AlleleFrequency]()
+  implicit val biosampleImp: ObjectType[Backend, Biosample] = deriveObjectType[Backend, Biosample]()
+  implicit val l2GFeatureImp: ObjectType[Backend, L2GFeature] =
+    deriveObjectType[Backend, L2GFeature]()
+  implicit val l2GPredictionImp: ObjectType[Backend, L2GPrediction] =
+    deriveObjectType[Backend, L2GPrediction](
+      ReplaceField(
+        "geneId",
+        Field(
+          "target",
+          OptionType(targetImp),
+          Some("Target"),
+          resolve = r => targetsFetcher.deferOpt(r.value.geneId)
+        )
+      )
+    )
+  implicit val l2GPredictionsImp: ObjectType[Backend, L2GPredictions] =
+    deriveObjectType[Backend, L2GPredictions]()
+  implicit val colocalisationImp: ObjectType[Backend, Colocalisation] =
+    deriveObjectType[Backend, Colocalisation](
+      ReplaceField(
+        "otherStudyLocusId",
+        Field(
+          "otherStudyLocus",
+          OptionType(credibleSetImp),
+          Some("Credible set"),
+          resolve = r =>
+            val studyLocusId = r.value.otherStudyLocusId.getOrElse("")
+            logger.debug(s"Finding colocalisation credible set: $studyLocusId")
+            credibleSetFetcher.deferOpt(studyLocusId)
+        )
+      ),
+      ExcludeFields("leftStudyLocusId", "rightStudyLocusId")
+    )
+  implicit val colocalisationsImp: ObjectType[Backend, Colocalisations] = ObjectType(
+    "Colocalisations",
+    "Colocalisations",
+    fields[Backend, Colocalisations](
+      Field("count", LongType, description = None, resolve = _.value.count),
+      Field("rows", ListType(colocalisationImp), description = None, resolve = _.value.rows)
+    )
+  )
+  implicit val dbXrefImp: ObjectType[Backend, DbXref] = deriveObjectType[Backend, DbXref]()
+  implicit val variantIndexImp: ObjectType[Backend, VariantIndex] =
+    deriveObjectType[Backend, VariantIndex](
+      ObjectTypeName("Variant"),
+      ReplaceField(
+        "mostSevereConsequenceId",
+        Field(
+          "mostSevereConsequence",
+          OptionType(sequenceOntologyTermImp),
+          description = Some("Most severe consequence sequence ontology"),
+          resolve = r =>
+            val soId = (r.value.mostSevereConsequenceId)
+              .replace("_", ":")
+            logger.debug(s"Finding variant functional consequence: $soId")
+            soTermsFetcher.deferOpt(soId)
+        )
+      ),
+      AddFields(
+        Field(
+          "credibleSets",
+          credibleSetsImp,
+          description = Some("Credible sets"),
+          arguments = pageArg :: studyTypes :: Nil,
+          resolve = r => CredibleSetsByVariantDeferred(r.value.variantId, r.arg(studyTypes), r.arg(pageArg))
+        ),
+        Field(
+          "pharmacogenomics",
+          ListType(pharmacogenomicsImp),
+          description = Some("Pharmoacogenomics"),
+          arguments = pageArg :: Nil,
+          resolve = ctx => ctx.ctx.getPharmacogenomicsByVariant(ctx.value.variantId)
+        ),
+        Field(
+          "evidences",
+          evidencesImp,
+          description = Some("The complete list of all possible datasources"),
+          arguments = datasourceIdsArg :: pageSize :: cursor :: Nil,
+          resolve = ctx =>
+            ctx.ctx.getEvidencesByVariantId(
+              ctx arg datasourceIdsArg,
+              ctx.value.variantId,
+              Some(("score", "desc")),
+              ctx arg pageSize,
+              ctx arg cursor
+            )
+        )
+      ),
+      RenameField("variantId", "id")
+    )
+
 }

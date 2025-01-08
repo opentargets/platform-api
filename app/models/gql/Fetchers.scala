@@ -2,21 +2,37 @@ package models.gql
 
 import models.Helpers.fromJsValue
 import models.entities.{
+  Biosample,
+  CredibleSet,
   Disease,
   Drug,
   Expressions,
   GeneOntologyTerm,
   HPO,
   Indications,
+  L2GPredictions,
+  Loci,
   OtarProjects,
+  Pagination,
   Reactome,
-  Target
+  Target,
+  VariantIndex
 }
 import models.{Backend, entities}
 import play.api.Logging
+import play.api.libs.json.{JsValue, __}
+import sangria.execution.deferred.{
+  Relation,
+  RelationIds,
+  Fetcher,
+  FetcherCache,
+  FetcherConfig,
+  HasId,
+  SimpleFetcherCache
+}
+import scala.concurrent._
+import models.gql.Arguments.studyId
 import play.api.libs.functional.syntax._
-import play.api.libs.json._
-import sangria.execution.deferred.{Fetcher, FetcherCache, FetcherConfig, HasId, SimpleFetcherCache}
 
 object Fetchers extends Logging {
   val soTermsFetcherCache = FetcherCache.simple
@@ -67,6 +83,15 @@ object Fetchers extends Logging {
   )
 
   // hpo fetcher
+  implicit val biosampleHasId: HasId[Biosample, String] = HasId[Biosample, String](_.biosampleId)
+  val biosamplesFetcherCache = FetcherCache.simple
+  val biosamplesFetcher: Fetcher[Backend, Biosample, Biosample, String] = Fetcher(
+    config =
+      FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(biosamplesFetcherCache),
+    fetch = (ctx: Backend, ids: Seq[String]) => ctx.getBiosamples(ids)
+  )
+
+  //hpo fetcher
   implicit val hpoHasId: HasId[HPO, String] = HasId[HPO, String](_.id)
 
   val hpoFetcherCache = FetcherCache.simple
@@ -98,6 +123,38 @@ object Fetchers extends Logging {
     fetch = (ctx: Backend, ids: Seq[String]) => ctx.getGoTerms(ids)
   )
 
+  implicit val variantFetcherId: HasId[VariantIndex, String] =
+    HasId[VariantIndex, String](_.variantId)
+  val variantFetcherCache = FetcherCache.simple
+  val variantFetcher: Fetcher[Backend, VariantIndex, VariantIndex, String] = Fetcher(
+    config =
+      FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(variantFetcherCache),
+    fetch = (ctx: Backend, ids: Seq[String]) => ctx.getVariants(ids)
+  )
+
+  val credibleSetFetcherCache = FetcherCache.simple
+  val credibleSetFetcher: Fetcher[Backend, JsValue, JsValue, String] = {
+    implicit val credibleSetFetcherId: HasId[JsValue, String] =
+      HasId[JsValue, String](js => (js \ "studyLocusId").as[String])
+    Fetcher(
+      config = FetcherConfig
+        .maxBatchSize(entities.Configuration.batchSize)
+        .caching(credibleSetFetcherCache),
+      fetch = (ctx: Backend, ids: Seq[String]) => ctx.getCredibleSet(ids)
+    )
+  }
+
+  val studyFetcherCache = FetcherCache.simple
+  val studyFetcher: Fetcher[Backend, JsValue, JsValue, String] = {
+    implicit val studyFetcherId: HasId[JsValue, String] =
+      HasId[JsValue, String](js => (js \ "studyId").as[String])
+    Fetcher(
+      config =
+        FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(studyFetcherCache),
+      fetch = (ctx: Backend, ids: Seq[String]) => ctx.getStudy(ids)
+    )
+  }
+
   def buildFetcher(index: String): Fetcher[Backend, JsValue, JsValue, String] = {
     implicit val soTermHasId: HasId[JsValue, String] =
       HasId[JsValue, String](el => (el \ "id").as[String])
@@ -118,6 +175,12 @@ object Fetchers extends Logging {
   def resetCache(): Unit = {
     logger.info("Clearing all GraphQL caches.")
     val fetchers: List[SimpleFetcherCache] = List(
+      biosamplesFetcherCache,
+      credibleSetFetcherCache,
+      studyFetcherCache,
+      hpoFetcherCache,
+      goFetcherCache,
+      variantFetcherCache,
       targetsFetcherCache,
       drugsFetcherCache,
       diseasesFetcherCache,

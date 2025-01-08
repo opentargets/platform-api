@@ -1,10 +1,10 @@
 package models
 
-import com.sksamuel.elastic4s.ElasticDsl.search
+import com.sksamuel.elastic4s.ElasticDsl.{search, multi}
 import com.sksamuel.elastic4s.api.QueryApi
 import com.sksamuel.elastic4s.requests.searches.aggs.AbstractAggregation
 import com.sksamuel.elastic4s.requests.searches.queries.Query
-import com.sksamuel.elastic4s.requests.searches.SearchRequest
+import com.sksamuel.elastic4s.requests.searches.{SearchRequest, MultiSearchRequest}
 import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
 import models.entities.Pagination
 import play.api.Logging
@@ -35,6 +35,14 @@ case class IndexQuery[V](
     excludedFields: Seq[String] = Seq.empty
 )
 
+case class IndexBoolQuery(
+    esIndex: String,
+    boolQuery: BoolQuery,
+    pagination: Pagination,
+    aggs: Iterable[AbstractAggregation] = Iterable.empty,
+    excludedFields: Seq[String] = Seq.empty
+)
+
 trait ElasticRetrieverQueryBuilders extends QueryApi with Logging {
 
   def IndexQueryMust[V](indexQuery: IndexQuery[V]): SearchRequest =
@@ -44,6 +52,21 @@ trait ElasticRetrieverQueryBuilders extends QueryApi with Logging {
       indexQuery: IndexQuery[V]
   ): SearchRequest =
     getByIndexQueryBuilder(indexQuery, should)
+
+  def IndexTermsMust[V](
+      indexQuery: IndexQuery[V]
+  ): SearchRequest =
+    getByIndexTermsBuilder(indexQuery, must)
+
+  def IndexTermsShould[V](
+      indexQuery: IndexQuery[V]
+  ): SearchRequest =
+    getByIndexTermsBuilder(indexQuery, should)
+
+  def MultiIndexTermsMust[V](
+      indexQueries: Seq[IndexQuery[V]]
+  ): MultiSearchRequest =
+    multiSearchTermsBuilder(indexQueries, must)
 
   def getByIndexQueryBuilder[V](
       indexQuery: IndexQuery[V],
@@ -67,5 +90,62 @@ trait ElasticRetrieverQueryBuilders extends QueryApi with Logging {
       .aggs(indexQuery.aggs)
       .trackTotalHits(true)
       .sourceExclude(indexQuery.excludedFields)
+  }
+
+  def getByIndexTermsBuilder[V](
+      indexQuery: IndexQuery[V],
+      f: Iterable[Query] => BoolQuery
+  ): SearchRequest = {
+    val limitClause = indexQuery.pagination.toES
+    val query: Iterable[Query] = {
+      val querySeq = indexQuery.kv.toSeq
+      Iterable(f(querySeq.map { it =>
+        val terms = it._2.asInstanceOf[Iterable[String]]
+        termsQuery(it._1, terms)
+      }))
+    }
+    val boolQuery: BoolQuery = must(query).filter(indexQuery.filters)
+    logger.debug(s"Query: $boolQuery")
+    search(indexQuery.esIndex)
+      .bool(boolQuery)
+      .start(limitClause._1)
+      .limit(limitClause._2)
+      .aggs(indexQuery.aggs)
+      .trackTotalHits(true)
+      .sourceExclude(indexQuery.excludedFields)
+  }
+
+  def BoolQueryBuilder(
+      indexQuery: IndexBoolQuery
+  ): SearchRequest = {
+    val limitClause = indexQuery.pagination.toES
+    val searchRequest: SearchRequest = search(indexQuery.esIndex)
+      .bool(indexQuery.boolQuery)
+      .start(limitClause._1)
+      .limit(limitClause._2)
+      .aggs(indexQuery.aggs)
+      .trackTotalHits(true)
+      .sourceExclude(indexQuery.excludedFields)
+
+    searchRequest
+  }
+
+  def multiBoolQueryBuilder(
+      indexQueries: Seq[IndexBoolQuery]
+  ): MultiSearchRequest = {
+    val searchRequests = indexQueries.map { query =>
+      BoolQueryBuilder(query)
+    }
+    multi(searchRequests)
+  }
+
+  def multiSearchTermsBuilder[V](
+      indexQueries: Seq[IndexQuery[V]],
+      f: Iterable[Query] => BoolQuery
+  ): MultiSearchRequest = {
+    val searchRequests = indexQueries.map { query =>
+      getByIndexTermsBuilder(query, f)
+    }
+    multi(searchRequests)
   }
 }

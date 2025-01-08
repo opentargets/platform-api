@@ -1,15 +1,18 @@
 package models.entities
 
 import models.Backend
+import models.entities.CredibleSet.credibleSetImp
 import models.gql.Fetchers.{
+  credibleSetFetcher,
   diseasesFetcher,
   drugsFetcher,
   goFetcher,
   soTermsFetcher,
-  targetsFetcher
+  targetsFetcher,
+  variantFetcher
 }
 import models.gql.Objects
-import models.gql.Objects.{diseaseImp, drugImp, geneOntologyTermImp, targetImp}
+import models.gql.Objects.{diseaseImp, drugImp, geneOntologyTermImp, targetImp, variantIndexImp}
 import play.api.Logging
 import play.api.libs.json._
 import sangria.schema.{
@@ -313,6 +316,15 @@ object Evidence extends Logging {
         resolve = js => (js.value \ "biomarkers").asOpt[JsValue]
       ),
       Field(
+        "credibleSet",
+        OptionType(credibleSetImp),
+        description = None,
+        resolve = js => {
+          val studyLocusId = (js.value \ "studyLocusId").asOpt[String]
+          credibleSetFetcher.deferOpt(studyLocusId)
+        }
+      ),
+      Field(
         "diseaseCellLines",
         OptionType(ListType(evidenceDiseaseCellLineImp)),
         description = None,
@@ -349,10 +361,14 @@ object Evidence extends Logging {
         resolve = js => (js.value \ "projectId").asOpt[String]
       ),
       Field(
-        "variantId",
-        OptionType(StringType),
-        description = Some("Variant evidence"),
-        resolve = js => (js.value \ "variantId").asOpt[String]
+        "variant",
+        OptionType(variantIndexImp),
+        description = None,
+        resolve = js => {
+          val id = (js.value \ "variantId").asOpt[String]
+          logger.debug(s"Finding variant for id: $id")
+          variantFetcher.deferOpt(id)
+        }
       ),
       Field(
         "variantRsId",
@@ -847,12 +863,6 @@ object Evidence extends Logging {
           "Number of cases in a case-control study that carry at least one allele of the qualifying variant"
         ),
         resolve = js => (js.value \ "studyCasesWithQualifyingVariants").asOpt[Long]
-      ),
-      Field(
-        "variantHgvsId",
-        OptionType(StringType),
-        description = Some("Identifier in HGVS notation of the disease-causing variant"),
-        resolve = js => (js.value \ "variantHgvsId").asOpt[String]
       ),
       Field(
         "releaseVersion",

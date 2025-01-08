@@ -26,6 +26,7 @@ case class Pharmacogenomics(
     targetFromSourceId: Option[String],
     variantFunctionalConsequenceId: Option[String],
     variantRsId: Option[String],
+    variantId: Option[String],
     isDirectTarget: Boolean
 )
 

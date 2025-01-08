@@ -7,7 +7,7 @@ organization := "io.opentargets"
 
 version := "latest"
 
-scalacOptions ++= Seq("-feature")
+scalacOptions ++= Seq("-feature", "-explain")
 
 lazy val root = (project in file(".")).enablePlugins(PlayScala, PlayLogback)
 
