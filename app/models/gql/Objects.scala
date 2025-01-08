@@ -1375,7 +1375,8 @@ object Objects extends Logging {
           credibleSetsImp,
           description = Some("Credible sets"),
           arguments = pageArg :: studyTypes :: Nil,
-          resolve = r => CredibleSetsByVariantDeferred(r.value.variantId, r.arg(studyTypes), r.arg(pageArg))
+          resolve =
+            r => CredibleSetsByVariantDeferred(r.value.variantId, r.arg(studyTypes), r.arg(pageArg))
         ),
         Field(
           "pharmacogenomics",

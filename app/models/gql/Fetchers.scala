@@ -91,7 +91,7 @@ object Fetchers extends Logging {
     fetch = (ctx: Backend, ids: Seq[String]) => ctx.getBiosamples(ids)
   )
 
-  //hpo fetcher
+  // hpo fetcher
   implicit val hpoHasId: HasId[HPO, String] = HasId[HPO, String](_.id)
 
   val hpoFetcherCache = FetcherCache.simple

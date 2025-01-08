@@ -2,7 +2,7 @@ package models.entities
 
 import models.Backend
 import models.entities.Pagination
-import models.gql.Fetchers.{variantFetcher}
+import models.gql.Fetchers.variantFetcher
 import models.gql.Objects.{logger, variantIndexImp}
 import play.api.Logging
 import play.api.libs.json._

@@ -216,7 +216,7 @@ class Backend @Inject() (implicit
   def getStudies(queryArgs: StudyQueryArgs, pagination: Option[Pagination]): Future[Studies] = {
     val pag = pagination.getOrElse(Pagination.mkDefault)
     val indexName = getIndexOrDefault("gwas_index")
-    val diseaseIds: Seq[String] = {
+    val diseaseIds: Seq[String] =
       if (queryArgs.enableIndirect) {
         val diseases = getDiseases(queryArgs.diseaseIds)
         val descendantEfos = diseases.map(_.map(_.descendants).flatten).await
@@ -224,7 +224,6 @@ class Backend @Inject() (implicit
       } else {
         queryArgs.diseaseIds
       }
-    }
     val termsQuery = Map(
       "studyId.keyword" -> queryArgs.id,
       "traitFromSourceMappedIds.keyword" -> diseaseIds
@@ -386,7 +385,7 @@ class Backend @Inject() (implicit
       val terms = it._2.asInstanceOf[Iterable[String]]
       termsQuery(it._1, terms)
     }))
-    val query: BoolQuery = {
+    val query: BoolQuery =
       if (queryArgs.variantIds.nonEmpty) {
         val nestedTermsQuery = Map("locus.variantId.keyword" -> queryArgs.variantIds)
         val nestedQueryIter = Iterable(
@@ -401,7 +400,6 @@ class Backend @Inject() (implicit
       } else {
         must(termsQueryIter)
       }
-    }
     val retriever =
       esRetriever
         .getQ(

@@ -19,7 +19,7 @@ import sangria.schema.{
   fields,
   DeferredValue
 }
-import sangria.schema.given 
+import sangria.schema.given
 import models.gql.StudyTypeEnum
 import models.gql.CredibleSetsByStudyDeferred
 import models.gql.Arguments.{pageArg, StudyType}
@@ -243,8 +243,8 @@ object Study extends Logging {
       description = Some("Credible sets"),
       resolve = js => {
         val studyId = (js.value \ "studyId").as[String]
-        //val credSetQueryArgs = CredibleSetQueryArgs(studyIds = Seq(studyId))
-        //js.ctx.getCredibleSets(credSetQueryArgs, js.arg(pageArg))
+        // val credSetQueryArgs = CredibleSetQueryArgs(studyIds = Seq(studyId))
+        // js.ctx.getCredibleSets(credSetQueryArgs, js.arg(pageArg))
         CredibleSetsByStudyDeferred(studyId, js.arg(pageArg))
 
       }

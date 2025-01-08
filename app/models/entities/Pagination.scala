@@ -58,7 +58,8 @@ object Pagination {
       else Success(Pagination(index, size))
   }
 
-  /** @return page with defaults: index = 0, size = 25.
+  /** @return
+    *   page with defaults: index = 0, size = 25.
     */
   def mkDefault: Pagination = Pagination(indexDefault, sizeDefault)
   def mkMax: Pagination = Pagination(Pagination.indexDefault, Pagination.sizeMax)
