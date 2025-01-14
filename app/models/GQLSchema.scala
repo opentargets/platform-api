@@ -44,6 +44,7 @@ object GQLSchema {
         ListType(targetImp),
         description = Some("Return Targets"),
         arguments = ensemblIds :: Nil,
+        complexity = Some((ctx, args, childScore) => args.arg(ensemblIds).length * childScore),
         resolve = ctx => targetsFetcher.deferSeqOpt(ctx.arg(ensemblIds))
       ),
       Field(
@@ -58,6 +59,7 @@ object GQLSchema {
         ListType(diseaseImp),
         description = Some("Return Diseases"),
         arguments = efoIds :: Nil,
+        complexity = Some((ctx, args, childScore) => args.arg(efoIds).length * childScore),
         resolve = ctx => diseasesFetcher.deferSeqOpt(ctx.arg(efoIds))
       ),
       Field(
@@ -72,6 +74,7 @@ object GQLSchema {
         ListType(drugImp),
         description = Some("Return drugs"),
         arguments = chemblIds :: Nil,
+        complexity = Some((ctx, args, childScore) => args.arg(chemblIds).length * childScore),
         resolve = ctx => drugsFetcher.deferSeqOpt(ctx.arg(chemblIds))
       ),
       Field(
@@ -128,6 +131,7 @@ object GQLSchema {
         ListType(OptionType(geneOntologyTermImp)),
         description = Some("Gene ontology terms"),
         arguments = goIds :: Nil,
+        complexity = Some((ctx, args, childScore) => args.arg(goIds).length * childScore),
         resolve = ctx => goFetcher.deferSeqOptExplicit(ctx.arg(goIds))
       ),
       Field(
@@ -149,6 +153,7 @@ object GQLSchema {
         studiesImp,
         description = Some("Return a studies"),
         arguments = pageArg :: studyId :: diseaseIds :: enableIndirect :: Nil,
+        complexity = Some((ctx, args, childScore) => args.arg(pageArg).getOrElse(Pagination.mkDefault).size * childScore),
         resolve = ctx => {
           val studyIdSeq =
             if (ctx.arg(studyId).isDefined) Seq(ctx.arg(studyId).get).filter(_ != "") else Seq.empty
@@ -174,6 +179,7 @@ object GQLSchema {
         description = None,
         arguments =
           pageArg :: studyLocusIds :: studyIds :: variantIds :: studyTypes :: regions :: Nil,
+        complexity = Some((ctx, args, childScore) => args.arg(pageArg).getOrElse(Pagination.mkDefault).size * childScore),
         resolve = ctx => {
           val credSetQueryArgs = CredibleSetQueryArgs(
             ctx.arg(studyLocusIds).getOrElse(Seq.empty),

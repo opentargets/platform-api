@@ -152,7 +152,7 @@ class GraphQLController @Inject() (implicit
                 ctx
               },
               QueryReducer.rejectMaxDepth[Backend](15),
-              QueryReducer.rejectComplexQueries[Backend](4000, (_, _) => TooComplexQueryError)
+              QueryReducer.rejectComplexQueries[Backend](150000, (_, _) => TooComplexQueryError)
             )
           )
           .map(

@@ -240,6 +240,7 @@ object Study extends Logging {
       "credibleSets",
       credibleSetsImp,
       arguments = pageArg :: Nil,
+      complexity = Some((ctx, args, childScore) => args.arg(pageArg).getOrElse(Pagination.mkDefault).size * childScore),
       description = Some("Credible sets"),
       resolve = js => {
         val studyId = (js.value \ "studyId").as[String]
