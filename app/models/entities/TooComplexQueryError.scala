@@ -7,7 +7,7 @@ import play.api.Logging
 import sangria.execution.{ExceptionHandler, HandledException, MaxQueryDepthReachedError}
 import sangria.marshalling.ResultMarshaller
 
-case object TooComplexQueryError extends Exception("Query is too expensive.") with Logging {
+case object TooComplexQueryError extends Exception("Query is too expensive. The response size is likely to be too large. Try requesting smaller page sizes") with Logging {
 
   private def handleExceptionWithCode(message: String,
                                       code: String,
