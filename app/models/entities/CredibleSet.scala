@@ -106,7 +106,9 @@ object CredibleSet extends Logging {
       l2GPredictionsImp,
       description = None,
       arguments = pageArg :: Nil,
-      complexity = Some((ctx, args, childScore) => args.arg(pageArg).getOrElse(Pagination.mkDefault).size * childScore),
+      complexity = Some((ctx, args, childScore) =>
+        args.arg(pageArg).getOrElse(Pagination.mkDefault).size * childScore
+      ),
       resolve = js => {
         val id: String = (js.value \ "studyLocusId").as[String]
         L2GPredictionsDeferred(id, js.arg(pageArg))
@@ -224,7 +226,9 @@ object CredibleSet extends Logging {
       "locus",
       lociImp,
       arguments = variantIds :: pageArg :: Nil,
-      complexity = Some((ctx, args, childScore) => args.arg(pageArg).getOrElse(Pagination.mkDefault).size * childScore),
+      complexity = Some((ctx, args, childScore) =>
+        args.arg(pageArg).getOrElse(Pagination.mkDefault).size * childScore
+      ),
       description = None,
       resolve = js => {
         import scala.concurrent.ExecutionContext.Implicits.global
@@ -261,7 +265,9 @@ object CredibleSet extends Logging {
       colocalisationsImp,
       description = None,
       arguments = studyTypes :: pageArg :: Nil,
-      complexity = Some((ctx, args, childScore) => args.arg(pageArg).getOrElse(Pagination.mkDefault).size * childScore),
+      complexity = Some((ctx, args, childScore) =>
+        args.arg(pageArg).getOrElse(Pagination.mkDefault).size * childScore
+      ),
       resolve = js => {
         val id = (js.value \ "studyLocusId").as[String]
         ColocalisationsDeferred(id, js.arg(studyTypes), js.arg(pageArg))
