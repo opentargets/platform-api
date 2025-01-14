@@ -137,7 +137,9 @@ object Objects extends Logging {
         evidencesImp,
         description = Some("The complete list of all possible datasources"),
         arguments = efoIds :: datasourceIdsArg :: pageSize :: cursor :: Nil,
-        complexity = Some((ctx, args, childScore) => args.arg(pageSize).getOrElse(Pagination.sizeDefault) * childScore),
+        complexity = Some((ctx, args, childScore) =>
+          args.arg(pageSize).getOrElse(Pagination.sizeDefault) * childScore
+        ),
         resolve = ctx =>
           ctx.ctx.getEvidencesByEfoId(
             ctx arg datasourceIdsArg,
@@ -153,7 +155,9 @@ object Objects extends Logging {
         OptionType(interactions),
         description = Some("Biological pathway membership from Reactome"),
         arguments = scoreThreshold :: databaseName :: pageArg :: Nil,
-        complexity = Some((ctx, args, childScore) => args.arg(pageArg).getOrElse(Pagination.mkDefault).size * childScore),
+        complexity = Some((ctx, args, childScore) =>
+          args.arg(pageArg).getOrElse(Pagination.mkDefault).size * childScore
+        ),
         resolve = r => {
           import r.ctx._
 
@@ -187,7 +191,9 @@ object Objects extends Logging {
             "targeting gene products according to their curated mechanism of action"
         ),
         arguments = freeTextQuery :: pageSize :: cursor :: Nil,
-        complexity = Some((ctx, args, childScore) => args.arg(pageSize).getOrElse(Pagination.sizeDefault) * childScore),
+        complexity = Some((ctx, args, childScore) =>
+          args.arg(pageSize).getOrElse(Pagination.sizeDefault) * childScore
+        ),
         resolve = ctx =>
           ctx.ctx.getKnownDrugs(
             ctx.arg(freeTextQuery).getOrElse(""),
@@ -202,7 +208,9 @@ object Objects extends Logging {
         description = Some("associations on the fly"),
         arguments =
           BIds :: indirectTargetEvidences :: datasourceSettingsListArg :: facetFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
-        complexity = Some((ctx, args, childScore) => args.arg(pageArg).getOrElse(Pagination.mkDefault).size * childScore),
+        complexity = Some((ctx, args, childScore) =>
+          args.arg(pageArg).getOrElse(Pagination.mkDefault).size * childScore
+        ),
         resolve = ctx =>
           ctx.ctx.getAssociationsTargetFixed(
             ctx.value,
@@ -255,7 +263,9 @@ object Objects extends Logging {
         ListType(pharmacogenomicsImp),
         description = Some("Pharmoacogenomics"),
         arguments = pageArg :: Nil,
-        complexity = Some((ctx, args, childScore) => args.arg(pageArg).getOrElse(Pagination.mkDefault).size * childScore),
+        complexity = Some((ctx, args, childScore) =>
+          args.arg(pageArg).getOrElse(Pagination.mkDefault).size * childScore
+        ),
         resolve = ctx => ctx.ctx.getPharmacogenomicsByTarget(ctx.value.id)
       )
     )
@@ -374,7 +384,9 @@ object Objects extends Logging {
         OptionType(diseaseHPOsImp),
         description = Some("Phenotype from HPO index"),
         arguments = pageArg :: Nil,
-        complexity = Some((ctx, args, childScore) => args.arg(pageArg).getOrElse(Pagination.mkDefault).size * childScore),
+        complexity = Some((ctx, args, childScore) =>
+          args.arg(pageArg).getOrElse(Pagination.mkDefault).size * childScore
+        ),
         resolve = ctx => ctx.ctx.getDiseaseHPOs(ctx.value.id, ctx.arg(pageArg))
       ),
       Field(
@@ -383,7 +395,9 @@ object Objects extends Logging {
         description = Some("The complete list of all possible datasources"),
         arguments =
           ensemblIds :: indirectEvidences :: datasourceIdsArg :: pageSize :: cursor :: Nil,
-        complexity = Some((ctx, args, childScore) => args.arg(pageSize).getOrElse(Pagination.sizeDefault) * childScore),
+        complexity = Some((ctx, args, childScore) =>
+          args.arg(pageSize).getOrElse(Pagination.sizeDefault) * childScore
+        ),
         resolve = ctx => {
           val indirects = ctx.arg(indirectEvidences).getOrElse(true)
           val efos = if (indirects) ctx.value.id +: ctx.value.descendants else ctx.value.id +: Nil
@@ -416,7 +430,9 @@ object Objects extends Logging {
             "drugs indicated for disease and curated mechanism of action"
         ),
         arguments = freeTextQuery :: pageSize :: cursor :: Nil,
-        complexity = Some((ctx, args, childScore) => args.arg(pageSize).getOrElse(Pagination.sizeDefault) * childScore),
+        complexity = Some((ctx, args, childScore) =>
+          args.arg(pageSize).getOrElse(Pagination.sizeDefault) * childScore
+        ),
         resolve = ctx =>
           ctx.ctx.getKnownDrugs(
             ctx.arg(freeTextQuery).getOrElse(""),
@@ -434,7 +450,9 @@ object Objects extends Logging {
         description = Some("associations on the fly"),
         arguments =
           BIds :: indirectEvidences :: datasourceSettingsListArg :: facetFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
-        complexity = Some((ctx, args, childScore) => args.arg(pageArg).getOrElse(Pagination.mkDefault).size * childScore),
+        complexity = Some((ctx, args, childScore) =>
+          args.arg(pageArg).getOrElse(Pagination.mkDefault).size * childScore
+        ),
         resolve = ctx =>
           ctx.ctx.getAssociationsDiseaseFixed(
             ctx.value,
@@ -996,7 +1014,9 @@ object Objects extends Logging {
             "with a known mechanism of action"
         ),
         arguments = freeTextQuery :: pageSize :: cursor :: Nil,
-        complexity = Some((ctx, args, childScore) => args.arg(pageSize).getOrElse(Pagination.sizeDefault) * childScore),
+        complexity = Some((ctx, args, childScore) =>
+          args.arg(pageSize).getOrElse(Pagination.sizeDefault) * childScore
+        ),
         resolve = ctx =>
           ctx.ctx.getKnownDrugs(
             ctx.arg(freeTextQuery).getOrElse(""),
@@ -1010,7 +1030,9 @@ object Objects extends Logging {
         OptionType(adverseEventsImp),
         description = Some("Significant adverse events inferred from FAERS reports"),
         arguments = pageArg :: Nil,
-        complexity = Some((ctx, args, childScore) => args.arg(pageArg).getOrElse(Pagination.mkDefault).size * childScore),
+        complexity = Some((ctx, args, childScore) =>
+          args.arg(pageArg).getOrElse(Pagination.mkDefault).size * childScore
+        ),
         resolve = ctx => ctx.ctx.getAdverseEvents(ctx.value.id, ctx.arg(pageArg))
       ),
       Field(
@@ -1018,7 +1040,9 @@ object Objects extends Logging {
         ListType(pharmacogenomicsImp),
         description = Some("Pharmoacogenomics"),
         arguments = pageArg :: Nil,
-        complexity = Some((ctx, args, childScore) => args.arg(pageArg).getOrElse(Pagination.mkDefault).size * childScore),
+        complexity = Some((ctx, args, childScore) =>
+          args.arg(pageArg).getOrElse(Pagination.mkDefault).size * childScore
+        ),
         resolve = ctx => ctx.ctx.getPharmacogenomicsByDrug(ctx.value.id)
       )
     ),
@@ -1390,7 +1414,9 @@ object Objects extends Logging {
           credibleSetsImp,
           description = Some("Credible sets"),
           arguments = pageArg :: studyTypes :: Nil,
-          complexity = Some((ctx, args, childScore) => args.arg(pageArg).getOrElse(Pagination.mkDefault).size * childScore),
+          complexity = Some((ctx, args, childScore) =>
+            args.arg(pageArg).getOrElse(Pagination.mkDefault).size * childScore
+          ),
           resolve =
             r => CredibleSetsByVariantDeferred(r.value.variantId, r.arg(studyTypes), r.arg(pageArg))
         ),
@@ -1399,7 +1425,9 @@ object Objects extends Logging {
           ListType(pharmacogenomicsImp),
           description = Some("Pharmoacogenomics"),
           arguments = pageArg :: Nil,
-          complexity = Some((ctx, args, childScore) => args.arg(pageArg).getOrElse(Pagination.mkDefault).size * childScore),
+          complexity = Some((ctx, args, childScore) =>
+            args.arg(pageArg).getOrElse(Pagination.mkDefault).size * childScore
+          ),
           resolve = ctx => ctx.ctx.getPharmacogenomicsByVariant(ctx.value.variantId)
         ),
         Field(
@@ -1407,7 +1435,9 @@ object Objects extends Logging {
           evidencesImp,
           description = Some("The complete list of all possible datasources"),
           arguments = datasourceIdsArg :: pageSize :: cursor :: Nil,
-          complexity = Some((ctx, args, childScore) => args.arg(pageSize).getOrElse(Pagination.sizeDefault) * childScore),
+          complexity = Some((ctx, args, childScore) =>
+            args.arg(pageSize).getOrElse(Pagination.sizeDefault) * childScore
+          ),
           resolve = ctx =>
             ctx.ctx.getEvidencesByVariantId(
               ctx arg datasourceIdsArg,
