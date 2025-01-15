@@ -1,0 +1,129 @@
+name: build-release
+
+on:
+  release:
+    types:
+      - published
+    branches:
+      - master
+
+jobs:
+  push-to-ghcr-and-gar:
+    name: Build docker image and push to quay.io, GAR and publish artifact
+    runs-on: ubuntu-22.04
+
+    permissions:
+      packages: write
+      contents: read
+      attestations: write
+      id-token: write
+
+    env:
+      TAG: ${{ github.ref_name }}
+
+    steps:
+      - id: prepare
+        name: Prepare the action and log details
+        shell: bash
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: |
+          TAG=$(echo $TAG | sed 's/^v//')
+          echo "TAG=$TAG" >> $GITHUB_ENV
+          echo "The tag for this build is $TAG"
+          echo "The repo name is: $REPO"
+          echo "Github context:\n$GITHUB_CONTEXT"
+
+      - id: checkout
+        name: Check out repo
+        uses: actions/checkout@v4
+
+      # =========== BUILD STEPS (TODO:  Extract to another workflow) ===========
+      - id: scala-setup
+        name: Install Scala
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'sbt'
+
+      - id: linter
+        name: Lint code
+        run: sbt scalafmtCheckAll
+
+      - id: compile
+        name: Compile code
+        run: sbt clean compile
+
+#      - id: test
+#        name: Run tests
+#        run: sbt coverage "testOnly * -- -l test_configuration.IntegrationTestTag" coverageReport
+
+      - id: dist
+        name: Create distribution
+        run: sbt dist
+      # ========================================================================
+
+      - id: auth-quay
+        name: Log in to quay.io
+        uses: docker/login-action@v3
+        with:
+          registry: quay.io
+          username: ${{ secrets.QUAY_USER }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+
+      - id: auth-ghcr
+        name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: auth-google
+        name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          token_format: access_token
+          project_id: 'open-targets-eu-dev'
+          workload_identity_provider: projects/426265110888/locations/global/workloadIdentityPools/github-actions/providers/opentargets
+          service_account: github-actions@open-targets-eu-dev.iam.gserviceaccount.com
+          access_token_lifetime: 300s
+
+      - id: auth-gar
+        name: Login to Google Artifact Registry
+        uses: docker/login-action@v3
+        with:
+          registry: europe-west1-docker.pkg.dev
+          username: oauth2accesstoken
+          password: ${{ steps.auth-google.outputs.access_token }}
+
+      - id: push-to-release
+        uses: xresloader/upload-to-github-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          file: 'target/universal/ot-platform-api-latest.zip'
+          tags: true
+
+      - id: push
+        name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            quay.io/opentargets/{{ env.REPO }}:latest
+            quay.io/opentargets/{{ env.REPO }}:${{ env.TAG }}
+            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository }}:${{ env.TAG }}
+            europe-west1-docker.pkg.dev/open-targets-eu-dev/${{ env.REPO }}/${{ env.REPO }}:latest
+            europe-west1-docker.pkg.dev/open-targets-eu-dev/${{ env.REPO }}/${{ env.REPO }}:${{ env.TAG }}
+
+      - id: generate-attestations
+        name: Generate artifact attestation
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: europe-west1-docker.pkg.dev/open-targets-eu-dev/${{ env.REPO }}/${{ env.REPO }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true

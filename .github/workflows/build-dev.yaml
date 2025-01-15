@@ -1,39 +1,63 @@
-name: Build docker image and publish to GHCR and GAR
+name: build-dev
 
 on:
-  release:
-    types:
-      - published
+  push:
+    tags:
+      # Matches tags that contain a dash after YY.major.minor
+      # Example: 25.0.0-beta.1
+      # Keep in mind github does not support all regex features:
+      # https://docs.github.com/en/actions/writing-workflows/workflow-syntax-for-github-actions#filter-pattern-cheat-sheet
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'
 
 jobs:
-  build-and-push:
+  push-to-ghcr:
+    name: Build docker image and push to quay.io and GAR
     runs-on: ubuntu-22.04
 
     permissions:
       packages: write
-      contents: write
+      contents: read
       attestations: write
       id-token: write
 
     env:
       TAG: ${{ github.ref_name }}
+      REPO: ${{ github.event.repository.name }}
 
     steps:
-      - id: prepare-tag
-        name: Prepare tag
-        run: echo "TAG=$(echo $TAG | sed 's/^v//')" >> $GITHUB_ENV
+      - id: prepare
+        name: Prepare the action and log details
+        shell: bash
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: |
+          TAG=$(echo $TAG | sed 's/^v//')
+          echo "TAG=$TAG" >> $GITHUB_ENV
+          echo "The tag for this build is $TAG"
+          echo "The repo name is: $REPO"
+          echo "Github context:\n$GITHUB_CONTEXT"
 
       - id: checkout
         name: Check out repo
         uses: actions/checkout@v4
 
+      # =========== BUILD STEPS (TODO:  Extract to another workflow) ===========
       - id: scala-setup
         name: Install Scala
-        uses: actions/setup-java@v4
+        uses: olafurpg/setup-scala@v11
         with:
-          distribution: 'temurin'
-          java-version: '21'
-          cache: 'sbt'
+          scala-version: 2.13.10
+          java-version: openjdk@1.11
+
+      - id: cache
+        name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/coursier
+            ~/.ivy2/cache
+            ~/.sbt
+          key: ${{ runner.os }}-sbt-${{ hashFiles('**/build.sbt') }}
 
       - id: linter
         name: Lint code
@@ -43,23 +67,16 @@ jobs:
         name: Compile code
         run: sbt clean compile
 
-#      - id: test
-#        name: Run tests
-#        run: sbt coverage "testOnly * -- -l test_configuration.IntegrationTestTag" coverageReport
+      - id: test
+        name: Run tests
+        run: sbt coverage "testOnly * -- -l test_configuration.IntegrationTestTag" coverageReport
 
       - id: dist
         name: Create distribution
         run: sbt dist
+      # ========================================================================
 
-      - id: push-to-release
-        uses: xresloader/upload-to-github-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          file: 'target/universal/ot-platform-api-latest.zip'
-          tags: true
-
-      - id: auth_quay
+      - id: auth-quay
         name: Log in to quay.io
         uses: docker/login-action@v3
         with:
@@ -67,15 +84,7 @@ jobs:
           username: ${{ secrets.QUAY_USER }}
           password: ${{ secrets.QUAY_PASSWORD }}
 
-      - id: auth_ghcr
-        name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - id: auth_google
+      - id: auth-google
         name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
@@ -85,13 +94,13 @@ jobs:
           service_account: github-actions@open-targets-eu-dev.iam.gserviceaccount.com
           access_token_lifetime: 300s
 
-      - id: auth_gar
+      - id: auth-gar
         name: Login to Google Artifact Registry
         uses: docker/login-action@v3
         with:
           registry: europe-west1-docker.pkg.dev
           username: oauth2accesstoken
-          password: ${{ steps.auth_google.outputs.access_token }}
+          password: ${{ steps.auth-google.outputs.access_token }}
 
       - id: push
         name: Build and push Docker image
@@ -100,17 +109,13 @@ jobs:
           context: .
           push: true
           tags: |
-            quay.io/opentargets/platform-api:latest
-            quay.io/opentargets/platform-api:${{ env.TAG }}
-            ghcr.io/${{ github.repository }}:latest
-            ghcr.io/${{ github.repository }}:${{ env.TAG }}
-            europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:latest
+            quay.io/opentargets/{{ env.REPO }}:${{ env.TAG }}
             europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:${{ env.TAG }}
 
       - id: generate-attestations
         name: Generate artifact attestation
         uses: actions/attest-build-provenance@v1
         with:
-          subject-name: ghcr.io/${{ github.repository }}
+          subject-name: europe-west1-docker.pkg.dev/open-targets-eu-dev/${{ env.REPO }}/${{ env.REPO }}
           subject-digest: ${{ steps.push.outputs.digest }}
           push-to-registry: true
