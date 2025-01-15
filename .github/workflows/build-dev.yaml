@@ -109,7 +109,7 @@ jobs:
           context: .
           push: true
           tags: |
-            quay.io/opentargets/{{ env.REPO }}:${{ env.TAG }}
+            quay.io/opentargets/${{ env.REPO }}:${{ env.TAG }}
             europe-west1-docker.pkg.dev/open-targets-eu-dev/platform-api/platform-api:${{ env.TAG }}
 
       - id: generate-attestations
