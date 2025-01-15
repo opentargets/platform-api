@@ -20,6 +20,7 @@ jobs:
 
     env:
       TAG: ${{ github.ref_name }}
+      REPO: ${{ github.event.repository.name }}
 
     steps:
       - id: prepare
@@ -43,7 +44,6 @@ jobs:
         name: Install Scala
         uses: olafurpg/setup-scala@v11
         with:
-          scala-version: 2.13.10
           java-version: openjdk@1.11
 
       - id: cache
