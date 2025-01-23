@@ -250,14 +250,14 @@ object Study extends Logging {
       }
     )
   lazy val studyImp: ObjectType[Backend, JsValue] = ObjectType(
-    "Gwas",
+    "Study",
     "A genome-wide association study",
     fields[Backend, JsValue](
       gwasFields ++ Seq(credibleSetField)*
     )
   )
   val studyWithoutCredSetsImp: ObjectType[Backend, JsValue] = ObjectType(
-    "GwasWithoutCredSets",
+    "StudyWithoutCredSets",
     "A genome-wide association study without credible sets",
     fields[Backend, JsValue](
       gwasFields*
