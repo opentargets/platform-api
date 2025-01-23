@@ -8,6 +8,7 @@ import com.sksamuel.elastic4s.requests.searches.aggs.*
 import com.sksamuel.elastic4s.requests.searches.sort.SortOrder
 import esecuele.*
 
+import gql.validators.QueryTermsValidator._
 import javax.inject.Inject
 import models.Helpers.*
 import models.db.{QAOTF, QLITAGG, QW2V, SentenceQuery}
@@ -172,7 +173,7 @@ class Backend @Inject() (implicit
   }
 
   def getVariants(ids: Seq[String]): Future[IndexedSeq[VariantIndex]] = {
-    val indexName = getIndexOrDefault("variant_index")
+    val indexName = getIndexOrDefault("variant")
     val r = esRetriever
       .getByIndexedTermsMust(indexName,
                              Map("variantId.keyword" -> ids),
@@ -196,7 +197,7 @@ class Backend @Inject() (implicit
   }
 
   def getStudy(ids: Seq[String]): Future[IndexedSeq[Study]] = {
-    val indexName = getIndexOrDefault("gwas_index")
+    val indexName = getIndexOrDefault("study")
     val termsQuery = Map("studyId.keyword" -> ids)
     val retriever =
       esRetriever
@@ -211,7 +212,7 @@ class Backend @Inject() (implicit
 
   def getStudies(queryArgs: StudyQueryArgs, pagination: Option[Pagination]): Future[Studies] = {
     val pag = pagination.getOrElse(Pagination.mkDefault)
-    val indexName = getIndexOrDefault("gwas_index")
+    val indexName = getIndexOrDefault("study")
     val diseaseIds: Seq[String] =
       if (queryArgs.enableIndirect) {
         val diseases = getDiseases(queryArgs.diseaseIds)
