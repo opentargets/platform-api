@@ -176,7 +176,7 @@ class Backend @Inject() (implicit
   }
 
   def getVariants(ids: Seq[String]): Future[IndexedSeq[VariantIndex]] = {
-    val indexName = getIndexOrDefault("variant_index")
+    val indexName = getIndexOrDefault("variant")
     val r = esRetriever
       .getByIndexedTermsMust(indexName,
                              Map("variantId.keyword" -> ids),
@@ -200,7 +200,7 @@ class Backend @Inject() (implicit
   }
 
   def getStudy(ids: Seq[String]): Future[IndexedSeq[JsValue]] = {
-    val indexName = getIndexOrDefault("gwas_index")
+    val indexName = getIndexOrDefault("study")
     val termsQuery = Map("studyId.keyword" -> ids)
     val retriever =
       esRetriever
@@ -215,7 +215,7 @@ class Backend @Inject() (implicit
 
   def getStudies(queryArgs: StudyQueryArgs, pagination: Option[Pagination]): Future[Studies] = {
     val pag = pagination.getOrElse(Pagination.mkDefault)
-    val indexName = getIndexOrDefault("gwas_index")
+    val indexName = getIndexOrDefault("study")
     val diseaseIds: Seq[String] =
       if (queryArgs.enableIndirect) {
         val diseases = getDiseases(queryArgs.diseaseIds)
