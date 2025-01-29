@@ -1192,7 +1192,9 @@ object Objects extends Logging {
     )
 
   lazy val mUnionType: UnionType[Backend] =
-    UnionType("EntityUnionType", types = List(targetImp, drugImp, diseaseImp, variantIndexImp))
+    UnionType("EntityUnionType",
+              types = List(targetImp, drugImp, diseaseImp, variantIndexImp, studyImp)
+    )
 
   implicit val searchResultAggsCategoryImp: ObjectType[Backend, SearchResultAggCategory] =
     deriveObjectType[Backend, models.entities.SearchResultAggCategory]()
