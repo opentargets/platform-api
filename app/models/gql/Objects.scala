@@ -1214,6 +1214,7 @@ object Objects extends Logging {
               case "target"  => targetsFetcher.deferOpt(ctx.value.id)
               case "disease" => diseasesFetcher.deferOpt(ctx.value.id)
               case "variant" => variantFetcher.deferOpt(ctx.value.id)
+              case "study"   => studyFetcher.deferOpt(ctx.value.id)
               case _         => drugsFetcher.deferOpt(ctx.value.id)
             }
         )
