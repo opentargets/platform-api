@@ -45,7 +45,7 @@ object KnownDrug extends Logging {
   implicit val URLImpR: Reads[URL] = (
     (__ \ "url").read[String] and
       (__ \ "niceName").read[String]
-  )(URL.apply _)
+  )(URL.apply)
 
   // approvedSymbol: String, label: String, prefName: String,
   implicit val knownDrugImpW: OWrites[KnownDrug] = Json.writes[KnownDrug]
@@ -67,7 +67,7 @@ object KnownDrug extends Logging {
         .readWithDefault[Seq[Map[String, String]]](Seq.empty)
         .map(s => s.flatMap(m => ctPattern findAllIn m("url"))) and
       (__ \ "urls").read[Seq[URL]]
-  )(KnownDrug.apply _)
+  )(KnownDrug.apply)
 
   implicit val knownDrugsImpF: OFormat[KnownDrugs] = Json.format[KnownDrugs]
 }

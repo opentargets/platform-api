@@ -1,6 +1,5 @@
 package models.db
 
-import akka.http.scaladsl.model.DateTime
 import esecuele.Column._
 import esecuele.{Functions => F, Query => Q, _}
 import play.api.Logging

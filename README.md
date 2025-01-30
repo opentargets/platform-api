@@ -7,13 +7,13 @@ At the moment the API uses Clickhouse and Elasticsearch 7.2 as data sources.
 ## Tech Stack
 
 | Technology      | Version |
-| --------------- | ------- |
-| Scala           | 2.13.10 |
-| Play Framework  | 2.8.18  |
-| Sangria         | 3.5.3   |
-| Slick           | 3.4.1   |
-| elastic4s       | 8.5.3   |
-| clickhouse-jdbc | 0.3.2   |
+| --------------- |---------|
+| Scala           | 3.5.0   |
+| Play Framework  | 3.0.5   |
+| Sangria         | 4.1.1   |
+| Slick           | 3.5.0   |
+| elastic4s       | 8.11.3  |
+| clickhouse-jdbc | 0.6.4   |
 
 ## How to use
 

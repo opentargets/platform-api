@@ -19,6 +19,7 @@ import sangria.schema.{
   fields,
   DeferredValue
 }
+import sangria.schema.given
 import models.gql.StudyTypeEnum
 import models.gql.CredibleSetsByStudyDeferred
 import models.gql.Arguments.{pageArg, StudyType}
@@ -47,7 +48,7 @@ object Study extends Logging {
   implicit val sumStatQCR: Reads[SumStatQC] = (
     (JsPath \ "key").read[String] and
       (JsPath \ "value").read[Double]
-  )(SumStatQC.apply _)
+  )(SumStatQC.apply)
 
   implicit val ldPopulationStructureImp: ObjectType[Backend, LdPopulationStructure] =
     deriveObjectType[Backend, LdPopulationStructure]()
@@ -242,8 +243,8 @@ object Study extends Logging {
       description = Some("Credible sets"),
       resolve = js => {
         val studyId = (js.value \ "studyId").as[String]
-        //val credSetQueryArgs = CredibleSetQueryArgs(studyIds = Seq(studyId))
-        //js.ctx.getCredibleSets(credSetQueryArgs, js.arg(pageArg))
+        // val credSetQueryArgs = CredibleSetQueryArgs(studyIds = Seq(studyId))
+        // js.ctx.getCredibleSets(credSetQueryArgs, js.arg(pageArg))
         CredibleSetsByStudyDeferred(studyId, js.arg(pageArg))
 
       }
@@ -252,14 +253,14 @@ object Study extends Logging {
     "Gwas",
     "A genome-wide association study",
     fields[Backend, JsValue](
-      gwasFields ++ Seq(credibleSetField): _*
+      gwasFields ++ Seq(credibleSetField)*
     )
   )
   val studyWithoutCredSetsImp: ObjectType[Backend, JsValue] = ObjectType(
     "GwasWithoutCredSets",
     "A genome-wide association study without credible sets",
     fields[Backend, JsValue](
-      gwasFields: _*
+      gwasFields*
     )
   )
 

@@ -204,8 +204,8 @@ class ElasticRetriever @Inject() (
   private def encodeSearchAfter(jsArray: Option[JsValue]): Option[String] =
     jsArray.map(jsv => Base64Engine.encode(Json.stringify(jsv))).map(new String(_))
 
-  /** This fn represents a query where each kv from the map is used in
-    * a bool must. Based on the query asked by `getByIndexedQuery` and aggregation is applied
+  /** This fn represents a query where each kv from the map is used in a bool must. Based on the
+    * query asked by `getByIndexedQuery` and aggregation is applied
     */
   def getAggregationsByQuery[A](
       esIndex: String,
@@ -228,8 +228,8 @@ class ElasticRetriever @Inject() (
     }
 
     elems.map {
-      case _: RequestFailure                       => JsNull
-      case results: RequestSuccess[SearchResponse] =>
+      case _: RequestFailure => JsNull
+      case results           =>
         // parse the full body response into JsValue
         // thus, we can apply Json Transformations from JSON Play
         val result = Json.parse(results.body.get)
@@ -240,8 +240,8 @@ class ElasticRetriever @Inject() (
     }
   }
 
-  /** This fn represents a query where each kv from the map is used in
-    * a bool must. Based on the query asked by `getByIndexedQuery` and aggregation is applied
+  /** This fn represents a query where each kv from the map is used in a bool must. Based on the
+    * query asked by `getByIndexedQuery` and aggregation is applied
     */
   def getByIndexedQueryMust[A, V](
       esIndex: String,
@@ -285,8 +285,8 @@ class ElasticRetriever @Inject() (
     getByIndexedQuery(searchRequest, sortByField, buildF)
   }
 
-  /** This fn represents a query where each kv from the map is used in
-    * a bool 'must' (AND) with optional filters that are 'must' (AND).
+  /** This fn represents a query where each kv from the map is used in a bool 'must' (AND) with
+    * optional filters that are 'must' (AND).
     */
   def getByIndexedTermsMust[A, V](
       esIndex: String,
@@ -310,8 +310,8 @@ class ElasticRetriever @Inject() (
     getByIndexedQuery(searchRequest, sortByField, buildF)
   }
 
-  /** This fn represents a query where each kv from the map is used in
-    * a bool 'should' (OR) with optional filters that are 'must' (AND).
+  /** This fn represents a query where each kv from the map is used in a bool 'should' (OR) with
+    * optional filters that are 'must' (AND).
     */
   def getByIndexedTermsShould[A, V](
       esIndex: String,
@@ -335,8 +335,8 @@ class ElasticRetriever @Inject() (
     getByIndexedQuery(searchRequest, sortByField, buildF)
   }
 
-  /** This fn represents a query where each kv from the map is used in
-    * a bool 'should'. Based on the query asked by `getByIndexedQuery` and aggregation is applied
+  /** This fn represents a query where each kv from the map is used in a bool 'should'. Based on the
+    * query asked by `getByIndexedQuery` and aggregation is applied
     */
   def getByIndexedQueryShould[A, V](
       esIndex: String,
@@ -353,8 +353,7 @@ class ElasticRetriever @Inject() (
                                                aggs = aggs,
                                                excludedFields = excludedFields
     )
-    val searchRequest: SearchRequest =
-      IndexQueryShould(indexQuery)
+    val searchRequest: SearchRequest = IndexQueryShould(indexQuery)
     // log and execute the query
     getByIndexedQuery(searchRequest, sortByField, buildF)
   }
@@ -428,7 +427,7 @@ class ElasticRetriever @Inject() (
         logger.debug(s"Request failure for query: $searchQuery")
         logger.error(s"Elasticsearch error: ${rf.error}")
         Results.empty
-      case results: RequestSuccess[SearchResponse] =>
+      case results: RequestSuccess[_] =>
         // parse the full body response into JsValue
         val result = Json.parse(results.body.get)
         logger.trace(Json.prettyPrint(result))
@@ -448,7 +447,7 @@ class ElasticRetriever @Inject() (
         logger.debug(s"Request failure for query: $searchQuery")
         logger.error(s"Elasticsearch error: ${rf.error}")
         IndexedSeq.empty
-      case results: RequestSuccess[MultiSearchResponse] =>
+      case results: RequestSuccess[_] =>
         val result = Json.parse(results.body.get)
         logger.trace(Json.prettyPrint(result))
         val responses = (result \ "responses").get.as[JsArray].value
@@ -470,7 +469,7 @@ class ElasticRetriever @Inject() (
         logger.debug(s"Request failure for query: $searchQuery")
         logger.error(s"Elasticsearch error: ${rf.error}")
         InnerResults.empty
-      case results: RequestSuccess[SearchResponse] =>
+      case results: RequestSuccess[_] =>
         val result = Json.parse(results.body.get)
         logger.trace(Json.prettyPrint(result))
         val r = ResultHandler(result, buildF, parentField, innerHitsName)
@@ -580,8 +579,8 @@ class ElasticRetriever @Inject() (
     }
 
     elems.map {
-      case _: RequestFailure                       => (IndexedSeq.empty, 0, None)
-      case results: RequestSuccess[SearchResponse] =>
+      case _: RequestFailure => (IndexedSeq.empty, 0, None)
+      case results           =>
         // parse the full body response into JsValue
         // thus, we can apply Json Transformations from JSON Play
         val result = Json.parse(results.body.get)
@@ -666,8 +665,8 @@ class ElasticRetriever @Inject() (
       }
 
     elems.map {
-      case _: RequestFailure                       => (IndexedSeq.empty, JsNull, None)
-      case results: RequestSuccess[SearchResponse] =>
+      case _: RequestFailure => (IndexedSeq.empty, JsNull, None)
+      case results           =>
         // parse the full body response into JsValue
         // thus, we can apply Json Transformations from JSON Play
         val result = Json.parse(results.body.get)
@@ -718,8 +717,8 @@ class ElasticRetriever @Inject() (
         }
 
         elems.map {
-          case _: RequestFailure                       => IndexedSeq.empty
-          case results: RequestSuccess[SearchResponse] =>
+          case _: RequestFailure => IndexedSeq.empty
+          case results           =>
             // parse the full body response into JsValue
             // thus, we can apply Json Transformations from JSON Play
             val result = Json.parse(results.body.get)
@@ -787,13 +786,12 @@ class ElasticRetriever @Inject() (
               case JsError(errors) =>
                 None
             }
-            val results = {
+            val results =
               (Json.parse(hits.body.get) \ "hits" \ "hits").validate[Seq[SearchResult]] match {
                 case JsSuccess(value, _) => value
                 case JsError(errors) =>
                   Seq.empty
               }
-            }
             val mappings: Seq[MappingResult] = queryTermsCleaned.map { term =>
               val termMappings =
                 results.filter(_.highlights.contains(term.toLowerCase()))
@@ -833,13 +831,12 @@ class ElasticRetriever @Inject() (
     }
 
     val filterQueries = boolQuery().must(categoryFilter) :: Nil
-    val fnQueries = {
+    val fnQueries =
       if (qString == "*") {
         matchAllQuery() :: Nil
       } else {
         boolQuery().should(Seq(fuzzyQueryFn) ++ exactQueryFn) :: Nil
       }
-    }
     val mainQuery = boolQuery().must(fnQueries ::: filterQueries)
     val aggQuery = termsAgg("categories", "category.keyword").size(1000)
 
@@ -988,9 +985,7 @@ class ElasticRetriever @Inject() (
 
 object ElasticRetriever extends Logging {
 
-  /** *
-    * SortBy case class use the `fieldName` to sort by and asc if `desc` is false
-    * otherwise desc
+  /** * SortBy case class use the `fieldName` to sort by and asc if `desc` is false otherwise desc
     */
   def sortByAsc(fieldName: String): Some[FieldSort] = Some(sort.FieldSort(fieldName).asc())
 

@@ -34,7 +34,7 @@ import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json._
 import play.api.{Configuration, Environment, Logging}
 import play.db.NamedDatabase
-import sangria.execution.HandledException
+import slick.basic.DatabaseConfig
 
 import java.time.LocalDate
 import scala.collection.immutable.ArraySeq
@@ -44,7 +44,7 @@ import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
 
 class Backend @Inject() (implicit
     ec: ExecutionContext,
-    @NamedDatabase("default") protected val dbConfigProvider: DatabaseConfigProvider,
+    @NamedDatabase("default") dbConfigProvider: DatabaseConfigProvider,
     config: Configuration,
     env: Environment,
     cache: AsyncCacheApi
@@ -52,6 +52,7 @@ class Backend @Inject() (implicit
 
   implicit val defaultOTSettings: OTSettings = loadConfigurationObject[OTSettings]("ot", config)
   implicit val defaultESSettings: ElasticsearchSettings = defaultOTSettings.elasticsearch
+  implicit val dbConfig: DatabaseConfig[ClickHouseProfile] = dbConfigProvider.get[ClickHouseProfile]
 
   /** return meta information loaded from ot.meta settings */
   lazy val getMeta: Meta = defaultOTSettings.meta
@@ -66,8 +67,10 @@ class Backend @Inject() (implicit
     .withFilter(_.searchIndex.isDefined)
     .map(_.searchIndex.get)
 
+  val test = dbConfigProvider.get[ClickHouseProfile]
+
   implicit lazy val dbRetriever: ClickhouseRetriever =
-    new ClickhouseRetriever(dbConfigProvider.get[ClickHouseProfile], defaultOTSettings)
+    new ClickhouseRetriever(defaultOTSettings)
 
   def getStatus(isOk: Boolean): HealthCheck =
     if (isOk) HealthCheck(true, "All good!")
@@ -213,7 +216,7 @@ class Backend @Inject() (implicit
   def getStudies(queryArgs: StudyQueryArgs, pagination: Option[Pagination]): Future[Studies] = {
     val pag = pagination.getOrElse(Pagination.mkDefault)
     val indexName = getIndexOrDefault("gwas_index")
-    val diseaseIds: Seq[String] = {
+    val diseaseIds: Seq[String] =
       if (queryArgs.enableIndirect) {
         val diseases = getDiseases(queryArgs.diseaseIds)
         val descendantEfos = diseases.map(_.map(_.descendants).flatten).await
@@ -221,7 +224,6 @@ class Backend @Inject() (implicit
       } else {
         queryArgs.diseaseIds
       }
-    }
     val termsQuery = Map(
       "studyId.keyword" -> queryArgs.id,
       "traitFromSourceMappedIds.keyword" -> diseaseIds
@@ -383,7 +385,7 @@ class Backend @Inject() (implicit
       val terms = it._2.asInstanceOf[Iterable[String]]
       termsQuery(it._1, terms)
     }))
-    val query: BoolQuery = {
+    val query: BoolQuery =
       if (queryArgs.variantIds.nonEmpty) {
         val nestedTermsQuery = Map("locus.variantId.keyword" -> queryArgs.variantIds)
         val nestedQueryIter = Iterable(
@@ -398,7 +400,6 @@ class Backend @Inject() (implicit
       } else {
         must(termsQueryIter)
       }
-    }
     val retriever =
       esRetriever
         .getQ(
@@ -511,7 +512,7 @@ class Backend @Inject() (implicit
       // Remove the targetId property
       val updatedObj: JsObject = myObj - "targetId"
 
-      //transform the object in a key value pair array
+      // transform the object in a key value pair array
       val properties = (updatedObj.keys).toSeq
       val keyValuePairs = properties.map { propName =>
         val value = (updatedObj \ propName).get
@@ -886,7 +887,7 @@ class Backend @Inject() (implicit
 
       if (assocIdSet.nonEmpty) {
         dbRetriever.executeQuery[Association, Query](fullQ) map { case assocs =>
-          val filteredAssocs = {
+          val filteredAssocs =
             if (mustIncludeDatasources.isEmpty) {
               assocs
             } else {
@@ -897,7 +898,6 @@ class Backend @Inject() (implicit
                 else Some(assoc)
               }
             }
-          }
           Associations(dss, assocIdSet.size, filteredAssocs)
         }
       } else {
@@ -1091,11 +1091,11 @@ class Backend @Inject() (implicit
   }
 
   /** @param index
-    * key of index (name field) in application.conf
+    *   key of index (name field) in application.conf
     * @param default
-    * fallback index name
+    *   fallback index name
     * @return
-    * elasticsearch index name resolved from application.conf or default.
+    *   elasticsearch index name resolved from application.conf or default.
     */
   private def getIndexOrDefault(index: String, default: Option[String] = None): String =
     defaultESSettings.entities
@@ -1105,7 +1105,7 @@ class Backend @Inject() (implicit
 
   /** Get the entity ids for a given set of facet filters.
     * @return
-    * A sequence of entity id sets.
+    *   A sequence of entity id sets.
     */
   private def resolveEntityIdsFromFacets(facetFilters: Seq[String],
                                          index: String
@@ -1117,11 +1117,11 @@ class Backend @Inject() (implicit
     entityIdsGroupedByCategory.map(_._2.flatten.toSet).toSeq
   }
 
-  /** Reduce a set of BIDs with the BIDs derived from the facets.
-    * If the set of BIDs is empty, the BIDs are derived from the facets.
-    * If the set of facets is empty, the BIDs are returned as is.
-    * If both the set of BIDs and the set of facets are not empty, the BIDs are intersected with the BIDs derived from the facets.
-    * If the intersection is empty, a Set of "" is returned to ensure that no ids are returned.
+  /** Reduce a set of BIDs with the BIDs derived from the facets. If the set of BIDs is empty, the
+    * BIDs are derived from the facets. If the set of facets is empty, the BIDs are returned as is.
+    * If both the set of BIDs and the set of facets are not empty, the BIDs are intersected with the
+    * BIDs derived from the facets. If the intersection is empty, a Set of "" is returned to ensure
+    * that no ids are returned.
     *
     * @param index
     * @param bIDs

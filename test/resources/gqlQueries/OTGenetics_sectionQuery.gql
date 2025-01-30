@@ -18,6 +18,8 @@ query OpenTargetsGeneticsQuery($ensemblId: String!, $efoId: String!, $size: Int!
           id
           name
         }
+        variantEffect
+        directionOnTrait
         diseaseFromSource
         studyId
         studySampleSize

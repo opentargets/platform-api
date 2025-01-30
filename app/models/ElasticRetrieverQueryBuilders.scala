@@ -10,13 +10,21 @@ import models.entities.Pagination
 import play.api.Logging
 
 /** IndexQuery is a case class that represents a query to be executed on an Elasticsearch index.
-  * @param esIndex the Elasticsearch index to query
-  * @param kv a map of key-value pairs to form match queries with, where the key is the field name and the value is the match value
-  * @param filters a sequence of additional filters to apply
-  * @param pagination the pagination settings
-  * @param aggs a sequence of aggregations to apply
-  * @param excludedFields a sequence of fields to exclude from the results
-  * @tparam V the type of the values in the key-value map
+  * @param esIndex
+  *   the Elasticsearch index to query
+  * @param kv
+  *   a map of key-value pairs to form match queries with, where the key is the field name and the
+  *   value is the match value
+  * @param filters
+  *   a sequence of additional filters to apply
+  * @param pagination
+  *   the pagination settings
+  * @param aggs
+  *   a sequence of aggregations to apply
+  * @param excludedFields
+  *   a sequence of fields to exclude from the results
+  * @tparam V
+  *   the type of the values in the key-value map
   */
 case class IndexQuery[V](
     esIndex: String,

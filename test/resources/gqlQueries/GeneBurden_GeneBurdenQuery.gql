@@ -18,6 +18,13 @@ query GeneBurdenQuery($ensemblId: String!, $efoId: String!, $size: Int!) {
           id
           approvedSymbol
         }
+        releaseVersion
+        targetFromSourceId
+        urls {
+          url
+        }
+        variantEffect
+        directionOnTrait
         allelicRequirements
         studyId
         ancestry

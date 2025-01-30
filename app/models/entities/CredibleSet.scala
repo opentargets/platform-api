@@ -285,14 +285,14 @@ object CredibleSet extends Logging {
     "credibleSet",
     "",
     fields[Backend, JsValue](
-      credibleSetFields ++ Seq(studyField): _*
+      credibleSetFields ++ Seq(studyField)*
     )
   )
   val credibleSetWithoutStudyImp: ObjectType[Backend, JsValue] = ObjectType(
     "credibleSetWithoutStudy",
     "",
     fields[Backend, JsValue](
-      credibleSetFields: _*
+      credibleSetFields*
     )
   )
 }

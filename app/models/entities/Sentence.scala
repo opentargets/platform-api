@@ -21,8 +21,8 @@ case class Sentence(
     sectionStart: Option[Long],
     startInSentence: Long,
     endInSentence: Long,
-    matchedType: String, //keywordType in DB
-    mappedId: String //keywordId in DB
+    matchedType: String, // keywordType in DB
+    mappedId: String // keywordId in DB
 )
 
 case class SentenceBySection(

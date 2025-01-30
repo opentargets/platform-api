@@ -4,7 +4,6 @@ import scala.concurrent.ExecutionContext
 import slick.relational.RelationalCapabilities
 import slick.sql.SqlCapabilities
 import slick.basic.Capability
-import slick.util.MacroSupport.macroSupportInterpolation
 import slick.compiler.CompilerState
 import slick.jdbc.meta._
 import slick.lifted.{Query, Rep, _}
@@ -12,7 +11,9 @@ import FunctionSymbolExtensionMethods._
 import slick.ast.Library.SqlAggregateFunction
 import slick.ast.ScalaBaseType.longType
 import slick.ast.{BaseTypedType, FieldSymbol, Insert, Library, Node, TypedType}
-import slick.jdbc.{JdbcCapabilities, JdbcModelBuilder, JdbcProfile}
+import slick.jdbc.{JdbcActionComponent, JdbcCapabilities, JdbcModelBuilder, JdbcProfile}
+
+import scala.language.implicitConversions
 
 object CHLibrary {
   val Uniq = new SqlAggregateFunction("uniq")
@@ -34,7 +35,7 @@ final class OptionCHColumnExtensionMethods[B1](val c: Rep[Option[B1]])
     with OptionExtensionMethods[B1]
 
 /** Extension methods for Queries of a single column */
-final class CHSingleColumnQueryExtensionMethods[B1, P1, C[_]](val q: Query[Rep[P1], _, C])
+final class CHSingleColumnQueryExtensionMethods[B1, P1, C[_]](val q: Query[Rep[P1], ?, C])
     extends AnyVal {
   type OptionTM = TypedType[Option[B1]]
 
@@ -43,7 +44,9 @@ final class CHSingleColumnQueryExtensionMethods[B1, P1, C[_]](val q: Query[Rep[P
   def any(implicit tm: OptionTM): Rep[Option[B1]] = CHLibrary.Any.column[Option[B1]](q.toNode)
 }
 
-trait ClickHouseProfile extends JdbcProfile {
+trait ClickHouseProfile
+    extends JdbcProfile
+    with JdbcActionComponent.MultipleRowsPerStatementSupport {
   override protected def computeCapabilities: Set[Capability] =
     (super.computeCapabilities
       - RelationalCapabilities.foreignKeyActions
@@ -74,11 +77,11 @@ trait ClickHouseProfile extends JdbcProfile {
 
   override def createInsertBuilder(node: Insert): super.InsertBuilder = new InsertBuilderCH(node)
 
-  override def createTableDDLBuilder(table: Table[_]): TableDDLBuilderCH = new TableDDLBuilderCH(
+  override def createTableDDLBuilder(table: Table[?]): TableDDLBuilderCH = new TableDDLBuilderCH(
     table
   )
 
-  override def createColumnDDLBuilder(column: FieldSymbol, table: Table[_]): ColumnDDLBuilderCH =
+  override def createColumnDDLBuilder(column: FieldSymbol, table: Table[?]): ColumnDDLBuilderCH =
     new ColumnDDLBuilderCH(column)
 
   override def createInsertActionExtensionMethods[T](
@@ -91,38 +94,30 @@ trait ClickHouseProfile extends JdbcProfile {
     override protected val alwaysAliasSubqueries = false
     override protected val supportsLiteralGroupBy = true
     override protected val quotedJdbcFns: Some[Nil.type] = Some(Nil)
-
-    override def expr(c: Node, skipParens: Boolean = false): Unit = c match {
-      case Library.UCase(ch)  => b"upper($ch)"
-      case Library.LCase(ch)  => b"lower($ch)"
-      case Library.User()     => b"''"
-      case Library.Database() => b"currentDatabase()"
-      case _                  => super.expr(c, skipParens)
-    }
   }
 
   class UpsertBuilderCH(ins: Insert) extends super.InsertBuilder(ins)
 
   class InsertBuilderCH(ins: Insert) extends super.InsertBuilder(ins)
 
-  class TableDDLBuilderCH(table: Table[_]) extends super.TableDDLBuilder(table)
+  class TableDDLBuilderCH(table: Table[?]) extends super.TableDDLBuilder(table)
 
   class ColumnDDLBuilderCH(column: FieldSymbol) extends super.ColumnDDLBuilder(column)
 
   class CountingInsertActionComposerImplCH[U](compiled: CompiledInsert)
       extends super.CountingInsertActionComposerImpl[U](compiled)
 
-  trait ClickHouseAPI extends API {
+  trait ClickHouseAPI extends JdbcAPI {
     // nice page to read about extending profile apis
     // https://virtuslab.com/blog/smooth-operator-with-slick-3/
 
     implicit def chSingleColumnQueryExtensionMethods[B1: BaseTypedType, C[_]](
-        q: Query[Rep[B1], _, C]
+        q: Query[Rep[B1], ?, C]
     ): CHSingleColumnQueryExtensionMethods[B1, B1, C] =
       new CHSingleColumnQueryExtensionMethods[B1, B1, C](q)
 
     implicit def chSingleOptionColumnQueryExtensionMethods[B1: BaseTypedType, C[_]](
-        q: Query[Rep[Option[B1]], _, C]
+        q: Query[Rep[Option[B1]], ?, C]
     ): CHSingleColumnQueryExtensionMethods[B1, Option[B1], C] =
       new CHSingleColumnQueryExtensionMethods[B1, Option[B1], C](q)
 
