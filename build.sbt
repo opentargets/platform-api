@@ -1,55 +1,44 @@
-import com.typesafe.sbt.packager.MappingsHelper._
 import scala.language.postfixOps
-import scala.sys.process._
-import sbt._
+import scala.sys.process.*
+import sbt.*
 
 name := """ot-platform-api"""
 organization := "io.opentargets"
 
 version := "latest"
 
+scalacOptions ++= Seq("-feature", "-explain")
+
 lazy val root = (project in file(".")).enablePlugins(PlayScala, PlayLogback)
 
-scalaVersion := "2.13.10"
+scalaVersion := "3.5.0"
 maintainer := "ops@opentargets.org"
 
 javacOptions ++= Seq("-encoding", "UTF-8")
 
-scalacOptions in ThisBuild ++= Seq(
-  "-language:_",
-  "-Xfatal-warnings"
-)
-scalacOptions in Compile += "-deprecation"
-
-// include resources into the unversal zipped package
-mappings in Universal ++= directory(baseDirectory.value / "resources")
-
-resolvers += Resolver.sonatypeRepo("releases")
-
 libraryDependencies ++= Seq(
   guice,
   caffeine,
-  "com.typesafe.slick" %% "slick" % "3.4.1",
-  "org.scalatestplus.play" %% "scalatestplus-play" % "5.1.0" % Test,
+  "com.typesafe.slick" %% "slick" % "3.5.0",
+  "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.1" % Test,
   "org.scalatestplus" %% "scalacheck-1-15" % "3.2.11.0" % Test
 )
 
-val playVersion = "2.8.18"
-libraryDependencies += "com.typesafe.play" %% "play" % playVersion
-libraryDependencies += "com.typesafe.play" %% "filters-helpers" % playVersion
-libraryDependencies += "com.typesafe.play" %% "play-logback" % playVersion
-libraryDependencies += "com.typesafe.play" %% "play-json" % "2.9.4"
-libraryDependencies += "com.typesafe.play" %% "play-streams" % playVersion
-libraryDependencies += "com.typesafe.play" %% "play-slick" % "5.1.0"
+val playVersion = "3.0.5"
+libraryDependencies += "org.playframework" %% "play" % playVersion
+libraryDependencies += "org.playframework" %% "play-filters-helpers" % "3.0.5"
+libraryDependencies += "org.playframework" %% "play-logback" % playVersion
+libraryDependencies += "org.playframework" %% "play-json" % "3.0.4"
+libraryDependencies += "org.playframework" %% "play-streams" % playVersion
+libraryDependencies += "org.playframework" %% "play-slick" % "6.1.1"
 
-val sangriaVersion = "3.5.3"
-libraryDependencies += "ru.yandex.clickhouse" % "clickhouse-jdbc" % "0.3.2"
+val sangriaVersion = "4.1.1"
+libraryDependencies += "com.clickhouse" % "clickhouse-jdbc" % "0.6.4"
+libraryDependencies += "org.apache.httpcomponents.client5" % "httpclient5" % "5.3.1"
 libraryDependencies += "org.sangria-graphql" %% "sangria" % sangriaVersion
-libraryDependencies += "org.sangria-graphql" %% "sangria-play-json" % "2.0.2"
+libraryDependencies += "org.sangria-graphql" %% "sangria-play-json-play30" % "2.0.3"
 
-libraryDependencies += "com.chuusai" %% "shapeless" % "2.3.10"
-
-lazy val catsVersion = "2.9.0"
+lazy val catsVersion = "2.12.0"
 lazy val cats = Seq(
   "org.typelevel" %% "cats-core" % catsVersion,
   "org.typelevel" %% "cats-laws" % catsVersion,
@@ -58,7 +47,7 @@ lazy val cats = Seq(
 )
 libraryDependencies ++= cats
 
-val s4sVersion = "8.5.3"
+val s4sVersion = "8.11.3"
 libraryDependencies ++= Seq(
   "com.sksamuel.elastic4s" %% "elastic4s-core" % s4sVersion exclude ("org.slf4j", "slf4j-api"),
   "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % s4sVersion exclude ("org.slf4j", "slf4j-api"),

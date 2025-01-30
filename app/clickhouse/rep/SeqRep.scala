@@ -1,9 +1,9 @@
 package clickhouse.rep
 
+import scala.language.implicitConversions
 import scala.reflect.ClassTag
 
-/** Clickhouse supports Array of elements from different types and this is an approximation
-  * to it.
+/** Clickhouse supports Array of elements from different types and this is an approximation to it.
   *
   * @param from
   * @tparam T
@@ -17,6 +17,7 @@ sealed abstract class SeqRep[T, C[_]](val from: String) {
 }
 
 object SeqRep {
+  // TODO: might need to be deleted in next release 25.x.x. This is no longer needed due to update in the driver
   def parseFastString(str: String): String = str.slice(1, str.length - 1)
 
   sealed abstract class NumSeqRep[T](override val from: String, val f: String => T)(implicit
@@ -57,7 +58,7 @@ object SeqRep {
         from.length match {
           case n if n > minLenTokensForStr =>
             val offset: Int = minLenTokensForStr / 2
-            from.slice(offset, n - offset).split("\\),\\(").map(f(_)).toVector
+            from.slice(offset, n - offset).split("\\], \\[").map(f(_)).toVector
           case _ => Vector.empty
         }
       } else

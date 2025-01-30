@@ -1,17 +1,22 @@
-query EvaSomaticQuery($ensemblId: String!, $efoId: String!) {
+query EvaSomaticQuery($ensemblId: String!, $efoId: String!, $size: Int!, $cursor: String) {
   disease(efoId: $efoId) {
     id
-    evaSomaticSummary: evidences(
+    eva_somatic: evidences(
       ensemblIds: [$ensemblId]
       enableIndirect: true
       datasourceIds: ["eva_somatic"]
+      size: $size
+      cursor: $cursor
     ) {
+      cursor
       count
       rows {
         disease {
           id
           name
         }
+        variantEffect
+        directionOnTrait
         diseaseFromSource
         variantId
         variantRsId

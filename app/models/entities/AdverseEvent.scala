@@ -21,11 +21,11 @@ object AdverseEvent {
       (JsPath \ "count").read[Long] and
       (JsPath \ "llr").read[Double] and
       (JsPath \ "critval").read[Double]
-  )(AdverseEvent.apply _)
+  )(AdverseEvent.apply)
 
   implicit val AdverseEventsImpReader: Reads[AdverseEvents] = (
     (JsPath \ "count").read[Long] and
       (JsPath \ "critval").read[Double] and
       (JsPath \ "rows").read[Seq[AdverseEvent]]
-  )(AdverseEvents.apply _)
+  )(AdverseEvents.apply)
 }

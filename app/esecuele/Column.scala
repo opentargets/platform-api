@@ -1,7 +1,7 @@
 package esecuele
 
 case class Column(raw: Expression, alias: Option[String]) extends Rep {
-  lazy val rep: String = {
+  val rep: String = {
     val ex = raw match {
       case _: EmptyExpression.type => None
       case _                       => Some(raw.toString)

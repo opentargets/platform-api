@@ -19,7 +19,7 @@ class RestHelpers @Inject() (implicit
     request.headers
       .get("apiKey")
       .collect {
-        case key if key.hashCode.toString equals config.getString("ot.apiKeyHash") =>
+        case key if key.hashCode.toString.equals(config.getString("ot.apiKeyHash")) =>
           action(request)
       }
       .getOrElse {

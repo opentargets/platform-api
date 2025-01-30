@@ -44,6 +44,6 @@ object MousePhenotypes extends Logging {
       (__ \ "targetInModel").read[String] and
       (__ \ "targetInModelEnsemblId").readNullable[String] and
       (__ \ "targetInModelMgiId").read[String]
-  )(MousePhenotype.apply _)
+  )(MousePhenotype.apply)
 
 }

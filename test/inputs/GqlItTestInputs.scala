@@ -2,18 +2,22 @@ package inputs
 
 import org.scalacheck.Gen
 
-import scala.reflect.io.File
+import scala.io.{BufferedSource, Source}
 
 trait GqlItTestInputs {
 
-  lazy val geneInputs =
-    File(this.getClass.getResource(s"/gqlInputs/genes.txt").getPath).lines().toList
-  lazy val diseaseInputs =
-    File(this.getClass.getResource(s"/gqlInputs/efos.txt").getPath).lines().toList
-  lazy val drugInputs =
-    File(this.getClass.getResource(s"/gqlInputs/drugs.txt").getPath).lines().toList
-  lazy val goInputs =
-    File(this.getClass.getResource(s"/gqlInputs/goIds.txt").getPath).lines().toList
+  val geneFile: BufferedSource =
+    Source.fromFile(this.getClass.getResource(s"/gqlInputs/genes.txt").getPath)
+  lazy val geneInputs: Seq[String] = geneFile.getLines().toList
+  val efoFile: BufferedSource =
+    Source.fromFile(this.getClass.getResource(s"/gqlInputs/efos.txt").getPath)
+  lazy val diseaseInputs: Seq[String] = efoFile.getLines().toList
+  val drugFile: BufferedSource =
+    Source.fromFile(this.getClass.getResource(s"/gqlInputs/drugs.txt").getPath)
+  lazy val drugInputs: Seq[String] = drugFile.getLines().toList
+  val goFile: BufferedSource =
+    Source.fromFile(this.getClass.getResource(s"/gqlInputs/goIds.txt").getPath)
+  lazy val goInputs: Seq[String] = goFile.getLines().toList
 
   // Generators
   val geneGenerator: Gen[String] = Gen.oneOf(geneInputs)

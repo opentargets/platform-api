@@ -1,0 +1,12 @@
+query FacetSearchQuery($queryString: String!, $entityNames: [String!], $category: String!) {
+  facets(queryString: $queryString, entityNames: $entityNames, category: $category) {
+    hits {
+      id
+      highlights
+      label
+      category
+      score
+    }
+    total
+  }
+}

@@ -1,10 +1,5 @@
 fragment evaSummary on Disease {
-  evaSummary: evidences(
-    ensemblIds: [$ensgId]
-    enableIndirect: true
-    datasourceIds: ["eva"]
-    size: 0
-  ) {
+  eva: evidences(ensemblIds: [$ensgId], enableIndirect: true, datasourceIds: ["eva"], size: 0) {
     count
   }
 }

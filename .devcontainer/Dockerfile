@@ -1,3 +1,3 @@
-FROM sbtscala/scala-sbt:eclipse-temurin-focal-11.0.17_8_1.9.0_2.13.10
+FROM sbtscala/scala-sbt:eclipse-temurin-alpine-21.0.2_13_1.10.2_3.5.0
 
-RUN apt-get update && apt-get install -y build-essential
+RUN apk add --update alpine-sdk openssh

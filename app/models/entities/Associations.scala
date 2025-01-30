@@ -8,10 +8,9 @@ import play.api.libs.json.OFormat
 
 case class ScoredComponent(id: String, score: Double)
 
-/** this is one side of an full association as the other part is fixed. In this
-  * case those are T <-> D and an association is built based on a harmonic computation
-  * where the overall score is `score` and each datasource contribution is contained
-  * in `scorePerDS` vector
+/** this is one side of an full association as the other part is fixed. In this case those are T <->
+  * D and an association is built based on a harmonic computation where the overall score is `score`
+  * and each datasource contribution is contained in `scorePerDS` vector
   */
 case class Association(
     id: String,
@@ -45,7 +44,7 @@ object Associations {
           tuples1,
           tuple => {
             val tokens = tuple.split(",")
-            val left = parseFastString(tokens(0))
+            val left = tokens(0)
             val right = tokens(1).toDouble
             ScoredComponent(left, right)
           }
@@ -54,7 +53,7 @@ object Associations {
           tuples2,
           tuple => {
             val tokens = tuple.split(",")
-            val left = parseFastString(tokens(0))
+            val left = tokens(0)
             val right = tokens(1).toDouble
             ScoredComponent(left, right)
           }

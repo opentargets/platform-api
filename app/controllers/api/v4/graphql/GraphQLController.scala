@@ -1,6 +1,6 @@
 package controllers.api.v4.graphql
 
-import akka.stream.Materializer
+import org.apache.pekko.stream.Materializer
 import controllers.api.v4.graphql.QueryMetadataHeaders.{
   GQL_COMPLEXITY_HEADER,
   GQL_OP_HEADER,

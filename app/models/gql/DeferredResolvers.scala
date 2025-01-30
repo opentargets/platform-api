@@ -18,9 +18,12 @@ trait TypeWithId {
   val id: String
 }
 
-/** @param id The ID to resolve on
-  * @param grouping A tuple of the values that are used to group the deferred values
-  * @tparam T The type of the deferred value
+/** @param id
+  *   The ID to resolve on
+  * @param grouping
+  *   A tuple of the values that are used to group the deferred values
+  * @tparam T
+  *   The type of the deferred value
   */
 abstract class DeferredMultiTerm[+T]() extends Deferred[T] {
   val id: String
@@ -111,8 +114,8 @@ case class L2GPredictionsDeferred(studyLocusId: String, pagination: Option[Pagin
   }
 }
 
-/** A deferred resolver for cases where we can't use the Fetch API because we resolve the
-  * values on multiple terms/filters.
+/** A deferred resolver for cases where we can't use the Fetch API because we resolve the values on
+  * multiple terms/filters.
   */
 class MultiTermResolver extends DeferredResolver[Backend] with Logging {
   def groupResults[T](deferred: Vector[DeferredMultiTerm[T]],

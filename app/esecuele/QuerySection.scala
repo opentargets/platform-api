@@ -7,46 +7,46 @@ abstract class QuerySection extends Rep {
 
 case class With(content: Seq[Column]) extends QuerySection {
   override val name: String = "WITH"
-  override lazy val rep: String = s"$name ${content.mkString("", ", ", "")}"
+  override val rep: String = s"$name ${content.mkString("", ", ", "")}"
 }
 
 case class Select(content: Seq[Column]) extends QuerySection {
   override val name: String = "SELECT"
-  override lazy val rep: String = s"$name ${content.mkString("", ", ", "")}"
+  override val rep: String = s"$name ${content.mkString("", ", ", "")}"
 }
 
 case class Where(col: Column) extends QuerySection {
   override val content: Seq[Column] = Seq(col)
   override val name: String = "WHERE"
-  override lazy val rep: String = s"$name ${content.mkString("(", "", ")")}"
+  override val rep: String = s"$name ${content.mkString("(", "", ")")}"
 }
 
 case class PreWhere(col: Column) extends QuerySection {
   override val content: Seq[Column] = Seq(col)
   override val name: String = "PREWHERE"
-  override lazy val rep: String = s"$name ${content.mkString("(", "", ")")}"
+  override val rep: String = s"$name ${content.mkString("(", "", ")")}"
 }
 
 case class ArrayJoin(col: Column) extends QuerySection {
   override val content: Seq[Column] = Seq(col)
   override val name: String = "ARRAY JOIN"
-  override lazy val rep: String = s"$name ${content.mkString}"
+  override val rep: String = s"$name ${content.mkString}"
 }
 
 case class Having(col: Column) extends QuerySection {
   override val content: Seq[Column] = Seq(col)
   override val name: String = "HAVING"
-  override lazy val rep: String = s"$name ${content.mkString("(", "", ")")}"
+  override val rep: String = s"$name ${content.mkString("(", "", ")")}"
 }
 
 case class GroupBy(content: Seq[Column]) extends QuerySection {
   override val name: String = "GROUP BY"
-  override lazy val rep: String = s"$name ${content.mkString("", ", ", "")}"
+  override val rep: String = s"$name ${content.mkString("", ", ", "")}"
 }
 
 case class OrderBy(content: Seq[Column]) extends QuerySection {
   override val name: String = "ORDER BY"
-  override lazy val rep: String = s"$name ${content.mkString("", ", ", "")}"
+  override val rep: String = s"$name ${content.mkString("", ", ", "")}"
 }
 
 //LIMIT 1 OFFSET 0 BY disease_id
@@ -55,19 +55,19 @@ case class OrderBy(content: Seq[Column]) extends QuerySection {
 case class Limit(offset: Int = 0, size: Int) extends QuerySection {
   override val content: Seq[Column] = Nil
   override val name: String = "LIMIT"
-  override lazy val rep: String = s"$name $size OFFSET $offset"
+  override val rep: String = s"$name $size OFFSET $offset"
 }
 
 case class LimitBy(size: Int, offset: Int = 0, by: Seq[Column]) extends QuerySection {
   override val content: Seq[Column] = by
   override val name: String = "LIMIT"
-  override lazy val rep: String = s"$name $size OFFSET $offset BY ${content.mkString("", ", ", "")}"
+  override val rep: String = s"$name $size OFFSET $offset BY ${content.mkString("", ", ", "")}"
 }
 
 case class From(col: Column, alias: Option[String] = None) extends QuerySection {
   override val content: Seq[Column] = Seq(col)
   override val name: String = "FROM"
-  override lazy val rep: String = s"$name ${content.mkString}${alias.map(" " + _).getOrElse("")}"
+  override val rep: String = s"$name ${content.mkString}${alias.map(" " + _).getOrElse("")}"
 }
 
 case class Join(
@@ -80,7 +80,7 @@ case class Join(
 ) extends QuerySection {
   override val content: Seq[Column] = Seq(col)
   override val name: String = "JOIN"
-  override lazy val rep: String =
+  override val rep: String =
     Seq(
       if (global) Some("GLOBAL") else None,
       setOper,
@@ -96,7 +96,7 @@ case class Join(
 case class FromSelect(select: QuerySection, alias: Option[String] = None) extends QuerySection {
   override val content: Seq[Column] = select.content
   override val name: String = "FROM"
-  override lazy val rep: String =
+  override val rep: String =
     s"$name (${select.name} ${content.mkString})${alias.map(" " + _).getOrElse("")}"
 }
 

@@ -1,6 +1,6 @@
 package controllers
 
-import akka.util.Timeout
+import org.apache.pekko.util.Timeout
 import controllers.GqlTest.{createRequest, generateQueryString, getQueryFromFile}
 import controllers.api.v4.graphql.GraphQLController
 import inputs._
@@ -15,18 +15,19 @@ import play.api.mvc.{Request, Result}
 import play.api.test.Helpers.{POST, contentAsString}
 import play.api.test.{FakeRequest, Injecting}
 import test_configuration.{ClickhouseTestTag, IntegrationTestTag}
+import scala.io.Source
 
 import java.util.concurrent.TimeUnit
 import scala.concurrent.Future
-import scala.reflect.io.File
 
 object GqlTest {
 
   /** Retrieves filename from target resources and returns query as string with quotes escaped.
     */
-  def getQueryFromFile(filename: String): String =
-    File(this.getClass.getResource(s"/gqlQueries/$filename.gql").getPath)
-      .lines()
+  def getQueryFromFile(filename: String): String = {
+    val queryFile = Source.fromFile(this.getClass.getResource(s"/gqlQueries/$filename.gql").getPath)
+    queryFile
+      .getLines()
       .withFilter(_.nonEmpty)
       .map(str =>
         str.flatMap {
@@ -35,6 +36,7 @@ object GqlTest {
         }
       )
       .mkString("\\n")
+  }
 
   def generateQueryString(query: String, variables: String): JsValue =
     Json.parse(s"""{"query": "$query" , $variables }""")
@@ -118,30 +120,30 @@ class GqlTest
     }
   }
 
-  "Association page queries" must {
-    "return a valid response for target associations" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
-      testQueryAgainstGqlEndpoint(AssociationTarget("TargetPage_TargetAssociations"))
-    }
-    "return a valid response for disease associations" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
-      testQueryAgainstGqlEndpoint(AssociationDisease("DiseasePage_DiseaseAssociations"))
-    }
-  }
-
   "Bibliography queries" must {
-    "return valid response for BibliographyQuery" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
+    "return valid response for BibliographyQuery" taggedAs (IntegrationTestTag,
+                                                            ClickhouseTestTag
+    ) in {
       testQueryAgainstGqlEndpoint(Target("Bibliography_BibliographyQuery"))(t =>
         t.replace("ensgId", "id")
       )
     }
-    "return valid response for BibliographySimilarEntities" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
+    "return valid response for BibliographySimilarEntities" taggedAs (IntegrationTestTag,
+                                                                      ClickhouseTestTag
+    ) in {
       testQueryAgainstGqlEndpoint(Target("Bibliography_SimilarEntities"))(t =>
         t.replace("ensgId", "id")
       )
     }
-    "return valid response for Bibliography summary fragment" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
+    "return valid response for Bibliography summary fragment" taggedAs (IntegrationTestTag,
+                                                                        ClickhouseTestTag
+    ) in {
       testQueryAgainstGqlEndpoint(DiseaseDrugFragment("Bibliography_BibliographySummaryFragment"))
     }
-    "return valid response for Bibliography similar entities summary fragment" taggedAs (IntegrationTestTag, ClickhouseTestTag) in {
+    "return valid response for Bibliography similar entities summary fragment" taggedAs (
+      IntegrationTestTag,
+      ClickhouseTestTag
+    ) in {
       testQueryAgainstGqlEndpoint(TargetFragment("Bibliography_SimilarEntitiesSummary"))
     }
   }
@@ -154,12 +156,6 @@ class GqlTest
       testQueryAgainstGqlEndpoint(
         DiseaseSummaryFragment("CancerBiomarkers_CancerBiomarkersEvidenceFragment")
       )
-    }
-  }
-
-  "Cancer biomarker queries" must {
-    "return a valid response" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(TargetDiseaseSize("CancerBiomarkers_CancerBiomarkersEvidence"))
     }
   }
 

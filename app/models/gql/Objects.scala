@@ -64,9 +64,9 @@ object Objects extends Logging {
     DocumentField("biotype", "Molecule biotype"),
     DocumentField("dbXrefs", "Database cross references"),
     DocumentField("functionDescriptions", "..."), // todo
-    DocumentField("geneticConstraint", "Symbol synonyms"),
+    DocumentField("constraint", "Symbol synonyms"),
     DocumentField("genomicLocation", "Chromosomic location"),
-    DocumentField("geneOntology", "Gene Ontology annotations"),
+    DocumentField("go", "Gene Ontology annotations"),
     DocumentField(
       "hallmarks",
       "Target-modulated essential alterations in cell physiology that dictate " +
@@ -88,6 +88,8 @@ object Objects extends Logging {
     DocumentField("tractability", "Target druggability assessment"),
     DocumentField("transcriptIds", "Ensembl transcript IDs"),
     DocumentField("pathways", "Reactome pathways"),
+    RenameField("go", "geneOntology"),
+    RenameField("constraint", "geneticConstraint"),
     AddFields(
       Field(
         "similarEntities",
@@ -134,7 +136,7 @@ object Objects extends Logging {
         evidencesImp,
         description = Some("The complete list of all possible datasources"),
         arguments = efoIds :: datasourceIdsArg :: pageSize :: cursor :: Nil,
-        resolve = ctx => {
+        resolve = ctx =>
           ctx.ctx.getEvidencesByEfoId(
             ctx arg datasourceIdsArg,
             Seq(ctx.value.id),
@@ -143,7 +145,6 @@ object Objects extends Logging {
             ctx arg pageSize,
             ctx arg cursor
           )
-        }
       ),
       Field(
         "interactions",
@@ -183,14 +184,13 @@ object Objects extends Logging {
             "targeting gene products according to their curated mechanism of action"
         ),
         arguments = freeTextQuery :: pageSize :: cursor :: Nil,
-        resolve = ctx => {
+        resolve = ctx =>
           ctx.ctx.getKnownDrugs(
             ctx.arg(freeTextQuery).getOrElse(""),
             Map("targetId.raw" -> ctx.value.id),
             ctx.arg(pageSize),
             ctx.arg(cursor)
           )
-        }
       ),
       Field(
         "associatedDiseases",
@@ -407,7 +407,7 @@ object Objects extends Logging {
             "drugs indicated for disease and curated mechanism of action"
         ),
         arguments = freeTextQuery :: pageSize :: cursor :: Nil,
-        resolve = ctx => {
+        resolve = ctx =>
           ctx.ctx.getKnownDrugs(
             ctx.arg(freeTextQuery).getOrElse(""),
             Map(
@@ -417,7 +417,6 @@ object Objects extends Logging {
             ctx.arg(pageSize),
             ctx.arg(cursor)
           )
-        }
       ),
       Field(
         "associatedTargets",
@@ -567,14 +566,13 @@ object Objects extends Logging {
           "term",
           geneOntologyTermImp,
           Some("Gene ontology term"),
-          resolve = r => {
+          resolve = r =>
             DeferredValue(goFetcher.deferOpt(r.value.id)).map {
               case Some(value) => value
               case None =>
                 logger.warn(s"GO: ${r.value.id} was not found in GO index, using default GO name")
                 GeneOntologyTerm(r.value.id, "Name unknown in Open Targets")
             }
-          }
         )
       )
     )
@@ -694,9 +692,7 @@ object Objects extends Logging {
           "frequencyHPO",
           OptionType(hpoImp),
           Some("HPO Entity"),
-          resolve = r => {
-            hposFetcher.deferOpt(r.value.frequency)
-          }
+          resolve = r => hposFetcher.deferOpt(r.value.frequency)
         )
       )
     )
@@ -717,9 +713,7 @@ object Objects extends Logging {
           "phenotypeEFO",
           OptionType(diseaseImp),
           Some("Disease Entity"),
-          resolve = r => {
-            diseasesFetcher.deferOpt(r.value.phenotype)
-          }
+          resolve = r => diseasesFetcher.deferOpt(r.value.phenotype)
         )
       ),
       ExcludeFields("disease"),
@@ -923,9 +917,7 @@ object Objects extends Logging {
         "drugWarnings",
         ListType(drugWarningsImp),
         description = Some("Warnings present on drug as identified by ChEMBL."),
-        resolve = c => {
-          c.ctx.getDrugWarnings(c.value.id)
-        }
+        resolve = c => c.ctx.getDrugWarnings(c.value.id)
       ),
       Field(
         "similarEntities",
@@ -992,14 +984,13 @@ object Objects extends Logging {
             "with a known mechanism of action"
         ),
         arguments = freeTextQuery :: pageSize :: cursor :: Nil,
-        resolve = ctx => {
+        resolve = ctx =>
           ctx.ctx.getKnownDrugs(
             ctx.arg(freeTextQuery).getOrElse(""),
             Map("drugId.raw" -> ctx.value.id),
             ctx.arg(pageSize),
             ctx.arg(cursor)
           )
-        }
       ),
       Field(
         "adverseEvents",
@@ -1025,9 +1016,7 @@ object Objects extends Logging {
           "Therapeutic indications for drug based on clinical trial data or " +
             "post-marketed drugs, when mechanism of action is known\""
         ),
-        resolve = r => {
-          r.value.linkedDiseases
-        }
+        resolve = r => r.value.linkedDiseases
       )
     ),
     ReplaceField(
@@ -1179,14 +1168,13 @@ object Objects extends Logging {
           "object",
           OptionType(mUnionType),
           description = Some("Associations for a fixed target"),
-          resolve = ctx => {
+          resolve = ctx =>
             ctx.value.entity match {
               case "target"  => targetsFetcher.deferOpt(ctx.value.id)
               case "disease" => diseasesFetcher.deferOpt(ctx.value.id)
               case "variant" => variantFetcher.deferOpt(ctx.value.id)
               case _         => drugsFetcher.deferOpt(ctx.value.id)
             }
-          }
         )
       )
     )
@@ -1200,13 +1188,12 @@ object Objects extends Logging {
           "object",
           OptionType(mUnionType),
           description = Some("Similarity label optionally resolved into an entity"),
-          resolve = ctx => {
+          resolve = ctx =>
             ctx.value.category match {
               case "target"  => targetsFetcher.deferOpt(ctx.value.id)
               case "disease" => diseasesFetcher.deferOpt(ctx.value.id)
               case _         => drugsFetcher.deferOpt(ctx.value.id)
             }
-          }
         )
       )
     )
@@ -1311,7 +1298,7 @@ object Objects extends Logging {
           "variantConsequences",
           ListType(sequenceOntologyTermImp),
           description = Some("Most severe consequence sequence ontology"),
-          resolve = r => {
+          resolve = r =>
             r.value.variantFunctionalConsequenceIds match {
               case Some(ids) =>
                 val soIds = ids.map(_.replace("_", ":"))
@@ -1319,7 +1306,6 @@ object Objects extends Logging {
                 soTermsFetcher.deferSeqOpt(soIds)
               case None => Future.successful(Seq.empty)
             }
-          }
         )
       )
     )
@@ -1350,11 +1336,10 @@ object Objects extends Logging {
           "otherStudyLocus",
           OptionType(credibleSetImp),
           Some("Credible set"),
-          resolve = r => {
+          resolve = r =>
             val studyLocusId = r.value.otherStudyLocusId.getOrElse("")
             logger.debug(s"Finding colocalisation credible set: $studyLocusId")
             credibleSetFetcher.deferOpt(studyLocusId)
-          }
         )
       ),
       ExcludeFields("leftStudyLocusId", "rightStudyLocusId")
@@ -1377,12 +1362,11 @@ object Objects extends Logging {
           "mostSevereConsequence",
           OptionType(sequenceOntologyTermImp),
           description = Some("Most severe consequence sequence ontology"),
-          resolve = r => {
+          resolve = r =>
             val soId = (r.value.mostSevereConsequenceId)
               .replace("_", ":")
             logger.debug(s"Finding variant functional consequence: $soId")
             soTermsFetcher.deferOpt(soId)
-          }
         )
       ),
       AddFields(
@@ -1391,9 +1375,8 @@ object Objects extends Logging {
           credibleSetsImp,
           description = Some("Credible sets"),
           arguments = pageArg :: studyTypes :: Nil,
-          resolve = r => {
-            CredibleSetsByVariantDeferred(r.value.variantId, r.arg(studyTypes), r.arg(pageArg))
-          }
+          resolve =
+            r => CredibleSetsByVariantDeferred(r.value.variantId, r.arg(studyTypes), r.arg(pageArg))
         ),
         Field(
           "pharmacogenomics",
@@ -1407,7 +1390,7 @@ object Objects extends Logging {
           evidencesImp,
           description = Some("The complete list of all possible datasources"),
           arguments = datasourceIdsArg :: pageSize :: cursor :: Nil,
-          resolve = ctx => {
+          resolve = ctx =>
             ctx.ctx.getEvidencesByVariantId(
               ctx arg datasourceIdsArg,
               ctx.value.variantId,
@@ -1415,7 +1398,6 @@ object Objects extends Logging {
               ctx arg pageSize,
               ctx arg cursor
             )
-          }
         )
       ),
       RenameField("variantId", "id")

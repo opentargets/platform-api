@@ -2,7 +2,7 @@ package models.entities
 
 import models.Backend
 import models.entities.Pagination
-import models.gql.Fetchers.{variantFetcher}
+import models.gql.Fetchers.variantFetcher
 import models.gql.Objects.{logger, variantIndexImp}
 import play.api.Logging
 import play.api.libs.json._
@@ -19,6 +19,7 @@ import sangria.schema.{
   StringType,
   fields
 }
+import sangria.schema.given
 import models.gql.Arguments.{studyTypes, pageArg, pageSize, variantIds}
 import models.gql.TypeWithId
 
@@ -69,6 +70,6 @@ object Loci extends Logging {
     (JsPath \ "count").read[Long] and
       (JsPath \ "locus").readNullable[Seq[Locus]] and
       (JsPath \ "studyLocusId").read[String]
-  )(Loci.apply _)
+  )(Loci.apply)
 
 }

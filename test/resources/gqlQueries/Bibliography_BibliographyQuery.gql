@@ -45,6 +45,7 @@ query SimilarEntitiesQuery(
       endMonth: $endMonth
     ) {
       count
+      filteredCount
       earliestPubYear
       cursor
       rows {

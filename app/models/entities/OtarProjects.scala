@@ -23,12 +23,12 @@ object OtarProjects {
       (JsPath \ "status").readNullable[String] and
       (JsPath \ "project_name").readNullable[String] and
       (JsPath \ "reference").read[String] and
-      (JsPath \ "integrates_data_PPP").readNullable[Boolean])(OtarProject.apply _)
+      (JsPath \ "integrates_data_PPP").readNullable[Boolean])(OtarProject.apply)
 
   implicit val otarProjectsImpW: OWrites[OtarProjects] = Json.writes[OtarProjects]
   implicit val otarProjectsImpR: Reads[OtarProjects] =
     (
       (__ \ "efo_id").read[String] and
         (__ \ "projects").readWithDefault[Seq[OtarProject]](Seq.empty)
-    )(OtarProjects.apply _)
+    )(OtarProjects.apply)
 }

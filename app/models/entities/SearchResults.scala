@@ -46,18 +46,18 @@ object SearchResults {
   implicit val searchResultAggCategoryImpR: Reads[models.entities.SearchResultAggCategory] = (
     (__ \ "key").read[String] and
       (__ \ "doc_count").read[Long]
-  )(SearchResultAggCategory.apply _)
+  )(SearchResultAggCategory.apply)
 
   implicit val searchResultAggEntityImpR: Reads[models.entities.SearchResultAggEntity] = (
     (__ \ "key").read[String] and
       (__ \ "doc_count").read[Long] and
       (__ \ "categories" \ "buckets").read[Seq[models.entities.SearchResultAggCategory]]
-  )(SearchResultAggEntity.apply _)
+  )(SearchResultAggEntity.apply)
 
   implicit val searchResultAggsImpR: Reads[models.entities.SearchResultAggs] =
     ((__ \ "total" \ "value").readWithDefault[Long](0) and
       (__ \ "entities" \ "buckets")
-        .read[Seq[models.entities.SearchResultAggEntity]])(models.entities.SearchResultAggs.apply _)
+        .read[Seq[models.entities.SearchResultAggEntity]])(models.entities.SearchResultAggs.apply)
 
   implicit val searchResultImpW: OWrites[SearchResult] = Json.writes[models.entities.SearchResult]
 
@@ -78,7 +78,7 @@ object SearchResults {
             s <- m.flatMap(_._2)
           } yield s).toSeq.distinct
         case None => Seq.empty[String]
-      })(SearchResult.apply _)
+      })(SearchResult.apply)
 
   implicit val msearchResultsImpW: OFormat[SearchResults] =
     Json.format[models.entities.SearchResults]

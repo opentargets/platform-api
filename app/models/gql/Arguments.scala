@@ -1,13 +1,14 @@
 package models.gql
 
-import models.entities.Configuration._
-import models.entities.Pagination._
-import models.entities.{_}
-import sangria.macros.derive._
-import sangria.schema._
-import sangria.marshalling.playJson._
+import models.entities.Configuration.*
+import models.entities.Pagination.*
+import models.entities.*
+import sangria.macros.derive.*
+import sangria.schema.*
+import sangria.marshalling.playJson.*
 import sangria.marshalling.FromInput
 import sangria.util.tag
+import sangria.util.tag.@@
 
 object StudyTypeEnum extends Enumeration {
 
@@ -18,7 +19,7 @@ object StudyTypeEnum extends Enumeration {
 object Arguments {
   import sangria.macros.derive._
 
-  implicit val StudyType = deriveEnumType[StudyTypeEnum.Value]()
+  implicit val StudyType: EnumType[StudyTypeEnum.Value] = deriveEnumType[StudyTypeEnum.Value]()
   val paginationGQLImp: InputObjectType[Pagination] = deriveInputObjectType[Pagination]()
 
   val datasourceSettingsInputImp: InputObjectType[DatasourceSettings] =
@@ -56,17 +57,17 @@ object Arguments {
     Argument("queryString", StringType, description = "Query string")
   val category: Argument[Option[String]] =
     Argument("category", OptionInputType(StringType), description = "Category")
-  val queryTerms: Argument[Seq[String with tag.Tagged[FromInput.CoercedScalaResult]]] =
+  val queryTerms: Argument[Seq[String @@ FromInput.CoercedScalaResult]] =
     Argument("queryTerms", ListInputType(StringType), description = "List of query terms to map")
   val optQueryString: Argument[Option[String]] =
     Argument("queryString", OptionInputType(StringType), description = "Query string")
   val freeTextQuery: Argument[Option[String]] =
     Argument("freeTextQuery", OptionInputType(StringType), description = "Query string")
   val efoId: Argument[String] = Argument("efoId", StringType, description = "EFO ID")
-  val efoIds: Argument[Seq[String with tag.Tagged[FromInput.CoercedScalaResult]]] =
+  val efoIds: Argument[Seq[String @@ FromInput.CoercedScalaResult]] =
     Argument("efoIds", ListInputType(StringType), description = "EFO ID")
   val ensemblId: Argument[String] = Argument("ensemblId", StringType, description = "Ensembl ID")
-  val ensemblIds: Argument[Seq[String with tag.Tagged[FromInput.CoercedScalaResult]]] =
+  val ensemblIds: Argument[Seq[String @@ FromInput.CoercedScalaResult]] =
     Argument("ensemblIds", ListInputType(StringType), description = "List of Ensembl IDs")
   val ensemblIdsOpt: Argument[Option[Seq[String]]] =
     Argument("ensemblIds",
@@ -74,9 +75,9 @@ object Arguments {
              description = "List of Ensembl IDs"
     )
   val chemblId: Argument[String] = Argument("chemblId", StringType, description = "Chembl ID")
-  val chemblIds: Argument[Seq[String with tag.Tagged[FromInput.CoercedScalaResult]]] =
+  val chemblIds: Argument[Seq[String @@ FromInput.CoercedScalaResult]] =
     Argument("chemblIds", ListInputType(StringType), description = "List of Chembl IDs")
-  val goIds: Argument[Seq[String with tag.Tagged[FromInput.CoercedScalaResult]]] =
+  val goIds: Argument[Seq[String @@ FromInput.CoercedScalaResult]] =
     Argument("goIds", ListInputType(StringType), description = "List of GO IDs, eg. GO:0005515")
   val variantId: Argument[String] = Argument("variantId", StringType, description = "Variant ID")
   val variantIds: Argument[Option[Seq[String]]] =
@@ -150,7 +151,7 @@ object Arguments {
   )
 
   val AId: Argument[String] = Argument("A", StringType)
-  val AIds: Argument[Seq[String with tag.Tagged[FromInput.CoercedScalaResult]]] =
+  val AIds: Argument[Seq[String @@ FromInput.CoercedScalaResult]] =
     Argument("As", ListInputType(StringType))
   val BIds: Argument[Option[Seq[String]]] =
     Argument("Bs",
@@ -163,7 +164,7 @@ object Arguments {
     OptionInputType(ListInputType(StringType)),
     description = "List of IDs either EFO ENSEMBL CHEMBL"
   )
-  val requiredIds: Argument[Seq[String with tag.Tagged[FromInput.CoercedScalaResult]]] = Argument(
+  val requiredIds: Argument[Seq[String @@ FromInput.CoercedScalaResult]] = Argument(
     "ids",
     ListInputType(StringType),
     description = "List of IDs either EFO ENSEMBL CHEMBL"

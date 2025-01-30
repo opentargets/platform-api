@@ -12,8 +12,7 @@ import models.entities.Violations.{
 import sangria.validation.BaseViolation
 import scala.util.{Try, Failure, Success}
 
-/** Pagination case class takes an index from 0..page-1 and size indicate
-  * the batch of each page.
+/** Pagination case class takes an index from 0..page-1 and size indicate the batch of each page.
   */
 case class Pagination(index: Int, size: Int) {
   lazy val offset: Int = toES._1
@@ -27,7 +26,7 @@ case class Pagination(index: Int, size: Int) {
     case (0, s) => s"LIMIT $s"
     case (i, 0) => s"LIMIT ${i * Pagination.sizeDefault}, ${Pagination.sizeDefault}"
     case (i, s) => s"LIMIT ${i * s} , $s"
-    case _      => s"LIMIT ${Pagination.indexDefault}, ${Pagination.sizeDefault}"
+    case null   => s"LIMIT ${Pagination.indexDefault}, ${Pagination.sizeDefault}"
   }
 
   val toES: (Int, Int) = (index, size) match {
@@ -35,7 +34,7 @@ case class Pagination(index: Int, size: Int) {
     case (0, s) => (0, s)
     case (i, 0) => (i * Pagination.sizeDefault, Pagination.sizeDefault)
     case (i, s) => (i * s, s)
-    case _      => (0, Pagination.sizeDefault)
+    case null   => (0, Pagination.sizeDefault)
   }
 }
 
@@ -59,7 +58,8 @@ object Pagination {
       else Success(Pagination(index, size))
   }
 
-  /** @return page with defaults: index = 0, size = 25.
+  /** @return
+    *   page with defaults: index = 0, size = 25.
     */
   def mkDefault: Pagination = Pagination(indexDefault, sizeDefault)
   def mkMax: Pagination = Pagination(Pagination.indexDefault, Pagination.sizeMax)
@@ -67,7 +67,7 @@ object Pagination {
   implicit val paginationJSONImpR: Reads[Pagination] = (
     (__ \ "index").read[Int] and
       (__ \ "size").read[Int]
-  )(Pagination.create _).flatMap {
+  )(Pagination.create).flatMap {
     case Success(p) => Reads(_ => JsSuccess(p))
     case Failure(e) => Reads(_ => JsError(e.getMessage))
   }
