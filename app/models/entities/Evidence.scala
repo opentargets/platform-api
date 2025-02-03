@@ -33,153 +33,99 @@ object Evidence extends Logging {
 
   case class NameAndDescription(name: String, description: String)
 
+  case class PathwayTerm(id: String, name: String)
+
+  case class SequenceOntologyTerm(id: String, label: String)
+
+  case class EvidenceTextMiningSentence(
+      dEnd: Long,
+      tEnd: Long,
+      dStart: Long,
+      tStart: Long,
+      section: String,
+      text: String
+  )
+
+  case class EvidenceDiseaseCellLine(id: Option[String], name: Option[String], tissue: Option[String], tissueId: Option[String])
+
+  case class EvidenceVariation(
+      functionalConsequenceId: Option[String],
+      numberMutatedSamples: Option[Long],
+      numberSamplesTested: Option[Long],
+      numberSamplesWithMutationType: Option[Long]
+  )
+
+  case class LabelledElement(id: String, label: String)
+
+  case class LabelledUri(url: String, niceName: String)
+
+//TODO: implement: biomarkers, diseaseCellLines
+  case class Evidence(id: String, score: Double, targetId: String, diseaseId: String, biomarkerName: Option[String], biomarkers: Option[JsValue], studyLocusId: Option[String], diseaseCellLines: Option[Seq[JsValue]], cohortPhenotypes: Option[Seq[String]])
+
   implicit val nameAndDescriptionJsonFormatImp: OFormat[NameAndDescription] =
     Json.format[NameAndDescription]
+
+  implicit val pathwayTermJsonFormatImp: OFormat[PathwayTerm] = Json.format[PathwayTerm]
+
+  implicit val sequenceOntologyTermJsonFormatImp: OFormat[SequenceOntologyTerm] =
+    Json.format[SequenceOntologyTerm]
+
+  implicit val evidenceTextMiningSentenceJsonFormatImp: OFormat[EvidenceTextMiningSentence] = Json.format[EvidenceTextMiningSentence]
+
+  implicit val evidenceDiseaseCellLineJsonFormatImp: OFormat[EvidenceDiseaseCellLine] = Json.format[EvidenceDiseaseCellLine]
+
+  implicit val evidenceVariationJsonFormatImp: OFormat[EvidenceVariation] = Json.format[EvidenceVariation]
+
+  implicit val labelledElementJsonFormatImp: OFormat[LabelledElement] = Json.format[LabelledElement]
+
+  implicit val labelledUriJsonFormatImp: OFormat[LabelledUri] = Json.format[LabelledUri]
 
   val nameAndDescriptionImp: ObjectType[Backend, NameAndDescription] =
     deriveObjectType[Backend, NameAndDescription](
       ObjectTypeName("NameDescription")
     )
-  val pathwayTermImp: ObjectType[Backend, JsValue] = ObjectType(
-    "Pathway",
-    "Pathway entry",
-    fields[Backend, JsValue](
-      Field(
-        "id",
-        StringType,
-        description = Some("Pathway ID"),
-        resolve = js => (js.value \ "id").as[String]
-      ),
-      Field(
-        "name",
-        StringType,
-        description = Some("Pathway Name"),
-        resolve = js => (js.value \ "name").as[String]
-      )
-    )
+
+  val pathwayTermImp: ObjectType[Backend, PathwayTerm] = deriveObjectType[Backend, PathwayTerm](
+    ObjectTypeName("Pathway"),
+    ObjectTypeDescription("Pathway entry")
   )
 
-  val sequenceOntologyTermImp: ObjectType[Backend, JsValue] = ObjectType(
-    "SequenceOntologyTerm",
-    "Sequence Ontology Term",
-    fields[Backend, JsValue](
-      Field(
-        "id",
-        StringType,
-        description = Some("Sequence Ontology ID"),
-        resolve = js => (js.value \ "id").as[String]
-      ),
-      Field(
-        "label",
-        StringType,
-        description = Some("Sequence Ontology Label"),
-        resolve = js => (js.value \ "label").as[String]
-      )
+  val sequenceOntologyTermImp: ObjectType[Backend, SequenceOntologyTerm] =
+    deriveObjectType[Backend, SequenceOntologyTerm](
+      ObjectTypeName("SequenceOntologyTerm"),
+      ObjectTypeDescription("Sequence Ontology Term")
     )
+
+  val evidenceTextMiningSentenceImp: ObjectType[Backend, EvidenceTextMiningSentence] = deriveObjectType[Backend, EvidenceTextMiningSentence](
+    ObjectTypeName("EvidenceTextMiningSentence")
   )
 
-  val evidenceTextMiningSentenceImp: ObjectType[Backend, JsValue] = ObjectType(
-    "EvidenceTextMiningSentence",
-    fields[Backend, JsValue](
-      Field("dEnd", LongType, description = None, resolve = js => (js.value \ "dEnd").as[Long]),
-      Field("tEnd", LongType, description = None, resolve = js => (js.value \ "tEnd").as[Long]),
-      Field("dStart", LongType, description = None, resolve = js => (js.value \ "dStart").as[Long]),
-      Field("tStart", LongType, description = None, resolve = js => (js.value \ "tStart").as[Long]),
-      Field(
-        "section",
-        StringType,
-        description = None,
-        resolve = js => (js.value \ "section").as[String]
-      ),
-      Field("text", StringType, description = None, resolve = js => (js.value \ "text").as[String])
-    )
-  )
-  val evidenceDiseaseCellLineImp: ObjectType[Backend, JsValue] = ObjectType(
-    "DiseaseCellLine",
-    fields[Backend, JsValue](
-      Field("id",
-            OptionType(StringType),
-            description = None,
-            resolve = js => (js.value \ "id").asOpt[String]
-      ),
-      Field("name",
-            OptionType(StringType),
-            description = None,
-            resolve = js => (js.value \ "name").asOpt[String]
-      ),
-      Field(
-        "tissue",
-        OptionType(StringType),
-        description = None,
-        resolve = js => (js.value \ "tissue").asOpt[String]
-      ),
-      Field(
-        "tissueId",
-        OptionType(StringType),
-        description = None,
-        resolve = js => (js.value \ "tissueId").asOpt[String]
-      )
-    )
+  val evidenceDiseaseCellLineImp: ObjectType[Backend, EvidenceDiseaseCellLine] = deriveObjectType[Backend, EvidenceDiseaseCellLine](
+    ObjectTypeName("DiseaseCellLine")
   )
 
-  val evidenceVariationImp: ObjectType[Backend, JsValue] = ObjectType(
-    "EvidenceVariation",
-    "Sequence Ontology Term",
-    fields[Backend, JsValue](
+  val evidenceVariationImp: ObjectType[Backend, EvidenceVariation] = deriveObjectType[Backend, EvidenceVariation](
+    ObjectTypeName("EvidenceVariation"),
+    ObjectTypeDescription("Sequence Ontology Term"),
+    AddFields(
       Field(
         "functionalConsequence",
         OptionType(sequenceOntologyTermImp),
         description = None,
         resolve = js => {
-          val soId = ((js.value \ "functionalConsequenceId").asOpt[String]).map(_.replace("_", ":"))
+          val soId = js.value.functionalConsequenceId.map(_.replace("_", ":"))
           soTermsFetcher.deferOpt(soId)
         }
-      ),
-      Field(
-        "numberMutatedSamples",
-        OptionType(LongType),
-        description = None,
-        resolve = js => (js.value \ "numberMutatedSamples").asOpt[Long]
-      ),
-      Field(
-        "numberSamplesTested",
-        OptionType(LongType),
-        description = None,
-        resolve = js => (js.value \ "numberSamplesTested").asOpt[Long]
-      ),
-      Field(
-        "numberSamplesWithMutationType",
-        OptionType(LongType),
-        description = None,
-        resolve = js => (js.value \ "numberSamplesWithMutationType").asOpt[Long]
       )
     )
   )
 
-  val labelledElementImp: ObjectType[Backend, JsValue] = ObjectType(
-    "LabelledElement",
-    fields[Backend, JsValue](
-      Field("id", StringType, description = None, resolve = js => (js.value \ "id").as[String]),
-      Field(
-        "label",
-        StringType,
-        description = None,
-        resolve = js => (js.value \ "label").as[String]
-      )
-    )
+  val labelledElementImp: ObjectType[Backend, LabelledElement] = deriveObjectType[Backend, LabelledElement](
+    ObjectTypeName("LabelledElement")
   )
 
-  val labelledUriImp: ObjectType[Backend, JsValue] = ObjectType(
-    "LabelledUri",
-    fields[Backend, JsValue](
-      Field("url", StringType, description = None, resolve = js => (js.value \ "url").as[String]),
-      Field(
-        "niceName",
-        StringType,
-        description = None,
-        resolve = js => (js.value \ "niceName").as[String]
-      )
-    )
+  val labelledUriImp: ObjectType[Backend, LabelledUri] = deriveObjectType[Backend, LabelledUri](
+    ObjectTypeName("LabelledUri")
   )
 
   val biomarkerGeneExpressionImp: ObjectType[Backend, JsValue] = ObjectType(
