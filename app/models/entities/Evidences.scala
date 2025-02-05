@@ -1,9 +1,10 @@
 package models.entities
 
 import models.Backend
-import models.entities.Evidence.{Evidence, evidenceImp}
+import models.entities.Evidence.Evidence
 import play.api.libs.json.JsValue
 import sangria.schema.{Field, ListType, LongType, ObjectType, OptionType, StringType, fields}
+import models.gql.Objects.evidenceImp
 
 case class Evidences(count: Long, cursor: Option[String], rows: IndexedSeq[Evidence])
 

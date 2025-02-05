@@ -2,7 +2,7 @@ package models.gql
 
 import models._
 import models.entities.Configuration._
-import models.entities.Evidence.sequenceOntologyTermImp
+import models.entities.Evidence._
 import models.entities.Evidences._
 import models.entities.Study.studyImp
 import models.entities.Interactions._
@@ -775,6 +775,12 @@ object Objects extends Logging {
       )
     )
 
+  implicit val sequenceOntologyTermImp: ObjectType[Backend, SequenceOntologyTerm] =
+    deriveObjectType[Backend, SequenceOntologyTerm](
+      ObjectTypeName("SequenceOntologyTerm"),
+      ObjectTypeDescription("Sequence Ontology Term")
+    )
+
   implicit lazy val pharmacogenomicsImp: ObjectType[Backend, Pharmacogenomics] =
     deriveObjectType[Backend, Pharmacogenomics](
       AddFields(
@@ -1403,4 +1409,223 @@ object Objects extends Logging {
       RenameField("variantId", "id")
     )
 
+  implicit val nameAndDescriptionImp: ObjectType[Backend, NameAndDescription] =
+    deriveObjectType[Backend, NameAndDescription](
+      ObjectTypeName("NameDescription")
+    )
+
+  implicit val pathwayTermImp: ObjectType[Backend, PathwayTerm] =
+    deriveObjectType[Backend, PathwayTerm](
+      ObjectTypeName("Pathway"),
+      ObjectTypeDescription("Pathway entry")
+    )
+
+  implicit val evidenceTextMiningSentenceImp: ObjectType[Backend, EvidenceTextMiningSentence] =
+    deriveObjectType[Backend, EvidenceTextMiningSentence](
+      ObjectTypeName("EvidenceTextMiningSentence")
+    )
+
+  implicit val evidenceDiseaseCellLineImp: ObjectType[Backend, EvidenceDiseaseCellLine] =
+    deriveObjectType[Backend, EvidenceDiseaseCellLine](
+      ObjectTypeName("DiseaseCellLine")
+    )
+
+  implicit val evidenceVariationImp: ObjectType[Backend, EvidenceVariation] =
+    deriveObjectType[Backend, EvidenceVariation](
+      ObjectTypeName("EvidenceVariation"),
+      ObjectTypeDescription("Sequence Ontology Term"),
+      ReplaceField(
+        "functionalConsequenceId",
+        Field(
+          "functionalConsequence",
+          OptionType(sequenceOntologyTermImp),
+          description = None,
+          resolve = js => {
+            val soId = js.value.functionalConsequenceId.map(_.replace("_", ":"))
+            soTermsFetcher.deferOpt(soId)
+          }
+        )
+      )
+    )
+
+  implicit val labelledElementImp: ObjectType[Backend, LabelledElement] =
+    deriveObjectType[Backend, LabelledElement](
+      ObjectTypeName("LabelledElement")
+    )
+
+  implicit val labelledUriImp: ObjectType[Backend, LabelledUri] =
+    deriveObjectType[Backend, LabelledUri](
+      ObjectTypeName("LabelledUri")
+    )
+
+  implicit val biomarkerGeneExpressionImp: ObjectType[Backend, BiomarkerGeneExpression] =
+    deriveObjectType[Backend, BiomarkerGeneExpression](
+      ObjectTypeName("BiomarkerGeneExpression"),
+      ReplaceField(
+        "id",
+        Field(
+          "id",
+          OptionType(geneOntologyTermImp),
+          description = None,
+          resolve = js => {
+            val goId = js.value.id.map(_.replace('_', ':'))
+            goFetcher.deferOpt(goId)
+          }
+        )
+      )
+    )
+
+  implicit val biomarkerVariantImp: ObjectType[Backend, BiomarkerVariant] = deriveObjectType(
+    ObjectTypeName("geneticVariation"),
+    ReplaceField(
+      "functionalConsequenceId",
+      Field(
+        "functionalConsequenceId",
+        OptionType(sequenceOntologyTermImp),
+        description = None,
+        resolve = js => {
+          val soId = js.value.functionalConsequenceId.map(_.replace("_", ":"))
+          soTermsFetcher.deferOpt(soId)
+        }
+      )
+    )
+  )
+
+  implicit val biomarkersImp: ObjectType[Backend, Biomarkers] = deriveObjectType(
+    ObjectTypeName("biomarkers")
+  )
+
+  implicit val assaysImp: ObjectType[Backend, Assays] = deriveObjectType(
+    ObjectTypeName("assays")
+  )
+
+  implicit val evidenceImp: ObjectType[Backend, Evidence] = deriveObjectType(
+    ObjectTypeName("Evidence"),
+    ObjectTypeDescription("Evidence for a Target-Disease pair"),
+    DocumentField("id", "Evidence identifier"),
+    DocumentField("score", "Evidence score"),
+    DocumentField("variantRsId", "Variant dbSNP identifier"),
+    DocumentField("oddsRatioConfidenceIntervalLower", "Confidence interval lower-bound"),
+    DocumentField("studySampleSize", "Sample size"),
+    DocumentField("literature", "list of pub med publications ids"),
+    DocumentField("studyStopReasonCategories",
+                  "Predicted reason(s) why the study has been stopped based on studyStopReason"
+    ),
+    DocumentField("ancestry", "Genetic origin of a population"),
+    DocumentField("ancestryId", "Identifier of the ancestry in the HANCESTRO ontology"),
+    DocumentField("statisticalMethod", "The statistical method used to calculate the association"),
+    DocumentField("statisticalMethodOverview",
+                  "Overview of the statistical method used to calculate the association"
+    ),
+    DocumentField(
+      "studyCasesWithQualifyingVariants",
+      "Number of cases in a case-control study that carry at least one allele of the qualifying variant"
+    ),
+    DocumentField("releaseVersion", "Release version"),
+    DocumentField("releaseDate", "Release date"),
+    DocumentField("warningMessage", "Warning message"),
+    DocumentField("variantEffect", "Variant effect"),
+    DocumentField("directionOnTrait", "Direction On Trait"),
+    DocumentField("assessments", "Assessments"),
+    DocumentField("primaryProjectHit", "Primary Project Hit"),
+    DocumentField("primaryProjectId", "Primary Project Id"),
+    ReplaceField(
+      "targetId",
+      Field(
+        "target",
+        targetImp,
+        description = Some("Target evidence"),
+        resolve = evidence => {
+          val tId = evidence.value.targetId
+          targetsFetcher.defer(tId)
+        }
+      )
+    ),
+    ReplaceField(
+      "diseaseId",
+      Field(
+        "disease",
+        diseaseImp,
+        description = Some("Disease evidence"),
+        resolve = evidence => {
+          val tId = evidence.value.diseaseId
+          diseasesFetcher.defer(tId)
+        }
+      )
+    ),
+    ReplaceField(
+      "studyLocusId",
+      Field(
+        "credibleSet",
+        OptionType(credibleSetImp),
+        description = None,
+        resolve = js => {
+          val studyLocusId = js.value.studyLocusId
+          credibleSetFetcher.deferOpt(studyLocusId)
+        }
+      )
+    ),
+    ReplaceField(
+      "variantId",
+      Field(
+        "variant",
+        OptionType(variantIndexImp),
+        description = None,
+        resolve = evidence => {
+          val id = evidence.value.variantId
+          logger.debug(s"Finding variant for id: $id")
+          variantFetcher.deferOpt(id)
+        }
+      )
+    ),
+    ReplaceField(
+      "drugId",
+      Field(
+        "drug",
+        OptionType(drugImp),
+        description = None,
+        resolve = evidence => {
+          val id = evidence.value.drugId
+          logger.debug(s"Finding drug for id: $id")
+          drugsFetcher.deferOpt(id)
+        }
+      )
+    ),
+    ReplaceField(
+      "variantFunctionalConsequenceId",
+      Field(
+        "variantFunctionalConsequence",
+        OptionType(sequenceOntologyTermImp),
+        description = None,
+        resolve = evidence => {
+          val soId = evidence.value.variantFunctionalConsequenceId
+            .map(id => id.replace("_", ":"))
+          logger.error(s"Finding variant functional consequence: $soId")
+          soTermsFetcher.deferOpt(soId)
+        }
+      )
+    ),
+    ReplaceField(
+      "variantFunctionalConsequenceFromQtlId",
+      Field(
+        "variantFunctionalConsequenceFromQtlId",
+        OptionType(sequenceOntologyTermImp),
+        description = None,
+        resolve = evidence => {
+          val soId = evidence.value.variantFunctionalConsequenceFromQtlId
+            .map(id => id.replace("_", ":"))
+          soTermsFetcher.deferOpt(soId)
+        }
+      )
+    ),
+    ReplaceField(
+      "pmcIds",
+      Field(
+        "pubMedCentralIds",
+        OptionType(ListType(StringType)),
+        description = Some("list of central pub med publications ids"),
+        resolve = js => js.value.pmcIds
+      )
+    )
+  )
 }
