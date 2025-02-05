@@ -1,11 +1,11 @@
 package models.entities
 
 import models.Backend
-import models.entities.Evidence.evidenceImp
+import models.entities.Evidence.{Evidence, evidenceImp}
 import play.api.libs.json.JsValue
 import sangria.schema.{Field, ListType, LongType, ObjectType, OptionType, StringType, fields}
 
-case class Evidences(count: Long, cursor: Option[String], rows: IndexedSeq[JsValue])
+case class Evidences(count: Long, cursor: Option[String], rows: IndexedSeq[Evidence])
 
 object Evidences {
   def empty(withTotal: Long = 0): Evidences = Evidences(withTotal, None, IndexedSeq.empty)

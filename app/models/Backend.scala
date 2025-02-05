@@ -1,29 +1,29 @@
 package models
 
 import clickhouse.ClickHouseProfile
-import com.sksamuel.elastic4s._
+import com.sksamuel.elastic4s.*
 import com.sksamuel.elastic4s.http.JavaClient
-import com.sksamuel.elastic4s.requests.searches._
-import com.sksamuel.elastic4s.requests.searches.aggs._
+import com.sksamuel.elastic4s.requests.searches.*
+import com.sksamuel.elastic4s.requests.searches.aggs.*
 import com.sksamuel.elastic4s.requests.searches.sort.SortOrder
-import esecuele._
+import esecuele.*
 
 import javax.inject.Inject
-import gql.validators.QueryTermsValidator._
-import models.Helpers._
+import gql.validators.QueryTermsValidator.*
+import models.Helpers.*
 import models.db.{QAOTF, QLITAGG, QW2V, SentenceQuery}
-import models.entities.Publication._
-import models.entities.Associations._
-import models.entities.Biosample._
-import models.entities.CredibleSet._
-import models.entities.Configuration._
-import models.entities.DiseaseHPOs._
-import models.entities.Drug._
-import models.entities.Loci._
-import models.entities.MousePhenotypes._
-import models.entities.Pharmacogenomics._
-import models.entities.SearchFacetsResults._
-import models.entities._
+import models.entities.Publication.*
+import models.entities.Associations.*
+import models.entities.Biosample.*
+import models.entities.CredibleSet.*
+import models.entities.Configuration.*
+import models.entities.DiseaseHPOs.*
+import models.entities.Drug.*
+import models.entities.Loci.*
+import models.entities.MousePhenotypes.*
+import models.entities.Pharmacogenomics.*
+import models.entities.SearchFacetsResults.*
+import models.entities.*
 import models.gql.Arguments.variantId
 import models.gql.StudyTypeEnum
 import models.InnerResults
@@ -31,16 +31,17 @@ import models.Results
 import org.apache.http.impl.nio.reactor.IOReactorConfig
 import play.api.cache.AsyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.{Configuration, Environment, Logging}
 import play.db.NamedDatabase
 import slick.basic.DatabaseConfig
 
 import java.time.LocalDate
 import scala.collection.immutable.ArraySeq
-import scala.concurrent._
+import scala.concurrent.*
 import scala.util.{Failure, Success}
 import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
+import models.entities.Evidence.{Evidence, SequenceOntologyTerm}
 
 class Backend @Inject() (implicit
     ec: ExecutionContext,
@@ -651,7 +652,7 @@ class Backend @Inject() (implicit
         cbIndex,
         filters,
         pag,
-        fromJsValue[JsValue],
+        fromJsValue[Evidence],
         Seq.empty,
         sortByField,
         Seq.empty,
@@ -739,6 +740,12 @@ class Backend @Inject() (implicit
     val targetIndexName = getIndexOrDefault("target", Some("targets"))
 
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[Target])
+  }
+
+  def getSoTerms(ids: Seq[String]): Future[IndexedSeq[SequenceOntologyTerm]] = {
+    val targetIndexName = getIndexOrDefault("so", Some("so"))
+
+    esRetriever.getByIds(targetIndexName, ids, fromJsValue[SequenceOntologyTerm])
   }
 
   def getDrugs(ids: Seq[String]): Future[IndexedSeq[Drug]] = {
