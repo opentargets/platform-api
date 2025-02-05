@@ -1,8 +1,7 @@
 package models.entities
 
 import models.Backend
-import models.entities.Evidence.Evidence
-import play.api.libs.json.JsValue
+import models.entities.Evidence
 import sangria.schema.{Field, ListType, LongType, ObjectType, OptionType, StringType, fields}
 import models.gql.Objects.evidenceImp
 

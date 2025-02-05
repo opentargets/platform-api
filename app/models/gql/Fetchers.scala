@@ -1,7 +1,8 @@
 package models.gql
 
-import models.entities.Evidence.SequenceOntologyTerm
 import models.entities.{
+  Evidence,
+  SequenceOntologyTerm,
   Biosample,
   Disease,
   Drug,

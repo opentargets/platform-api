@@ -23,6 +23,8 @@ import models.entities.Loci.*
 import models.entities.MousePhenotypes.*
 import models.entities.Pharmacogenomics.*
 import models.entities.SearchFacetsResults.*
+import models.entities.Evidence.*
+import models.entities.SequenceOntologyTerm.*
 import models.entities.*
 import models.gql.Arguments.variantId
 import models.gql.StudyTypeEnum
@@ -41,7 +43,6 @@ import scala.collection.immutable.ArraySeq
 import scala.concurrent.*
 import scala.util.{Failure, Success}
 import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
-import models.entities.Evidence.{Evidence, SequenceOntologyTerm}
 
 class Backend @Inject() (implicit
     ec: ExecutionContext,
