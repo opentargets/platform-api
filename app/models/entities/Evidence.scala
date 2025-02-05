@@ -23,7 +23,7 @@ import sangria.schema.{
   ObjectType,
   OptionType,
   StringType,
-  BooleanType,
+  BooleanType
 }
 
 object Evidence extends Logging {
@@ -64,108 +64,109 @@ object Evidence extends Logging {
 
   case class BiomarkerGeneExpression(name: Option[String], id: Option[String])
 
-  case class Evidence(id: String,
-                      score: Double,
-                      targetId: String,
-                      diseaseId: String,
-                      biomarkerName: Option[String],
-                      biomarkers: Option[Biomarkers],
-                      studyLocusId: Option[String],
-                      diseaseCellLines: Option[Seq[EvidenceDiseaseCellLine]],
-                      cohortPhenotypes: Option[Seq[String]],
-                      targetInModel: Option[String],
-                      reactionId: Option[String],
-                      reactionName: Option[String],
-                      projectId: Option[String],
-                      variantId: Option[String],
-                      variantRsId: Option[String],
-                      oddsRatioConfidenceIntervalLower: Option[Double],
-                      studySampleSize: Option[Long],
-                      variantAminoacidDescriptions: Option[Seq[String]],
-                      mutatedSamples: Option[Seq[EvidenceVariation]],
-                      drugId: Option[String],
-                      drugFromSource: Option[String],
-                      drugResponse: Option[String],
-                      cohortShortName: Option[String],
-                      diseaseModelAssociatedModelPhenotypes: Option[Seq[LabelledElement]],
-                      diseaseModelAssociatedHumanPhenotypes: Option[Seq[LabelledElement]],
-                      significantDriverMethods: Option[Seq[String]],
-                      pValueExponent: Option[Long],
-                      log2FoldChangePercentileRank: Option[Long],
-                      biologicalModelAllelicComposition: Option[String],
-                      confidence: Option[String],
-                      clinicalPhase: Option[Double],
-                      resourceScore: Option[Double],
-                      variantFunctionalConsequenceId: Option[String],
-                      variantFunctionalConsequenceFromQtlId: Option[String],
-                      biologicalModelGeneticBackground: Option[String],
-                      urls: Option[Seq[LabelledUri]],
-                      literature: Option[Seq[String]],
-                      pmcIds: Option[Seq[String]],
-                      studyCases: Option[Long],
-                      studyOverview: Option[String],
-                      allelicRequirements: Option[Seq[String]],
-                      datasourceId: String,
-                      datatypeId: String,
-                      oddsRatioConfidenceIntervalUpper: Option[Double],
-                      clinicalStatus: Option[String],
-                      log2FoldChangeValue: Option[Double],
-                      oddsRatio: Option[Double],
-                      cohortDescription: Option[String],
-                      publicationYear: Option[Long],
-                      diseaseFromSource: Option[String],
-                      diseaseFromSourceId: Option[String],
-                      targetFromSourceId: Option[String],
-                      targetModulation: Option[String],
-                      textMiningSentences: Option[Seq[EvidenceTextMiningSentence]],
-                      studyId: Option[String],
-                      clinicalSignificances: Option[Seq[String]],
-                      cohortId: Option[String],
-                      pValueMantissa: Option[Double],
-                      pathways: Option[Seq[PathwayTerm]],
-                      publicationFirstAuthor: Option[String],
-                      alleleOrigins: Option[Seq[String]],
-                      biologicalModelId: Option[String],
-                      biosamplesFromSource: Option[Seq[String]],
-                      diseaseFromSourceMappedId: Option[String],
-                      beta: Option[Double],
-                      betaConfidenceIntervalLower: Option[Double],
-                      betaConfidenceIntervalUpper: Option[Double],
-                      studyStartDate: Option[String],
-                      studyStopReason: Option[String],
-                      studyStopReasonCategories: Option[Seq[String]],
-                      targetFromSource: Option[String],
-                      cellLineBackground: Option[String],
-                      contrast: Option[String],
-                      crisprScreenLibrary: Option[String],
-                      cellType: Option[String],
-                      statisticalTestTail: Option[String],
-                      interactingTargetFromSourceId: Option[String],
-                      phenotypicConsequenceLogFoldChange: Option[Double],
-                      phenotypicConsequenceFDR: Option[Double],
-                      phenotypicConsequencePValue: Option[Double],
-                      geneticInteractionScore: Option[Double],
-                      geneticInteractionPValue: Option[Double],
-                      geneticInteractionFDR: Option[Double],
-                      biomarkerList: Option[Seq[NameAndDescription]],
-                      projectDescription: Option[String],
-                      geneInteractionType: Option[String],
-                      targetRole: Option[String],
-                      interactingTargetRole: Option[String],
-                      ancestry: Option[String],
-                      ancestryId: Option[String],
-                      statisticalMethod: Option[String],
-                      statisticalMethodOverview: Option[String],
-                      studyCasesWithQualifyingVariants: Option[Long],
-                      releaseVersion: Option[String],
-                      releaseDate: Option[String],
-                      warningMessage: Option[String],
-                      variantEffect: Option[String],
-                      directionOnTrait: Option[String],
-                      assessments: Option[Seq[String]],
-                      primaryProjectHit: Option[Boolean],
-                      primaryProjectId: Option[String],
-                      assays: Option[Seq[Assays]]
+  case class Evidence(
+      id: String,
+      score: Double,
+      targetId: String,
+      diseaseId: String,
+      biomarkerName: Option[String],
+      biomarkers: Option[Biomarkers],
+      studyLocusId: Option[String],
+      diseaseCellLines: Option[Seq[EvidenceDiseaseCellLine]],
+      cohortPhenotypes: Option[Seq[String]],
+      targetInModel: Option[String],
+      reactionId: Option[String],
+      reactionName: Option[String],
+      projectId: Option[String],
+      variantId: Option[String],
+      variantRsId: Option[String],
+      oddsRatioConfidenceIntervalLower: Option[Double],
+      studySampleSize: Option[Long],
+      variantAminoacidDescriptions: Option[Seq[String]],
+      mutatedSamples: Option[Seq[EvidenceVariation]],
+      drugId: Option[String],
+      drugFromSource: Option[String],
+      drugResponse: Option[String],
+      cohortShortName: Option[String],
+      diseaseModelAssociatedModelPhenotypes: Option[Seq[LabelledElement]],
+      diseaseModelAssociatedHumanPhenotypes: Option[Seq[LabelledElement]],
+      significantDriverMethods: Option[Seq[String]],
+      pValueExponent: Option[Long],
+      log2FoldChangePercentileRank: Option[Long],
+      biologicalModelAllelicComposition: Option[String],
+      confidence: Option[String],
+      clinicalPhase: Option[Double],
+      resourceScore: Option[Double],
+      variantFunctionalConsequenceId: Option[String],
+      variantFunctionalConsequenceFromQtlId: Option[String],
+      biologicalModelGeneticBackground: Option[String],
+      urls: Option[Seq[LabelledUri]],
+      literature: Option[Seq[String]],
+      pmcIds: Option[Seq[String]],
+      studyCases: Option[Long],
+      studyOverview: Option[String],
+      allelicRequirements: Option[Seq[String]],
+      datasourceId: String,
+      datatypeId: String,
+      oddsRatioConfidenceIntervalUpper: Option[Double],
+      clinicalStatus: Option[String],
+      log2FoldChangeValue: Option[Double],
+      oddsRatio: Option[Double],
+      cohortDescription: Option[String],
+      publicationYear: Option[Long],
+      diseaseFromSource: Option[String],
+      diseaseFromSourceId: Option[String],
+      targetFromSourceId: Option[String],
+      targetModulation: Option[String],
+      textMiningSentences: Option[Seq[EvidenceTextMiningSentence]],
+      studyId: Option[String],
+      clinicalSignificances: Option[Seq[String]],
+      cohortId: Option[String],
+      pValueMantissa: Option[Double],
+      pathways: Option[Seq[PathwayTerm]],
+      publicationFirstAuthor: Option[String],
+      alleleOrigins: Option[Seq[String]],
+      biologicalModelId: Option[String],
+      biosamplesFromSource: Option[Seq[String]],
+      diseaseFromSourceMappedId: Option[String],
+      beta: Option[Double],
+      betaConfidenceIntervalLower: Option[Double],
+      betaConfidenceIntervalUpper: Option[Double],
+      studyStartDate: Option[String],
+      studyStopReason: Option[String],
+      studyStopReasonCategories: Option[Seq[String]],
+      targetFromSource: Option[String],
+      cellLineBackground: Option[String],
+      contrast: Option[String],
+      crisprScreenLibrary: Option[String],
+      cellType: Option[String],
+      statisticalTestTail: Option[String],
+      interactingTargetFromSourceId: Option[String],
+      phenotypicConsequenceLogFoldChange: Option[Double],
+      phenotypicConsequenceFDR: Option[Double],
+      phenotypicConsequencePValue: Option[Double],
+      geneticInteractionScore: Option[Double],
+      geneticInteractionPValue: Option[Double],
+      geneticInteractionFDR: Option[Double],
+      biomarkerList: Option[Seq[NameAndDescription]],
+      projectDescription: Option[String],
+      geneInteractionType: Option[String],
+      targetRole: Option[String],
+      interactingTargetRole: Option[String],
+      ancestry: Option[String],
+      ancestryId: Option[String],
+      statisticalMethod: Option[String],
+      statisticalMethodOverview: Option[String],
+      studyCasesWithQualifyingVariants: Option[Long],
+      releaseVersion: Option[String],
+      releaseDate: Option[String],
+      warningMessage: Option[String],
+      variantEffect: Option[String],
+      directionOnTrait: Option[String],
+      assessments: Option[Seq[String]],
+      primaryProjectHit: Option[Boolean],
+      primaryProjectId: Option[String],
+      assays: Option[Seq[Assays]]
   )
 
   implicit val nameAndDescriptionJsonFormatImp: OFormat[NameAndDescription] =
@@ -191,17 +192,19 @@ object Evidence extends Logging {
 
   implicit val evidenceJsonFormatImp: OFormat[Evidence] = Json.format[Evidence]
 
-  implicit val biomarkerGeneExpressionJsonFormatImp: OFormat[BiomarkerGeneExpression] = Json.format[BiomarkerGeneExpression]
+  implicit val biomarkerGeneExpressionJsonFormatImp: OFormat[BiomarkerGeneExpression] =
+    Json.format[BiomarkerGeneExpression]
 
   implicit val nameAndDescriptionImp: ObjectType[Backend, NameAndDescription] =
     deriveObjectType[Backend, NameAndDescription](
       ObjectTypeName("NameDescription")
     )
 
-  implicit val pathwayTermImp: ObjectType[Backend, PathwayTerm] = deriveObjectType[Backend, PathwayTerm](
-    ObjectTypeName("Pathway"),
-    ObjectTypeDescription("Pathway entry")
-  )
+  implicit val pathwayTermImp: ObjectType[Backend, PathwayTerm] =
+    deriveObjectType[Backend, PathwayTerm](
+      ObjectTypeName("Pathway"),
+      ObjectTypeDescription("Pathway entry")
+    )
 
   implicit val sequenceOntologyTermImp: ObjectType[Backend, SequenceOntologyTerm] =
     deriveObjectType[Backend, SequenceOntologyTerm](
@@ -242,29 +245,35 @@ object Evidence extends Logging {
       ObjectTypeName("LabelledElement")
     )
 
-  implicit val labelledUriImp: ObjectType[Backend, LabelledUri] = deriveObjectType[Backend, LabelledUri](
-    ObjectTypeName("LabelledUri")
-  )
+  implicit val labelledUriImp: ObjectType[Backend, LabelledUri] =
+    deriveObjectType[Backend, LabelledUri](
+      ObjectTypeName("LabelledUri")
+    )
 
-  implicit val biomarkerGeneExpressionImp: ObjectType[Backend, BiomarkerGeneExpression] = deriveObjectType[Backend, BiomarkerGeneExpression](
-    ObjectTypeName("BiomarkerGeneExpression"),
-    ReplaceField(
-      "id",
-      Field(
+  implicit val biomarkerGeneExpressionImp: ObjectType[Backend, BiomarkerGeneExpression] =
+    deriveObjectType[Backend, BiomarkerGeneExpression](
+      ObjectTypeName("BiomarkerGeneExpression"),
+      ReplaceField(
         "id",
-        OptionType(geneOntologyTermImp),
-        description = None,
-        resolve = js => {
-          val goId = js.value.id.map(_.replace('_', ':'))
-          goFetcher.deferOpt(goId)
-        }
+        Field(
+          "id",
+          OptionType(geneOntologyTermImp),
+          description = None,
+          resolve = js => {
+            val goId = js.value.id.map(_.replace('_', ':'))
+            goFetcher.deferOpt(goId)
+          }
+        )
       )
     )
+
+  case class BiomarkerVariant(id: Option[String],
+                              name: Option[String],
+                              functionalConsequenceId: Option[String]
   )
 
-  case class BiomarkerVariant(id: Option[String], name: Option[String], functionalConsequenceId: Option[String])
-
-  implicit val biomarkerVariantJsonFormatImp: OFormat[BiomarkerVariant] = Json.format[BiomarkerVariant]
+  implicit val biomarkerVariantJsonFormatImp: OFormat[BiomarkerVariant] =
+    Json.format[BiomarkerVariant]
 
   implicit val biomarkerVariantImp: ObjectType[Backend, BiomarkerVariant] = deriveObjectType(
     ObjectTypeName("geneticVariation"),
@@ -282,7 +291,9 @@ object Evidence extends Logging {
     )
   )
 
-  case class Biomarkers(geneExpression: Option[Seq[BiomarkerGeneExpression]], geneticVariation: Option[Seq[BiomarkerVariant]])
+  case class Biomarkers(geneExpression: Option[Seq[BiomarkerGeneExpression]],
+                        geneticVariation: Option[Seq[BiomarkerVariant]]
+  )
 
   implicit val biomarkersJsonFormatImp: OFormat[Biomarkers] = Json.format[Biomarkers]
 
@@ -307,12 +318,19 @@ object Evidence extends Logging {
     DocumentField("oddsRatioConfidenceIntervalLower", "Confidence interval lower-bound"),
     DocumentField("studySampleSize", "Sample size"),
     DocumentField("literature", "list of pub med publications ids"),
-    DocumentField("studyStopReasonCategories","Predicted reason(s) why the study has been stopped based on studyStopReason"),
+    DocumentField("studyStopReasonCategories",
+                  "Predicted reason(s) why the study has been stopped based on studyStopReason"
+    ),
     DocumentField("ancestry", "Genetic origin of a population"),
     DocumentField("ancestryId", "Identifier of the ancestry in the HANCESTRO ontology"),
     DocumentField("statisticalMethod", "The statistical method used to calculate the association"),
-    DocumentField("statisticalMethodOverview", "Overview of the statistical method used to calculate the association"),
-    DocumentField("studyCasesWithQualifyingVariants", "Number of cases in a case-control study that carry at least one allele of the qualifying variant"),
+    DocumentField("statisticalMethodOverview",
+                  "Overview of the statistical method used to calculate the association"
+    ),
+    DocumentField(
+      "studyCasesWithQualifyingVariants",
+      "Number of cases in a case-control study that carry at least one allele of the qualifying variant"
+    ),
     DocumentField("releaseVersion", "Release version"),
     DocumentField("releaseDate", "Release date"),
     DocumentField("warningMessage", "Warning message"),

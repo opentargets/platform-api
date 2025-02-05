@@ -1,7 +1,19 @@
 package models.gql
 
 import models.entities.Evidence.SequenceOntologyTerm
-import models.entities.{Biosample, Disease, Drug, Expressions, GeneOntologyTerm, HPO, Indications, OtarProjects, Reactome, Target, VariantIndex}
+import models.entities.{
+  Biosample,
+  Disease,
+  Drug,
+  Expressions,
+  GeneOntologyTerm,
+  HPO,
+  Indications,
+  OtarProjects,
+  Reactome,
+  Target,
+  VariantIndex
+}
 import models.{Backend, entities}
 import play.api.Logging
 import play.api.libs.json.{JsValue, __}
@@ -11,12 +23,14 @@ import scala.concurrent.*
 
 object Fetchers extends Logging {
   val soTermsFetcherCache = FetcherCache.simple
-  implicit val soTermHasId: HasId[SequenceOntologyTerm, String] = HasId[SequenceOntologyTerm, String](_.id)
-  val soTermsFetcher: Fetcher[Backend, SequenceOntologyTerm, SequenceOntologyTerm, String] = Fetcher(
-    config =
-      FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(soTermsFetcherCache),
-    fetch = (ctx: Backend, ids: Seq[String]) => ctx.getSoTerms(ids)
-  )
+  implicit val soTermHasId: HasId[SequenceOntologyTerm, String] =
+    HasId[SequenceOntologyTerm, String](_.id)
+  val soTermsFetcher: Fetcher[Backend, SequenceOntologyTerm, SequenceOntologyTerm, String] =
+    Fetcher(
+      config =
+        FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(soTermsFetcherCache),
+      fetch = (ctx: Backend, ids: Seq[String]) => ctx.getSoTerms(ids)
+    )
   val targetsFetcherCache = FetcherCache.simple
 
   // target
