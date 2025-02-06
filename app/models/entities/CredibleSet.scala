@@ -16,6 +16,7 @@ import models.gql.Objects.{
   colocalisationsImp,
   l2GPredictionsImp
 }
+import models.Helpers.ComplexityCalculator._
 import play.api.Logging
 import play.api.libs.json._
 import play.api.libs.json.{Reads, JsValue, Json, OFormat, OWrites}
@@ -106,9 +107,7 @@ object CredibleSet extends Logging {
       l2GPredictionsImp,
       description = None,
       arguments = pageArg :: Nil,
-      complexity = Some((ctx, args, childScore) =>
-        args.arg(pageArg).getOrElse(Pagination.mkDefault).size * childScore
-      ),
+      complexity = Some(complexityCalculator(pageArg)),
       resolve = js => {
         val id: String = (js.value \ "studyLocusId").as[String]
         L2GPredictionsDeferred(id, js.arg(pageArg))
@@ -226,9 +225,7 @@ object CredibleSet extends Logging {
       "locus",
       lociImp,
       arguments = variantIds :: pageArg :: Nil,
-      complexity = Some((ctx, args, childScore) =>
-        args.arg(pageArg).getOrElse(Pagination.mkDefault).size * childScore
-      ),
+      complexity = Some(complexityCalculator(pageArg)),
       description = None,
       resolve = js => {
         import scala.concurrent.ExecutionContext.Implicits.global
@@ -265,9 +262,7 @@ object CredibleSet extends Logging {
       colocalisationsImp,
       description = None,
       arguments = studyTypes :: pageArg :: Nil,
-      complexity = Some((ctx, args, childScore) =>
-        args.arg(pageArg).getOrElse(Pagination.mkDefault).size * childScore
-      ),
+      complexity = Some(complexityCalculator(pageArg)),
       resolve = js => {
         val id = (js.value \ "studyLocusId").as[String]
         ColocalisationsDeferred(id, js.arg(studyTypes), js.arg(pageArg))
