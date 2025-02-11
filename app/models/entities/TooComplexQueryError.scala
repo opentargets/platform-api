@@ -9,7 +9,7 @@ import sangria.marshalling.ResultMarshaller
 
 case object TooComplexQueryError
     extends Exception(
-      "Query is too expensive. The response size is likely to be too large. Try requesting smaller page sizes"
+      "Query is too expensive. The response size is likely to be too large. Try requesting smaller page sizes or fewer items"
     )
     with Logging {
 
