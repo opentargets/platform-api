@@ -1653,75 +1653,77 @@ object Objects extends Logging {
   implicit val ldSetImp: ObjectType[Backend, LdSet] =
     deriveObjectType[Backend, LdSet]()
 
-  implicit val credibleSetImp: ObjectType[Backend, CredibleSet] =
-    deriveObjectType[Backend, CredibleSet](
-      ObjectTypeName("CredibleSet"),
-      ReplaceField(
-        "variantId",
-        Field(
-          "variant",
-          OptionType(variantIndexImp),
-          description = None,
-          resolve = js => {
-            val id = js.value.variantId
-            logger.debug(s"Finding variant for id: $id")
-            variantFetcher.deferOpt(id)
-          }
-        )
-      ),
-      ReplaceField(
+  implicit val credibleSetImp: ObjectType[Backend, CredibleSet] = deriveObjectType[Backend, CredibleSet](
+    ObjectTypeName("CredibleSet"),
+    ReplaceField(
+      "variantId",
+      Field(
+        "variant",
+        OptionType(variantIndexImp),
+        description = None,
+        resolve = js => {
+          val id = js.value.variantId
+          logger.debug(s"Finding variant for id: $id")
+          variantFetcher.deferOpt(id)
+        }
+      )
+    ),
+    ReplaceField(
+      "studyType",
+      Field(
         "studyType",
-        Field(
-          "studyType",
-          OptionType(StudyType),
-          description = None,
-          resolve = js => js.value.studyType
-        )
+        OptionType(StudyType),
+        description = None,
+        resolve = js => js.value.studyType
+      )
+    ),
+    AddFields(
+      Field(
+        "l2GPredictions",
+        l2GPredictionsImp,
+        description = None,
+        arguments = pageArg :: Nil,
+        complexity = Some(complexityCalculator(pageArg)),
+        resolve = js => {
+          val id: String = js.value.studyLocusId
+          L2GPredictionsDeferred(id, js.arg(pageArg))
+        }
       ),
-      AddFields(
-        Field(
-          "l2GPredictions",
-          l2GPredictionsImp,
-          description = None,
-          arguments = pageArg :: Nil,
-          resolve = js => {
-            val id: String = js.value.studyLocusId
-            L2GPredictionsDeferred(id, js.arg(pageArg))
-          }
-        ),
-        Field(
-          "locus",
-          lociImp,
-          arguments = variantIds :: pageArg :: Nil,
-          description = None,
-          resolve = js => {
-            import scala.concurrent.ExecutionContext.Implicits.global
-            val id = js.value.studyLocusId
-            LocusDeferred(id, js.arg(variantIds), js.arg(pageArg))
-          }
-        ),
-        Field(
-          "colocalisation",
-          colocalisationsImp,
-          description = None,
-          arguments = studyTypes :: pageArg :: Nil,
-          resolve = js => {
-            val id = js.value.studyLocusId
-            ColocalisationsDeferred(id, js.arg(studyTypes), js.arg(pageArg))
-          }
-        ),
-        Field(
-          "study",
-          OptionType(studyImp),
-          description = Some("Gwas study"),
-          resolve = js => {
-            val studyId = js.value.studyId
-            logger.debug(s"Finding gwas study: $studyId")
-            studyFetcher.deferOpt(studyId)
-          }
-        )
+      Field(
+        "locus",
+        lociImp,
+        arguments = variantIds :: pageArg :: Nil,
+        description = None,
+        complexity = Some(complexityCalculator(pageArg)),
+        resolve = js => {
+          import scala.concurrent.ExecutionContext.Implicits.global
+          val id = js.value.studyLocusId
+          LocusDeferred(id, js.arg(variantIds), js.arg(pageArg))
+        }
+      ),
+      Field(
+        "colocalisation",
+        colocalisationsImp,
+        description = None,
+        arguments = studyTypes :: pageArg :: Nil,
+        complexity = Some(complexityCalculator(pageArg)),
+        resolve = js => {
+          val id = js.value.studyLocusId
+          ColocalisationsDeferred(id, js.arg(studyTypes), js.arg(pageArg))
+        }
+      ),
+      Field(
+        "study",
+        OptionType(studyImp),
+        description = Some("Gwas study"),
+        resolve = js => {
+          val studyId = js.value.studyId
+          logger.debug(s"Finding gwas study: $studyId")
+          studyFetcher.deferOpt(studyId)
+        }
       )
     )
+  )
 
   implicit val ldPopulationStructureImp: ObjectType[Backend, LdPopulationStructure] =
     deriveObjectType[Backend, LdPopulationStructure]()
@@ -1729,7 +1731,7 @@ object Objects extends Logging {
   implicit val sumStatQCImp: ObjectType[Backend, SumStatQC] = deriveObjectType[Backend, SumStatQC]()
 
   implicit val studyImp: ObjectType[Backend, Study] = deriveObjectType(
-    ObjectTypeName("Gwas"),
+    ObjectTypeName("Study"),
     ObjectTypeDescription("A genome-wide association study"),
     DocumentField("condition", "Condition"),
     DocumentField("projectId", "The project identifier"),
@@ -1809,6 +1811,7 @@ object Objects extends Logging {
         credibleSetsImp,
         arguments = pageArg :: Nil,
         description = Some("Credible sets"),
+        complexity = Some(complexityCalculator(pageArg)),
         resolve = js => {
           val studyId = js.value.studyId
           CredibleSetsByStudyDeferred(studyId, js.arg(pageArg))
