@@ -7,13 +7,32 @@ import play.api.libs.json.{JsValue, Json, OFormat}
 import models.entities.CredibleSetQueryArgs
 import models.entities.Study.{LdPopulationStructure, Sample, SumStatQC}
 import models.gql.Objects.{biosampleImp, credibleSetImp, diseaseImp, targetImp}
-import sangria.schema.{BooleanType, DeferredValue, EnumType, Field, IntType, ListType, ObjectType, OptionType, StringType, fields, given}
+import sangria.schema.{
+  BooleanType,
+  DeferredValue,
+  EnumType,
+  Field,
+  IntType,
+  ListType,
+  ObjectType,
+  OptionType,
+  StringType,
+  fields,
+  given
+}
 import models.gql.{CredibleSetsByStudyDeferred, StudyTypeEnum}
 import models.gql.Arguments.{StudyType, pageArg}
 import play.api.libs.json.*
 import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json
-import sangria.macros.derive.{AddFields, DocumentField, ObjectTypeDescription, ObjectTypeName, ReplaceField, deriveObjectType}
+import sangria.macros.derive.{
+  AddFields,
+  DocumentField,
+  ObjectTypeDescription,
+  ObjectTypeName,
+  ReplaceField,
+  deriveObjectType
+}
 
 case class StudyQueryArgs(
     id: Seq[String] = Seq.empty,
@@ -78,5 +97,3 @@ object Study extends Logging {
   implicit val studyF: OFormat[Study] = Json.format[Study]
 
 }
-
-
