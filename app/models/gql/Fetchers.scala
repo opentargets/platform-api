@@ -1,6 +1,22 @@
 package models.gql
 
-import models.entities.{Biosample, CredibleSet, Disease, Drug, Evidence, Expressions, GeneOntologyTerm, HPO, Indications, OtarProjects, Reactome, SequenceOntologyTerm, Study, Target, VariantIndex}
+import models.entities.{
+  Biosample,
+  CredibleSet,
+  Disease,
+  Drug,
+  Evidence,
+  Expressions,
+  GeneOntologyTerm,
+  HPO,
+  Indications,
+  OtarProjects,
+  Reactome,
+  SequenceOntologyTerm,
+  Study,
+  Target,
+  VariantIndex
+}
 import models.{Backend, entities}
 import play.api.Logging
 import play.api.libs.json.{JsValue, __}

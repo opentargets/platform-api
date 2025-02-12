@@ -3,12 +3,10 @@ package models
 import play.api.libs.json.*
 import scala.quoted.*
 
-
 trait EnumFormat[T] extends Format[T]
 
 object EnumFormat:
   inline def derived[T]: EnumFormat[T] = ${ EnumMacros.enumFormatMacro[T] }
-
 
 object EnumMacros {
 
@@ -32,9 +30,9 @@ object EnumMacros {
       new EnumFormat[T] {
         private def valueOfUnsafe(name: String): T = ${ reifyValueOf('name) }
 
-        override def reads(json: JsValue): JsResult[T] = try {
+        override def reads(json: JsValue): JsResult[T] = try
           JsSuccess(valueOfUnsafe(json.as[JsString].value))
-        } catch {
+        catch {
           case e: NoSuchElementException => JsError(e.getMessage)
         }
 

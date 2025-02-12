@@ -25,7 +25,7 @@ object StudyTypeEnum extends Enumeration {
 
 object Arguments {
   import sangria.macros.derive._
-  implicit val StudyType:EnumType[StudyTypeEnum.Value] = deriveEnumType[StudyTypeEnum.Value]()
+  implicit val StudyType: EnumType[StudyTypeEnum.Value] = deriveEnumType[StudyTypeEnum.Value]()
 //  implicit val StudyType: EnumType[StudyTypeEnum] = EnumType("StudyType", values = List(
 //    EnumValue("tuqtl", value = StudyTypeEnum.tuqtl),
 //    EnumValue("pqtl", value = StudyTypeEnum.pqtl),
