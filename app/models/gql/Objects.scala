@@ -1,24 +1,22 @@
 package models.gql
 
-import models._
-import models.entities.Configuration._
-import models.entities.Evidence._
-import models.entities.Evidences._
-import models.entities.Study.studyImp
-import models.entities.Interactions._
+import models.*
+import models.entities.Configuration.*
+import models.entities.Evidence.*
+import models.entities.Evidences.*
+import models.entities.Interactions.*
 import models.entities.Publications.publicationsImp
-import models.entities._
-import models.gql.Arguments._
-import models.gql.Fetchers._
+import models.entities.*
+import models.gql.Arguments.*
+import models.gql.Fetchers.*
 import play.api.Logging
-import play.api.libs.json._
-import sangria.macros.derive.{DocumentField, _}
-import sangria.schema._
-
+import play.api.libs.json.*
+import sangria.macros.derive.{DocumentField, *}
+import sangria.schema.*
+import models.entities.Loci.*
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent._
+import scala.concurrent.*
 import models.entities.CredibleSets.credibleSetsImp
-import models.entities.CredibleSet.credibleSetImp
 
 object Objects extends Logging {
   implicit val metaDataVersionImp: ObjectType[Backend, DataVersion] =
@@ -1625,6 +1623,164 @@ object Objects extends Logging {
         OptionType(ListType(StringType)),
         description = Some("list of central pub med publications ids"),
         resolve = js => js.value.pmcIds
+      )
+    )
+  )
+
+  implicit val credibleSetImp: ObjectType[Backend, CredibleSet] = deriveObjectType[Backend, CredibleSet](
+    ObjectTypeName("CredibleSet"),
+    ReplaceField(
+      "variantId",
+      Field(
+        "variant",
+        OptionType(variantIndexImp),
+        description = None,
+        resolve = js => {
+          val id = js.value.variantId
+          logger.debug(s"Finding variant for id: $id")
+          variantFetcher.deferOpt(id)
+        }
+      )
+    ),
+    ReplaceField(
+      "studyType",
+      Field(
+        "studyType",
+        OptionType(StudyType),
+        description = None,
+        resolve = js => js.value.studyType
+      )
+    ),
+    AddFields(
+      Field(
+        "l2GPredictions",
+        l2GPredictionsImp,
+        description = None,
+        arguments = pageArg :: Nil,
+        resolve = js => {
+          val id: String = js.value.studyLocusId
+          L2GPredictionsDeferred(id, js.arg(pageArg))
+        }
+      ),
+      Field(
+        "locus",
+        lociImp,
+        arguments = variantIds :: pageArg :: Nil,
+        description = None,
+        resolve = js => {
+          import scala.concurrent.ExecutionContext.Implicits.global
+          val id = js.value.studyLocusId
+          LocusDeferred(id, js.arg(variantIds), js.arg(pageArg))
+        }
+      ),
+      Field(
+        "colocalisation",
+        colocalisationsImp,
+        description = None,
+        arguments = studyTypes :: pageArg :: Nil,
+        resolve = js => {
+          val id = js.value.studyLocusId
+          ColocalisationsDeferred(id, js.arg(studyTypes), js.arg(pageArg))
+        }
+      ),
+      Field(
+        "study",
+        OptionType(studyImp),
+        description = Some("Gwas study"),
+        resolve = js => {
+          val studyId = js.value.studyId
+          logger.debug(s"Finding gwas study: $studyId")
+          studyFetcher.deferOpt(studyId)
+        }
+      )
+    )
+  )
+
+  implicit val studyImp: ObjectType[Backend, Study] = deriveObjectType(
+    ObjectTypeName("Gwas"),
+    ObjectTypeDescription("A genome-wide association study"),
+    DocumentField("condition", "Condition"),
+    DocumentField("projectId", "The project identifier"),
+    ReplaceField(
+      "studyId",
+      Field(
+        "id",
+        StringType,
+        description = Some("The study identifier"),
+        resolve = js => js.value.studyId
+      )
+    ),
+    ReplaceField(
+      "studyType",
+      Field(
+        "studyType",
+        OptionType(StudyType),
+        description = Some("The study type"),
+        resolve = js => js.value.studyType
+      )
+    ),
+    ReplaceField(
+      "geneId",
+      Field(
+        "target",
+        OptionType(targetImp),
+        Some("Target"),
+        resolve = js => {
+          val geneId = js.value.geneId
+          logger.debug(s"Finding target: $geneId")
+          targetsFetcher.deferOpt(geneId)
+        }
+      )
+    ),
+    ReplaceField(
+      "biosampleFromSourceId",
+      Field(
+        "biosample",
+        OptionType(biosampleImp),
+        Some("biosample"),
+        resolve = js => {
+          val biosampleId = js.value.biosampleFromSourceId
+          biosamplesFetcher.deferOpt(biosampleId)
+        }
+      )
+    ),
+    ReplaceField(
+      "traitFromSourceMappedIds",
+      Field(
+        "diseases",
+        OptionType(ListType(diseaseImp)),
+        None,
+        resolve = js => {
+          val ids = js.value.traitFromSourceMappedIds.getOrElse(Seq.empty)
+          logger.debug(s"Finding diseases for ids: $ids")
+          diseasesFetcher.deferSeqOpt(ids)
+        }
+      )
+    ),
+    ReplaceField(
+      "backgroundTraitFromSourceMappedIds",
+      Field(
+        "backgroundTraits",
+        OptionType(ListType(diseaseImp)),
+        None,
+        resolve = js => {
+          val ids = js.value.backgroundTraitFromSourceMappedIds
+            .getOrElse(Seq.empty)
+          logger.debug(s"Finding diseases for ids: $ids")
+          diseasesFetcher.deferSeqOpt(ids)
+        }
+      )
+    ),
+    AddFields(
+      Field(
+        "credibleSets",
+        credibleSetsImp,
+        arguments = pageArg :: Nil,
+        description = Some("Credible sets"),
+        resolve = js => {
+          val studyId = js.value.studyId
+          CredibleSetsByStudyDeferred(studyId, js.arg(pageArg))
+        }
       )
     )
   )

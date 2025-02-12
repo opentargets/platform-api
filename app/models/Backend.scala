@@ -201,7 +201,7 @@ class Backend @Inject() (implicit
       .map(_.mappedHits)
   }
 
-  def getStudy(ids: Seq[String]): Future[IndexedSeq[JsValue]] = {
+  def getStudy(ids: Seq[String]): Future[IndexedSeq[Study]] = {
     val indexName = getIndexOrDefault("gwas_index")
     val termsQuery = Map("studyId.keyword" -> ids)
     val retriever =
@@ -210,7 +210,7 @@ class Backend @Inject() (implicit
           indexName,
           termsQuery,
           Pagination.mkMax,
-          fromJsValue[JsValue]
+          fromJsValue[Study]
         )
     retriever.map(_.mappedHits)
   }
@@ -238,7 +238,7 @@ class Backend @Inject() (implicit
           indexName,
           termsQuery,
           pag,
-          fromJsValue[JsValue]
+          fromJsValue[Study]
         )
       retriever.map {
         case Results(Seq(), _, _, _) => Studies.empty
@@ -356,7 +356,7 @@ class Backend @Inject() (implicit
     }
   }
 
-  def getCredibleSet(ids: Seq[String]): Future[IndexedSeq[JsValue]] = {
+  def getCredibleSet(ids: Seq[String]): Future[IndexedSeq[CredibleSet]] = {
     val indexName = getIndexOrDefault("credible_set")
     val termsQuery = Map("studyLocusId.keyword" -> ids)
     val retriever =
@@ -365,7 +365,7 @@ class Backend @Inject() (implicit
           indexName,
           termsQuery,
           Pagination.mkMax,
-          fromJsValue[JsValue],
+          fromJsValue[CredibleSet],
           excludedFields = Seq("locus", "ldSet")
         )
     retriever.map(_.mappedHits)
@@ -408,7 +408,7 @@ class Backend @Inject() (implicit
           indexName,
           query,
           pag,
-          fromJsValue[JsValue],
+          fromJsValue[CredibleSet],
           excludedFields = Seq("locus", "ldSet")
         )
     retriever.map {
@@ -437,7 +437,7 @@ class Backend @Inject() (implicit
       esRetriever
         .getMultiByIndexedTermsMust(
           queries,
-          fromJsValue[JsValue],
+          fromJsValue[CredibleSet],
           None,
           Some(ResolverField("studyId"))
         )
@@ -482,7 +482,7 @@ class Backend @Inject() (implicit
       esRetriever
         .getMultiQ(
           boolQueries,
-          fromJsValue[JsValue],
+          fromJsValue[CredibleSet],
           None,
           Some(ResolverField(matched_queries = true))
         )

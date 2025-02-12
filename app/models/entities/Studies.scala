@@ -1,13 +1,13 @@
 package models.entities
 
 import models.Backend
-import models.entities.Study.studyImp
+import models.gql.Objects.studyImp
 import play.api.libs.json.JsValue
 import sangria.schema.{ObjectType, Field, ListType, LongType, fields}
 
 case class Studies(
     count: Long,
-    rows: IndexedSeq[JsValue]
+    rows: IndexedSeq[Study]
 )
 
 object Studies {

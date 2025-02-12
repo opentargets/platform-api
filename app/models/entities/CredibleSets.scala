@@ -1,14 +1,14 @@
 package models.entities
 
 import models.Backend
-import models.entities.CredibleSet.credibleSetImp
 import play.api.libs.json.JsValue
 import sangria.schema.{ObjectType, Field, ListType, LongType, fields}
 import models.gql.TypeWithId
+import models.gql.Objects.credibleSetImp
 
 case class CredibleSets(
     count: Long,
-    rows: IndexedSeq[JsValue],
+    rows: IndexedSeq[CredibleSet],
     id: String = ""
 ) extends TypeWithId
 

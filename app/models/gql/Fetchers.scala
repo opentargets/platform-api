@@ -1,20 +1,6 @@
 package models.gql
 
-import models.entities.{
-  Evidence,
-  SequenceOntologyTerm,
-  Biosample,
-  Disease,
-  Drug,
-  Expressions,
-  GeneOntologyTerm,
-  HPO,
-  Indications,
-  OtarProjects,
-  Reactome,
-  Target,
-  VariantIndex
-}
+import models.entities.{Biosample, CredibleSet, Disease, Drug, Evidence, Expressions, GeneOntologyTerm, HPO, Indications, OtarProjects, Reactome, SequenceOntologyTerm, Study, Target, VariantIndex}
 import models.{Backend, entities}
 import play.api.Logging
 import play.api.libs.json.{JsValue, __}
@@ -128,9 +114,9 @@ object Fetchers extends Logging {
   )
 
   val credibleSetFetcherCache = FetcherCache.simple
-  val credibleSetFetcher: Fetcher[Backend, JsValue, JsValue, String] = {
-    implicit val credibleSetFetcherId: HasId[JsValue, String] =
-      HasId[JsValue, String](js => (js \ "studyLocusId").as[String])
+  val credibleSetFetcher: Fetcher[Backend, CredibleSet, CredibleSet, String] = {
+    implicit val credibleSetFetcherId: HasId[CredibleSet, String] =
+      HasId[CredibleSet, String](js => js.studyLocusId)
     Fetcher(
       config = FetcherConfig
         .maxBatchSize(entities.Configuration.batchSize)
@@ -140,9 +126,9 @@ object Fetchers extends Logging {
   }
 
   val studyFetcherCache = FetcherCache.simple
-  val studyFetcher: Fetcher[Backend, JsValue, JsValue, String] = {
-    implicit val studyFetcherId: HasId[JsValue, String] =
-      HasId[JsValue, String](js => (js \ "studyId").as[String])
+  val studyFetcher: Fetcher[Backend, Study, Study, String] = {
+    implicit val studyFetcherId: HasId[Study, String] =
+      HasId[Study, String](js => (js.studyId))
     Fetcher(
       config =
         FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(studyFetcherCache),

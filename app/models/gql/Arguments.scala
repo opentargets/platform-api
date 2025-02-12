@@ -9,17 +9,34 @@ import sangria.marshalling.playJson.*
 import sangria.marshalling.FromInput
 import sangria.util.tag
 import sangria.util.tag.@@
+import play.api.libs.json.{Format, Json}
+import models.EnumFormat
 
 object StudyTypeEnum extends Enumeration {
 
   type StudyType = Value
   val tuqtl, pqtl, eqtl, sqtl, sctuqtl, scpqtl, sceqtl, scsqtl, gwas = Value
+
+  implicit val studyTypeF: Format[StudyType] = Json.formatEnum(this)
 }
+
+//enum StudyTypeEnum derives EnumFormat:
+//  case tuqtl, pqtl, eqtl, sqtl, sctuqtl, scpqtl, sceqtl, scsqtl, gwas
 
 object Arguments {
   import sangria.macros.derive._
-
-  implicit val StudyType: EnumType[StudyTypeEnum.Value] = deriveEnumType[StudyTypeEnum.Value]()
+  implicit val StudyType:EnumType[StudyTypeEnum.Value] = deriveEnumType[StudyTypeEnum.Value]()
+//  implicit val StudyType: EnumType[StudyTypeEnum] = EnumType("StudyType", values = List(
+//    EnumValue("tuqtl", value = StudyTypeEnum.tuqtl),
+//    EnumValue("pqtl", value = StudyTypeEnum.pqtl),
+//    EnumValue("eqtl", value = StudyTypeEnum.eqtl),
+//    EnumValue("sqtl", value = StudyTypeEnum.sqtl),
+//    EnumValue("sctuqtl", value = StudyTypeEnum.sctuqtl),
+//    EnumValue("scpqtl", value = StudyTypeEnum.scpqtl),
+//    EnumValue("sceqtl", value = StudyTypeEnum.sceqtl),
+//    EnumValue("scsqtl", value = StudyTypeEnum.scsqtl),
+//    EnumValue("gwas", value = StudyTypeEnum.gwas),
+//  ))
   val paginationGQLImp: InputObjectType[Pagination] = deriveInputObjectType[Pagination]()
 
   val datasourceSettingsInputImp: InputObjectType[DatasourceSettings] =

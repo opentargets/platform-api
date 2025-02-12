@@ -4,10 +4,8 @@ import play.api.Logging
 import play.api.libs.json._
 import sangria.schema._
 import entities._
-import models.entities.CredibleSet.credibleSetImp
 import models.entities.CredibleSets.credibleSetsImp
 import models.entities.Studies.studiesImp
-import models.entities.Study.studyImp
 import sangria.execution.deferred._
 import gql.validators.QueryTermsValidator._
 import scala.concurrent.ExecutionContext.Implicits.global
