@@ -971,6 +971,7 @@ class ElasticRetriever @Inject() (
               .highlighting(HighlightOptions(highlighterType = Some("fvh")), hlFieldSeq)
               .trackTotalHits(true)
               .sourceExclude("terms", "terms5", "terms25")
+              .searchType(SearchType.DFS_QUERY_THEN_FETCH)
             logger.trace(client.show(mhits))
             mhits
           }
