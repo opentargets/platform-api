@@ -923,6 +923,23 @@ class ElasticRetriever @Inject() (
         .modifier(FieldValueFactorFunctionModifier.NONE)
     )
 
+    val exactSearchFields = Seq(
+      ("id", 1000d),
+      ("keywords", 1000d),
+      ("name", 1000d),
+      ("prefixes", 500d),
+      ("terms5", 100d),
+      ("terms25", 50d),
+      ("terms", 25d),
+      ("ngrams", 1d)
+    )
+    val exactMatchQueries = exactSearchFields.map { f =>
+      functionScoreQuery(termQuery(f._1 + ".raw", qString).caseInsensitive(true).boost(f._2))
+        .functions(
+          fieldFactorScore("multiplier").factor(1.0).modifier(FieldValueFactorFunctionModifier.NONE)
+        )
+    }
+
     val aggFns = Seq(
       termsAgg("entities", "entity.raw")
         .size(1000)
@@ -931,7 +948,10 @@ class ElasticRetriever @Inject() (
     )
 
     val filterQueries = boolQuery().must() :: Nil
-    val fnQueries = boolQuery().should(keywordQueryFn, stringQueryFn) :: Nil
+    val fnQueries = boolQuery().should(
+      Seq(keywordQueryFn, stringQueryFn)
+        ++ exactMatchQueries
+    ) :: Nil
     val mainQuery = boolQuery().must(fnQueries ::: filterQueries)
 
     if (qString.nonEmpty) {
