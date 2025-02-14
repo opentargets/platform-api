@@ -8,10 +8,11 @@ case class L2GPrediction(
     studyLocusId: String,
     geneId: String,
     score: Double,
-    locusToGeneFeatures: Option[Seq[L2GFeature]]
+    features: Option[Seq[L2GFeature]],
+    shapBaseValue: Double
 )
 
-case class L2GFeature(key: String, value: Double)
+case class L2GFeature(name: String, value: Double, shapValue: Double)
 
 object L2GPrediction extends Logging {
   implicit val l2GFeatureF: OFormat[L2GFeature] = Json.format[L2GFeature]
