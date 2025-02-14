@@ -2,7 +2,6 @@ package models.gql
 
 import models.*
 import models.entities.Configuration.*
-import models.entities.Evidence.*
 import models.entities.Evidences.*
 import models.entities.Interactions.*
 import models.entities.Publications.publicationsImp
@@ -14,9 +13,11 @@ import play.api.libs.json.*
 import sangria.macros.derive.{DocumentField, *}
 import sangria.schema.*
 import models.entities.Loci.*
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.*
 import models.entities.CredibleSets.credibleSetsImp
+import models.entities.Study.{LdPopulationStructure, Sample, SumStatQC}
 
 object Objects extends Logging {
   implicit val metaDataVersionImp: ObjectType[Backend, DataVersion] =
@@ -1627,6 +1628,9 @@ object Objects extends Logging {
     )
   )
 
+  implicit val ldSetImp: ObjectType[Backend, LdSet] =
+    deriveObjectType[Backend, LdSet]()
+
   implicit val credibleSetImp: ObjectType[Backend, CredibleSet] =
     deriveObjectType[Backend, CredibleSet](
       ObjectTypeName("CredibleSet"),
@@ -1696,6 +1700,11 @@ object Objects extends Logging {
         )
       )
     )
+
+  implicit val ldPopulationStructureImp: ObjectType[Backend, LdPopulationStructure] =
+    deriveObjectType[Backend, LdPopulationStructure]()
+  implicit val sampleImp: ObjectType[Backend, Sample] = deriveObjectType[Backend, Sample]()
+  implicit val sumStatQCImp: ObjectType[Backend, SumStatQC] = deriveObjectType[Backend, SumStatQC]()
 
   implicit val studyImp: ObjectType[Backend, Study] = deriveObjectType(
     ObjectTypeName("Gwas"),

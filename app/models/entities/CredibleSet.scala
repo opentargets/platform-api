@@ -1,38 +1,8 @@
 package models.entities
 
-import models.Backend
 import models.gql.StudyTypeEnum
-import models.gql.Arguments.StudyType
-import models.entities.Loci.lociImp
-import models.gql.Fetchers.{studyFetcher, targetsFetcher, variantFetcher}
-import models.gql.ColocalisationsDeferred
-import models.gql.LocusDeferred
-import models.gql.L2GPredictionsDeferred
-import models.gql.Objects.{
-  colocalisationsImp,
-  l2GPredictionsImp,
-  logger,
-  targetImp,
-  variantIndexImp,
-  studyImp
-}
 import play.api.Logging
 import play.api.libs.json.*
-import play.api.libs.functional.syntax.*
-import sangria.schema.{
-  DeferredFutureValue,
-  DeferredValue,
-  Field,
-  FloatType,
-  IntType,
-  ListType,
-  ObjectType,
-  OptionType,
-  StringType,
-  fields
-}
-import models.gql.Arguments.{pageArg, pageSize, studyTypes, variantIds}
-import sangria.macros.derive.{AddFields, ObjectTypeName, ReplaceField, deriveObjectType}
 
 case class LdSet(
     tagVariantId: Option[String],
@@ -75,17 +45,9 @@ case class CredibleSetQueryArgs(
     regions: Seq[String] = Seq.empty
 )
 
-implicit val ldSetImp: ObjectType[Backend, LdSet] =
-  deriveObjectType[Backend, LdSet]()
-
 object CredibleSet extends Logging {
-  import sangria.macros.derive._
 
   implicit val ldSetF: OFormat[LdSet] = Json.format[LdSet]
-
-  import models.{EnumFormat, EnumMacros}
-
-//  implicit val studyTypeEnum: EnumFormat[StudyTypeEnum.Value] = EnumFormat.derived[StudyTypeEnum.Value]
 
   implicit val credibleSetF: OFormat[CredibleSet] = Json.format[CredibleSet]
 }

@@ -9,7 +9,6 @@ import com.sksamuel.elastic4s.requests.searches.sort.SortOrder
 import esecuele.*
 
 import javax.inject.Inject
-import gql.validators.QueryTermsValidator.*
 import models.Helpers.*
 import models.db.{QAOTF, QLITAGG, QW2V, SentenceQuery}
 import models.entities.Publication.*
@@ -26,10 +25,7 @@ import models.entities.SearchFacetsResults.*
 import models.entities.Evidence.*
 import models.entities.SequenceOntologyTerm.*
 import models.entities.*
-import models.gql.Arguments.variantId
 import models.gql.StudyTypeEnum
-import models.InnerResults
-import models.Results
 import org.apache.http.impl.nio.reactor.IOReactorConfig
 import play.api.cache.AsyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
@@ -39,9 +35,7 @@ import play.db.NamedDatabase
 import slick.basic.DatabaseConfig
 
 import java.time.LocalDate
-import scala.collection.immutable.ArraySeq
 import scala.concurrent.*
-import scala.util.{Failure, Success}
 import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
 
 class Backend @Inject() (implicit

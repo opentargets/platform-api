@@ -1,38 +1,11 @@
 package models.entities
 
-import models.Backend
-import models.gql.Fetchers.{biosamplesFetcher, credibleSetFetcher, diseasesFetcher, targetsFetcher}
 import play.api.Logging
-import play.api.libs.json.{JsValue, Json, OFormat}
-import models.entities.CredibleSetQueryArgs
 import models.entities.Study.{LdPopulationStructure, Sample, SumStatQC}
-import models.gql.Objects.{biosampleImp, credibleSetImp, diseaseImp, targetImp}
-import sangria.schema.{
-  BooleanType,
-  DeferredValue,
-  EnumType,
-  Field,
-  IntType,
-  ListType,
-  ObjectType,
-  OptionType,
-  StringType,
-  fields,
-  given
-}
-import models.gql.{CredibleSetsByStudyDeferred, StudyTypeEnum}
-import models.gql.Arguments.{StudyType, pageArg}
+import models.gql.StudyTypeEnum
 import play.api.libs.json.*
 import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json
-import sangria.macros.derive.{
-  AddFields,
-  DocumentField,
-  ObjectTypeDescription,
-  ObjectTypeName,
-  ReplaceField,
-  deriveObjectType
-}
 
 case class StudyQueryArgs(
     id: Seq[String] = Seq.empty,
@@ -71,7 +44,6 @@ case class Study(
 )
 
 object Study extends Logging {
-  import sangria.macros.derive._
 
   case class Sample(ancestry: Option[String], sampleSize: Option[Int])
 
@@ -87,12 +59,6 @@ object Study extends Logging {
     (JsPath \ "key").read[String] and
       (JsPath \ "value").read[Double]
   )(SumStatQC.apply)
-
-  implicit val ldPopulationStructureImp: ObjectType[Backend, LdPopulationStructure] =
-    deriveObjectType[Backend, LdPopulationStructure]()
-  implicit val sampleImp: ObjectType[Backend, Sample] = deriveObjectType[Backend, Sample]()
-  implicit val sumStatQCImp: ObjectType[Backend, SumStatQC] = deriveObjectType[Backend, SumStatQC]()
-//  implicit val studyTypeF: EnumType[StudyTypeEnum] = deriveEnumType[StudyTypeEnum]()
 
   implicit val studyF: OFormat[Study] = Json.format[Study]
 
