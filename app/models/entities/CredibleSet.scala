@@ -22,6 +22,7 @@ import play.api.libs.json._
 import play.api.libs.json.{Reads, JsValue, Json, OFormat, OWrites}
 import play.api.libs.functional.syntax._
 import sangria.schema.{
+  BooleanType,
   Field,
   FloatType,
   IntType,
@@ -66,7 +67,8 @@ case class CredibleSet(studyLocusId: String,
                        ldSet: Option[Seq[LdSet]],
                        studyType: Option[StudyTypeEnum.Value],
                        qtlGeneId: Option[String],
-                       confidence: Option[String]
+                       confidence: Option[String],
+                       isTransQtl: Option[Boolean]
 )
 
 case class CredibleSetQueryArgs(
@@ -273,6 +275,12 @@ object CredibleSet extends Logging {
       OptionType(StringType),
       description = None,
       resolve = js => (js.value \ "confidence").asOpt[String]
+    ),
+    Field(
+      "isTrans",
+      OptionType(BooleanType),
+      description = None,
+      resolve = js => (js.value \ "isTransQtl").asOpt[Boolean]
     )
   )
   val studyField: Field[Backend, JsValue] = Field(
