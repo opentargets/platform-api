@@ -14,19 +14,23 @@ import scala.concurrent._
 import models.gql.Arguments.studyId
 import models.gql.Objects.locationAndSourceImp
 
-
 trait TypeWithId {
   val id: String
 }
 
+enum DeferredType {
+  case Loci
+  case CredibleSets
+  case Colocalisations
+  case L2GPredictions
+}
 
-case class Grouping(entity: String, options: Product)
-
+case class Grouping(label: DeferredType, options: Product)
 
 /** @param id
   *   The ID to resolve on
   * @param grouping
-  *   A tuple of the values that are used to group the deferred values
+  *   The grouping of the deferred value
   * @tparam T
   *   The type of the deferred value
   */
@@ -43,7 +47,7 @@ case class LocusDeferred(studyLocusId: String,
 ) extends DeferredMultiTerm[Loci] {
   val id: String = studyLocusId
   val options = (variantIds, pagination)
-  val grouping = Grouping("Loci", options)
+  val grouping = Grouping(DeferredType.Loci, options)
   def empty(): Loci = Loci.empty()
   def resolver(ctx: Backend): (Seq[String], Grouping) => Future[IndexedSeq[Loci]] = {
     case (s: Seq[String], grouping: Grouping) =>
@@ -58,7 +62,7 @@ case class CredibleSetsByStudyDeferred(studyId: String, pagination: Option[Pagin
     extends DeferredMultiTerm[CredibleSets] {
   val id: String = studyId
   val options = (pagination)
-  val grouping = Grouping("CredibleSets", options)
+  val grouping = Grouping(DeferredType.CredibleSets, options)
 
   def empty(): CredibleSets = CredibleSets.empty
   def resolver(ctx: Backend): (Seq[String], Grouping) => Future[IndexedSeq[CredibleSets]] = {
@@ -76,8 +80,8 @@ case class CredibleSetsByVariantDeferred(variantId: String,
 ) extends DeferredMultiTerm[CredibleSets] {
   val id: String = variantId
   val options = (studyTypes, pagination)
-  val grouping = Grouping("CredibleSets", options)
-  
+  val grouping = Grouping(DeferredType.CredibleSets, options)
+
   def empty(): CredibleSets = CredibleSets.empty
   def resolver(ctx: Backend): (Seq[String], Grouping) => Future[IndexedSeq[CredibleSets]] = {
     case (v: Seq[String], grouping: Grouping) =>
@@ -97,7 +101,7 @@ case class ColocalisationsDeferred(studyLocusId: String,
 ) extends DeferredMultiTerm[Colocalisations] {
   val id: String = studyLocusId
   val options = (studyTypes, pagination)
-  val grouping = Grouping("Colocalisations", options)
+  val grouping = Grouping(DeferredType.Colocalisations, options)
   def empty(): Colocalisations = Colocalisations.empty
   def resolver(ctx: Backend): (Seq[String], Grouping) => Future[IndexedSeq[Colocalisations]] = {
     case (s: Seq[String], grouping: Grouping) =>
@@ -115,7 +119,7 @@ case class L2GPredictionsDeferred(studyLocusId: String, pagination: Option[Pagin
     extends DeferredMultiTerm[L2GPredictions] {
   val id: String = studyLocusId
   val options = (pagination)
-  val grouping = Grouping("L2GPredictions", options)
+  val grouping = Grouping(DeferredType.L2GPredictions, options)
   def empty(): L2GPredictions = L2GPredictions.empty
   def resolver(ctx: Backend): (Seq[String], Grouping) => Future[IndexedSeq[L2GPredictions]] = {
     case (s: Seq[String], grouping: Grouping) =>
