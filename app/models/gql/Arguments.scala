@@ -3,14 +3,11 @@ package models.gql
 import models.entities.Configuration.*
 import models.entities.Pagination.*
 import models.entities.*
-import sangria.macros.derive.*
 import sangria.schema.*
 import sangria.marshalling.playJson.*
 import sangria.marshalling.FromInput
-import sangria.util.tag
 import sangria.util.tag.@@
 import play.api.libs.json.{Format, Json}
-import models.EnumFormat
 
 object StudyTypeEnum extends Enumeration {
 
