@@ -1,25 +1,24 @@
 package models.gql
 
-import models._
-import models.entities.Configuration._
-import models.entities.Evidence.sequenceOntologyTermImp
-import models.entities.Evidences._
-import models.entities.Study.studyImp
-import models.entities.Interactions._
+import models.*
+import models.entities.Configuration.*
+import models.entities.Evidences.*
+import models.entities.Interactions.*
 import models.entities.Publications.publicationsImp
-import models.entities._
-import models.gql.Arguments._
-import models.gql.Fetchers._
-import models.Helpers.ComplexityCalculator._
+import models.entities.Colocalisations.*
+import models.entities.*
+import models.gql.Arguments.*
+import models.gql.Fetchers.*
+import models.Helpers.ComplexityCalculator.*
 import play.api.Logging
-import play.api.libs.json._
-import sangria.macros.derive.{DocumentField, _}
-import sangria.schema._
+import play.api.libs.json.*
+import sangria.macros.derive.{DocumentField, *}
+import sangria.schema.*
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent._
+import scala.concurrent.*
 import models.entities.CredibleSets.credibleSetsImp
-import models.entities.CredibleSet.credibleSetImp
+import models.entities.Study.{LdPopulationStructure, Sample, SumStatQC}
 
 object Objects extends Logging {
   implicit val metaDataVersionImp: ObjectType[Backend, DataVersion] =
@@ -787,6 +786,12 @@ object Objects extends Logging {
       )
     )
 
+  implicit val sequenceOntologyTermImp: ObjectType[Backend, SequenceOntologyTerm] =
+    deriveObjectType[Backend, SequenceOntologyTerm](
+      ObjectTypeName("SequenceOntologyTerm"),
+      ObjectTypeDescription("Sequence Ontology Term")
+    )
+
   implicit lazy val pharmacogenomicsImp: ObjectType[Backend, Pharmacogenomics] =
     deriveObjectType[Backend, Pharmacogenomics](
       AddFields(
@@ -1349,28 +1354,21 @@ object Objects extends Logging {
     deriveObjectType[Backend, L2GPredictions]()
   implicit val colocalisationImp: ObjectType[Backend, Colocalisation] =
     deriveObjectType[Backend, Colocalisation](
-      ReplaceField(
-        "otherStudyLocusId",
-        Field(
-          "otherStudyLocus",
-          OptionType(credibleSetImp),
-          Some("Credible set"),
-          resolve = r =>
-            val studyLocusId = r.value.otherStudyLocusId.getOrElse("")
-            logger.debug(s"Finding colocalisation credible set: $studyLocusId")
-            credibleSetFetcher.deferOpt(studyLocusId)
-        )
-      ),
-      ExcludeFields("leftStudyLocusId", "rightStudyLocusId")
+//      ReplaceField(
+//        "otherStudyLocusId",
+//        Field(
+//          "otherStudyLocus",
+//          OptionType(credibleSetImp),
+//          Some("Credible set"),
+//          resolve = r =>
+//            val studyLocusId = r.value.otherStudyLocusId.getOrElse("")
+//            logger.debug(s"Finding colocalisation credible set: $studyLocusId")
+//            credibleSetFetcher.deferOpt(studyLocusId)
+//        )
+//      ),
+//      ExcludeFields("leftStudyLocusId", "rightStudyLocusId")
     )
-  implicit val colocalisationsImp: ObjectType[Backend, Colocalisations] = ObjectType(
-    "Colocalisations",
-    "Colocalisations",
-    fields[Backend, Colocalisations](
-      Field("count", LongType, description = None, resolve = _.value.count),
-      Field("rows", ListType(colocalisationImp), description = None, resolve = _.value.rows)
-    )
-  )
+
   implicit val dbXrefImp: ObjectType[Backend, DbXref] = deriveObjectType[Backend, DbXref]()
   implicit val variantIndexImp: ObjectType[Backend, VariantIndex] =
     deriveObjectType[Backend, VariantIndex](
@@ -1425,4 +1423,413 @@ object Objects extends Logging {
       RenameField("variantId", "id")
     )
 
+  implicit val nameAndDescriptionImp: ObjectType[Backend, NameAndDescription] =
+    deriveObjectType[Backend, NameAndDescription](
+      ObjectTypeName("NameDescription")
+    )
+
+  implicit val pathwayTermImp: ObjectType[Backend, PathwayTerm] =
+    deriveObjectType[Backend, PathwayTerm](
+      ObjectTypeName("Pathway"),
+      ObjectTypeDescription("Pathway entry")
+    )
+
+  implicit val evidenceTextMiningSentenceImp: ObjectType[Backend, EvidenceTextMiningSentence] =
+    deriveObjectType[Backend, EvidenceTextMiningSentence](
+      ObjectTypeName("EvidenceTextMiningSentence")
+    )
+
+  implicit val evidenceDiseaseCellLineImp: ObjectType[Backend, EvidenceDiseaseCellLine] =
+    deriveObjectType[Backend, EvidenceDiseaseCellLine](
+      ObjectTypeName("DiseaseCellLine")
+    )
+
+  implicit val evidenceVariationImp: ObjectType[Backend, EvidenceVariation] =
+    deriveObjectType[Backend, EvidenceVariation](
+      ObjectTypeName("EvidenceVariation"),
+      ObjectTypeDescription("Sequence Ontology Term"),
+      ReplaceField(
+        "functionalConsequenceId",
+        Field(
+          "functionalConsequence",
+          OptionType(sequenceOntologyTermImp),
+          description = None,
+          resolve = js => {
+            val soId = js.value.functionalConsequenceId.map(_.replace("_", ":"))
+            soTermsFetcher.deferOpt(soId)
+          }
+        )
+      )
+    )
+
+  implicit val labelledElementImp: ObjectType[Backend, LabelledElement] =
+    deriveObjectType[Backend, LabelledElement](
+      ObjectTypeName("LabelledElement")
+    )
+
+  implicit val labelledUriImp: ObjectType[Backend, LabelledUri] =
+    deriveObjectType[Backend, LabelledUri](
+      ObjectTypeName("LabelledUri")
+    )
+
+  implicit val biomarkerGeneExpressionImp: ObjectType[Backend, BiomarkerGeneExpression] =
+    deriveObjectType[Backend, BiomarkerGeneExpression](
+      ObjectTypeName("BiomarkerGeneExpression"),
+      ReplaceField(
+        "id",
+        Field(
+          "id",
+          OptionType(geneOntologyTermImp),
+          description = None,
+          resolve = js => {
+            val goId = js.value.id.map(_.replace('_', ':'))
+            goFetcher.deferOpt(goId)
+          }
+        )
+      )
+    )
+
+  implicit val biomarkerVariantImp: ObjectType[Backend, BiomarkerVariant] = deriveObjectType(
+    ObjectTypeName("geneticVariation"),
+    ReplaceField(
+      "functionalConsequenceId",
+      Field(
+        "functionalConsequenceId",
+        OptionType(sequenceOntologyTermImp),
+        description = None,
+        resolve = js => {
+          val soId = js.value.functionalConsequenceId.map(_.replace("_", ":"))
+          soTermsFetcher.deferOpt(soId)
+        }
+      )
+    )
+  )
+
+  implicit val biomarkersImp: ObjectType[Backend, Biomarkers] = deriveObjectType(
+    ObjectTypeName("biomarkers")
+  )
+
+  implicit val assaysImp: ObjectType[Backend, Assays] = deriveObjectType(
+    ObjectTypeName("assays")
+  )
+
+  implicit val evidenceImp: ObjectType[Backend, Evidence] = deriveObjectType(
+    ObjectTypeName("Evidence"),
+    ObjectTypeDescription("Evidence for a Target-Disease pair"),
+    DocumentField("id", "Evidence identifier"),
+    DocumentField("score", "Evidence score"),
+    DocumentField("variantRsId", "Variant dbSNP identifier"),
+    DocumentField("oddsRatioConfidenceIntervalLower", "Confidence interval lower-bound"),
+    DocumentField("studySampleSize", "Sample size"),
+    DocumentField("literature", "list of pub med publications ids"),
+    DocumentField("studyStopReasonCategories",
+                  "Predicted reason(s) why the study has been stopped based on studyStopReason"
+    ),
+    DocumentField("ancestry", "Genetic origin of a population"),
+    DocumentField("ancestryId", "Identifier of the ancestry in the HANCESTRO ontology"),
+    DocumentField("statisticalMethod", "The statistical method used to calculate the association"),
+    DocumentField("statisticalMethodOverview",
+                  "Overview of the statistical method used to calculate the association"
+    ),
+    DocumentField(
+      "studyCasesWithQualifyingVariants",
+      "Number of cases in a case-control study that carry at least one allele of the qualifying variant"
+    ),
+    DocumentField("releaseVersion", "Release version"),
+    DocumentField("releaseDate", "Release date"),
+    DocumentField("warningMessage", "Warning message"),
+    DocumentField("variantEffect", "Variant effect"),
+    DocumentField("directionOnTrait", "Direction On Trait"),
+    DocumentField("assessments", "Assessments"),
+    DocumentField("primaryProjectHit", "Primary Project Hit"),
+    DocumentField("primaryProjectId", "Primary Project Id"),
+    ReplaceField(
+      "targetId",
+      Field(
+        "target",
+        targetImp,
+        description = Some("Target evidence"),
+        resolve = evidence => {
+          val tId = evidence.value.targetId
+          targetsFetcher.defer(tId)
+        }
+      )
+    ),
+    ReplaceField(
+      "diseaseId",
+      Field(
+        "disease",
+        diseaseImp,
+        description = Some("Disease evidence"),
+        resolve = evidence => {
+          val tId = evidence.value.diseaseId
+          diseasesFetcher.defer(tId)
+        }
+      )
+    ),
+    ReplaceField(
+      "studyLocusId",
+      Field(
+        "credibleSet",
+        OptionType(credibleSetImp),
+        description = None,
+        resolve = js => {
+          val studyLocusId = js.value.studyLocusId
+          credibleSetFetcher.deferOpt(studyLocusId)
+        }
+      )
+    ),
+    ReplaceField(
+      "variantId",
+      Field(
+        "variant",
+        OptionType(variantIndexImp),
+        description = None,
+        resolve = evidence => {
+          val id = evidence.value.variantId
+          logger.debug(s"Finding variant for id: $id")
+          variantFetcher.deferOpt(id)
+        }
+      )
+    ),
+    ReplaceField(
+      "drugId",
+      Field(
+        "drug",
+        OptionType(drugImp),
+        description = None,
+        resolve = evidence => {
+          val id = evidence.value.drugId
+          logger.debug(s"Finding drug for id: $id")
+          drugsFetcher.deferOpt(id)
+        }
+      )
+    ),
+    ReplaceField(
+      "variantFunctionalConsequenceId",
+      Field(
+        "variantFunctionalConsequence",
+        OptionType(sequenceOntologyTermImp),
+        description = None,
+        resolve = evidence => {
+          val soId = evidence.value.variantFunctionalConsequenceId
+            .map(id => id.replace("_", ":"))
+          logger.error(s"Finding variant functional consequence: $soId")
+          soTermsFetcher.deferOpt(soId)
+        }
+      )
+    ),
+    ReplaceField(
+      "variantFunctionalConsequenceFromQtlId",
+      Field(
+        "variantFunctionalConsequenceFromQtlId",
+        OptionType(sequenceOntologyTermImp),
+        description = None,
+        resolve = evidence => {
+          val soId = evidence.value.variantFunctionalConsequenceFromQtlId
+            .map(id => id.replace("_", ":"))
+          soTermsFetcher.deferOpt(soId)
+        }
+      )
+    ),
+    ReplaceField(
+      "pmcIds",
+      Field(
+        "pubMedCentralIds",
+        OptionType(ListType(StringType)),
+        description = Some("list of central pub med publications ids"),
+        resolve = js => js.value.pmcIds
+      )
+    )
+  )
+
+  implicit val ldSetImp: ObjectType[Backend, LdSet] =
+    deriveObjectType[Backend, LdSet]()
+
+  implicit val locusImp: ObjectType[Backend, Locus] = deriveObjectType[Backend, Locus](
+    ReplaceField(
+      "variantId",
+      Field(
+        "variant",
+        OptionType(variantIndexImp),
+        description = None,
+        resolve = r => {
+          val variantId = r.value.variantId.getOrElse("")
+          logger.debug(s"Finding variant index: $variantId")
+          variantFetcher.deferOpt(variantId)
+        }
+      )
+    )
+  )
+
+  implicit val lociImp: ObjectType[Backend, Loci] = deriveObjectType[Backend, Loci](
+    ExcludeFields("id")
+  )
+
+  implicit val credibleSetImp: ObjectType[Backend, CredibleSet] =
+    deriveObjectType[Backend, CredibleSet](
+      ObjectTypeName("CredibleSet"),
+      ReplaceField(
+        "variantId",
+        Field(
+          "variant",
+          OptionType(variantIndexImp),
+          description = None,
+          resolve = js => {
+            val id = js.value.variantId
+            logger.debug(s"Finding variant for id: $id")
+            variantFetcher.deferOpt(id)
+          }
+        )
+      ),
+      ReplaceField(
+        "studyType",
+        Field(
+          "studyType",
+          OptionType(StudyType),
+          description = None,
+          resolve = js => js.value.studyType
+        )
+      ),
+      AddFields(
+        Field(
+          "l2GPredictions",
+          l2GPredictionsImp,
+          description = None,
+          arguments = pageArg :: Nil,
+          complexity = Some(complexityCalculator(pageArg)),
+          resolve = js => {
+            val id: String = js.value.studyLocusId
+            L2GPredictionsDeferred(id, js.arg(pageArg))
+          }
+        ),
+        Field(
+          "locus",
+          lociImp,
+          arguments = variantIds :: pageArg :: Nil,
+          description = None,
+          complexity = Some(complexityCalculator(pageArg)),
+          resolve = js => {
+            import scala.concurrent.ExecutionContext.Implicits.global
+            val id = js.value.studyLocusId
+            LocusDeferred(id, js.arg(variantIds), js.arg(pageArg))
+          }
+        ),
+        Field(
+          "colocalisation",
+          colocalisationsImp,
+          description = None,
+          arguments = studyTypes :: pageArg :: Nil,
+          complexity = Some(complexityCalculator(pageArg)),
+          resolve = js => {
+            val id = js.value.studyLocusId
+            ColocalisationsDeferred(id, js.arg(studyTypes), js.arg(pageArg))
+          }
+        ),
+        Field(
+          "study",
+          OptionType(studyImp),
+          description = Some("Gwas study"),
+          resolve = js => {
+            val studyId = js.value.studyId
+            logger.debug(s"Finding gwas study: $studyId")
+            studyFetcher.deferOpt(studyId)
+          }
+        )
+      )
+    )
+  implicit val ldPopulationStructureImp: ObjectType[Backend, LdPopulationStructure] =
+    deriveObjectType[Backend, LdPopulationStructure]()
+  implicit val sampleImp: ObjectType[Backend, Sample] = deriveObjectType[Backend, Sample]()
+  implicit val sumStatQCImp: ObjectType[Backend, SumStatQC] = deriveObjectType[Backend, SumStatQC]()
+
+  implicit val studyImp: ObjectType[Backend, Study] = deriveObjectType(
+    ObjectTypeName("Study"),
+    ObjectTypeDescription("A genome-wide association study"),
+    DocumentField("condition", "Condition"),
+    DocumentField("projectId", "The project identifier"),
+    ReplaceField(
+      "studyId",
+      Field(
+        "id",
+        StringType,
+        description = Some("The study identifier"),
+        resolve = js => js.value.studyId
+      )
+    ),
+    ReplaceField(
+      "studyType",
+      Field(
+        "studyType",
+        OptionType(StudyType),
+        description = Some("The study type"),
+        resolve = js => js.value.studyType
+      )
+    ),
+    ReplaceField(
+      "geneId",
+      Field(
+        "target",
+        OptionType(targetImp),
+        Some("Target"),
+        resolve = js => {
+          val geneId = js.value.geneId
+          logger.debug(s"Finding target: $geneId")
+          targetsFetcher.deferOpt(geneId)
+        }
+      )
+    ),
+    ReplaceField(
+      "biosampleFromSourceId",
+      Field(
+        "biosample",
+        OptionType(biosampleImp),
+        Some("biosample"),
+        resolve = js => {
+          val biosampleId = js.value.biosampleFromSourceId
+          biosamplesFetcher.deferOpt(biosampleId)
+        }
+      )
+    ),
+    ReplaceField(
+      "traitFromSourceMappedIds",
+      Field(
+        "diseases",
+        OptionType(ListType(diseaseImp)),
+        None,
+        resolve = js => {
+          val ids = js.value.traitFromSourceMappedIds.getOrElse(Seq.empty)
+          logger.debug(s"Finding diseases for ids: $ids")
+          diseasesFetcher.deferSeqOpt(ids)
+        }
+      )
+    ),
+    ReplaceField(
+      "backgroundTraitFromSourceMappedIds",
+      Field(
+        "backgroundTraits",
+        OptionType(ListType(diseaseImp)),
+        None,
+        resolve = js => {
+          val ids = js.value.backgroundTraitFromSourceMappedIds
+            .getOrElse(Seq.empty)
+          logger.debug(s"Finding diseases for ids: $ids")
+          diseasesFetcher.deferSeqOpt(ids)
+        }
+      )
+    ),
+    AddFields(
+      Field(
+        "credibleSets",
+        credibleSetsImp,
+        arguments = pageArg :: Nil,
+        description = Some("Credible sets"),
+        complexity = Some(complexityCalculator(pageArg)),
+        resolve = js => {
+          val studyId = js.value.studyId
+          CredibleSetsByStudyDeferred(studyId, js.arg(pageArg))
+        }
+      )
+    )
+  )
 }
