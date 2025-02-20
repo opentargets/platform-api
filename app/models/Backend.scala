@@ -1,45 +1,42 @@
 package models
 
 import clickhouse.ClickHouseProfile
-import com.sksamuel.elastic4s._
+import com.sksamuel.elastic4s.*
 import com.sksamuel.elastic4s.http.JavaClient
-import com.sksamuel.elastic4s.requests.searches._
-import com.sksamuel.elastic4s.requests.searches.aggs._
+import com.sksamuel.elastic4s.requests.searches.*
+import com.sksamuel.elastic4s.requests.searches.aggs.*
 import com.sksamuel.elastic4s.requests.searches.sort.SortOrder
-import esecuele._
+import esecuele.*
 
-import javax.inject.Inject
 import gql.validators.QueryTermsValidator._
-import models.Helpers._
+import javax.inject.Inject
+import models.Helpers.*
 import models.db.{QAOTF, QLITAGG, QW2V, SentenceQuery}
-import models.entities.Publication._
-import models.entities.Associations._
-import models.entities.Biosample._
-import models.entities.CredibleSet._
-import models.entities.Configuration._
-import models.entities.DiseaseHPOs._
-import models.entities.Drug._
-import models.entities.Loci._
-import models.entities.MousePhenotypes._
-import models.entities.Pharmacogenomics._
-import models.entities.SearchFacetsResults._
-import models.entities._
-import models.gql.Arguments.variantId
+import models.entities.Publication.*
+import models.entities.Associations.*
+import models.entities.Biosample.*
+import models.entities.CredibleSet.*
+import models.entities.Configuration.*
+import models.entities.DiseaseHPOs.*
+import models.entities.Drug.*
+import models.entities.Loci.*
+import models.entities.MousePhenotypes.*
+import models.entities.Pharmacogenomics.*
+import models.entities.SearchFacetsResults.*
+import models.entities.Evidence.*
+import models.entities.SequenceOntologyTerm.*
+import models.entities.*
 import models.gql.StudyTypeEnum
-import models.InnerResults
-import models.Results
 import org.apache.http.impl.nio.reactor.IOReactorConfig
 import play.api.cache.AsyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
-import play.api.libs.json._
+import play.api.libs.json.*
 import play.api.{Configuration, Environment, Logging}
 import play.db.NamedDatabase
 import slick.basic.DatabaseConfig
 
 import java.time.LocalDate
-import scala.collection.immutable.ArraySeq
-import scala.concurrent._
-import scala.util.{Failure, Success}
+import scala.concurrent.*
 import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
 
 class Backend @Inject() (implicit
@@ -199,7 +196,7 @@ class Backend @Inject() (implicit
       .map(_.mappedHits)
   }
 
-  def getStudy(ids: Seq[String]): Future[IndexedSeq[JsValue]] = {
+  def getStudy(ids: Seq[String]): Future[IndexedSeq[Study]] = {
     val indexName = getIndexOrDefault("study")
     val termsQuery = Map("studyId.keyword" -> ids)
     val retriever =
@@ -208,7 +205,7 @@ class Backend @Inject() (implicit
           indexName,
           termsQuery,
           Pagination.mkMax,
-          fromJsValue[JsValue]
+          fromJsValue[Study]
         )
     retriever.map(_.mappedHits)
   }
@@ -236,7 +233,7 @@ class Backend @Inject() (implicit
           indexName,
           termsQuery,
           pag,
-          fromJsValue[JsValue]
+          fromJsValue[Study]
         )
       retriever.map {
         case Results(Seq(), _, _, _) => Studies.empty
@@ -354,7 +351,7 @@ class Backend @Inject() (implicit
     }
   }
 
-  def getCredibleSet(ids: Seq[String]): Future[IndexedSeq[JsValue]] = {
+  def getCredibleSet(ids: Seq[String]): Future[IndexedSeq[CredibleSet]] = {
     val indexName = getIndexOrDefault("credible_set")
     val termsQuery = Map("studyLocusId.keyword" -> ids)
     val retriever =
@@ -363,7 +360,7 @@ class Backend @Inject() (implicit
           indexName,
           termsQuery,
           Pagination.mkMax,
-          fromJsValue[JsValue],
+          fromJsValue[CredibleSet],
           excludedFields = Seq("locus", "ldSet")
         )
     retriever.map(_.mappedHits)
@@ -406,7 +403,7 @@ class Backend @Inject() (implicit
           indexName,
           query,
           pag,
-          fromJsValue[JsValue],
+          fromJsValue[CredibleSet],
           excludedFields = Seq("locus", "ldSet")
         )
     retriever.map {
@@ -435,7 +432,7 @@ class Backend @Inject() (implicit
       esRetriever
         .getMultiByIndexedTermsMust(
           queries,
-          fromJsValue[JsValue],
+          fromJsValue[CredibleSet],
           None,
           Some(ResolverField("studyId"))
         )
@@ -480,7 +477,7 @@ class Backend @Inject() (implicit
       esRetriever
         .getMultiQ(
           boolQueries,
-          fromJsValue[JsValue],
+          fromJsValue[CredibleSet],
           None,
           Some(ResolverField(matched_queries = true))
         )
@@ -651,7 +648,7 @@ class Backend @Inject() (implicit
         cbIndex,
         filters,
         pag,
-        fromJsValue[JsValue],
+        fromJsValue[Evidence],
         Seq.empty,
         sortByField,
         Seq.empty,
@@ -739,6 +736,12 @@ class Backend @Inject() (implicit
     val targetIndexName = getIndexOrDefault("target", Some("targets"))
 
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[Target])
+  }
+
+  def getSoTerms(ids: Seq[String]): Future[IndexedSeq[SequenceOntologyTerm]] = {
+    val targetIndexName = getIndexOrDefault("so", Some("so"))
+
+    esRetriever.getByIds(targetIndexName, ids, fromJsValue[SequenceOntologyTerm])
   }
 
   def getDrugs(ids: Seq[String]): Future[IndexedSeq[Drug]] = {
