@@ -12,256 +12,74 @@ import sangria.schema._
 
 import scala.concurrent.{ExecutionContext, Future}
 
+case class Key(
+                intA: String,
+                intB: String,
+                targetA: String,
+                targetB: Option[String],
+                intABiologicalRole: String,
+                intBBiologicalRole: String,
+                sourceDatabase: String
+              )
+
+case class InteractionEvidencePDM(miIdentifier: Option[String], shortName: Option[String])
+
+case class InteractionSpecies(mnemonic: Option[String], scientific_name: Option[String], taxon_id: Option[Long])
+
+case class InteractionResources(databaseVersion: String, sourceDatabase: String)
+
+case class InteractionEvidence(
+                                evidenceScore: Option[Double],
+                                expansionMethodMiIdentifier: Option[String],
+                                expansionMethodShortName: Option[String],
+                                hostOrganismScientificName: Option[String],
+                                hostOrganismTaxId: Option[Long],
+                                intASource: String,
+                                intBSource: String,
+                                interactionDetectionMethodMiIdentifier: String,
+                                interactionDetectionMethodShortName: String,
+                                interactionIdentifier: Option[String],
+                                interactionTypeMiIdentifier: Option[String],
+                                interactionTypeShortName: Option[String],
+                                participantDetectionMethodA: Option[Seq[InteractionEvidencePDM]],
+                                participantDetectionMethodB: Option[Seq[InteractionEvidencePDM]],
+                                pubmedId: Option[String]
+                              )
+
+case class Interaction(
+                        intA: String,
+                        targetA: String,
+                        intB: String,
+                        targetB: String,
+                        intABiologicalRole: String,
+                        intBBiologicalRole: String,
+                        scoring: Option[Double],
+                        count: Long,
+                        sourceDatabase: String,
+                        speciesA: Option[InteractionSpecies],
+                        speciesB: Option[InteractionSpecies],
+    //TODO: Implement evidence gathering
+                      )
+
 object Interaction extends Logging {
 
-  case class Key(
-      intA: String,
-      intB: String,
-      targetA: String,
-      targetB: Option[String],
-      intABiologicalRole: String,
-      intBBiologicalRole: String,
-      sourceDatabase: String
-  )
-
   implicit val interactionKeyJSON: OFormat[Key] = Json.format[Key]
+  
+  implicit val interactionEvidencePDMF: OFormat[InteractionEvidencePDM] = Json.format[InteractionEvidencePDM]
 
-  val interactionEvidencePDM: ObjectType[Backend, JsValue] = ObjectType(
-    "InteractionEvidencePDM",
-    fields[Backend, JsValue](
-      Field(
-        "miIdentifier",
-        OptionType(StringType),
-        description = None,
-        resolve = js => (js.value \ "miIdentifier").asOpt[String]
-      ),
-      Field(
-        "shortName",
-        OptionType(StringType),
-        description = None,
-        resolve = js => (js.value \ "shortName").asOpt[String]
-      )
-    )
-  )
+  implicit val interactionSpeciesF: OFormat[InteractionSpecies] = Json.format[InteractionSpecies]// TODO: Corregir para leer json underscore y asignar a entidad
 
-  val interactionSpecies: ObjectType[Backend, JsValue] = ObjectType(
-    "InteractionSpecies",
-    fields[Backend, JsValue](
-      Field(
-        "mnemonic",
-        OptionType(StringType),
-        description = None,
-        resolve = js => (js.value \ "mnemonic").asOpt[String]
-      ),
-      Field(
-        "scientificName",
-        OptionType(StringType),
-        description = None,
-        resolve = js => (js.value \ "scientific_name").asOpt[String]
-      ),
-      Field(
-        "taxonId",
-        OptionType(LongType),
-        description = None,
-        resolve = js => (js.value \ "taxon_id").asOpt[Long]
-      )
-    )
-  )
+  implicit val interactionResourcesF: OFormat[InteractionResources] = Json.format[InteractionResources]
 
-  val interactionResources: ObjectType[Backend, JsValue] = ObjectType(
-    "InteractionResources",
-    fields[Backend, JsValue](
-      Field(
-        "databaseVersion",
-        StringType,
-        description = None,
-        resolve = js => (js.value \ "databaseVersion").as[String]
-      ),
-      Field(
-        "sourceDatabase",
-        StringType,
-        description = None,
-        resolve = js => (js.value \ "sourceDatabase").as[String]
-      )
-    )
-  )
-
-  val interactionEvidence: ObjectType[Backend, JsValue] = ObjectType(
-    "InteractionEvidence",
-    fields[Backend, JsValue](
-      Field(
-        "evidenceScore",
-        OptionType(FloatType),
-        description = None,
-        resolve = js => (js.value \ "evidenceScore").asOpt[Double]
-      ),
-      Field(
-        "expansionMethodMiIdentifier",
-        OptionType(StringType),
-        description = None,
-        resolve = js => (js.value \ "expansionMethodMiIdentifier").asOpt[String]
-      ),
-      Field(
-        "expansionMethodShortName",
-        OptionType(StringType),
-        description = None,
-        resolve = js => (js.value \ "expansionMethodShortName").asOpt[String]
-      ),
-      Field(
-        "hostOrganismScientificName",
-        OptionType(StringType),
-        description = None,
-        resolve = js => (js.value \ "hostOrganismScientificName").asOpt[String]
-      ),
-      Field(
-        "hostOrganismTaxId",
-        OptionType(LongType),
-        description = None,
-        resolve = js => (js.value \ "hostOrganismTaxId").asOpt[Long]
-      ),
-      Field(
-        "intASource",
-        StringType,
-        description = None,
-        resolve = js => (js.value \ "intASource").as[String]
-      ),
-      Field(
-        "intBSource",
-        StringType,
-        description = None,
-        resolve = js => (js.value \ "intBSource").as[String]
-      ),
-      Field(
-        "interactionDetectionMethodMiIdentifier",
-        StringType,
-        description = None,
-        resolve = js => (js.value \ "interactionDetectionMethodMiIdentifier").as[String]
-      ),
-      Field(
-        "interactionDetectionMethodShortName",
-        StringType,
-        description = None,
-        resolve = js => (js.value \ "interactionDetectionMethodShortName").as[String]
-      ),
-      Field(
-        "interactionIdentifier",
-        OptionType(StringType),
-        description = None,
-        resolve = js => (js.value \ "interactionIdentifier").asOpt[String]
-      ),
-      Field(
-        "interactionTypeMiIdentifier",
-        OptionType(StringType),
-        description = None,
-        resolve = js => (js.value \ "interactionTypeMiIdentifier").asOpt[String]
-      ),
-      Field(
-        "interactionTypeShortName",
-        OptionType(StringType),
-        description = None,
-        resolve = js => (js.value \ "interactionTypeShortName").asOpt[String]
-      ),
-      Field(
-        "participantDetectionMethodA",
-        OptionType(ListType(interactionEvidencePDM)),
-        description = None,
-        resolve = js => (js.value \ "participantDetectionMethodA").asOpt[Seq[JsValue]]
-      ),
-      Field(
-        "participantDetectionMethodB",
-        OptionType(ListType(interactionEvidencePDM)),
-        description = None,
-        resolve = js => (js.value \ "participantDetectionMethodB").asOpt[Seq[JsValue]]
-      ),
-      Field(
-        "pubmedId",
-        OptionType(StringType),
-        description = None,
-        resolve = js => (js.value \ "pubmedId").asOpt[String]
-      )
-    )
-  )
-
-  val interaction: ObjectType[Backend, JsValue] = ObjectType(
-    "Interaction",
-    fields[Backend, JsValue](
-      Field("intA", StringType, description = None, resolve = js => (js.value \ "intA").as[String]),
-      Field(
-        "targetA",
-        OptionType(targetImp),
-        description = None,
-        resolve = js => {
-          val tID = (js.value \ "targetA").as[String]
-          targetsFetcher.deferOpt(tID)
-        }
-      ),
-      Field("intB", StringType, description = None, resolve = js => (js.value \ "intB").as[String]),
-      Field(
-        "targetB",
-        OptionType(targetImp),
-        description = None,
-        resolve = js => {
-          val tID = (js.value \ "targetB").asOpt[String]
-          targetsFetcher.deferOpt(tID)
-        }
-      ),
-      Field(
-        "intABiologicalRole",
-        StringType,
-        description = None,
-        resolve = js => (js.value \ "intABiologicalRole").as[String]
-      ),
-      Field(
-        "intBBiologicalRole",
-        StringType,
-        description = None,
-        resolve = js => (js.value \ "intBBiologicalRole").as[String]
-      ),
-      Field(
-        "score",
-        OptionType(FloatType),
-        description = None,
-        resolve = js => (js.value \ "scoring").asOpt[Double]
-      ),
-      Field("count", LongType, description = None, resolve = js => (js.value \ "count").as[Long]),
-      Field(
-        "sourceDatabase",
-        StringType,
-        description = None,
-        resolve = js => (js.value \ "sourceDatabase").as[String]
-      ),
-      Field(
-        "speciesA",
-        OptionType(interactionSpecies),
-        description = None,
-        resolve = js => (js.value \ "speciesA").asOpt[JsValue]
-      ),
-      Field(
-        "speciesB",
-        OptionType(interactionSpecies),
-        description = None,
-        resolve = js => (js.value \ "speciesB").asOpt[JsValue]
-      ),
-      Field(
-        "evidences",
-        ListType(interactionEvidence),
-        description = Some("List of evidences for this interaction"),
-        resolve = r => {
-          import scala.concurrent.ExecutionContext.Implicits.global
-          import r.ctx._
-
-          val ev = r.value.as[Key]
-          Interaction.findEvidences(ev)
-        }
-      )
-    )
-  )
+  implicit val interactionEvidenceF: OFormat[InteractionEvidence] = Json.format[InteractionEvidence]
+  
+  implicit val interactionF: OFormat[Interaction] = Json.format[Interaction]
 
   def findEvidences(interaction: Key)(implicit
       ec: ExecutionContext,
       esSettings: ElasticsearchSettings,
       esRetriever: ElasticRetriever
-  ): Future[IndexedSeq[JsValue]] = {
+  ): Future[IndexedSeq[InteractionEvidence]] = {
 
     val pag = Pagination(0, 10000)
 
@@ -279,7 +97,7 @@ object Interaction extends Logging {
       "intBBiologicalRole.keyword" -> interaction.intBBiologicalRole
     ) ++ interaction.targetB.map("targetB.keyword" -> _)
 
-    esRetriever.getByIndexedQueryMust(cbIndex, kv.toMap, pag, fromJsValue[JsValue]).map {
+    esRetriever.getByIndexedQueryMust(cbIndex, kv.toMap, pag, fromJsValue[InteractionEvidence]).map {
       case Results(Seq(), _, _, _) => IndexedSeq.empty
       case Results(seq, _, _, _)   => seq
     }

@@ -8,7 +8,7 @@ import com.sksamuel.elastic4s.requests.searches.sort._
 import models.Helpers.fromJsValue
 import models.{Backend, ElasticRetriever}
 import models.entities.Configuration.ElasticsearchSettings
-import models.entities.Interaction.interaction
+import models.gql.Objects.interactionImp
 import models.Results
 import play.api.Logging
 import play.api.libs.json._
@@ -23,7 +23,7 @@ object Interactions extends Logging {
     "Interactions",
     fields[Backend, Interactions](
       Field("count", LongType, description = None, resolve = o => o.value.count),
-      Field("rows", ListType(interaction), description = None, resolve = o => o.value.rows)
+      Field("rows", ListType(interactionImp), description = None, resolve = o => o.value.rows)
     )
   )
 
