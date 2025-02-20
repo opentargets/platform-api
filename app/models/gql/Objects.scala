@@ -1832,4 +1832,17 @@ object Objects extends Logging {
       )
     )
   )
+
+  implicit val interactionEvidencePDMImp: ObjectType[Backend, InteractionEvidencePDM] =
+    deriveObjectType[Backend, InteractionEvidencePDM]()
+
+  implicit val interactionSpeciesImp: ObjectType[Backend, InteractionSpecies] =
+    deriveObjectType[Backend, InteractionSpecies]()
+
+  implicit val interactionResources: ObjectType[Backend, InteractionResources] =
+    deriveObjectType[Backend, InteractionResources]()
+
+  implicit val interactionEvidenceImp: ObjectType[Backend, InteractionEvidence] = deriveObjectType[Backend, InteractionEvidence]()
+
+  implicit val interactionImp : ObjectType[Backend, Interaction] = deriveObjectType[Backend, Interaction]()
 }
