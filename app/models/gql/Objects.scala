@@ -1842,7 +1842,25 @@ object Objects extends Logging {
   implicit val interactionResources: ObjectType[Backend, InteractionResources] =
     deriveObjectType[Backend, InteractionResources]()
 
-  implicit val interactionEvidenceImp: ObjectType[Backend, InteractionEvidence] = deriveObjectType[Backend, InteractionEvidence]()
+  implicit val interactionEvidenceImp: ObjectType[Backend, InteractionEvidence] =
+    deriveObjectType[Backend, InteractionEvidence]()
 
-  implicit val interactionImp : ObjectType[Backend, Interaction] = deriveObjectType[Backend, Interaction]()
+  implicit val interactionImp: ObjectType[Backend, Interaction] =
+    deriveObjectType[Backend, Interaction](
+      RenameField("scoring", "score"),
+      AddFields(
+        Field(
+          "evidences",
+          ListType(interactionEvidenceImp),
+          description = Some("List of evidences for this interaction"),
+          resolve = r => {
+            import scala.concurrent.ExecutionContext.Implicits.global
+            import r.ctx._
+
+            val ev = r.value
+            Interaction.findEvidences(ev)
+          }
+        )
+      )
+    )
 }

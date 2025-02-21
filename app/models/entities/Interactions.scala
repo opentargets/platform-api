@@ -16,7 +16,7 @@ import sangria.schema.{Field, ListType, LongType, ObjectType, fields}
 
 import scala.concurrent.{ExecutionContext, Future}
 
-case class Interactions(count: Long, rows: IndexedSeq[JsValue])
+case class Interactions(count: Long, rows: IndexedSeq[Interaction])
 
 object Interactions extends Logging {
   val interactions: ObjectType[Backend, Interactions] = ObjectType(
@@ -66,7 +66,7 @@ object Interactions extends Logging {
         kv,
         filters,
         pag,
-        fromJsValue[JsValue],
+        fromJsValue[Interaction],
         aggs,
         Some(sort.FieldSort("scoring", order = SortOrder.DESC))
       )

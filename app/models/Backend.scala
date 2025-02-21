@@ -950,7 +950,7 @@ class Backend @Inject() (implicit
         Interactions.find(target.id, None, None, pagination = Some(Pagination(0, 10000))) map {
           case Some(ints) =>
             ints.rows
-              .flatMap(int => (int \ ("targetB")).asOpt[String].filter(_.startsWith("ENSG")))
+              .flatMap(int => int.targetB.filter(_.startsWith("ENSG")))
               .toSet + target.id
           case None => Set.empty + target.id
         }
