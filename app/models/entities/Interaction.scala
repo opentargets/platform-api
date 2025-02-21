@@ -61,10 +61,10 @@ object Interaction extends Logging {
     Json.format[InteractionEvidencePDM]
 
   implicit val interactionSpeciesW: OWrites[InteractionSpecies] = Json.writes[InteractionSpecies]
-    implicit val interactionSpeciesR: Reads[InteractionSpecies] =
-      ((__ \ "mnemonic").readNullable[String] and
-        (__ \ "scientific_name").readNullable[String] and
-          (__ \ "taxon_id").readNullable[Long])(InteractionSpecies.apply)
+  implicit val interactionSpeciesR: Reads[InteractionSpecies] =
+    ((__ \ "mnemonic").readNullable[String] and
+      (__ \ "scientific_name").readNullable[String] and
+      (__ \ "taxon_id").readNullable[Long])(InteractionSpecies.apply)
 
   implicit val interactionResourcesF: OFormat[InteractionResources] =
     Json.format[InteractionResources]
