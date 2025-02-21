@@ -5,7 +5,6 @@ import models.entities.{
   CredibleSet,
   Disease,
   Drug,
-  Evidence,
   Expressions,
   GeneOntologyTerm,
   HPO,
@@ -19,7 +18,6 @@ import models.entities.{
 }
 import models.{Backend, entities}
 import play.api.Logging
-import play.api.libs.json.{JsValue, __}
 import sangria.execution.deferred.{Fetcher, FetcherCache, FetcherConfig, HasId, SimpleFetcherCache}
 
 import scala.concurrent.*
