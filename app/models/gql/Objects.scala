@@ -1354,19 +1354,19 @@ object Objects extends Logging {
     deriveObjectType[Backend, L2GPredictions]()
   implicit val colocalisationImp: ObjectType[Backend, Colocalisation] =
     deriveObjectType[Backend, Colocalisation](
-//      ReplaceField(
-//        "otherStudyLocusId",
-//        Field(
-//          "otherStudyLocus",
-//          OptionType(credibleSetImp),
-//          Some("Credible set"),
-//          resolve = r =>
-//            val studyLocusId = r.value.otherStudyLocusId.getOrElse("")
-//            logger.debug(s"Finding colocalisation credible set: $studyLocusId")
-//            credibleSetFetcher.deferOpt(studyLocusId)
-//        )
-//      ),
-//      ExcludeFields("leftStudyLocusId", "rightStudyLocusId")
+      ReplaceField(
+        "otherStudyLocusId",
+        Field(
+          "otherStudyLocus",
+          OptionType(credibleSetImp),
+          Some("Credible set"),
+          resolve = r =>
+            val studyLocusId = r.value.otherStudyLocusId.getOrElse("")
+            logger.debug(s"Finding colocalisation credible set: $studyLocusId")
+            credibleSetFetcher.deferOpt(studyLocusId)
+        )
+      ),
+      ExcludeFields("leftStudyLocusId", "rightStudyLocusId")
     )
 
   implicit val dbXrefImp: ObjectType[Backend, DbXref] = deriveObjectType[Backend, DbXref]()
