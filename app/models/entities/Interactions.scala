@@ -84,7 +84,7 @@ object Interactions extends Logging {
       ec: ExecutionContext,
       esSettings: ElasticsearchSettings,
       esRetriever: ElasticRetriever
-  ): Future[Seq[JsValue]] = {
+  ): Future[Seq[InteractionResources]] = {
 
     val cbIndex = esSettings.entities
       .find(_.name == "interaction_evidence")
@@ -115,7 +115,7 @@ object Interactions extends Logging {
           .map { el =>
             val k = (el \ "key").as[String]
             val v = (el \ "aggs" \ "buckets" \\ "key").take(1).head.as[String]
-            JsObject(List("sourceDatabase" -> JsString(k), "databaseVersion" -> JsString(v)))
+            InteractionResources(k, v)
           }
 
         keys
