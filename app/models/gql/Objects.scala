@@ -1848,6 +1848,30 @@ object Objects extends Logging {
   implicit val interactionImp: ObjectType[Backend, Interaction] =
     deriveObjectType[Backend, Interaction](
       RenameField("scoring", "score"),
+      ReplaceField(
+        "targetA",
+        Field(
+          "targetA",
+          OptionType(targetImp),
+          description = None,
+          resolve = interaction => {
+            val tId = interaction.value.targetA
+            targetsFetcher.deferOpt(tId)
+          }
+        )
+      ),
+      ReplaceField(
+        "targetB",
+        Field(
+          "targetB",
+          OptionType(targetImp),
+          description = None,
+          resolve = interaction => {
+            val tId = interaction.value.targetB
+            targetsFetcher.deferOpt(tId)
+          }
+        )
+      ),
       AddFields(
         Field(
           "evidences",
