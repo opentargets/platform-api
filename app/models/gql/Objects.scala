@@ -1294,8 +1294,8 @@ object Objects extends Logging {
     )
   )
 
-  implicit val inSilicoPredictorImp: ObjectType[Backend, InSilicoPredictor] =
-    deriveObjectType[Backend, InSilicoPredictor](
+  implicit val variantEffectImp: ObjectType[Backend, VariantEffect] =
+    deriveObjectType[Backend, VariantEffect](
       ReplaceField(
         "targetId",
         Field(
