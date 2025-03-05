@@ -3,12 +3,12 @@ package models.entities
 import play.api.Logging
 import play.api.libs.json.{OFormat, OWrites, Json}
 
-case class InSilicoPredictor(method: Option[String],
-                             assessment: Option[String],
-                             score: Option[Double],
-                             assessmentFlag: Option[String],
-                             targetId: Option[String],
-                             normalisedScore: Option[Double]
+case class VariantEffect(method: Option[String],
+                         assessment: Option[String],
+                         score: Option[Double],
+                         assessmentFlag: Option[String],
+                         targetId: Option[String],
+                         normalisedScore: Option[Double]
 )
 
 case class TranscriptConsequence(variantFunctionalConsequenceIds: Option[Seq[String]],
@@ -37,7 +37,7 @@ case class VariantIndex(variantId: String,
                         position: Int,
                         referenceAllele: String,
                         alternateAllele: String,
-                        inSilicoPredictors: Option[Seq[InSilicoPredictor]],
+                        variantEffect: Option[Seq[VariantEffect]],
                         mostSevereConsequenceId: String,
                         transcriptConsequences: Option[Seq[TranscriptConsequence]],
                         rsIds: Option[Seq[String]],
@@ -48,7 +48,7 @@ case class VariantIndex(variantId: String,
 )
 
 object VariantIndex extends Logging {
-  implicit val inSilicoPredictorF: OFormat[InSilicoPredictor] = Json.format[InSilicoPredictor]
+  implicit val variantEffectF: OFormat[VariantEffect] = Json.format[VariantEffect]
   implicit val transcriptConsequenceF: OFormat[TranscriptConsequence] =
     Json.format[TranscriptConsequence]
   implicit val dbXrefF: OFormat[DbXref] = Json.format[DbXref]
