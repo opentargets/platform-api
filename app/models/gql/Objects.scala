@@ -1606,6 +1606,19 @@ object Objects extends Logging {
       )
     ),
     ReplaceField(
+      "drugResponse",
+      Field(
+        "drugResponse",
+        OptionType(diseaseImp),
+        description = None,
+        resolve = evidence => {
+          val id = evidence.value.drugResponse
+          logger.debug(s"Finding drug for id: $id")
+          diseasesFetcher.deferOpt(id)
+        }
+      )
+    ),
+    ReplaceField(
       "variantFunctionalConsequenceId",
       Field(
         "variantFunctionalConsequence",
