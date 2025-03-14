@@ -116,11 +116,8 @@ jobs:
           context: .
           push: true
           tags: |
-            quay.io/opentargets/${{ env.REPO }}:latest
             quay.io/opentargets/${{ env.REPO }}:${{ env.TAG }}
-            ghcr.io/${{ github.repository }}:latest
             ghcr.io/${{ github.repository }}:${{ env.TAG }}
-            europe-west1-docker.pkg.dev/open-targets-eu-dev/${{ env.REPO }}/${{ env.REPO }}:latest
             europe-west1-docker.pkg.dev/open-targets-eu-dev/${{ env.REPO }}/${{ env.REPO }}:${{ env.TAG }}
 
       - id: generate-attestations
