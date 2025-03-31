@@ -12,7 +12,7 @@ RUN chmod +x ot-platform-api-latest/bin/ot-platform-api
 
 ENTRYPOINT ["bash", "-c", "ot-platform-api-latest/bin/ot-platform-api \
     -J-Xms2g \
-    -J-Xmx7g \
+    -J-Xmx30g \
     -J-server \
     -Dlogger.file=/srv/app/production.xml \
     -Dlogback.debug=true \
