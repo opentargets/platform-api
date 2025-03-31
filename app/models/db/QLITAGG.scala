@@ -113,23 +113,26 @@ case class QLITAGG(
       )
     )
   )
-
+  /**
+   * with cte_pmids  as (SELECT pmid FROM ot.literature_index PREWHERE (in(keywordId,('ENSG00000133703'))) GROUP BY pmid HAVING (greaterOrEquals(count(pmid),1)) ORDER BY sum(relevance) DESC, any(date) DESC) SELECT pmid, pmcid, date, year, month FROM cte_pmids l INNER JOIN (select * from ot.literature PREWHERE(in(pmid, (select pmid from cte_pmids)))) r USING (pmid) LIMIT 25 OFFSET 0
+   * **/
+//TDDO: implement with cte_pmids  as (SELECT pmid FROM ot.literature_index PREWHERE (in(keywordId,('ENSG00000133703'))) GROUP BY pmid HAVING (greaterOrEquals(count(pmid),1)) ORDER BY sum(relevance) DESC, any(date) DESC) SELECT pmid, pmcid, date, year, month FROM cte_pmids l INNER JOIN (select * from ot.literature PREWHERE(in(pmid, (select pmid from cte_pmids)))) r USING (pmid) LIMIT 25 OFFSET 0
   override val query: Q = {
 
     val q = filterDate match {
       case Some(value) =>
         Q(
           Select(pmid :: pmcid :: date :: year :: month :: Nil),
-          From(T),
-          PreWhere(F.in(pmid, pmidsQ(pmid :: Nil).toColumn(None))),
+          From(pmidsQ(pmid :: Nil).toColumn(None), Some("l")),
+          Join(T, None, Some("INNER"), false, Some("r"), pmid :: Nil),
           dateFilter(value),
           Limit(offset, size)
         )
       case _ =>
         Q(
           Select(pmid :: pmcid :: date :: year :: month :: Nil),
-          From(T),
-          PreWhere(F.in(pmid, pmidsQ(pmid :: Nil).toColumn(None))),
+          From(pmidsQ(pmid :: Nil).toColumn(None), Some("l")),
+          Join(T, None, Some("INNER"), false, Some("r"), pmid :: Nil),
           Limit(offset, size)
         )
     }
