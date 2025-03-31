@@ -14,8 +14,8 @@ ENV JVM_XMS=2g
 ENV JVM_XMX=7g
 
 ENTRYPOINT ["bash", "-c", "ot-platform-api-latest/bin/ot-platform-api \
-    -J-Xms${JVM_XMS} \
-    -J-Xmx${JVM_XMX} \
+    -J-Xms${JVM_XMS:-2g} \
+    -J-Xmx${JVM_XMX:-7g} \
     -J-server \
     -Dlogger.file=/srv/app/production.xml \
     -Dlogback.debug=true \
