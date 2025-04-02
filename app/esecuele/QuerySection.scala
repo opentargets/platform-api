@@ -5,9 +5,10 @@ abstract class QuerySection extends Rep {
   val content: Seq[Column]
 }
 
-case class With(content: Seq[Column]) extends QuerySection {
+case class With(content: Seq[Column], alias: Option[String | Column] = None) extends QuerySection {
   override val name: String = "WITH"
-  override val rep: String = s"$name ${content.mkString("", ", ", "")}"
+  override val rep: String =
+    s"$name${alias.map(" " + _ + " as").getOrElse("")} ${content.mkString("", ", ", "")}"
 }
 
 case class Select(content: Seq[Column]) extends QuerySection {
