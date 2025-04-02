@@ -27,21 +27,15 @@ case class QLITAGG(
   val T: Column = column(tableName)
   val TIdx: Column = column(indexTableName)
 
-  private def pmidsQ(select: Seq[Column]): Q = Q(
-    Select(select),
-    From(TIdx),
-    PreWhere(F.in(key, F.set(ids.map(literal).toSeq))),
-    GroupBy(pmid.name :: Nil),
-    Having(F.greaterOrEquals(F.count(pmid.name), literal(ids.size))),
-    OrderBy(F.sum(relevance.name).desc :: F.any(date.name).desc :: Nil)
+  val pmidsSections = Seq(From(TIdx),
+                          PreWhere(F.in(key, F.set(ids.map(literal).toSeq))),
+                          GroupBy(pmid.name :: Nil),
+                          Having(F.greaterOrEquals(F.count(pmid.name), literal(ids.size)))
   )
 
-  private def pmidsQNord(select: Seq[Column]): Q = Q(
+  private def pmidsQ(select: Seq[Column]): Q = Q(
     Select(select),
-    From(TIdx),
-    PreWhere(F.in(key, F.set(ids.map(literal).toSeq))),
-    GroupBy(pmid.name :: Nil),
-    Having(F.greaterOrEquals(F.count(pmid.name), literal(ids.size)))
+    pmidsSections*
   )
 
   val filteredTotalQ: Q = {
@@ -50,14 +44,14 @@ case class QLITAGG(
         Q(
           Select(literal(1) :: Nil),
           From(T),
-          PreWhere(F.in(pmid, pmidsQNord(pmid :: Nil).toColumn(None))),
+          PreWhere(F.in(pmid, pmidsQ(pmid :: Nil).toColumn(None))),
           dateFilter(value)
         )
       case _ =>
         Q(
           Select(literal(1) :: Nil),
           From(T),
-          PreWhere(F.in(pmid, pmidsQNord(pmid :: Nil).toColumn(None)))
+          PreWhere(F.in(pmid, pmidsQ(pmid :: Nil).toColumn(None)))
         )
     }
 
@@ -87,10 +81,16 @@ case class QLITAGG(
   }
 
   val minDate: Q = {
+    def pmidsOrderedQ(select: Seq[Column]): Q = Q(
+      Select(select),
+      (pmidsSections :+ OrderBy(F.sum(relevance.name).desc :: F.any(date.name).desc :: Nil))*
+    )
     val q = Q(
       Select(F.min(year) :: Nil),
       From(T),
-      PreWhere(F.and(F.in(pmid, pmidsQ(pmid :: Nil).toColumn(None)), F.greater(year, literal(0))))
+      PreWhere(
+        F.and(F.in(pmid, pmidsOrderedQ(pmid :: Nil).toColumn(None)), F.greater(year, literal(0)))
+      )
     )
 
     logger.debug(q.toString)
@@ -113,32 +113,43 @@ case class QLITAGG(
       )
     )
   )
-  /**
-   * with cte_pmids  as (SELECT pmid FROM ot.literature_index PREWHERE (in(keywordId,('ENSG00000133703'))) GROUP BY pmid HAVING (greaterOrEquals(count(pmid),1)) ORDER BY sum(relevance) DESC, any(date) DESC) SELECT pmid, pmcid, date, year, month FROM cte_pmids l INNER JOIN (select * from ot.literature PREWHERE(in(pmid, (select pmid from cte_pmids)))) r USING (pmid) LIMIT 25 OFFSET 0
-   * **/
-//TDDO: implement with cte_pmids  as (SELECT pmid FROM ot.literature_index PREWHERE (in(keywordId,('ENSG00000133703'))) GROUP BY pmid HAVING (greaterOrEquals(count(pmid),1)) ORDER BY sum(relevance) DESC, any(date) DESC) SELECT pmid, pmcid, date, year, month FROM cte_pmids l INNER JOIN (select * from ot.literature PREWHERE(in(pmid, (select pmid from cte_pmids)))) r USING (pmid) LIMIT 25 OFFSET 0
-  override val query: Q = {
 
-    val q = filterDate match {
+  override val query: Q = {
+    val ctePmids = Column("cte_pmids")
+
+    val litQuery = Q(
+      Select(pmid :: pmcid :: date :: year :: month :: Nil),
+      From(T),
+      PreWhere(F.in(pmid, ctePmids))
+    )
+
+    val withQuery = filterDate match {
       case Some(value) =>
         Q(
-          Select(pmid :: pmcid :: date :: year :: month :: Nil),
-          From(pmidsQ(pmid :: Nil).toColumn(None), Some("l")),
-          Join(T, None, Some("INNER"), false, Some("r"), pmid :: Nil),
-          dateFilter(value),
-          Limit(offset, size)
+          Select(pmid :: Nil),
+          (pmidsSections ++ Seq(dateFilter(value),
+                                OrderBy(F.sum(relevance.name).desc :: F.any(date.name).desc :: Nil),
+                                Limit(offset, size)
+          ))*
         )
       case _ =>
         Q(
-          Select(pmid :: pmcid :: date :: year :: month :: Nil),
-          From(pmidsQ(pmid :: Nil).toColumn(None), Some("l")),
-          Join(T, None, Some("INNER"), false, Some("r"), pmid :: Nil),
-          Limit(offset, size)
+          Select(pmid :: Nil),
+          (pmidsSections ++ Seq(OrderBy(F.sum(relevance.name).desc :: F.any(date.name).desc :: Nil),
+                                Limit(offset, size)
+          ))*
         )
     }
 
-    logger.debug(q.toString)
+    val query = Q(
+      With(Seq(withQuery.toColumn(None)), Some(ctePmids)),
+      Select(pmid :: pmcid :: date :: year :: month :: Nil),
+      From(ctePmids),
+      Join(litQuery.toColumn(None), None, Some("INNER"), false, Some("r"), pmid :: Nil)
+    )
 
-    q
+    logger.debug(query.toString)
+
+    query
   }
 }
