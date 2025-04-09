@@ -1036,13 +1036,26 @@ class Backend @Inject() (implicit
 
     val pag = Helpers.Cursor.to(cursor).flatMap(_.asOpt[Pagination]).getOrElse(Pagination.mkDefault)
 
-    val filterDate = (startYear, endYear) match {
-      case (Some(strYear), Some(ndYear)) =>
-        Some(strYear, startMonth.getOrElse(1), ndYear, endMonth.getOrElse(12))
+    val filterStartDate = startYear match {
+      case Some(strYear) =>
+        Some(strYear, startMonth.getOrElse(1))
       case _ => Option.empty
     }
 
-    val simQ = QLITAGG(table.name, indexTable.name, ids, pag.size, pag.offset, filterDate)
+    val filterEndDate = endYear match {
+      case Some(ndYear) =>
+        Some(ndYear, endMonth.getOrElse(12))
+      case _ => Option.empty
+    }
+
+    val simQ = QLITAGG(table.name,
+                       indexTable.name,
+                       ids,
+                       pag.size,
+                       pag.offset,
+                       filterStartDate,
+                       filterEndDate
+    )
 
     def runQuery(year: Int, total: Long) =
       dbRetriever.executeQuery[Publication, Query](simQ.query).map { v =>
