@@ -124,9 +124,11 @@ object Arguments {
              description = "Year at the lower end of the filter"
     )
   val startMonth: Argument[Option[Int]] =
-    Argument("startMonth",
-             OptionInputType(IntType),
-             description = "Month at the lower end of the filter"
+    Argument(
+      "startMonth",
+      OptionInputType(IntType),
+      description =
+        "Month at the lower end of the filter. This value will be ignored if startYear is not set"
     )
   val endYear: Argument[Option[Int]] =
     Argument("endYear",
@@ -134,9 +136,11 @@ object Arguments {
              description = "Year at the higher end of the filter"
     )
   val endMonth: Argument[Option[Int]] =
-    Argument("endMonth",
-             OptionInputType(IntType),
-             description = "Month at the higher end of the filter"
+    Argument(
+      "endMonth",
+      OptionInputType(IntType),
+      description =
+        "Month at the higher end of the filter. This value will be ignored if endYear is not set"
     )
 
   val BFilterString: Argument[Option[String]] = Argument(
