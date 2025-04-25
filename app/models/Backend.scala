@@ -22,6 +22,7 @@ import models.entities.Drug.*
 import models.entities.Loci.*
 import models.entities.MousePhenotypes.*
 import models.entities.Pharmacogenomics.*
+import models.entities.ProteinCodingCoordinates.*
 import models.entities.SearchFacetsResults.*
 import models.entities.Evidence.*
 import models.entities.SequenceOntologyTerm.*
@@ -712,6 +713,39 @@ class Backend @Inject() (implicit
         fromJsValue[Pharmacogenomics]
       )
       .map(_.mappedHits)
+  }
+
+  def getProteinCodingCoordinatesByTarget(id: String,
+                                          pagination: Option[Pagination]
+  ): Future[ProteinCodingCoordinates] = {
+    val queryTerm: Map[String, String] = Map("targetId.keyword" -> id)
+    getProteinCodingCoordinates(id, queryTerm, pagination)
+  }
+  def getProteinCodingCoordinatesByVariantId(id: String,
+                                             pagination: Option[Pagination]
+  ): Future[ProteinCodingCoordinates] = {
+    val queryTerm: Map[String, String] = Map("variantId.keyword" -> id)
+    getProteinCodingCoordinates(id, queryTerm, pagination)
+  }
+  def getProteinCodingCoordinates(id: String,
+                                  queryTerm: Map[String, String],
+                                  pagination: Option[Pagination]
+  ): Future[ProteinCodingCoordinates] = {
+    val indexName = getIndexOrDefault("proteinCodingCoordinates")
+    val pag = pagination.getOrElse(Pagination(0, 2))
+    logger.debug(s"Querying protein coding coordinates for: $id")
+    val retriever = esRetriever
+      .getByIndexedQueryMust(
+        indexName,
+        queryTerm,
+        pag,
+        fromJsValue[ProteinCodingCoordinate]
+      )
+    retriever.map {
+      case Results(Seq(), _, _, _) => ProteinCodingCoordinates.empty()
+      case Results(coords, _, counts, _) =>
+        ProteinCodingCoordinates(counts, coords)
+    }
   }
 
   def getOtarProjects(ids: Seq[String]): Future[IndexedSeq[OtarProjects]] = {

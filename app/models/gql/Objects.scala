@@ -257,6 +257,14 @@ object Objects extends Logging {
         arguments = pageArg :: Nil,
         complexity = Some(complexityCalculator(pageArg)),
         resolve = ctx => ctx.ctx.getPharmacogenomicsByTarget(ctx.value.id)
+      ),
+      Field(
+        "proteinCodingCoordinates",
+        proteinCodingCoordinatesImp,
+        description = Some("Protein coding coordinates"),
+        arguments = pageArg :: Nil,
+        complexity = Some(complexityCalculator(pageArg)),
+        resolve = ctx => ctx.ctx.getProteinCodingCoordinatesByTarget(ctx.value.id, ctx.arg(pageArg))
       )
     )
   )
@@ -1352,6 +1360,24 @@ object Objects extends Logging {
     )
   implicit val l2GPredictionsImp: ObjectType[Backend, L2GPredictions] =
     deriveObjectType[Backend, L2GPredictions]()
+  implicit val maxVariantEffectForPositionImp: ObjectType[Backend, MaxVariantEffectForPosition] =
+    deriveObjectType[Backend, MaxVariantEffectForPosition]()
+  implicit val proteinCodingEvidenceSourceImp: ObjectType[Backend, ProteinCodingEvidenceSource] =
+    deriveObjectType[Backend, ProteinCodingEvidenceSource]()
+  implicit val proteinCodingCoordinateImp: ObjectType[Backend, ProteinCodingCoordinate] =
+    deriveObjectType[Backend, ProteinCodingCoordinate](
+      ReplaceField(
+        "diseaseIds",
+        Field(
+          "diseases",
+          ListType(diseaseImp),
+          Some("Diseases"),
+          resolve = r => diseasesFetcher.deferSeqOpt(r.value.diseaseIds)
+        )
+      )
+    )
+  implicit val proteinCodingCoordinatesImp: ObjectType[Backend, ProteinCodingCoordinates] =
+    deriveObjectType[Backend, ProteinCodingCoordinates]()
   implicit val colocalisationImp: ObjectType[Backend, Colocalisation] =
     deriveObjectType[Backend, Colocalisation](
       ReplaceField(
@@ -1418,6 +1444,15 @@ object Objects extends Logging {
               ctx arg pageSize,
               ctx arg cursor
             )
+        ),
+        Field(
+          "proteinCodingCoordinates",
+          proteinCodingCoordinatesImp,
+          description = Some("Protein coding coordinates"),
+          arguments = pageArg :: Nil,
+          complexity = Some(complexityCalculator(pageArg)),
+          resolve = ctx =>
+            ctx.ctx.getProteinCodingCoordinatesByVariantId(ctx.value.variantId, ctx.arg(pageArg))
         )
       ),
       RenameField("variantId", "id")
