@@ -55,6 +55,12 @@ libraryDependencies ++= Seq(
   "com.sksamuel.elastic4s" %% "elastic4s-json-play" % s4sVersion exclude ("org.slf4j", "slf4j-api")
 )
 
+libraryDependencies ++= Seq(
+  "io.prometheus" % "prometheus-metrics-core" % "1.3.6",
+  "io.prometheus" % "prometheus-metrics-instrumentation-jvm" % "1.3.6",
+  "io.prometheus" % "prometheus-metrics-exporter-common" % "1.3.6"
+)
+
 lazy val frontendRepository = settingKey[String]("Git repository with open targets front end.")
 lazy val gqlFileDir = settingKey[File]("Location to save test input queries")
 lazy val getGqlFiles = taskKey[Unit]("Add *.gql files from frontendRepository to test resources")
