@@ -8,7 +8,6 @@ import com.sksamuel.elastic4s.requests.searches.aggs.*
 import com.sksamuel.elastic4s.requests.searches.sort.SortOrder
 import esecuele.*
 
-import gql.validators.QueryTermsValidator._
 import javax.inject.Inject
 import models.Helpers.*
 import models.db.{QAOTF, QLITAGG, QW2V, SentenceQuery}
@@ -38,13 +37,15 @@ import slick.basic.DatabaseConfig
 import java.time.LocalDate
 import scala.concurrent.*
 import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
+import services.ApplicationStart
 
 class Backend @Inject() (implicit
-    ec: ExecutionContext,
-    @NamedDatabase("default") dbConfigProvider: DatabaseConfigProvider,
-    config: Configuration,
-    env: Environment,
-    cache: AsyncCacheApi
+                         ec: ExecutionContext,
+                         @NamedDatabase("default") dbConfigProvider: DatabaseConfigProvider,
+                         appStart: ApplicationStart,
+                         config: Configuration,
+                         env: Environment,
+                         cache: AsyncCacheApi
 ) extends Logging {
 
   implicit val defaultOTSettings: OTSettings = loadConfigurationObject[OTSettings]("ot", config)

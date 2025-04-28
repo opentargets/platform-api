@@ -37,6 +37,6 @@ run_with_standalone: ## Runs API with standalone platform
 	@sbt "run 8090" -J-Xms2g -J-Xmx7g -J-XX:+UseG1GC -DPLATFORM_API_IGNORE_CACHE=true -DELASTICSEARCH_HOST=elasticsearch -DSLICK_CLICKHOUSE_URL=jdbc:clickhouse://clickhouse:8123
 
 debug_with_standalone: ## Runs API with standalone platform
-	@sbt -jvm-debug 9999 run 8090 -DSLICK_CLICKHOUSE_URL=jdbc:clickhouse://clickhouse:8123 -DPLATFORM_API_IGNORE_CACHE=true
+	@sbt "run 8090" -jvm-debug 9999 -J-Xms2g -J-Xmx7g -J-XX:+UseG1GC -DPLATFORM_API_IGNORE_CACHE=true -DELASTICSEARCH_HOST=elasticsearch -DSLICK_CLICKHOUSE_URL=jdbc:clickhouse://clickhouse:8123
 
 .PHONY: help run_local debug_local es_tunnel ch_tunnel run_with_standalone
