@@ -15,11 +15,9 @@ case class MetricsRequest(request: Request[AnyContent]) extends PrometheusHttpRe
 
     headers match
       case Some(header) => Seq(header).iterator.asJavaEnumeration
-      case None => util.Collections.emptyEnumeration()
+      case None         => util.Collections.emptyEnumeration()
 
   override def getMethod: String = request.method
 
   override def getRequestPath: String = request.path
 }
-
-

@@ -44,12 +44,12 @@ import models.entities.Violations.{DateFilterError, InputParameterCheckError}
 import services.ApplicationStart
 
 class Backend @Inject() (implicit
-                         ec: ExecutionContext,
-                         @NamedDatabase("default") dbConfigProvider: DatabaseConfigProvider,
-                         appStart: ApplicationStart,
-                         config: Configuration,
-                         env: Environment,
-                         cache: AsyncCacheApi
+    ec: ExecutionContext,
+    @NamedDatabase("default") dbConfigProvider: DatabaseConfigProvider,
+    appStart: ApplicationStart,
+    config: Configuration,
+    env: Environment,
+    cache: AsyncCacheApi
 ) extends Logging {
 
   implicit val defaultOTSettings: OTSettings = loadConfigurationObject[OTSettings]("ot", config)
