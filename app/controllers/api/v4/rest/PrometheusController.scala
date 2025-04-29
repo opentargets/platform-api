@@ -3,11 +3,21 @@ package controllers.api.v4.rest
 import org.apache.pekko.stream.scaladsl.Source
 import play.api.Logging
 import play.api.http.HttpEntity.Streamed
-import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents, RangeResult, ResponseHeader, Result}
+import play.api.mvc.{
+  AbstractController,
+  Action,
+  AnyContent,
+  ControllerComponents,
+  RangeResult,
+  ResponseHeader,
+  Result
+}
 
 import javax.inject.Inject
 
-class PrometheusController @Inject() (implicit cc: ControllerComponents) extends AbstractController(cc) with Logging {
+class PrometheusController @Inject() (implicit cc: ControllerComponents)
+    extends AbstractController(cc)
+    with Logging {
 
   val prometheusScraper = PrometheusScraper()
 
@@ -26,4 +36,3 @@ class PrometheusController @Inject() (implicit cc: ControllerComponents) extends
     )
   }
 }
-
