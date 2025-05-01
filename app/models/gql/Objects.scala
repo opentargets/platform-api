@@ -1374,6 +1374,24 @@ object Objects extends Logging {
           Some("Diseases"),
           resolve = r => diseasesFetcher.deferSeqOpt(r.value.diseaseIds)
         )
+      ),
+      ReplaceField(
+        "targetId",
+        Field(
+          "target",
+          OptionType(targetImp),
+          Some("Target"),
+          resolve = r => targetsFetcher.deferOpt(r.value.targetId)
+        )
+      ),
+      ReplaceField(
+        "variantId",
+        Field(
+          "variant",
+          OptionType(variantIndexImp),
+          Some("Variant"),
+          resolve = r => variantFetcher.deferOpt(r.value.variantId)
+        )
       )
     )
   implicit val proteinCodingCoordinatesImp: ObjectType[Backend, ProteinCodingCoordinates] =
