@@ -8,7 +8,7 @@ help: ## Show this help message
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make <target>\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  %-28s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 
 run: ## Runs API
-	@sbt run
+	@sbt run -J-Xms2g -J-Xmx7g
 
 debug: ## Debugs API
 	@sbt -jvm-debug 9999 run -DPLATFORM_API_IGNORE_CACHE=true
