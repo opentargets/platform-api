@@ -36,7 +36,6 @@ class PrometheusMetrics @Inject() (implicit appStart: ApplicationStart)
       case None => 0L
 
   override def afterQuery(queryVal: Long, context: MiddlewareQueryContext[Any, ?, ?]): Unit =
-    //Maybe not count Some(IntrospectionQuery) context.operationName
     context.operationName match
       case Some(name) if excludedQueries.contains(name) => ()
       case Some(name) =>
