@@ -39,8 +39,8 @@ class GraphQLController @Inject() (implicit
     cc: ControllerComponents,
     metadataAction: MetadataAction,
     config: Configuration,
-    appStart: ApplicationStart
-//                                   prometheusMetricsMiddleware: PrometheusMetrics
+    appStart: ApplicationStart,
+    prometheusMetricsMiddleware: PrometheusMetrics
 ) extends AbstractController(cc)
     with Logging {
 
@@ -142,13 +142,14 @@ class GraphQLController @Inject() (implicit
 
       // query parsed successfully, time to execute it!
       case Success(queryAst) =>
+//        val prometheusMetricsMiddleware: PrometheusMetrics = PrometheusMetrics.
         var queryComplexity = -1.0
         Executor
           .execute(
             GQLSchema.schema,
             queryAst,
             dbTables,
-//            middleware = prometheusMetricsMiddleware :: Nil,
+            middleware = prometheusMetricsMiddleware :: Nil,
             operationName = gqlQuery.operation,
             variables = gqlQuery.variables,
             deferredResolver = GQLSchema.resolvers,
