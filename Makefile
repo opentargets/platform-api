@@ -8,10 +8,10 @@ help: ## Show this help message
 	@awk 'BEGIN {FS = ":.*##"; printf "\nUsage:\n  make <target>\n"} /^[a-zA-Z_-]+:.*?##/ { printf "  %-28s %s\n", $$1, $$2 }' $(MAKEFILE_LIST)
 
 run: ## Runs API
-	@sbt run
+	@sbt run -J-Xms2g -J-Xmx7g
 
 debug: ## Debugs API
-	@sbt -jvm-debug 9999 run
+	@sbt -jvm-debug 9999 run -J-Xms2g -J-Xmx7g
 
 debug_with_standalone: ## Debugs API
 	@sbt -jvm-debug 9999 "run 8090" -DPLATFORM_API_IGNORE_CACHE=true
