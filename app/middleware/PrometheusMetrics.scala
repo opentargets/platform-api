@@ -1,7 +1,13 @@
 package middleware
 
 import javax.inject.*
-import sangria.execution.{BeforeFieldResult, Middleware, MiddlewareAfterField, MiddlewareErrorField, MiddlewareQueryContext}
+import sangria.execution.{
+  BeforeFieldResult,
+  Middleware,
+  MiddlewareAfterField,
+  MiddlewareErrorField,
+  MiddlewareQueryContext
+}
 import sangria.schema.Context
 import services.ApplicationStart
 import io.prometheus.metrics.model.snapshots.Unit as PrometheusUnit
@@ -32,8 +38,8 @@ class PrometheusMetrics @Inject() (implicit appStart: ApplicationStart)
   override def beforeQuery(context: MiddlewareQueryContext[Any, ?, ?]): Long =
     context.operationName match
       case Some(name) if excludedQueries.contains(name) => 0L
-      case Some(name) => System.nanoTime()
-      case None => 0L
+      case Some(name)                                   => System.nanoTime()
+      case None                                         => 0L
 
   override def afterQuery(queryVal: Long, context: MiddlewareQueryContext[Any, ?, ?]): Unit =
     context.operationName match
@@ -41,7 +47,6 @@ class PrometheusMetrics @Inject() (implicit appStart: ApplicationStart)
       case Some(name) =>
         appStart.QueryTime.observe(PrometheusUnit.nanosToSeconds(System.nanoTime - queryVal))
       case None => ()
-
 
   override def beforeField(queryVal: Long,
                            mctx: MiddlewareQueryContext[Any, ?, ?],
@@ -65,11 +70,8 @@ class PrometheusMetrics @Inject() (implicit appStart: ApplicationStart)
                           error: Throwable,
                           mctx: MiddlewareQueryContext[Any, ?, ?],
                           ctx: Context[Any, ?]
-  ): Unit = {
+  ): Unit =
     if !excludedFields.contains(ctx.parentType.name) then
       val fieldName = ctx.parentType.name + "_" + ctx.field.name
       appStart.FieldErrorCount.labelValues(fieldName).inc()
-  }
 }
-
-
