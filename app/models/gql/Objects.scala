@@ -1360,19 +1360,17 @@ object Objects extends Logging {
     )
   implicit val l2GPredictionsImp: ObjectType[Backend, L2GPredictions] =
     deriveObjectType[Backend, L2GPredictions]()
-  implicit val maxVariantEffectForPositionImp: ObjectType[Backend, MaxVariantEffectForPosition] =
-    deriveObjectType[Backend, MaxVariantEffectForPosition]()
-  implicit val proteinCodingEvidenceSourceImp: ObjectType[Backend, ProteinCodingEvidenceSource] =
-    deriveObjectType[Backend, ProteinCodingEvidenceSource]()
+  implicit val proteinCodingEvidenceSourceImp: ObjectType[Backend, Datasource] =
+    deriveObjectType[Backend, Datasource]()
   implicit val proteinCodingCoordinateImp: ObjectType[Backend, ProteinCodingCoordinate] =
     deriveObjectType[Backend, ProteinCodingCoordinate](
       ReplaceField(
-        "diseaseIds",
+        "diseases",
         Field(
           "diseases",
           ListType(diseaseImp),
           Some("Diseases"),
-          resolve = r => diseasesFetcher.deferSeqOpt(r.value.diseaseIds)
+          resolve = r => diseasesFetcher.deferSeqOpt(r.value.diseases)
         )
       ),
       ReplaceField(
@@ -1391,6 +1389,22 @@ object Objects extends Logging {
           OptionType(variantIndexImp),
           Some("Variant"),
           resolve = r => variantFetcher.deferOpt(r.value.variantId)
+        )
+      ),
+      ReplaceField(
+        "variantFunctionalConsequenceIds",
+        Field(
+          "variantConsequences",
+          ListType(sequenceOntologyTermImp),
+          description = Some("Most severe consequence sequence ontology"),
+          resolve = r =>
+            r.value.variantFunctionalConsequenceIds match {
+              case Some(ids) =>
+                val soIds = ids.map(_.replace("_", ":"))
+                logger.debug(s"Finding variant functional consequences: $soIds")
+                soTermsFetcher.deferSeqOpt(soIds)
+              case None => Future.successful(Seq.empty)
+            }
         )
       )
     )
