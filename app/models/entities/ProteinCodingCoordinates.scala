@@ -9,27 +9,22 @@ case class ProteinCodingCoordinate(
     aminoAcidPosition: Int,
     alternateAminoAcid: String,
     referenceAminoAcid: String,
-    maxVariantEffectForPosition: MaxVariantEffectForPosition,
+    variantFunctionalConsequenceIds: Option[Seq[String]],
     variantId: String,
-    diseaseIds: Seq[String],
-    evidenceSources: Seq[ProteinCodingEvidenceSource]
+    diseases: Seq[String],
+    datasources: Seq[Datasource],
+    therapeuticAreas: Seq[String]
 )
 
-case class MaxVariantEffectForPosition(
-    method: String,
-    value: Double
-)
-
-case class ProteinCodingEvidenceSource(
+case class Datasource(
+    datasourceCount: Int,
     datasourceId: String,
-    evidenceCount: Int
+    datasourceNiceName: String
 )
 
 object ProteinCodingCoordinate extends Logging {
-  implicit val proteinCodingEvidenceSourceF: OFormat[ProteinCodingEvidenceSource] =
-    Json.format[ProteinCodingEvidenceSource]
-  implicit val maxVariantEffectForPositionF: OFormat[MaxVariantEffectForPosition] =
-    Json.format[MaxVariantEffectForPosition]
+  implicit val DatasourceF: OFormat[Datasource] =
+    Json.format[Datasource]
   implicit val proteinCodingCoordinateF: OFormat[ProteinCodingCoordinate] =
     Json.format[ProteinCodingCoordinate]
 }
