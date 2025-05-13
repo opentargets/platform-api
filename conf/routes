@@ -18,7 +18,7 @@ GET            /api/v4/graphql/browser         controllers.api.v4.graphql.GQLSch
 GET            /api/v4/rest/meta/info          controllers.api.v4.rest.MetaController.meta()
 GET            /api/v4/rest/meta/health        controllers.api.v4.rest.MetaController.healthcheck()
 GET            /api/v4/rest/cache/clear        controllers.api.v4.rest.CacheController.clearCache()
-GET            /api/v4/rest/metrics            controllers.api.v4.rest.PrometheusController.metrics()
+GET            /metrics                        controllers.api.v4.rest.PrometheusController.metrics()
 
 # health uri
 GET            /_ah/health                     controllers.api.v4.rest.MetaController.healthcheck()
