@@ -9,7 +9,7 @@ on:
 
 jobs:
   push-to-ghcr-and-gar:
-    name: Build docker image and push to quay.io, GAR and publish artifact
+    name: Build docker image and push to GHRC, GAR and publish artifact
     runs-on: ubuntu-22.04
 
     permissions:
@@ -73,14 +73,6 @@ jobs:
         run: sbt dist
       # ========================================================================
 
-      - id: auth-quay
-        name: Log in to quay.io
-        uses: docker/login-action@v3
-        with:
-          registry: quay.io
-          username: ${{ secrets.QUAY_USER }}
-          password: ${{ secrets.QUAY_PASSWORD }}
-
       - id: auth-ghcr
         name: Log in to GitHub Container Registry
         uses: docker/login-action@v3
@@ -122,8 +114,6 @@ jobs:
           context: .
           push: true
           tags: |
-            quay.io/opentargets/${{ env.REPO }}:latest
-            quay.io/opentargets/${{ env.REPO }}:${{ env.TAG }}
             ghcr.io/${{ github.repository }}:latest
             ghcr.io/${{ github.repository }}:${{ env.TAG }}
             europe-west1-docker.pkg.dev/open-targets-eu-dev/${{ env.REPO }}/${{ env.REPO }}:latest
