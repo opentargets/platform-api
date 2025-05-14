@@ -638,7 +638,7 @@ class Backend @Inject() (implicit
       ElasticRetriever.sortBy(p._1, if (p._2 == "desc") SortOrder.Desc else SortOrder.Asc)
     }
 
-    val cbIndexPrefix = getIndexOrDefault("evidences", Some("evidence_datasource_"))
+    val cbIndexPrefix = getIndexOrDefault("evidences", Some("evidence_"))
 
     val cbIndex = datasourceIds
       .map(_.map(cbIndexPrefix.concat).mkString(","))

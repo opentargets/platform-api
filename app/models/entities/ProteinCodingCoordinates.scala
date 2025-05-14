@@ -10,6 +10,7 @@ case class ProteinCodingCoordinate(
     alternateAminoAcid: String,
     referenceAminoAcid: String,
     variantFunctionalConsequenceIds: Option[Seq[String]],
+    variantEffect: Option[Double],
     variantId: String,
     diseases: Seq[String],
     datasources: Seq[Datasource],
