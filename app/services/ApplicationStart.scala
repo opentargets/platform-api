@@ -2,7 +2,6 @@ package services
 
 import com.google.inject.Singleton
 import io.prometheus.metrics.core.metrics.{Counter, Histogram}
-import io.prometheus.metrics.instrumentation.jvm.JvmMetrics
 import io.prometheus.metrics.model.snapshots.Unit
 
 import javax.inject.Inject
@@ -12,7 +11,7 @@ class ApplicationStart @Inject() (
     // Add your dependencies here
 ) {
 
-  JvmMetrics.builder().register()
+//  JvmMetrics.builder().register()
 
   // TODO: Register prometheus metrics
   val RequestCounter: Counter = Counter
@@ -42,4 +41,6 @@ class ApplicationStart @Inject() (
     .help("count the number of times that processing has failed on a given field")
     .labelNames("field_name")
     .register()
+
+
 }
