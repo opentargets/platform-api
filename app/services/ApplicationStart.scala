@@ -42,5 +42,4 @@ class ApplicationStart @Inject() (
     .labelNames("field_name")
     .register()
 
-
 }
