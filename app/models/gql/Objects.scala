@@ -804,13 +804,15 @@ object Objects extends Logging {
     deriveObjectType[Backend, VariantAnnotation](
       ObjectTypeDescription("PharmGKB's variant curation that supports a clinical annotation."),
       DocumentField("literature", "PMID of the supporting publication."),
-      DocumentField("effectDescription", "Summary of the impact of the allele on the drug response."),
+      DocumentField("effectDescription",
+                    "Summary of the impact of the allele on the drug response."
+      ),
       DocumentField("effectType", "Type of effect."),
       DocumentField("baseAlleleOrGenotype", "Allele or genotype in the base case."),
       DocumentField("comparisonAlleleOrGenotype", "Allele or genotype in the comparison case."),
       DocumentField("directionality", "Allele directionality of the effect."),
       DocumentField("effect", "Allele observed effect."),
-      DocumentField("entity", "Entity affected by the effect."),
+      DocumentField("entity", "Entity affected by the effect.")
     )
 
   implicit lazy val pharmacogenomicsImp: ObjectType[Backend, Pharmacogenomics] =
