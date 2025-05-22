@@ -15,7 +15,7 @@ case class VariantAnnotation(baseAlleleOrGenotype: Option[String],
                              effectDescription: Option[String],
                              effectType: Option[String],
                              entity: Option[String],
-                             literature: Option[Seq[String]]
+                             literature: Option[String]
 )
 
 case class Pharmacogenomics(
