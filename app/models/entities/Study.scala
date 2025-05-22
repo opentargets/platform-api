@@ -27,6 +27,7 @@ case class Study(
     cohorts: Option[Seq[String]],
     initialSampleSize: Option[String],
     traitFromSourceMappedIds: Option[Seq[String]],
+    diseaseIds: Option[Seq[String]],
     publicationJournal: Option[String],
     publicationDate: Option[String],
     ldPopulationStructure: Option[Seq[LdPopulationStructure]],

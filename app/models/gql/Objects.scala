@@ -1872,13 +1872,13 @@ object Objects extends Logging {
       )
     ),
     ReplaceField(
-      "traitFromSourceMappedIds",
+      "diseaseIds",
       Field(
         "diseases",
         OptionType(ListType(diseaseImp)),
         None,
         resolve = js => {
-          val ids = js.value.traitFromSourceMappedIds.getOrElse(Seq.empty)
+          val ids = js.value.diseaseIds.getOrElse(Seq.empty)
           logger.debug(s"Finding diseases for ids: $ids")
           diseasesFetcher.deferSeqOpt(ids)
         }
