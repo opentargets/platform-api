@@ -8,6 +8,16 @@ case class DrugWithIdentifiers(
     drugFromSource: Option[String]
 )
 
+case class VariantAnnotation(baseAlleleOrGenotype: Option[String],
+                             comparisonAlleleOrGenotype: Option[String],
+                             directionality: Option[String],
+                             effect: Option[String],
+                             effectDescription: Option[String],
+                             effectType: Option[String],
+                             entity: Option[String],
+                             literature: Option[Seq[String]]
+)
+
 case class Pharmacogenomics(
     datasourceId: Option[String],
     datatypeId: Option[String],
@@ -22,7 +32,7 @@ case class Pharmacogenomics(
     pgxCategory: Option[String],
     phenotypeFromSourceId: Option[String],
     phenotypeText: Option[String],
-    variantAnnotation: Option[String],
+    variantAnnotation: Option[VariantAnnotation],
     studyId: Option[String],
     targetFromSourceId: Option[String],
     variantFunctionalConsequenceId: Option[String],
