@@ -44,6 +44,7 @@ case class Pharmacogenomics(
 object Pharmacogenomics extends Logging {
   implicit val drugW: OWrites[DrugWithIdentifiers] = Json.writes[DrugWithIdentifiers]
   implicit val drugF: OFormat[DrugWithIdentifiers] = Json.format[DrugWithIdentifiers]
+  implicit val variantAnnotation: OFormat[VariantAnnotation] = Json.format[VariantAnnotation]
   implicit val pharmacogenomicsW: OWrites[Pharmacogenomics] = Json.writes[Pharmacogenomics]
   implicit val pharmacogenomicsF: OFormat[Pharmacogenomics] = Json.format[Pharmacogenomics]
 }
