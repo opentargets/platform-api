@@ -62,7 +62,7 @@ case class MechanismOfActionRaw(
     references: Option[Seq[Reference]]
 )
 
-case class DrugReferences(source: String, reference: Seq[String])
+case class DrugReferences(source: String, ids: Seq[String])
 
 case class Drug(
     id: String,
