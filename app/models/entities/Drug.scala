@@ -136,11 +136,7 @@ object Drug {
     MechanismsOfAction(rows, uat, utt)
   }
 
-  implicit val DrugXRefImpW: OWrites[DrugReferences] = Json.writes[DrugReferences]
-  implicit val DrugXRefImpR: Reads[DrugReferences] = (
-    (JsPath \ "key").read[String] and
-      (JsPath \ "value").read[Seq[String]]
-  )(DrugReferences.apply)
+  implicit val DrugXRefImpW: OFormat[DrugReferences] = Json.format[DrugReferences]
 
   implicit val drugImplicitR: Reads[Drug] = Json.reads[Drug]
   implicit val drugImplicitW: OWrites[Drug] = Json.writes[Drug]
