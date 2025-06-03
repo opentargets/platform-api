@@ -56,12 +56,7 @@ object Study extends Logging {
   implicit val sampleF: OFormat[Sample] = Json.format[Sample]
   implicit val ldPopulationStructureF: OFormat[LdPopulationStructure] =
     Json.format[LdPopulationStructure]
-  implicit val sumStatQCW: OWrites[SumStatQC] = Json.writes[SumStatQC]
-  implicit val sumStatQCR: Reads[SumStatQC] = (
-    (JsPath \ "key").read[String] and
-      (JsPath \ "value").read[Double]
-  )(SumStatQC.apply)
-
+  implicit val sumStatQCF: OFormat[SumStatQC] = Json.format[SumStatQC]
   implicit val studyF: OFormat[Study] = Json.format[Study]
 
 }
