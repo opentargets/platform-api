@@ -32,7 +32,7 @@ case class Pharmacogenomics(
     pgxCategory: Option[String],
     phenotypeFromSourceId: Option[String],
     phenotypeText: Option[String],
-    variantAnnotation: Option[VariantAnnotation],
+    variantAnnotation: Option[Seq[VariantAnnotation]],
     studyId: Option[String],
     targetFromSourceId: Option[String],
     variantFunctionalConsequenceId: Option[String],
