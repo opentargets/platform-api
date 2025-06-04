@@ -458,6 +458,16 @@ object Objects extends Logging {
             }),
             ctx arg pageArg
           )
+      ),
+      Field(
+        "resolvedAncestors",
+        ListType(diseaseImp),
+        description = Some(
+          "All parent diseases in the hierarchy from the term up to a " +
+            "therapeutic area."
+        ),
+        arguments = Nil,
+        resolve = ctx => diseasesFetcher.deferSeq(ctx.value.ancestors)
       )
     )
   )
