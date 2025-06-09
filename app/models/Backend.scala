@@ -137,6 +137,16 @@ class Backend @Inject() (implicit
     }
   }
 
+  def getDownloads: Future[Option[String]] = {
+    val indexName = getIndexOrDefault("downloads")
+    esRetriever.getByIds(indexName, Seq("croissant"), fromJsValue[JsValue]).map {
+      case IndexedSeq(downloads) =>
+        Some(downloads.toString)
+      case _ => None
+    }
+
+  }
+
   def getGoTerms(ids: Seq[String]): Future[IndexedSeq[GeneOntologyTerm]] = {
     val targetIndexName = getIndexOrDefault("go")
 

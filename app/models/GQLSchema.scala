@@ -34,6 +34,13 @@ object GQLSchema {
         resolve = ctx => ctx.ctx.getMeta
       ),
       Field(
+        "downloads",
+        OptionType(StringType),
+        description = Some("Return Open Targets downloads information"),
+        arguments = Nil,
+        resolve = ctx => ctx.ctx.getDownloads
+      ),
+      Field(
         "target",
         OptionType(targetImp),
         description = Some("Return a Target"),
