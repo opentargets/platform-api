@@ -25,7 +25,16 @@ object Objects extends Logging {
     deriveObjectType[Backend, DataVersion]()
   implicit val metaAPIVersionImp: ObjectType[Backend, APIVersion] =
     deriveObjectType[Backend, APIVersion]()
-  implicit val metaImp: ObjectType[Backend, Meta] = deriveObjectType[Backend, Meta]()
+  implicit val metaImp: ObjectType[Backend, Meta] = deriveObjectType[Backend, Meta](
+    AddFields(
+      Field(
+        "downloads",
+        OptionType(StringType),
+        description = Some("Return Open Targets downloads information"),
+        resolve = _.ctx.getDownloads
+      )
+    )
+  )
 
   // Define a case class to represent each item in the array
   case class KeyValue(key: String, value: BigDecimal)
