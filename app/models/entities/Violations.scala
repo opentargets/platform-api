@@ -4,6 +4,12 @@ import sangria.execution.{UserFacingError, WithViolations}
 import sangria.validation.{BaseViolation, Violation}
 
 object Violations {
+
+  val dateFilterErrorMsg = "Invalid arguments, %s is required if you set %s"
+
+  case class DateFilterError(yearField: String, monthField: String)
+      extends BaseViolation(dateFilterErrorMsg format (yearField, monthField))
+
   val paginationSizeErrorMsg: String =
     "There was a pagination error. You used size %d but the size must be between 0 and %d"
 

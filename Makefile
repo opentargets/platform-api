@@ -11,7 +11,7 @@ run: ## Runs API
 	@sbt run
 
 debug: ## Debugs API
-	@sbt -jvm-debug 9999 run
+	@sbt -jvm-debug 9999 run -DPLATFORM_API_IGNORE_CACHE=true
 
 run_log: ## Runs API using the logback file specified in logfile eg: make run_log logfile=./conf/logback.xml
 	@sbt run -Dlogback.configurationFile=${logfile}
@@ -21,6 +21,22 @@ debug_log: ## Debugs API using the logback file specified in logfile eg: make de
 
 debug_log_standalone: ## Debugs API using the logback file specified in logfile eg: make debug_log_standalone logfile=./conf/logback.xml
 	@sbt -jvm-debug 9999 "run 8090" -Dlogback.configurationFile=${logfile}
+
+os_tunnel_prefix:
+	@echo "Connecting to OpenSearch using the instance prefix"
+	@bash -c '\
+		read os_instance os_zone <<< "$$(gcloud compute instances list | grep $(prefix) | awk '\''{print $$1, $$2}'\'')"; \
+		echo "Connecting to $$os_instance in zone $$os_zone"; \
+		gcloud compute ssh --zone "$$os_zone" --tunnel-through-iap $$os_instance -- -L 9200:localhost:9200 -N \
+	'
+
+ch_tunnel_prefix:
+	@echo "Connecting to Clickhouse using the instance prefix"
+	@bash -c '\
+		read ch_instance ch_zone <<< "$$(gcloud compute instances list | grep $(prefix) | awk '\''{print $$1, $$2}'\'')"; \
+		echo "Connecting to $$ch_instance in zone $$ch_zone"; \
+		gcloud compute ssh --zone "$$ch_zone" --tunnel-through-iap $$ch_instance -- -L 8123:localhost:8123 -N \
+	'
 
 es_tunnel: ## Create tunnel connection to OpenSearch. E.g.: make es_tunnel zone=europe-west1-d instance=trnplt-es-0-esearch-fl6c
 	@echo "Connecting to OpenSearch"
@@ -34,6 +50,6 @@ run_with_standalone: ## Runs API with standalone platform
 	@sbt "run 8090" -J-Xms2g -J-Xmx7g -J-XX:+UseG1GC -DPLATFORM_API_IGNORE_CACHE=true -DELASTICSEARCH_HOST=elasticsearch -DSLICK_CLICKHOUSE_URL=jdbc:clickhouse://clickhouse:8123
 
 debug_with_standalone: ## Runs API with standalone platform
-	@sbt -jvm-debug 9999 run 8090 -DSLICK_CLICKHOUSE_URL=jdbc:clickhouse://clickhouse:8123 -DPLATFORM_API_IGNORE_CACHE=true
+	@sbt -jvm-debug 9999 "run 8090" -DSLICK_CLICKHOUSE_URL=jdbc:clickhouse://clickhouse:8123 -DPLATFORM_API_IGNORE_CACHE=true
 
 .PHONY: help run_local debug_local es_tunnel ch_tunnel run_with_standalone

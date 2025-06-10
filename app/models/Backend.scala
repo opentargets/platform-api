@@ -7,8 +7,8 @@ import com.sksamuel.elastic4s.requests.searches.*
 import com.sksamuel.elastic4s.requests.searches.aggs.*
 import com.sksamuel.elastic4s.requests.searches.sort.SortOrder
 import esecuele.*
+import gql.validators.QueryTermsValidator.*
 
-import gql.validators.QueryTermsValidator._
 import javax.inject.Inject
 import models.Helpers.*
 import models.db.{QAOTF, QLITAGG, QW2V, SentenceQuery}
@@ -39,6 +39,7 @@ import slick.basic.DatabaseConfig
 import java.time.LocalDate
 import scala.concurrent.*
 import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
+import models.entities.Violations.{DateFilterError, InputParameterCheckError}
 
 class Backend @Inject() (implicit
     ec: ExecutionContext,
@@ -1080,15 +1081,21 @@ class Backend @Inject() (implicit
 
     val pag = Helpers.Cursor.to(cursor).flatMap(_.asOpt[Pagination]).getOrElse(Pagination.mkDefault)
 
-    val filterStartDate = startYear match {
-      case Some(strYear) =>
-        Some(strYear, startMonth.getOrElse(1))
+    val filterStartDate = (startYear, startMonth) match {
+      case (Some(strYear), Some(strMonth)) =>
+        Some(strYear, strMonth)
+      case (Some(strYear), None) => Some(strYear, 1)
+      case (None, Some(strMonth)) =>
+        throw InputParameterCheckError(Vector(DateFilterError("startYear", "startMonth")))
       case _ => Option.empty
     }
 
-    val filterEndDate = endYear match {
-      case Some(ndYear) =>
-        Some(ndYear, endMonth.getOrElse(12))
+    val filterEndDate = (endYear, endMonth) match {
+      case (Some(ndYear), Some(ndMonth)) =>
+        Some(ndYear, ndMonth)
+      case (Some(ndYear), None) => Some(ndYear, 12)
+      case (None, Some(ndMonth)) =>
+        throw InputParameterCheckError(Vector(DateFilterError("startYear", "startMonth")))
       case _ => Option.empty
     }
 
