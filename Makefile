@@ -22,22 +22,6 @@ debug_log: ## Debugs API using the logback file specified in logfile eg: make de
 debug_log_standalone: ## Debugs API using the logback file specified in logfile eg: make debug_log_standalone logfile=./conf/logback.xml
 	@sbt -jvm-debug 9999 "run 8090" -Dlogback.configurationFile=${logfile}
 
-os_tunnel_prefix:
-	@echo "Connecting to OpenSearch using the instance prefix"
-	@bash -c '\
-		read os_instance os_zone <<< "$$(gcloud compute instances list | grep $(prefix) | awk '\''{print $$1, $$2}'\'')"; \
-		echo "Connecting to $$os_instance in zone $$os_zone"; \
-		gcloud compute ssh --zone "$$os_zone" --tunnel-through-iap $$os_instance -- -L 9200:localhost:9200 -N \
-	'
-
-ch_tunnel_prefix:
-	@echo "Connecting to Clickhouse using the instance prefix"
-	@bash -c '\
-		read ch_instance ch_zone <<< "$$(gcloud compute instances list | grep $(prefix) | awk '\''{print $$1, $$2}'\'')"; \
-		echo "Connecting to $$ch_instance in zone $$ch_zone"; \
-		gcloud compute ssh --zone "$$ch_zone" --tunnel-through-iap $$ch_instance -- -L 8123:localhost:8123 -N \
-	'
-
 es_tunnel: ## Create tunnel connection to OpenSearch. E.g.: make es_tunnel zone=europe-west1-d instance=trnplt-es-0-esearch-fl6c
 	@echo "Connecting to OpenSearch"
 	@gcloud compute ssh --zone "${zone}" --tunnel-through-iap ${instance} -- -L 9200:localhost:9200 -N
