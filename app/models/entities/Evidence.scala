@@ -5,7 +5,7 @@ import play.api.libs.json._
 
 case class NameAndDescription(name: String, description: String)
 
-case class PathwayTerm(id: String, name: String)
+case class PathwayTerm(id: Option[String], name: String)
 
 case class EvidenceTextMiningSentence(
     dEnd: Long,
