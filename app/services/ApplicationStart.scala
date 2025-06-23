@@ -2,8 +2,8 @@ package services
 
 import com.google.inject.Singleton
 import io.prometheus.metrics.core.metrics.{Counter, Histogram}
-import io.prometheus.metrics.instrumentation.jvm.JvmMetrics
 import io.prometheus.metrics.model.snapshots.Unit
+import utils.prometheus.CustomJvmMetrics
 
 import javax.inject.Inject
 
@@ -12,7 +12,7 @@ class ApplicationStart @Inject() (
     // Add your dependencies here
 ) {
 
-  JvmMetrics.builder().register()
+  CustomJvmMetrics.builder().register()
 
   // TODO: Register prometheus metrics
   val RequestCounter: Counter = Counter
