@@ -44,9 +44,11 @@ jobs:
       # =========== BUILD STEPS (TODO:  Extract to another workflow) ===========
       - id: scala-setup
         name: Install Scala
-        uses: olafurpg/setup-scala@v11
+        uses: actions/setup-java@v3
         with:
-          java-version: openjdk@1.11
+          distribution: temurin
+          java-version: 21
+          cache: sbt
 
       - id: cache
         name: Cache dependencies
