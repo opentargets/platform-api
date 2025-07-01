@@ -80,8 +80,13 @@ object Configuration {
   implicit val metaJSONImp: OFormat[Meta] = Json.format[Meta]
 
   implicit val esEntitiesJSONImp: OFormat[ElasticsearchEntity] = Json.format[ElasticsearchEntity]
-  implicit val esSettingsJSONImp: OFormat[ElasticsearchSettings] =
-    Json.format[ElasticsearchSettings]
+  implicit val esSettingsJSONImp: Reads[ElasticsearchSettings] = ((__ \ "host").read[String] and
+    (__ \ "port").read[String].map(_.toInt).orElse((__ \ "port").read[Int]) and
+    (__ \ "entities").read[Seq[ElasticsearchEntity]] and
+    (__ \ "highlightFields").read[Seq[String]])(ElasticsearchSettings.apply)
+
+  implicit val esSettingsJSONWrites: OWrites[ElasticsearchSettings] =
+    Json.writes[ElasticsearchSettings]
 
   implicit val luTableJSONImp: OFormat[LUTableSettings] = Json.format[LUTableSettings]
   implicit val dbTableSettingsImp: OFormat[DbTableSettings] =
