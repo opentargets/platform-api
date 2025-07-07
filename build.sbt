@@ -20,20 +20,20 @@ libraryDependencies ++= Seq(
   guice,
   caffeine,
   "com.typesafe.slick" %% "slick" % "3.6.1",
-  "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.1" % Test,
+  "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.2" % Test,
   "org.scalatestplus" %% "scalacheck-1-15" % "3.2.11.0" % Test
 )
 
-val playVersion = "3.0.7"
+val playVersion = "3.0.8"
 libraryDependencies += "org.playframework" %% "play" % playVersion
-libraryDependencies += "org.playframework" %% "play-filters-helpers" % "3.0.7"
+libraryDependencies += "org.playframework" %% "play-filters-helpers" % "3.0.8"
 libraryDependencies += "org.playframework" %% "play-logback" % playVersion
-libraryDependencies += "org.playframework" %% "play-json" % "3.0.4"
+libraryDependencies += "org.playframework" %% "play-json" % "3.0.5"
 libraryDependencies += "org.playframework" %% "play-streams" % playVersion
 libraryDependencies += "org.playframework" %% "play-slick" % "6.2.0"
 
 val sangriaVersion = "4.2.10"
-libraryDependencies += "com.clickhouse" % "clickhouse-jdbc" % "0.6.4"
+libraryDependencies += "com.clickhouse" % "clickhouse-jdbc" % "0.7.2"
 libraryDependencies += "org.apache.httpcomponents.client5" % "httpclient5" % "5.5"
 libraryDependencies += "org.sangria-graphql" %% "sangria" % sangriaVersion
 libraryDependencies += "org.sangria-graphql" %% "sangria-play-json-play30" % "2.0.3"
