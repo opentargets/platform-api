@@ -118,9 +118,6 @@ class GraphQLController @Inject() (implicit
                     logger.info(s"Temporarily caching 200 response with errors")
                     errorMessagesOpt.foreach(errors => logger.error(s"Errors in response: $errors"))
                     cache.set(gqlQuery.toString, s, non200CacheDuration)
-                    appStart.CacheRegistrationCounter
-                      .labelValues(gqlQuery.operation.getOrElse(""))
-                      .inc()
                   } else {
                     logger.info(
                       s"Caching 200 response on ${gqlQuery.operation}: ${gqlQuery.query.filter(_ >= ' ')}"
