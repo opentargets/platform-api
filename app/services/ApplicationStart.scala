@@ -19,7 +19,7 @@ class ApplicationStart @Inject() (
   // TODO: Register prometheus metrics
   val RequestCounter: Counter = Counter
     .builder()
-    .name(metric_prefix+ "http_requests_total")
+    .name(metric_prefix + "http_requests_total")
     .help("total number of http requests")
     .labelNames("handler", "method", "query_name")
     .register()
@@ -33,28 +33,28 @@ class ApplicationStart @Inject() (
 
   val CacheMissedCounter: Counter = Counter
     .builder()
-    .name(metric_prefix+"cache_missed_total")
+    .name(metric_prefix + "cache_missed_total")
     .help("total number of times queries were not found from the query")
     .labelNames("query_name")
     .register()
 
   val QueryTime: Histogram = Histogram
     .builder()
-    .name(metric_prefix+ "graphql_query_time")
+    .name(metric_prefix + "graphql_query_time")
     .help("histogram measuring the time taken for query execution")
     .unit(Unit.SECONDS)
     .register();
 
   val FieldUsageCount: Counter = Counter
     .builder()
-    .name(metric_prefix+ "graphql_field_usage")
+    .name(metric_prefix + "graphql_field_usage")
     .help("count the usages of different fields")
     .labelNames("field_name")
     .register()
 
   val FieldErrorCount: Counter = Counter
     .builder()
-    .name(metric_prefix+ "graphql_field_error")
+    .name(metric_prefix + "graphql_field_error")
     .help("count the number of times that processing has failed on a given field")
     .labelNames("field_name")
     .register()
