@@ -54,16 +54,16 @@ class GraphQLController @Inject() (implicit
 
   def gql(query: String, variables: Option[String], operation: Option[String]): Action[AnyContent] =
     metadataAction.async {
-      appStart.RequestCounter.labelValues("/api/v4/graphql", "GET").inc()
+      appStart.RequestCounter.labelValues("/api/v4/graphql", "GET", operation.getOrElse("")).inc()
       val gqlQuery =
         GqlQuery(query, (variables map parseVariables).getOrElse(Json.obj()), operation)
       runQuery(gqlQuery)
     }
 
   def gqlBody(): Action[JsValue] = metadataAction(parse.json).async { request =>
-    appStart.RequestCounter.labelValues("/api/v4/graphql", "POST").inc()
     val query = (request.body \ "query").as[String]
     val operation = (request.body \ "operationName").asOpt[String]
+    appStart.RequestCounter.labelValues("/api/v4/graphql", "POST", operation.getOrElse("")).inc()
 
     val variables: JsObject = (request.body \ "variables").toOption
       .map {

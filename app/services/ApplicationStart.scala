@@ -19,7 +19,7 @@ class ApplicationStart @Inject() (
     .builder()
     .name("platform_api_http_requests_total")
     .help("total number of http requests")
-    .labelNames("handler", "method")
+    .labelNames("handler", "method", "query_name")
     .register
 
   val QueryTime: Histogram = Histogram
