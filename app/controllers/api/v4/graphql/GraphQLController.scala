@@ -104,6 +104,7 @@ class GraphQLController @Inject() (implicit
         case Some(result) => Future.successful(result)
         case None =>
           logger.debug(s"Cache miss on ${gqlQuery.operation}: ${gqlQuery.variables}")
+          appStart.CacheMissedCounter.labelValues(gqlQuery.operation.getOrElse("")).inc()
           val queryResult = executeQuery(gqlQuery)
           queryResult.andThen { case Success(s) =>
             if (s.header.status == HttpStatus.SC_OK) {
@@ -116,12 +117,13 @@ class GraphQLController @Inject() (implicit
                   if (hasErrors) {
                     logger.info(s"Temporarily caching 200 response with errors")
                     errorMessagesOpt.foreach(errors => logger.error(s"Errors in response: $errors"))
-                    cache.set(gqlQuery.toString, s, non200CacheDuration)
+                    cache.set(gqlQuery.toString, s, non200CacheDuration)//TODO: we probably need to remove this
                   } else {
                     logger.info(
                       s"Caching 200 response on ${gqlQuery.operation}: ${gqlQuery.query.filter(_ >= ' ')}"
                     )
                     cache.set(gqlQuery.toString, s)
+                    appStart.CacheRegistrationCounter.labelValues(gqlQuery.operation.getOrElse("")).inc()
                   }
                 case Failure(exception) => logger.error(exception.getMessage)
               }
