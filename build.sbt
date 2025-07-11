@@ -19,26 +19,26 @@ javacOptions ++= Seq("-encoding", "UTF-8")
 libraryDependencies ++= Seq(
   guice,
   caffeine,
-  "com.typesafe.slick" %% "slick" % "3.5.0",
-  "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.1" % Test,
+  "com.typesafe.slick" %% "slick" % "3.6.1",
+  "org.scalatestplus.play" %% "scalatestplus-play" % "7.0.2" % Test,
   "org.scalatestplus" %% "scalacheck-1-15" % "3.2.11.0" % Test
 )
 
-val playVersion = "3.0.5"
+val playVersion = "3.0.8"
 libraryDependencies += "org.playframework" %% "play" % playVersion
-libraryDependencies += "org.playframework" %% "play-filters-helpers" % "3.0.5"
+libraryDependencies += "org.playframework" %% "play-filters-helpers" % "3.0.8"
 libraryDependencies += "org.playframework" %% "play-logback" % playVersion
-libraryDependencies += "org.playframework" %% "play-json" % "3.0.4"
+libraryDependencies += "org.playframework" %% "play-json" % "3.0.5"
 libraryDependencies += "org.playframework" %% "play-streams" % playVersion
-libraryDependencies += "org.playframework" %% "play-slick" % "6.1.1"
+libraryDependencies += "org.playframework" %% "play-slick" % "6.2.0"
 
-val sangriaVersion = "4.1.1"
-libraryDependencies += "com.clickhouse" % "clickhouse-jdbc" % "0.6.4"
-libraryDependencies += "org.apache.httpcomponents.client5" % "httpclient5" % "5.3.1"
+val sangriaVersion = "4.2.10"
+libraryDependencies += "com.clickhouse" % "clickhouse-jdbc" % "0.7.2"
+libraryDependencies += "org.apache.httpcomponents.client5" % "httpclient5" % "5.5"
 libraryDependencies += "org.sangria-graphql" %% "sangria" % sangriaVersion
 libraryDependencies += "org.sangria-graphql" %% "sangria-play-json-play30" % "2.0.3"
 
-lazy val catsVersion = "2.12.0"
+lazy val catsVersion = "2.13.0"
 lazy val cats = Seq(
   "org.typelevel" %% "cats-core" % catsVersion,
   "org.typelevel" %% "cats-laws" % catsVersion,
@@ -47,7 +47,7 @@ lazy val cats = Seq(
 )
 libraryDependencies ++= cats
 
-val s4sVersion = "8.11.3"
+val s4sVersion = "8.11.5"
 libraryDependencies ++= Seq(
   "com.sksamuel.elastic4s" %% "elastic4s-core" % s4sVersion exclude ("org.slf4j", "slf4j-api"),
   "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % s4sVersion exclude ("org.slf4j", "slf4j-api"),
