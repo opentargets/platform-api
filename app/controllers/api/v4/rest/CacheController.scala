@@ -20,7 +20,7 @@ class CacheController @Inject() (implicit
 
   def clearCache(): Action[AnyContent] =
     restHelpers.checkCredentials(Action.async { request =>
-      appStart.RequestCounter.labelValues("/api/v4/rest/cache/clear", "GET").inc()
+      appStart.RequestCounter.labelValues("/api/v4/rest/cache/clear", "GET", "").inc()
       Future {
         logger.info("Received request to clear cache.")
         Fetchers.resetCache()
