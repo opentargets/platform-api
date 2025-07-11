@@ -1,32 +1,29 @@
 package models
 
 import com.google.inject.Inject
-import com.sksamuel.elastic4s._
+import com.sksamuel.elastic4s.*
 import com.sksamuel.elastic4s.api.QueryApi
 import com.sksamuel.elastic4s.requests.common.Operator
-import com.sksamuel.elastic4s.requests.searches._
+import com.sksamuel.elastic4s.requests.searches.*
 import com.sksamuel.elastic4s.requests.searches.aggs.AbstractAggregation
-import com.sksamuel.elastic4s.requests.searches.queries.NestedQuery
 import com.sksamuel.elastic4s.requests.searches.queries.Query
 import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
-import com.sksamuel.elastic4s.requests.searches.queries.funcscorer._
+import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.*
 import com.sksamuel.elastic4s.requests.searches.queries.matches.MultiMatchQueryBuilderType
 import models.entities.Configuration.ElasticsearchEntity
-import models.entities.SearchResults._
-import models.entities.SearchFacetsResults._
-import models.entities._
+import models.entities.SearchResults.*
+import models.entities.SearchFacetsResults.*
+import models.entities.*
 import models.Helpers.Base64Engine
 import play.api.Logging
-import play.api.libs.json.Reads._
-import play.api.libs.json._
+import play.api.libs.json.Reads.*
+import play.api.libs.json.*
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Try
 import com.sksamuel.elastic4s.requests.searches.sort.FieldSort
-import com.sksamuel.elastic4s.requests.searches.term.TermQuery
-import com.sksamuel.elastic4s.handlers.index.Search
-import views.html.index.f
+import services.ApplicationStart
 
 case class ResolverField(fieldname: Option[String], matched_queries: Boolean = false)
 object ResolverField {
@@ -155,9 +152,12 @@ class ElasticRetriever @Inject() (
     client: ElasticClient,
     hlFields: Seq[String],
     searchEntities: Seq[String]
-) extends Logging
+)(implicit appStart: ApplicationStart)
+    extends Logging
     with QueryApi
     with ElasticRetrieverQueryBuilders {
+
+  val db_name = "opensearch"
 
   val hlFieldSeq: Seq[HighlightField] = hlFields.map(HighlightField(_))
 
@@ -220,6 +220,8 @@ class ElasticRetriever @Inject() (
       .limit(0)
       .aggs(aggs)
       .trackTotalHits(true)
+
+    appStart.DatabaseCallCounter.labelValues(db_name, "getAggregationsByQuery").inc()
 
     // just log and execute the query
     val elems: Future[Response[SearchResponse]] = client.execute {
@@ -390,6 +392,9 @@ class ElasticRetriever @Inject() (
       searchRequest: SearchRequest,
       sortByField: Option[sort.FieldSort]
   ): Future[Response[SearchResponse]] =
+
+    appStart.DatabaseCallCounter.labelValues(db_name, "executeQuery").inc()
+
     client.execute {
       val sortedSearchRequest = sortByField match {
         case Some(s) => searchRequest.sortBy(s)
@@ -404,6 +409,9 @@ class ElasticRetriever @Inject() (
       searchRequest: MultiSearchRequest,
       sortByField: Option[sort.FieldSort]
   ): Future[Response[MultiSearchResponse]] =
+
+    appStart.DatabaseCallCounter.labelValues(db_name, "executeMultiQuery").inc()
+
     client.execute {
       val sortedSearchRequest = sortByField match {
         case Some(s) =>
@@ -565,6 +573,8 @@ class ElasticRetriever @Inject() (
       .sourceExclude(excludedFields)
       .searchAfter(sa)
 
+    appStart.DatabaseCallCounter.labelValues(db_name, "getByMustWithSearch").inc()
+
     // just log and execute the query
     val elems: Future[Response[SearchResponse]] = client.execute {
       val qq = sortByField match {
@@ -651,6 +661,8 @@ class ElasticRetriever @Inject() (
         .sourceExclude(excludedFields)
         .searchAfter(searchAfterEntries)
 
+    appStart.DatabaseCallCounter.labelValues(db_name, "getByFreeQuery").inc()
+
     val elems =
       client.execute {
         val qq = sortByField match {
@@ -707,6 +719,8 @@ class ElasticRetriever @Inject() (
         logger.warn("No IDs provided to getByIds. Something is probably wrong.")
         Future.successful(IndexedSeq.empty)
       case _ =>
+        appStart.DatabaseCallCounter.labelValues(db_name, "getByIds").inc()
+
         val elems: Future[Response[SearchResponse]] = client.execute {
           val q = search(esIndex).query {
             idsQuery(ids)
@@ -766,6 +780,8 @@ class ElasticRetriever @Inject() (
             logger.trace(client.show(aggregations))
             aggregations trackTotalHits (true)
           }
+
+        appStart.DatabaseCallCounter.labelValues(db_name, "getTermsResultsMapping").inc()
 
         val execMainSearch = client.execute {
           val q = search(esIndices)
@@ -955,6 +971,8 @@ class ElasticRetriever @Inject() (
     val mainQuery = boolQuery().must(fnQueries ::: filterQueries)
 
     if (qString.nonEmpty) {
+      appStart.DatabaseCallCounter.labelValues(db_name, "getSearchResultSet").inc()
+
       client
         .execute {
           val aggregations =
