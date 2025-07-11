@@ -31,6 +31,13 @@ class ApplicationStart @Inject() (
     .labelNames("query_name")
     .register()
 
+  val DatabaseCallCounter: Counter = Counter
+    .builder()
+    .name(metric_prefix + "db_query_total")
+    .help("total number of queries to the db")
+    .labelNames("database", "method")
+    .register()
+
   val CacheMissedCounter: Counter = Counter
     .builder()
     .name(metric_prefix + "cache_missed_total")
