@@ -16,12 +16,18 @@ class ApplicationStart @Inject() (
 
   val metric_prefix = "platform_api_"
 
-  // TODO: Register prometheus metrics
   val RequestCounter: Counter = Counter
     .builder()
     .name(metric_prefix + "http_requests_total")
     .help("total number of http requests")
-    .labelNames("handler", "method", "query_name")
+    .labelNames("handler", "method")
+    .register()
+
+  val GraphqlRequestCounter: Counter = Counter
+    .builder()
+    .name(metric_prefix + "graphql_requests_total")
+    .help("total number of http requests")
+    .labelNames("method", "query_name")
     .register()
 
   val CacheRegistrationCounter: Counter = Counter
