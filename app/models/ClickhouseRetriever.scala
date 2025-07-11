@@ -55,7 +55,6 @@ class ClickhouseRetriever(config: OTSettings)(implicit
   def executeQuery[A, B <: Q](q: B)(implicit rconv: GetResult[A]): Future[Vector[A]] = {
     logger.debug(s"execute query from eselecu Q ${q.toString}")
     val qq = q.as[A]
-
     db.run(qq.asTry).map {
       case Success(v) => v
       case Failure(ex) =>

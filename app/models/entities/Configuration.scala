@@ -39,7 +39,7 @@ object Configuration {
 
   case class TargetSettings(associations: DbTableSettings)
 
-  case class DiseaseSettings(associations: DbTableSettings)
+  case class DiseaseSettings(disease: DbTableSettings, associations: DbTableSettings)
 
   case class DatasourceSettings(id: String,
                                 weight: Double,

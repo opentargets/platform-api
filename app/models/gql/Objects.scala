@@ -298,8 +298,8 @@ object Objects extends Logging {
     DocumentField("dbXRefs", "List of external cross reference IDs"),
     ExcludeFields("ontology"),
     DocumentField("obsoleteTerms", "List of obsolete diseases"),
-    DocumentField("directLocationIds", "List of direct location Disease terms"),
-    DocumentField("indirectLocationIds", "List of indirect location Disease terms"),
+    // DocumentField("directLocationIds", "List of direct location Disease terms"),
+    // DocumentField("indirectLocationIds", "List of indirect location Disease terms"),
     ReplaceField(
       "therapeuticAreas",
       Field(
@@ -328,18 +328,18 @@ object Objects extends Logging {
       )
     ),
     AddFields(
-      Field(
-        "directLocations",
-        ListType(diseaseImp),
-        Some("Direct Location disease terms"),
-        resolve = r => diseasesFetcher.deferSeqOpt(r.value.directLocationIds.getOrElse(Seq.empty))
-      ),
-      Field(
-        "indirectLocations",
-        ListType(diseaseImp),
-        Some("Indirect Location disease terms"),
-        resolve = r => diseasesFetcher.deferSeqOpt(r.value.indirectLocationIds.getOrElse(Seq.empty))
-      ),
+      // Field(
+      //   "directLocations",
+      //   ListType(diseaseImp),
+      //   Some("Direct Location disease terms"),
+      //   resolve = r => diseasesFetcher.deferSeqOpt(r.value.directLocationIds.getOrElse(Seq.empty))
+      // ),
+      // Field(
+      //   "indirectLocations",
+      //   ListType(diseaseImp),
+      //   Some("Indirect Location disease terms"),
+      //   resolve = r => diseasesFetcher.deferSeqOpt(r.value.indirectLocationIds.getOrElse(Seq.empty))
+      // ),
       Field(
         "similarEntities",
         ListType(similarityGQLImp),

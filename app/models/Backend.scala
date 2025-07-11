@@ -11,7 +11,7 @@ import gql.validators.QueryTermsValidator.*
 
 import javax.inject.Inject
 import models.Helpers.*
-import models.db.{QAOTF, QLITAGG, QW2V, SentenceQuery}
+import models.db.{QAOTF, QLITAGG, QW2V, SentenceQuery, DiseaseQuery}
 import models.entities.Publication.*
 import models.entities.Associations.*
 import models.entities.Biosample.*
@@ -847,9 +847,14 @@ class Backend @Inject() (implicit
       }
   }
 
-  def getDiseases(ids: Seq[String]): Future[IndexedSeq[Disease]] = {
-    val diseaseIndexName = getIndexOrDefault("disease")
-    esRetriever.getByIds(diseaseIndexName, ids, fromJsValue[Disease])
+  def getDiseases(ids: Seq[String]): Future[Vector[Disease]] = {
+    val table = defaultOTSettings.clickhouse.disease.disease
+    val diseaseQuery = DiseaseQuery(ids, table.name)
+    logger.debug(s"getDiseases: ${diseaseQuery.query}")
+    val results = dbRetriever.executeQuery[Disease, Query](diseaseQuery.query)
+    results
+
+    // esRetriever.getByIds(diseaseIndexName, ids, fromJsValue[Disease])
   }
 
   def mapIds(
