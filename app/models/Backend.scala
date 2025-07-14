@@ -11,7 +11,7 @@ import gql.validators.QueryTermsValidator.*
 
 import javax.inject.Inject
 import models.Helpers.*
-import models.db.{QAOTF, QLITAGG, QW2V, SentenceQuery}
+import models.db.{QAOTF, QLITAGG, QW2V, SentenceQuery, IntervalsQuery}
 import models.entities.Publication.*
 import models.entities.Associations.*
 import models.entities.Biosample.*
@@ -19,6 +19,7 @@ import models.entities.CredibleSet.*
 import models.entities.Configuration.*
 import models.entities.DiseaseHPOs.*
 import models.entities.Drug.*
+import models.entities.Intervals.*
 import models.entities.Loci.*
 import models.entities.MousePhenotypes.*
 import models.entities.Pharmacogenomics.*
@@ -850,6 +851,28 @@ class Backend @Inject() (implicit
   def getDiseases(ids: Seq[String]): Future[IndexedSeq[Disease]] = {
     val diseaseIndexName = getIndexOrDefault("disease")
     esRetriever.getByIds(diseaseIndexName, ids, fromJsValue[Disease])
+  }
+
+  def getIntervals(chromosome: String,
+                   start: Int,
+                   end: Int,
+                   pagination: Option[Pagination]
+  ): Future[Intervals] = {
+    val intervalsQuery = IntervalsQuery(
+      chromosome,
+      start,
+      end,
+      "ot.intervals"
+    )
+    val results = dbRetriever.executeQuery[Interval, Query](intervalsQuery.query)
+    results.map { case intervals =>
+      val count = intervals.size
+      val paginatedIntervals = intervals.slice(
+        pagination.map(_.offset).getOrElse(0),
+        pagination.map(p => p.offset + p.size).getOrElse(count)
+      )
+      Intervals(count, paginatedIntervals)
+    }
   }
 
   def mapIds(
