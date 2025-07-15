@@ -34,8 +34,8 @@ object IntervalsQuery extends Logging {
     Where(
       Functions.and(
         Functions.equals(column("chromosome"), literal(chromosome)),
-        Functions.greaterOrEquals(column("start"), literal(start)),
-        Functions.lessOrEquals(column("end"), literal(end))
+        Functions.lessOrEquals(column("start"), literal(start)),
+        Functions.greaterOrEquals(column("end"), literal(end))
       )
     )
   )
