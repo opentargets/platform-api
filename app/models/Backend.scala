@@ -1,13 +1,13 @@
 package models
 
 import clickhouse.ClickHouseProfile
+import net.logstash.logback.argument.StructuredArguments.keyValue
 import com.sksamuel.elastic4s.*
 import com.sksamuel.elastic4s.http.JavaClient
 import com.sksamuel.elastic4s.requests.searches.*
 import com.sksamuel.elastic4s.requests.searches.aggs.*
 import com.sksamuel.elastic4s.requests.searches.sort.SortOrder
 import esecuele.*
-import gql.validators.QueryTermsValidator.*
 
 import javax.inject.Inject
 import models.Helpers.*
@@ -23,7 +23,6 @@ import models.entities.Intervals.*
 import models.entities.Loci.*
 import models.entities.MousePhenotypes.*
 import models.entities.Pharmacogenomics.*
-import models.entities.ProteinCodingCoordinates.*
 import models.entities.SearchFacetsResults.*
 import models.entities.Evidence.*
 import models.entities.SequenceOntologyTerm.*
@@ -33,7 +32,7 @@ import org.apache.http.impl.nio.reactor.IOReactorConfig
 import play.api.cache.AsyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json.*
-import play.api.{Configuration, Environment, Logging}
+import play.api.{Configuration, Environment}
 import play.db.NamedDatabase
 import slick.basic.DatabaseConfig
 
@@ -41,6 +40,7 @@ import java.time.LocalDate
 import scala.concurrent.*
 import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
 import models.entities.Violations.{DateFilterError, InputParameterCheckError}
+import org.slf4j.{Logger, LoggerFactory}
 import services.ApplicationStart
 import utils.MetadataUtils.getIndexWithPrefixOrDefault
 
@@ -51,7 +51,9 @@ class Backend @Inject() (implicit
     config: Configuration,
     env: Environment,
     cache: AsyncCacheApi
-) extends Logging {
+) {
+
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   implicit val defaultOTSettings: OTSettings = loadConfigurationObject[OTSettings]("ot", config)
   implicit val defaultESSettings: ElasticsearchSettings = defaultOTSettings.elasticsearch
@@ -96,6 +98,8 @@ class Backend @Inject() (implicit
 
     val indexName = getIndexOrDefault("faers")
 
+    logger.debug(s"querying adverse events", keyValue("id", id), keyValue("index", indexName))
+
     val kv = Map("chembl_id.keyword" -> id)
 
     val aggs = Seq(
@@ -113,7 +117,7 @@ class Backend @Inject() (implicit
       )
       .map {
         case Results(Seq(), _, _, _) =>
-          logger.debug(s"No adverse event found for ${kv.toString}")
+          logger.debug(s"no adverse event found", keyValue("chembl_id", kv.toString()))
           None
         case Results(seq, agg, _, _) =>
           logger.trace(Json.prettyPrint(agg))
@@ -127,6 +131,8 @@ class Backend @Inject() (implicit
     val pag = pagination.getOrElse(Pagination.mkDefault)
 
     val cbIndex = getIndexOrDefault("disease_hpo")
+
+    logger.debug(s"querying disease hpos", keyValue("id", id), keyValue("index", cbIndex))
 
     val kv = Map("disease.keyword" -> id)
 
@@ -145,6 +151,7 @@ class Backend @Inject() (implicit
 
   def getDownloads: Future[Option[String]] = {
     val indexName = getIndexOrDefault("downloads")
+    logger.debug(s"querying downloads", keyValue("index", indexName))
     // We assume that the index has a single document, "croissant", with the downloads information
     esRetriever.getByIds(indexName, Seq("croissant"), fromJsValue[JsValue]).map {
       case IndexedSeq(downloads) =>
@@ -156,6 +163,8 @@ class Backend @Inject() (implicit
   def getGoTerms(ids: Seq[String]): Future[IndexedSeq[GeneOntologyTerm]] = {
     val targetIndexName = getIndexOrDefault("go")
 
+    logger.debug(s"querying go terms", keyValue("ids", ids), keyValue("index", targetIndexName))
+
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[GeneOntologyTerm])
   }
 
@@ -163,6 +172,9 @@ class Backend @Inject() (implicit
                         pagination: Option[Pagination]
   ): Future[IndexedSeq[L2GPredictions]] = {
     val indexName = getIndexOrDefault("l2g_predictions")
+
+    logger.debug(s"querying l2g predictions", keyValue("ids", ids), keyValue("index", indexName))
+
     val pag = pagination.getOrElse(Pagination.mkDefault)
     val queries = ids.map { studyLocusId =>
       IndexQuery(
@@ -191,6 +203,9 @@ class Backend @Inject() (implicit
 
   def getVariants(ids: Seq[String]): Future[IndexedSeq[VariantIndex]] = {
     val indexName = getIndexOrDefault("variant")
+
+    logger.debug(s"querying variants", keyValue("ids", ids), keyValue("index", indexName))
+
     val r = esRetriever
       .getByIndexedTermsMust(indexName,
                              Map("variantId.keyword" -> ids),
@@ -203,6 +218,9 @@ class Backend @Inject() (implicit
 
   def getBiosamples(ids: Seq[String]): Future[IndexedSeq[Biosample]] = {
     val indexName = getIndexOrDefault("biosample", Some("biosample"))
+
+    logger.debug(s"querying biosamples", keyValue("ids", ids), keyValue("index", indexName))
+
     esRetriever
       .getByIndexedTermsMust(
         indexName,
@@ -215,6 +233,9 @@ class Backend @Inject() (implicit
 
   def getStudy(ids: Seq[String]): Future[IndexedSeq[Study]] = {
     val indexName = getIndexOrDefault("study")
+
+    logger.debug(s"querying studies by id", keyValue("ids", ids), keyValue("index", indexName))
+
     val termsQuery = Map("studyId.keyword" -> ids)
     val retriever =
       esRetriever
@@ -230,6 +251,13 @@ class Backend @Inject() (implicit
   def getStudies(queryArgs: StudyQueryArgs, pagination: Option[Pagination]): Future[Studies] = {
     val pag = pagination.getOrElse(Pagination.mkDefault)
     val indexName = getIndexOrDefault("study")
+
+    logger.debug(s"querying studies by disease",
+                 keyValue("id", queryArgs.id),
+                 keyValue("diseases", queryArgs.diseaseIds),
+                 keyValue("index", indexName)
+    )
+
     val diseaseIds: Seq[String] =
       if (queryArgs.enableIndirect) {
         val diseases = getDiseases(queryArgs.diseaseIds)
@@ -265,6 +293,13 @@ class Backend @Inject() (implicit
                          pagination: Option[Pagination]
   ): Future[IndexedSeq[Colocalisations]] = {
     val indexName = getIndexOrDefault("colocalisation")
+
+    logger.debug(s"querying colocalisations",
+                 keyValue("study_locus_ids", studyLocusIds),
+                 keyValue("studyType", studyTypes),
+                 keyValue("index", indexName)
+    )
+
     val pag = pagination.getOrElse(Pagination.mkDefault)
     val boolQueries: Seq[IndexBoolQuery] = studyLocusIds.map { studyLocusId =>
       val leftStudyLocusQuery = must(
@@ -325,6 +360,13 @@ class Backend @Inject() (implicit
                pagination: Option[Pagination]
   ): Future[IndexedSeq[Loci]] = {
     val indexName = getIndexOrDefault("credible_set")
+
+    logger.debug(s"querying locus",
+                 keyValue("ids", studyLocusIds),
+                 keyValue("variant_ids", variantIds),
+                 keyValue("index", indexName)
+    )
+
     val limitClause = pagination.getOrElse(Pagination.mkDefault).toES
     val termsQuerySeq = Seq(Map("studyLocusId.keyword" -> studyLocusIds))
     val termsQueryIter = termsQuerySeq.map { termsQuerySeq =>
@@ -370,6 +412,9 @@ class Backend @Inject() (implicit
 
   def getCredibleSet(ids: Seq[String]): Future[IndexedSeq[CredibleSet]] = {
     val indexName = getIndexOrDefault("credible_set")
+
+    logger.debug(s"querying credible sets", keyValue("ids", ids), keyValue("index", indexName))
+
     val termsQuery = Map("studyLocusId.keyword" -> ids)
     val retriever =
       esRetriever
@@ -389,6 +434,16 @@ class Backend @Inject() (implicit
   ): Future[CredibleSets] = {
     val pag = pagination.getOrElse(Pagination.mkDefault)
     val indexName = getIndexOrDefault("credible_set")
+
+    logger.debug(
+      s"querying credible sets",
+      keyValue("studyLocusId", queryArgs.ids),
+      keyValue("studyId", queryArgs.studyIds),
+      keyValue("studyType", queryArgs.studyTypes),
+      keyValue("region", queryArgs.regions),
+      keyValue("index", indexName)
+    )
+
     val termsQuerySeq = Map(
       "studyLocusId.keyword" -> queryArgs.ids,
       "studyId.keyword" -> queryArgs.studyIds,
@@ -435,6 +490,12 @@ class Backend @Inject() (implicit
   ): Future[IndexedSeq[CredibleSets]] = {
     val pag = pagination.getOrElse(Pagination.mkDefault)
     val indexName = getIndexOrDefault("credible_set")
+
+    logger.debug(s"querying credible sets by study ids",
+                 keyValue("ids", studyIds),
+                 keyValue("index", indexName)
+    )
+
     val queries = studyIds.map { studyId =>
       IndexQuery(
         esIndex = indexName,
@@ -468,6 +529,13 @@ class Backend @Inject() (implicit
   ): Future[IndexedSeq[CredibleSets]] = {
     val pag = pagination.getOrElse(Pagination.mkDefault)
     val indexName = getIndexOrDefault("credible_set")
+
+    logger.debug(s"querying credible sets by variant ids",
+                 keyValue("ids", variantIds),
+                 keyValue("study_types", studyTypes),
+                 keyValue("index", indexName)
+    )
+
     val termsQueryIter: Option[Iterable[queries.Query]] = studyTypes match {
       case Some(studyTypes) => Some(Iterable(should(termsQuery("studyType.keyword", studyTypes))))
       case None             => None
@@ -510,11 +578,21 @@ class Backend @Inject() (implicit
   def getTargetEssentiality(ids: Seq[String]): Future[IndexedSeq[TargetEssentiality]] = {
     val targetIndexName = getIndexOrDefault("target_essentiality")
 
+    logger.debug(s"querying target essentiality",
+                 keyValue("ids", ids),
+                 keyValue("index", targetIndexName)
+    )
+
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[TargetEssentiality])
   }
 
   def getTargetsPrioritisation(id: String): Future[IndexedSeq[JsValue]] = {
     val targetsPrioritisationIndexName = getIndexOrDefault("target_prioritisation")
+
+    logger.debug(s"querying credible sets",
+                 keyValue("id", id),
+                 keyValue("index", targetsPrioritisationIndexName)
+    )
 
     esRetriever.getByIds(targetsPrioritisationIndexName, Seq(id), fromJsValue[JsValue])
   }
@@ -574,6 +652,11 @@ class Backend @Inject() (implicit
     val pag = Pagination(0, sizeLimit.getOrElse(Pagination.sizeDefault))
     val sortByField = sort.FieldSort(field = "phase").desc()
     val cbIndex = getIndexOrDefault("known_drugs")
+
+    val mappedValues =
+      Seq(keyValue("index", cbIndex)) ++ kv.map(pair => keyValue(pair._1, pair._2)).toSeq
+
+    logger.debug(s"querying known drugs", mappedValues*)
 
     val aggs = Seq(
       cardinalityAgg("uniqueTargets", "targetId.raw"),
@@ -660,6 +743,14 @@ class Backend @Inject() (implicit
       .map(_.map(cbIndexPrefix.concat).mkString(","))
       .getOrElse(cbIndexPrefix.concat("*"))
 
+    val mappedFiltered = filters.map(filter => keyValue(filter._1, filter._2)).toSeq
+
+    val loggingKeys = datasourceIds match
+      case Some(value) => mappedFiltered ++ Seq(keyValue("datasource_ids", value))
+      case None        => mappedFiltered
+
+    logger.debug(s"querying credible sets", loggingKeys*)
+
     esRetriever
       .getByMustWithSearch(
         cbIndex,
@@ -681,13 +772,15 @@ class Backend @Inject() (implicit
   def getHPOs(ids: Seq[String]): Future[IndexedSeq[HPO]] = {
     val targetIndexName = getIndexOrDefault("hpo")
 
+    logger.debug(s"querying hpos", keyValue("ids", ids), keyValue("index", targetIndexName))
+
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[HPO])
   }
 
   def getMousePhenotypes(ids: Seq[String]): Future[IndexedSeq[MousePhenotype]] = {
     val indexName = getIndexOrDefault("mouse_phenotypes", Some("mouse_phenotypes"))
     val queryTerm = Map("targetFromSourceId.keyword" -> ids)
-    logger.debug(s"Querying mouse phenotypes for: $ids")
+    logger.debug(s"querying mouse phenotypes", keyValue("ids", ids), keyValue("index", indexName))
 
     // The entry with the highest number of MP is ENSG00000157404 with 1828. Pagination max size is 5000, so we have plenty
     // of headroom for now.
@@ -720,7 +813,7 @@ class Backend @Inject() (implicit
                           queryTerm: Map[String, String]
   ): Future[IndexedSeq[Pharmacogenomics]] = {
     val indexName = getIndexOrDefault("pharmacogenomics", Some("pharmacogenomics"))
-    logger.debug(s"Querying pharmacogenomics for: $id")
+    logger.debug(s"querying pharmacogenomics", keyValue("id", id), keyValue("index", indexName))
     esRetriever
       .getByIndexedQueryMust(
         indexName,
@@ -749,7 +842,10 @@ class Backend @Inject() (implicit
   ): Future[ProteinCodingCoordinates] = {
     val indexName = getIndexOrDefault("proteinCodingCoordinates")
     val pag = pagination.getOrElse(Pagination(0, 2))
-    logger.debug(s"Querying protein coding coordinates for: $id")
+    logger.debug(s"querying protein coding coordinates",
+                 keyValue("id", id),
+                 keyValue("index", indexName)
+    )
     val retriever = esRetriever
       .getByIndexedQueryMust(
         indexName,
@@ -767,11 +863,15 @@ class Backend @Inject() (implicit
   def getOtarProjects(ids: Seq[String]): Future[IndexedSeq[OtarProjects]] = {
     val otarsIndexName = getIndexOrDefault("otar_projects")
 
+    logger.debug(s"querying otar projects", keyValue("ids", ids), keyValue("index", otarsIndexName))
+
     esRetriever.getByIds(otarsIndexName, ids, fromJsValue[OtarProjects])
   }
 
   def getExpressions(ids: Seq[String]): Future[IndexedSeq[Expressions]] = {
     val targetIndexName = getIndexOrDefault("expression")
+
+    logger.debug(s"querying expressions", keyValue("ids", ids), keyValue("index", targetIndexName))
 
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[Expressions])
   }
@@ -779,12 +879,20 @@ class Backend @Inject() (implicit
   def getReactomeNodes(ids: Seq[String]): Future[IndexedSeq[Reactome]] = {
     val targetIndexName = getIndexOrDefault("reactome")
 
+    logger.debug(s"querying reactome nodes",
+                 keyValue("ids", ids),
+                 keyValue("index", targetIndexName)
+    )
+
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[Reactome])
   }
 
   def getTargets(ids: Seq[String]): Future[IndexedSeq[Target]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.target.name)
     val targetsQuery = TargetsQuery(ids, tableName, 0, Pagination.sizeMax)
+
+    logger.debug(s"querying targets", keyValue("ids", ids), keyValue("index", targetIndexName))
+
     val results = dbRetriever
       .executeQuery[Target, Query](targetsQuery.query)
       .map(targets => targets)
@@ -794,12 +902,16 @@ class Backend @Inject() (implicit
   def getSoTerms(ids: Seq[String]): Future[IndexedSeq[SequenceOntologyTerm]] = {
     val targetIndexName = getIndexOrDefault("so", Some("so"))
 
+    logger.debug(s"querying so terms", keyValue("ids", ids), keyValue("index", targetIndexName))
+
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[SequenceOntologyTerm])
   }
 
   def getDrugs(ids: Seq[String]): Future[IndexedSeq[Drug]] = {
-    logger.debug(s"Querying drugs: $ids")
     val drugIndexName = getIndexOrDefault("drug")
+
+    logger.debug(s"querying drugs", keyValue("drug_ids", ids), keyValue("index", drugIndexName))
+
     val queryTerm = Map("id.keyword" -> ids)
     esRetriever
       .getByIndexedQueryShould(drugIndexName, queryTerm, Pagination(0, ids.size), fromJsValue[Drug])
@@ -808,8 +920,8 @@ class Backend @Inject() (implicit
 
   def getMechanismsOfAction(id: String): Future[MechanismsOfAction] = {
 
-    logger.debug(s"querying ES: getting mechanisms of action for $id")
     val index = getIndexOrDefault("drugMoA")
+    logger.debug(s"querying mechanisms of action", keyValue("id", id), keyValue("index", index))
     val queryTerms = Map("chemblIds.keyword" -> id)
     val mechanismsOfActionRaw: Future[Results[MechanismOfActionRaw]] =
       esRetriever.getByIndexedQueryShould(
@@ -822,8 +934,8 @@ class Backend @Inject() (implicit
   }
 
   def getIndications(ids: Seq[String]): Future[IndexedSeq[Indications]] = {
-    logger.debug(s"querying ES: getting indications for $ids")
     val index = getIndexOrDefault("drugIndications")
+    logger.debug(s"querying indications", keyValue("ids", ids), keyValue("index", index))
     val queryTerm = Map("id.keyword" -> ids)
 
     esRetriever
@@ -832,8 +944,8 @@ class Backend @Inject() (implicit
   }
 
   def getDrugWarnings(id: String): Future[IndexedSeq[DrugWarning]] = {
-    logger.debug(s"Querying drug warnings for $id")
     val indexName = getIndexOrDefault("drugWarnings")
+    logger.debug(s"querying drug warnings", keyValue("id", id), keyValue("index", indexName))
     val queryTerm = Map("chemblIds.keyword" -> id)
     esRetriever
       .getByIndexedQueryShould(indexName, queryTerm, Pagination.mkDefault, fromJsValue[DrugWarning])
@@ -857,6 +969,9 @@ class Backend @Inject() (implicit
 
   def getDiseases(ids: Seq[String]): Future[IndexedSeq[Disease]] = {
     val diseaseIndexName = getIndexOrDefault("disease")
+
+    logger.debug(s"querying diseases", keyValue("ids", ids), keyValue("index", diseaseIndexName))
+
     esRetriever.getByIds(diseaseIndexName, ids, fromJsValue[Disease])
   }
 
@@ -964,6 +1079,12 @@ class Backend @Inject() (implicit
     val weights = dss.map(s => (s.id, s.weight))
     val mustIncludeDatasources = dss.withFilter(_.required).map(_.id).toSet
     val dontPropagate = dss.withFilter(!_.propagate).map(_.id).toSet
+
+    logger.debug(s"querying credible sets",
+                 keyValue("id", fixedEntityId),
+                 keyValue("table", tableName)
+    )
+
     val aotfQ = QAOTF(
       tableName,
       fixedEntityId,
@@ -1015,7 +1136,10 @@ class Backend @Inject() (implicit
       orderBy: Option[(String, String)],
       pagination: Option[Pagination]
   ): Future[Associations] = {
-    logger.debug(s"get disease id ${disease.name}")
+    logger.debug(s"querying associations with fixed disease",
+                 keyValue("disease_id", disease.name),
+                 keyValue("indirect", indirect)
+    )
     val indirectIDs = if (indirect) disease.descendants.toSet + disease.id else Set.empty[String]
     val targetIds = applyFacetFiltersToBIDs("facet_search_target", targetSet, facetFilters)
     getAssociationsEntityFixed(
@@ -1042,7 +1166,10 @@ class Backend @Inject() (implicit
       orderBy: Option[(String, String)],
       pagination: Option[Pagination]
   ): Future[Associations] = {
-    logger.debug(s"get target id ${target.approvedSymbol} ACTUALLY DISABLED!")
+    logger.debug(s"querying associations with fixed target",
+                 keyValue("target_id", target.approvedSymbol),
+                 keyValue("indirect", indirect)
+    )
     val indirectIDs = if (indirect) {
       val interactions =
         Interactions.find(target.id, None, None, pagination = Some(Pagination(0, 10000))) map {
@@ -1083,7 +1210,11 @@ class Backend @Inject() (implicit
       size: Int
   ): Future[Vector[Similarity]] = {
     val table = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.similarities.name)
-    logger.debug(s"query similarities in table ${table}")
+    logger.debug(s"querying similarities",
+                 keyValue("table", table.name),
+                 keyValue("label", label),
+                 keyValue("labels", labels)
+    )
 
     val jointLabels = labels + label
     val simQ = QW2V(table, categories, jointLabels, threshold, size)
@@ -1125,7 +1256,10 @@ class Backend @Inject() (implicit
   ): Future[Publications] = {
     val table = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.literature.name)
     val indexTable = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.literatureIndex.name)
-    logger.debug(s"query literature ocurrences in table ${table} and index ${indexTable}")
+    logger.debug(s"querying literature ocurrences",
+                 keyValue("table", table.name),
+                 keyValue("ids", ids)
+    )
 
     val pag = Helpers.Cursor.to(cursor).flatMap(_.asOpt[Pagination]).getOrElse(Pagination.mkDefault)
 
@@ -1174,12 +1308,12 @@ class Backend @Inject() (implicit
           case Vector(year) =>
             runQuery(year, total)
           case _ =>
-            logger.debug(s"Cannot find the earliest year for the publications.")
+            logger.warn(s"cannot find the earliest year for the publications")
             runQuery(1900, total)
         }
 
       case _ =>
-        logger.debug(s"there is no publications with this set of ids $ids")
+        logger.warn(s"there is no publications with this set of ids", keyValue("ids", ids))
         Future.successful(Publications.empty())
     }
   }

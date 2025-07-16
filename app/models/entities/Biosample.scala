@@ -1,7 +1,7 @@
 package models.entities
 
-import play.api.Logging
-import play.api.libs.json._
+import org.slf4j.{Logger, LoggerFactory}
+import play.api.libs.json.*
 
 case class Biosample(
     biosampleId: String,
@@ -15,6 +15,9 @@ case class Biosample(
     descendants: Option[Seq[String]]
 )
 
-object Biosample extends Logging {
+object Biosample {
+
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+
   implicit val biosampleF: OFormat[Biosample] = Json.format[Biosample]
 }
