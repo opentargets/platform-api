@@ -32,6 +32,8 @@ libraryDependencies += "org.playframework" %% "play-json" % "3.0.5"
 libraryDependencies += "org.playframework" %% "play-streams" % playVersion
 libraryDependencies += "org.playframework" %% "play-slick" % "6.2.0"
 
+libraryDependencies += "net.logstash.logback" % "logstash-logback-encoder" % "7.3"
+
 val sangriaVersion = "4.2.10"
 libraryDependencies += "com.clickhouse" % "clickhouse-jdbc" % "0.7.2"
 libraryDependencies += "org.apache.httpcomponents.client5" % "httpclient5" % "5.5"
