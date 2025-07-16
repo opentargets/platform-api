@@ -1,24 +1,26 @@
 package models
 
-import play.api.Logging
-import play.api.libs.json._
-import sangria.schema._
-import entities._
+import sangria.schema.*
+import entities.*
 import models.entities.CredibleSets.credibleSetsImp
 import models.entities.Studies.studiesImp
-import sangria.execution.deferred._
-import gql.validators.QueryTermsValidator._
-import scala.concurrent.ExecutionContext.Implicits.global
-import models.entities.Interaction._
-import models.gql.Objects._
-import models.gql.Arguments._
-import models.gql.Fetchers._
-import models.gql.DeferredResolvers._
-import scala.concurrent._
-import scala.util.{Try, Failure, Success}
-import models.Helpers.ComplexityCalculator._
+import sangria.execution.deferred.*
+import gql.validators.QueryTermsValidator.*
 
-trait GQLEntities extends Logging {}
+import scala.concurrent.ExecutionContext.Implicits.global
+import models.gql.Objects.*
+import models.gql.Arguments.*
+import models.gql.Fetchers.*
+import models.gql.DeferredResolvers.*
+
+import scala.concurrent.*
+import scala.util.{Failure, Success}
+import models.Helpers.ComplexityCalculator.*
+import org.slf4j.{Logger, LoggerFactory}
+
+trait GQLEntities {
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+}
 
 object GQLSchema {
   val resolvers: DeferredResolver[Backend] = deferredResolvers

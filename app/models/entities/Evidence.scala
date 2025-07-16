@@ -1,7 +1,7 @@
 package models.entities
 
-import play.api.Logging
-import play.api.libs.json._
+import org.slf4j.{Logger, LoggerFactory}
+import play.api.libs.json.*
 
 case class NameAndDescription(name: String, description: String)
 
@@ -151,7 +151,9 @@ case class Evidence(
     assays: Option[Seq[Assays]]
 )
 
-object Evidence extends Logging {
+object Evidence {
+
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   implicit val nameAndDescriptionJsonFormatImp: OFormat[NameAndDescription] =
     Json.format[NameAndDescription]

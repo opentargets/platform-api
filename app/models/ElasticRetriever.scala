@@ -15,7 +15,6 @@ import models.entities.SearchResults.*
 import models.entities.SearchFacetsResults.*
 import models.entities.*
 import models.Helpers.Base64Engine
-import play.api.Logging
 import play.api.libs.json.Reads.*
 import play.api.libs.json.*
 import utils.MetadataUtils.getIndexWithPrefixOrDefault
@@ -24,6 +23,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Try
 import com.sksamuel.elastic4s.requests.searches.sort.FieldSort
+import org.slf4j.{Logger, LoggerFactory}
 import services.ApplicationStart
 
 case class ResolverField(fieldname: Option[String], matched_queries: Boolean = false)
@@ -154,9 +154,10 @@ class ElasticRetriever @Inject() (
     hlFields: Seq[String],
     searchEntities: Seq[String]
 )(implicit appStart: ApplicationStart)
-    extends Logging
-    with QueryApi
+    extends QueryApi
     with ElasticRetrieverQueryBuilders {
+
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   val db_name = "opensearch"
 
@@ -198,7 +199,7 @@ class ElasticRetriever @Inject() (
         flattenedValues
       }
       .getOrElse({
-        logger.info("No results decoded from search, returning empty collection.")
+        logger.info("no results decoded from search returning empty collection.")
         Seq.empty
       })
 
@@ -433,7 +434,7 @@ class ElasticRetriever @Inject() (
   ): Results[A] =
     searchResponse match {
       case rf: RequestFailure =>
-        logger.debug(s"Request failure for query: $searchQuery")
+        logger.debug(s"request failure for query: $searchQuery")
         logger.error(s"Elasticsearch error: ${rf.error}")
         Results.empty
       case results: RequestSuccess[_] =>
@@ -453,7 +454,7 @@ class ElasticRetriever @Inject() (
   ): IndexedSeq[Results[A]] =
     searchResponse match {
       case rf: RequestFailure =>
-        logger.debug(s"Request failure for query: $searchQuery")
+        logger.debug(s"request failure for query: $searchQuery")
         logger.error(s"Elasticsearch error: ${rf.error}")
         IndexedSeq.empty
       case results: RequestSuccess[_] =>
@@ -475,7 +476,7 @@ class ElasticRetriever @Inject() (
   ): InnerResults[A] =
     searchResponse match {
       case rf: RequestFailure =>
-        logger.debug(s"Request failure for query: $searchQuery")
+        logger.debug(s"request failure for query: $searchQuery")
         logger.error(s"Elasticsearch error: ${rf.error}")
         InnerResults.empty
       case results: RequestSuccess[_] =>
@@ -717,7 +718,7 @@ class ElasticRetriever @Inject() (
   ): Future[IndexedSeq[A]] =
     ids match {
       case Nil =>
-        logger.warn("No IDs provided to getByIds. Something is probably wrong.")
+        logger.warn("no ids provided to getByIds something is probably wrong")
         Future.successful(IndexedSeq.empty)
       case _ =>
         appStart.DatabaseCallCounter.labelValues(db_name, "getByIds").inc()
@@ -760,7 +761,7 @@ class ElasticRetriever @Inject() (
     val queryTermsCleaned = queryTerms.filterNot(_.isEmpty)
     queryTermsCleaned match {
       case Nil =>
-        logger.warn("No terms provided.")
+        logger.warn("no terms provided")
         Future.successful(MappingResults.empty)
       case _ =>
         val esIndices = entities
@@ -1027,7 +1028,9 @@ class ElasticRetriever @Inject() (
   }
 }
 
-object ElasticRetriever extends Logging {
+object ElasticRetriever {
+
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   /** * SortBy case class use the `fieldName` to sort by and asc if `desc` is false otherwise desc
     */

@@ -1,13 +1,13 @@
 package models
 
-import com.sksamuel.elastic4s.ElasticDsl.{search, multi}
+import com.sksamuel.elastic4s.ElasticDsl.{multi, search}
 import com.sksamuel.elastic4s.api.QueryApi
 import com.sksamuel.elastic4s.requests.searches.aggs.AbstractAggregation
 import com.sksamuel.elastic4s.requests.searches.queries.Query
-import com.sksamuel.elastic4s.requests.searches.{SearchRequest, MultiSearchRequest}
+import com.sksamuel.elastic4s.requests.searches.{MultiSearchRequest, SearchRequest}
 import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
 import models.entities.Pagination
-import play.api.Logging
+import org.slf4j.{Logger, LoggerFactory}
 
 /** IndexQuery is a case class that represents a query to be executed on an Elasticsearch index.
   * @param esIndex
@@ -43,7 +43,9 @@ case class IndexBoolQuery(
     excludedFields: Seq[String] = Seq.empty
 )
 
-trait ElasticRetrieverQueryBuilders extends QueryApi with Logging {
+trait ElasticRetrieverQueryBuilders extends QueryApi {
+
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   def IndexQueryMust[V](indexQuery: IndexQuery[V]): SearchRequest =
     getByIndexQueryBuilder(indexQuery, must)
