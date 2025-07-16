@@ -11,7 +11,7 @@ import models.entities.Configuration.{ElasticsearchSettings, OTSettings}
 import models.gql.Objects.interactionImp
 import models.Results
 import utils.MetadataUtils.getIndexWithPrefixOrDefault
-import play.api.Logging
+import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json.*
 import sangria.schema.{Field, ListType, LongType, ObjectType, fields}
 
@@ -19,7 +19,10 @@ import scala.concurrent.{ExecutionContext, Future}
 
 case class Interactions(count: Long, rows: IndexedSeq[Interaction])
 
-object Interactions extends Logging {
+object Interactions {
+
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+
   val interactions: ObjectType[Backend, Interactions] = ObjectType(
     "Interactions",
     "Molecular interactions reported between targets, with total count and rows",

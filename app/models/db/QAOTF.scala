@@ -1,11 +1,13 @@
 package models.db
 
-import esecuele._
-import esecuele.{Functions => F}
-import esecuele.Column._
-import esecuele.{Query => Q}
+import esecuele.*
+import esecuele.Functions as F
+import esecuele.Column.*
+import esecuele.Query as Q
 import models.entities.Harmonic
 import models.entities.Harmonic.pExponentDefault
+import net.logstash.logback.argument.StructuredArguments.keyValue
+import org.slf4j.{Logger, LoggerFactory}
 import play.api.Logging
 
 abstract class Queryable {
@@ -48,8 +50,10 @@ case class QAOTF(
     nonPropagatedDatasources: Set[String],
     offset: Int,
     size: Int
-) extends Queryable
-    with Logging {
+) extends Queryable {
+
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+
   val A: Column = column("A")
   val B: Column = column("B")
   val DS: Column = column("datasource_id")
@@ -195,7 +199,10 @@ case class QAOTF(
     val limitC = Limit(offset, size)
 
     val rootQ = Q(selectScores, fromAgg, groupByB, limitC)
-    logger.debug(rootQ.toString)
+    logger.debug(rootQ.toString,
+                 keyValue("query_name", "simpleQuery"),
+                 keyValue("query_type", this.getClass.getName)
+    )
 
     rootQ
   }
@@ -301,7 +308,10 @@ case class QAOTF(
     val limitC = Limit(offset, size)
 
     val rootQ = Q(withScores, selectScores, fromAgg, groupByB, orderBySome, limitC)
-    logger.debug(rootQ.toString)
+    logger.debug(rootQ.toString,
+                 keyValue("query_name", "query"),
+                 keyValue("query_type", this.getClass.getName)
+    )
 
     rootQ
   }

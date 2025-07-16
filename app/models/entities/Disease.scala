@@ -1,8 +1,8 @@
 package models.entities
 
-import play.api.Logging
-import play.api.libs.json._
-import play.api.libs.json.Reads._
+import org.slf4j.{Logger, LoggerFactory}
+import play.api.libs.json.*
+import play.api.libs.json.Reads.*
 
 case class DiseaseSynonyms(relation: String, terms: Seq[String])
 
@@ -25,7 +25,9 @@ case class Disease(
     ontology: DiseaseOntology
 )
 
-object Disease extends Logging {
+object Disease {
+
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   implicit val DiseaseOntologyImpF: OFormat[DiseaseOntology] =
     Json.format[models.entities.DiseaseOntology]
