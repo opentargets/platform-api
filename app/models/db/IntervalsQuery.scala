@@ -33,16 +33,7 @@ case class IntervalsQuery(chromosome: String,
   override val query: Query =
     Query(
       Select(
-        column("chromosome") ::
-          column("start") ::
-          column("end") ::
-          column("geneId") ::
-          column("biosampleName") ::
-          column("intervalType") ::
-          column("score") ::
-          column("resourceScore") ::
-          column("datasourceId") ::
-          column("pmid") :: Nil
+        Column.star :: Nil
       ),
       From(column(tableName)),
       positional_query,

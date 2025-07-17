@@ -10,15 +10,18 @@ case class ResourceScore(name: String, value: Double)
 
 case class Interval(
     chromosome: String,
-    start: Long,
-    end: Long,
+    start: Int,
+    end: Int,
     geneId: String,
     biosampleName: String,
+    biosampleId: String,
     intervalType: String,
+    distanceToTSS: Int,
     score: Double,
     resourceScore: Vector[ResourceScore],
     datasourceId: String,
-    pmid: String
+    pmid: String,
+    studyId: String
 )
 
 case class Intervals(
@@ -32,15 +35,18 @@ object Intervals {
   implicit val getIntervalRowFromDB: GetResult[Interval] =
     GetResult { r =>
       val chromosome: String = r.<<
-      val start: Long = r.<<
-      val end: Long = r.<<
+      val start: Int = r.<<
+      val end: Int = r.<<
       val geneId: String = r.<<
       val biosampleName: String = r.<<
+      val biosampleId: String = r.<<
       val intervalType: String = r.<<
+      val distanceToTSS: Int = r.<<
       val score: Double = r.<<
       val resourceScores: String = r.<<
       val datasourceId: String = r.<<
       val pmid: String = r.<<
+      val studyId: String = r.<<
 
       Interval(
         chromosome,
@@ -48,7 +54,9 @@ object Intervals {
         end,
         geneId,
         biosampleName,
+        biosampleId,
         intervalType,
+        distanceToTSS,
         score,
         TupleSeqRep[ResourceScore](
           resourceScores,
@@ -60,7 +68,8 @@ object Intervals {
           }
         ).rep,
         datasourceId,
-        pmid
+        pmid,
+        studyId
       )
     }
 
