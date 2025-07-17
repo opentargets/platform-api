@@ -858,21 +858,31 @@ class Backend @Inject() (implicit
                    end: Int,
                    pagination: Option[Pagination]
   ): Future[Intervals] = {
+    val page = pagination.getOrElse(Pagination.mkDefault)
     val intervalsQuery = IntervalsQuery(
       chromosome,
       start,
       end,
-      "ot.intervals"
+      "ot.intervals",
+      page.index,
+      page.size
     )
-    val results = dbRetriever.executeQuery[Interval, Query](intervalsQuery.query)
-    results.map { case intervals =>
-      val count = intervals.size
-      val paginatedIntervals = intervals.slice(
-        pagination.map(_.offset).getOrElse(0),
-        pagination.map(p => p.offset + p.size).getOrElse(count)
-      )
-      Intervals(count, paginatedIntervals)
-    }
+    val total: Int = dbRetriever
+      .executeQuery[Int, Query](intervalsQuery.totals)
+      .map {
+        case Seq(totalCount) => totalCount
+        case _               => 0
+      }
+      .await
+    logger.info(s"Total intervals found: $total")
+
+    val results =
+      if total == 0 then Future.successful(Intervals(total, Vector.empty))
+      else
+        dbRetriever
+          .executeQuery[Interval, Query](intervalsQuery.query)
+          .map(intervals => Intervals(total, intervals))
+    results
   }
 
   def mapIds(
