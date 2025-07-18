@@ -907,6 +907,22 @@ object Objects extends Logging {
     )
   implicit lazy val intervalImp: ObjectType[Backend, Interval] =
     deriveObjectType[Backend, Interval](
+      ReplaceField(
+        "geneId",
+        Field("target",
+              targetImp,
+              Some("Target"),
+              resolve = r => targetsFetcher.defer(r.value.geneId)
+        )
+      ),
+      ReplaceField(
+        "biosampleId",
+        Field("biosample",
+              OptionType(biosampleImp),
+              Some("Biosample"),
+              resolve = r => biosamplesFetcher.deferOpt(r.value.biosampleId)
+        )
+      )
     )
   implicit lazy val intervalsImp: ObjectType[Backend, Intervals] =
     deriveObjectType[Backend, Intervals]()
