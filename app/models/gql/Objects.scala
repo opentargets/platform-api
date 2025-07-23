@@ -26,8 +26,13 @@ import models.entities.Violations.{
 }
 
 import scala.collection.View.Empty
+import net.logstash.logback.argument.StructuredArguments.keyValue
+import org.slf4j.{Logger, LoggerFactory}
 
-object Objects extends Logging {
+object Objects {
+
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+
   implicit val metaDataVersionImp: ObjectType[Backend, DataVersion] =
     deriveObjectType[Backend, DataVersion]()
   implicit val metaAPIVersionImp: ObjectType[Backend, APIVersion] =
@@ -659,7 +664,7 @@ object Objects extends Logging {
             DeferredValue(goFetcher.deferOpt(r.value.id)).map {
               case Some(value) => value
               case None =>
-                logger.warn(s"GO: ${r.value.id} was not found in GO index, using default GO name")
+                logger.warn(s"go was not found in go index using default go name", keyValue("id", r.value.id))
                 GeneOntologyTerm(r.value.id, "Name unknown in Open Targets")
             }
         )
@@ -897,7 +902,7 @@ object Objects extends Logging {
           resolve = r => {
             val soId = (r.value.variantFunctionalConsequenceId)
               .map(id => id.replace("_", ":"))
-            logger.debug(s"Finding variant functional consequence: $soId")
+            logger.debug(s"finding variant functional consequence", keyValue("id", soId))
             soTermsFetcher.deferOpt(soId)
           }
         ),
@@ -1446,7 +1451,7 @@ object Objects extends Logging {
             r.value.variantFunctionalConsequenceIds match {
               case Some(ids) =>
                 val soIds = ids.map(_.replace("_", ":"))
-                logger.debug(s"Finding variant functional consequences: $soIds")
+                logger.debug(s"finding variant functional consequences", keyValue("ids", soIds))
                 soTermsFetcher.deferSeqOpt(soIds)
               case None => Future.successful(Seq.empty)
             }
@@ -1513,7 +1518,7 @@ object Objects extends Logging {
             r.value.variantFunctionalConsequenceIds match {
               case Some(ids) =>
                 val soIds = ids.map(_.replace("_", ":"))
-                logger.debug(s"Finding variant functional consequences: $soIds")
+                logger.debug(s"finding variant functional consequences", keyValue("id", soIds))
                 soTermsFetcher.deferSeqOpt(soIds)
               case None => Future.successful(Seq.empty)
             }
@@ -1532,7 +1537,7 @@ object Objects extends Logging {
           Some("Credible set"),
           resolve = r =>
             val studyLocusId = r.value.otherStudyLocusId.getOrElse("")
-            logger.debug(s"Finding colocalisation credible set: $studyLocusId")
+            logger.debug(s"finding colocalisation credible set", keyValue("id", studyLocusId))
             credibleSetFetcher.deferOpt(studyLocusId)
         )
       ),
@@ -1552,7 +1557,7 @@ object Objects extends Logging {
           resolve = r =>
             val soId = (r.value.mostSevereConsequenceId)
               .replace("_", ":")
-            logger.debug(s"Finding variant functional consequence: $soId")
+            logger.debug(s"finding variant functional consequence", keyValue("id", soId))
             soTermsFetcher.deferOpt(soId)
         )
       ),
@@ -1779,7 +1784,7 @@ object Objects extends Logging {
         description = None,
         resolve = evidence => {
           val id = evidence.value.variantId
-          logger.debug(s"Finding variant for id: $id")
+          logger.debug(s"finding variant", keyValue("id", id))
           variantFetcher.deferOpt(id)
         }
       )
@@ -1792,7 +1797,7 @@ object Objects extends Logging {
         description = None,
         resolve = evidence => {
           val id = evidence.value.drugId
-          logger.debug(s"Finding drug for id: $id")
+          logger.debug(s"finding drug", keyValue("id", id))
           drugsFetcher.deferOpt(id)
         }
       )
@@ -1805,7 +1810,7 @@ object Objects extends Logging {
         description = None,
         resolve = evidence => {
           val id = evidence.value.drugResponse
-          logger.debug(s"Finding drug for id: $id")
+          logger.debug(s"finding drug", keyValue("id", id))
           diseasesFetcher.deferOpt(id)
         }
       )
@@ -1819,7 +1824,7 @@ object Objects extends Logging {
         resolve = evidence => {
           val soId = evidence.value.variantFunctionalConsequenceId
             .map(id => id.replace("_", ":"))
-          logger.error(s"Finding variant functional consequence: $soId")
+          logger.error(s"finding variant functional consequence", keyValue("id", soId))
           soTermsFetcher.deferOpt(soId)
         }
       )
@@ -1860,7 +1865,7 @@ object Objects extends Logging {
         description = None,
         resolve = r => {
           val variantId = r.value.variantId.getOrElse("")
-          logger.debug(s"Finding variant index: $variantId")
+          logger.debug(s"finding variant index", keyValue("id", variantId))
           variantFetcher.deferOpt(variantId)
         }
       )
@@ -1882,7 +1887,7 @@ object Objects extends Logging {
           description = None,
           resolve = js => {
             val id = js.value.variantId
-            logger.debug(s"Finding variant for id: $id")
+            logger.debug(s"finding variant", keyValue("id", id))
             variantFetcher.deferOpt(id)
           }
         )
@@ -1937,7 +1942,7 @@ object Objects extends Logging {
           description = Some("Gwas study"),
           resolve = js => {
             val studyId = js.value.studyId
-            logger.debug(s"Finding gwas study: $studyId")
+            logger.debug(s"finding gwas study", keyValue("id", studyId))
             studyFetcher.deferOpt(studyId)
           }
         )
@@ -1979,7 +1984,7 @@ object Objects extends Logging {
         Some("Target"),
         resolve = js => {
           val geneId = js.value.geneId
-          logger.debug(s"Finding target: $geneId")
+          logger.debug(s"finding target", keyValue("id", geneId))
           targetsFetcher.deferOpt(geneId)
         }
       )
@@ -2004,7 +2009,7 @@ object Objects extends Logging {
         None,
         resolve = js => {
           val ids = js.value.diseaseIds.getOrElse(Seq.empty)
-          logger.debug(s"Finding diseases for ids: $ids")
+          logger.debug(s"finding diseases", keyValue("ids", ids))
           diseasesFetcher.deferSeqOpt(ids)
         }
       )
@@ -2018,7 +2023,7 @@ object Objects extends Logging {
         resolve = js => {
           val ids = js.value.backgroundTraitFromSourceMappedIds
             .getOrElse(Seq.empty)
-          logger.debug(s"Finding diseases for ids: $ids")
+          logger.debug(s"finding diseases", keyValue("ids", ids))
           diseasesFetcher.deferSeqOpt(ids)
         }
       )

@@ -59,23 +59,36 @@ class GraphQLController @Inject() (implicit
 
   private def logRequestReceived(operation: Option[String], request: Request[Any]): Unit =
     operation match {
-      case None => logger.info(s"request received")
+      case None => logger.info(s"request received", kv("request.method", request.method), kv("request.ip", request.connection.remoteAddressString))
       case Some(op) =>
         if (op != "IntrospectionQuery")
           logger.info(s"request received",
                       kv("operation", op),
-                      kv("request.method", request.method),
-                      kv("request.ip", request.connection.remoteAddressString)
+            kv("request.method", request.method), kv("request.ip", request.connection.remoteAddressString)
           )
     }
 
-//request.connection.remoteAddress.getHostAddress
+  /**
+   * Adds a request id value to the logging context so that all logs for the same request have this id.
+   * This id can later be used to correlate the log messages. If the request headers contain `request-id`
+   * this value will be used if not a GUID will be generated
+   * @param request HTTP request.
+   */
+  private def addRequestIdToLoggingContext(request: Request[Any]): Unit =
+    val headerReqId = request.headers.get("request-id")
+    val requestId = headerReqId match
+      case Some(id) => id
+      case None => UUID.randomUUID().toString
+    MDC.put("request.id", requestId)
+
+  //request.connection.remoteAddress.getHostAddress
   def gql(query: String, variables: Option[String], operation: Option[String]): Action[AnyContent] =
     metadataAction.async { request =>
       appStart.RequestCounter.labelValues("/api/v4/graphql", "GET").inc()
       appStart.GraphqlRequestCounter.labelValues("GET", operation.getOrElse("")).inc()
 
-      MDC.put("request.id", UUID.randomUUID().toString)
+      addRequestIdToLoggingContext(request)
+
       logRequestReceived(operation, request)
 
       val gqlQuery =
@@ -85,7 +98,8 @@ class GraphQLController @Inject() (implicit
     }
 
   def gqlBody(): Action[JsValue] = metadataAction(parse.json).async { request =>
-    MDC.put("request.id", UUID.randomUUID().toString) // TODO: Check for header
+    addRequestIdToLoggingContext(request)
+
     val query = (request.body \ "query").as[String]
     val operation = (request.body \ "operationName").asOpt[String]
     appStart.RequestCounter.labelValues("/api/v4/graphql", "POST").inc()
@@ -143,7 +157,7 @@ class GraphQLController @Inject() (implicit
               responseContainsErrors(s).onComplete {
                 case Success((hasErrors, errorMessagesOpt)) =>
                   if (hasErrors) {
-                    logger.info(s"temporarily caching 200 response with errors")
+                    logger.info(s"temporarily caching 200 response with errors", kv("operation", gqlQuery.operation))
                     errorMessagesOpt.foreach(errors => logger.error(s"errors in response: $errors"))
                     cache.set(gqlQuery.toString, s, non200CacheDuration)
                   } else {

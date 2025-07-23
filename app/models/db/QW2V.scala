@@ -1,9 +1,11 @@
 package models.db
 
-import esecuele._
-import esecuele.{Functions => F}
-import esecuele.Column._
-import esecuele.{Query => Q}
+import esecuele.*
+import esecuele.Functions as F
+import esecuele.Column.*
+import esecuele.Query as Q
+import net.logstash.logback.argument.StructuredArguments.keyValue
+import org.slf4j.{Logger, LoggerFactory}
 import play.api.Logging
 
 case class QW2V(
@@ -12,8 +14,9 @@ case class QW2V(
     labels: Set[String],
     threshold: Double,
     size: Int
-) extends Queryable
-    with Logging {
+) extends Queryable {
+
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   require(labels.nonEmpty)
 
@@ -60,7 +63,7 @@ case class QW2V(
     val qElements =
       Select(F.count(star) :: Nil) :: fromQ.get :: PreWhere(F.equals(label, literal(id))) :: Nil
     val mainQ: Query = Q(qElements)
-    logger.debug(mainQ.toString)
+    logger.debug(mainQ.toString, keyValue("query_name", "existsLabel"), keyValue("query_type", this.getClass.getName))
 
     mainQ
   }
@@ -68,7 +71,7 @@ case class QW2V(
   override val query: Query = {
     val qElements = wQ :: sQ :: fromQ :: preWhereQ :: whereQ :: orderByQ :: limitQ :: Nil
     val mainQ = Q(qElements.filter(_.isDefined).map(_.get))
-    logger.debug(mainQ.toString)
+    logger.debug(mainQ.toString, keyValue("query_name", "query"), keyValue("query_type", this.getClass.getName))
 
     mainQ
   }

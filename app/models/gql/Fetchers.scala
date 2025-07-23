@@ -151,7 +151,7 @@ object Fetchers extends Logging {
   }
 
   def resetCache(): Unit = {
-    logger.info("Clearing all GraphQL caches.")
+    logger.info("clearing all GraphQL caches")
     val fetchers: List[SimpleFetcherCache] = List(
       biosamplesFetcherCache,
       credibleSetFetcherCache,

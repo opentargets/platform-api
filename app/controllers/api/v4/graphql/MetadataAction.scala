@@ -77,7 +77,7 @@ class MetadataAction @Inject() (parser: BodyParsers.Default)(implicit
               dataVersion
             )
 
-            logger.info(meta.toString)
+            logger.info(meta.toString)//TODO: review logger
 
             response
           }
