@@ -15,16 +15,18 @@ class RestHelpers @Inject() (implicit
     with Logging {
 
   def checkCredentials[A](action: Action[A]): Action[A] = Action.async(action.parser) { request =>
-    logger.info(s"Checking admin credentials")
+    logger.info(s"checking admin credentials")
     request.headers
       .get("apiKey")
       .collect {
         case key if key.hashCode.toString.equals(config.getString("ot.apiKeyHash")) =>
           action(request)
+        case _ => logger.error("invalid 'apiKey' provided on request to secure endpoint")
+          Future.successful(Forbidden("invalid API key"))
       }
       .getOrElse {
-        logger.warn("No apiKey header provided on request to secure endpoint.")
-        Future.successful(Forbidden("Invalid API key (not) provided."))
+        logger.error("no 'apiKey' header provided on request to secure endpoint.")
+        Future.successful(Forbidden("invalid API key (not) provided"))
       }
   }
 }
