@@ -184,7 +184,10 @@ case class QAOTF(
     val limitC = Limit(offset, size)
 
     val rootQ = Q(selectScores, fromAgg, groupByB, limitC)
-    logger.debug(rootQ.toString, keyValue("query_name", "simpleQuery"), keyValue("query_type", this.getClass.getName))
+    logger.debug(rootQ.toString,
+                 keyValue("query_name", "simpleQuery"),
+                 keyValue("query_type", this.getClass.getName)
+    )
 
     rootQ
   }
@@ -290,7 +293,10 @@ case class QAOTF(
     val limitC = Limit(offset, size)
 
     val rootQ = Q(withScores, selectScores, fromAgg, groupByB, orderBySome, limitC)
-    logger.debug(rootQ.toString, keyValue("query_name", "query"), keyValue("query_type", this.getClass.getName))
+    logger.debug(rootQ.toString,
+                 keyValue("query_name", "query"),
+                 keyValue("query_type", this.getClass.getName)
+    )
 
     rootQ
   }

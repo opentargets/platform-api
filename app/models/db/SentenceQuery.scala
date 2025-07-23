@@ -12,7 +12,10 @@ case class SentenceQuery(pmid: String, tableName: String) extends Queryable {
 
   val query = {
     val q: Query = SentenceQuery.getQuery(pmid, tableName)
-    logger.debug(q.toString, keyValue("query_name", "query"), keyValue("query_type", this.getClass.getName))
+    logger.debug(q.toString,
+                 keyValue("query_name", "query"),
+                 keyValue("query_type", this.getClass.getName)
+    )
     q
   }
 }

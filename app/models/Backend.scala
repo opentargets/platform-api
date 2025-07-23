@@ -750,7 +750,10 @@ class Backend @Inject() (implicit
   ): Future[ProteinCodingCoordinates] = {
     val indexName = getIndexOrDefault("proteinCodingCoordinates")
     val pag = pagination.getOrElse(Pagination(0, 2))
-    logger.debug(s"querying protein coding coordinates", keyValue("id", id), keyValue("index", indexName))
+    logger.debug(s"querying protein coding coordinates",
+                 keyValue("id", id),
+                 keyValue("index", indexName)
+    )
     val retriever = esRetriever
       .getByIndexedQueryMust(
         indexName,
@@ -1003,7 +1006,10 @@ class Backend @Inject() (implicit
       orderBy: Option[(String, String)],
       pagination: Option[Pagination]
   ): Future[Associations] = {
-    logger.debug(s"querying associations with fixed disease", keyValue("disease_id", disease.name), keyValue("indirect", indirect))
+    logger.debug(s"querying associations with fixed disease",
+                 keyValue("disease_id", disease.name),
+                 keyValue("indirect", indirect)
+    )
     val indirectIDs = if (indirect) disease.descendants.toSet + disease.id else Set.empty[String]
     val targetIds = applyFacetFiltersToBIDs("facet_search_target", targetSet, facetFilters)
     getAssociationsEntityFixed(
@@ -1028,7 +1034,10 @@ class Backend @Inject() (implicit
       orderBy: Option[(String, String)],
       pagination: Option[Pagination]
   ): Future[Associations] = {
-    logger.debug(s"querying associations with fixed target", keyValue("target_id", target.approvedSymbol), keyValue("indirect", indirect))
+    logger.debug(s"querying associations with fixed target",
+                 keyValue("target_id", target.approvedSymbol),
+                 keyValue("indirect", indirect)
+    )
     val indirectIDs = if (indirect) {
       val interactions =
         Interactions.find(target.id, None, None, pagination = Some(Pagination(0, 10000))) map {
@@ -1064,7 +1073,11 @@ class Backend @Inject() (implicit
       size: Int
   ): Future[Vector[Similarity]] = {
     val table = defaultOTSettings.clickhouse.similarities
-    logger.debug(s"querying similarities", keyValue("table", table.name), keyValue("label", label), keyValue("labels", labels))
+    logger.debug(s"querying similarities",
+                 keyValue("table", table.name),
+                 keyValue("label", label),
+                 keyValue("labels", labels)
+    )
 
     val jointLabels = labels + label
     val simQ = QW2V(table.name, categories, jointLabels, threshold, size)
@@ -1083,7 +1096,10 @@ class Backend @Inject() (implicit
       pmid: String
   ): Future[Map[String, Vector[Sentence]]] = {
     val table = defaultOTSettings.clickhouse.sentences
-    logger.debug(s"querying literature sentences", keyValue("pmid", pmid), keyValue("table", table.name))
+    logger.debug(s"querying literature sentences",
+                 keyValue("pmid", pmid),
+                 keyValue("table", table.name)
+    )
     val sentenceQuery = SentenceQuery(pmid, table.name)
     val results = dbRetriever.executeQuery[Sentence, Query](sentenceQuery.query)
     results.map(vs => vs.groupMap(_.section)(identity))
@@ -1116,7 +1132,10 @@ class Backend @Inject() (implicit
   ): Future[Publications] = {
     val table = defaultOTSettings.clickhouse.literature
     val indexTable = defaultOTSettings.clickhouse.literatureIndex
-    logger.debug(s"querying literature ocurrences", keyValue("table", table.name), keyValue("ids", ids))
+    logger.debug(s"querying literature ocurrences",
+                 keyValue("table", table.name),
+                 keyValue("ids", ids)
+    )
 
     val pag = Helpers.Cursor.to(cursor).flatMap(_.asOpt[Pagination]).getOrElse(Pagination.mkDefault)
 
