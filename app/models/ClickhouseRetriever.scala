@@ -1,12 +1,14 @@
 package models
 
 import clickhouse.ClickHouseProfile
-import esecuele.Column._
-import esecuele.{Query => Q, _}
+import esecuele.Column.*
+import esecuele.{Query as Q, *}
 import models.db.QAOTF
-import models.entities.Associations._
+import models.entities.Associations.*
 import models.entities.Configuration.{DatasourceSettings, OTSettings}
-import models.entities._
+import models.entities.*
+import net.logstash.logback.argument.StructuredArguments.keyValue
+import org.slf4j.{Logger, LoggerFactory}
 import play.api.Logging
 import slick.basic.DatabaseConfig
 import slick.jdbc.{GetResult, SQLActionBuilder}
@@ -18,7 +20,9 @@ import scala.util.{Failure, Success}
 
 class ClickhouseRetriever(config: OTSettings)(implicit
     val dbConfig: DatabaseConfig[ClickHouseProfile]
-) extends Logging {
+) {
+
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   import dbConfig.profile.api._
 
@@ -41,7 +45,7 @@ class ClickhouseRetriever(config: OTSettings)(implicit
     val l = Limit(0, 100000)
     val q = Q(s, f, g, l)
 
-    logger.debug(s"getUniqList get distinct $of from $from with query ${q.toString}")
+    logger.debug(s"getUniqList get distinct with query ${q.toString}", keyValue("column", of), keyValue("table", from))
     val qq = q.as[A]
 
     db.run(qq.asTry).map {
@@ -53,7 +57,7 @@ class ClickhouseRetriever(config: OTSettings)(implicit
   }
 
   def executeQuery[A, B <: Q](q: B)(implicit rconv: GetResult[A]): Future[Vector[A]] = {
-    logger.debug(s"execute query from eselecu Q ${q.toString}")
+    logger.debug(s"execute query from esecuele Q ${q.toString}")
     val qq = q.as[A]
 
     db.run(qq.asTry).map {

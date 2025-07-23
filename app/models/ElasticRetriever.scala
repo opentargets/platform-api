@@ -197,7 +197,7 @@ class ElasticRetriever @Inject() (
         flattenedValues
       }
       .getOrElse({
-        logger.info("No results decoded from search, returning empty collection.")
+        logger.info("no results decoded from search returning empty collection.")
         Seq.empty
       })
 
@@ -424,7 +424,7 @@ class ElasticRetriever @Inject() (
   ): Results[A] =
     searchResponse match {
       case rf: RequestFailure =>
-        logger.debug(s"Request failure for query: $searchQuery")
+        logger.debug(s"request failure for query: $searchQuery")
         logger.error(s"Elasticsearch error: ${rf.error}")
         Results.empty
       case results: RequestSuccess[_] =>
@@ -444,7 +444,7 @@ class ElasticRetriever @Inject() (
   ): IndexedSeq[Results[A]] =
     searchResponse match {
       case rf: RequestFailure =>
-        logger.debug(s"Request failure for query: $searchQuery")
+        logger.debug(s"request failure for query: $searchQuery")
         logger.error(s"Elasticsearch error: ${rf.error}")
         IndexedSeq.empty
       case results: RequestSuccess[_] =>
@@ -466,7 +466,7 @@ class ElasticRetriever @Inject() (
   ): InnerResults[A] =
     searchResponse match {
       case rf: RequestFailure =>
-        logger.debug(s"Request failure for query: $searchQuery")
+        logger.debug(s"request failure for query: $searchQuery")
         logger.error(s"Elasticsearch error: ${rf.error}")
         InnerResults.empty
       case results: RequestSuccess[_] =>
@@ -704,7 +704,7 @@ class ElasticRetriever @Inject() (
   ): Future[IndexedSeq[A]] =
     ids match {
       case Nil =>
-        logger.warn("No IDs provided to getByIds. Something is probably wrong.")
+        logger.warn("no ids provided to getByIds something is probably wrong")
         Future.successful(IndexedSeq.empty)
       case _ =>
         val elems: Future[Response[SearchResponse]] = client.execute {
@@ -745,7 +745,7 @@ class ElasticRetriever @Inject() (
     val queryTermsCleaned = queryTerms.filterNot(_.isEmpty)
     queryTermsCleaned match {
       case Nil =>
-        logger.warn("No terms provided.")
+        logger.warn("no terms provided")
         Future.successful(MappingResults.empty)
       case _ =>
         val esIndices = entities.withFilter(_.searchIndex.isDefined).map(_.searchIndex.get)
