@@ -902,6 +902,31 @@ object Objects extends Logging {
       RenameField("indicationCount", "count")
     )
 
+  implicit lazy val resourceScoreImp: ObjectType[Backend, ResourceScore] =
+    deriveObjectType[Backend, ResourceScore](
+    )
+  implicit lazy val intervalImp: ObjectType[Backend, Interval] =
+    deriveObjectType[Backend, Interval](
+      ReplaceField(
+        "geneId",
+        Field("target",
+              targetImp,
+              Some("Target"),
+              resolve = r => targetsFetcher.defer(r.value.geneId)
+        )
+      ),
+      ReplaceField(
+        "biosampleId",
+        Field("biosample",
+              OptionType(biosampleImp),
+              Some("Biosample"),
+              resolve = r => biosamplesFetcher.deferOpt(r.value.biosampleId)
+        )
+      )
+    )
+  implicit lazy val intervalsImp: ObjectType[Backend, Intervals] =
+    deriveObjectType[Backend, Intervals]()
+
   implicit lazy val mechanismOfActionImp: ObjectType[Backend, MechanismsOfAction] =
     deriveObjectType[Backend, MechanismsOfAction]()
 
@@ -1519,6 +1544,20 @@ object Objects extends Logging {
           complexity = Some(complexityCalculator(pageArg)),
           resolve = ctx =>
             ctx.ctx.getProteinCodingCoordinatesByVariantId(ctx.value.variantId, ctx.arg(pageArg))
+        ),
+        Field(
+          "intervals",
+          intervalsImp,
+          description = Some("Intervals for the variant"),
+          arguments = pageArg :: Nil,
+          complexity = Some(complexityCalculator(pageArg)),
+          resolve = ctx =>
+            ctx.ctx.getIntervals(ctx.value.chromosome,
+                                 ctx.value.position,
+                                 ctx.value.position,
+                                 ctx.arg(pageArg)
+            )
+          // ctx.ctx.getIntervals("1", 109, 559, ctx.arg(pageArg))
         )
       ),
       RenameField("variantId", "id")

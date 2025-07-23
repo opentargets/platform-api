@@ -11,7 +11,7 @@ import gql.validators.QueryTermsValidator.*
 
 import javax.inject.Inject
 import models.Helpers.*
-import models.db.{QAOTF, QLITAGG, QW2V, SentenceQuery}
+import models.db.{QAOTF, QLITAGG, QW2V, SentenceQuery, IntervalsQuery}
 import models.entities.Publication.*
 import models.entities.Associations.*
 import models.entities.Biosample.*
@@ -19,6 +19,7 @@ import models.entities.CredibleSet.*
 import models.entities.Configuration.*
 import models.entities.DiseaseHPOs.*
 import models.entities.Drug.*
+import models.entities.Intervals.*
 import models.entities.Loci.*
 import models.entities.MousePhenotypes.*
 import models.entities.Pharmacogenomics.*
@@ -850,6 +851,38 @@ class Backend @Inject() (implicit
   def getDiseases(ids: Seq[String]): Future[IndexedSeq[Disease]] = {
     val diseaseIndexName = getIndexOrDefault("disease")
     esRetriever.getByIds(diseaseIndexName, ids, fromJsValue[Disease])
+  }
+
+  def getIntervals(chromosome: String,
+                   start: Int,
+                   end: Int,
+                   pagination: Option[Pagination]
+  ): Future[Intervals] = {
+    val page = pagination.getOrElse(Pagination.mkDefault)
+    val intervalsQuery = IntervalsQuery(
+      chromosome,
+      start,
+      end,
+      "ot.intervals",
+      page.index,
+      page.size
+    )
+    val total: Int = dbRetriever
+      .executeQuery[Int, Query](intervalsQuery.totals)
+      .map {
+        case Seq(totalCount) => totalCount
+        case _               => 0
+      }
+      .await
+    logger.info(s"Total intervals found: $total")
+
+    val results =
+      if total == 0 then Future.successful(Intervals(total, Vector.empty))
+      else
+        dbRetriever
+          .executeQuery[Interval, Query](intervalsQuery.query)
+          .map(intervals => Intervals(total, intervals))
+    results
   }
 
   def mapIds(
