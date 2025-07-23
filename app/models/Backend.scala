@@ -23,7 +23,6 @@ import models.entities.Intervals.*
 import models.entities.Loci.*
 import models.entities.MousePhenotypes.*
 import models.entities.Pharmacogenomics.*
-import models.entities.ProteinCodingCoordinates.*
 import models.entities.SearchFacetsResults.*
 import models.entities.Evidence.*
 import models.entities.SequenceOntologyTerm.*
@@ -33,7 +32,7 @@ import org.apache.http.impl.nio.reactor.IOReactorConfig
 import play.api.cache.AsyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
 import play.api.libs.json.*
-import play.api.{Configuration, Environment, Logging}
+import play.api.{Configuration, Environment}
 import play.db.NamedDatabase
 import slick.basic.DatabaseConfig
 
@@ -97,6 +96,8 @@ class Backend @Inject() (implicit
 
     val indexName = getIndexOrDefault("faers")
 
+    logger.debug(s"querying adverse events", keyValue("id", id), keyValue("index", indexName))
+
     val kv = Map("chembl_id.keyword" -> id)
 
     val aggs = Seq(
@@ -129,6 +130,8 @@ class Backend @Inject() (implicit
 
     val cbIndex = getIndexOrDefault("disease_hpo")
 
+    logger.debug(s"querying disease hpos", keyValue("id", id), keyValue("index", cbIndex))
+
     val kv = Map("disease.keyword" -> id)
 
     val aggs = Seq(
@@ -146,6 +149,7 @@ class Backend @Inject() (implicit
 
   def getDownloads: Future[Option[String]] = {
     val indexName = getIndexOrDefault("downloads")
+    logger.debug(s"querying downloads", keyValue("index", indexName))
     // We assume that the index has a single document, "croissant", with the downloads information
     esRetriever.getByIds(indexName, Seq("croissant"), fromJsValue[JsValue]).map {
       case IndexedSeq(downloads) =>
@@ -157,6 +161,8 @@ class Backend @Inject() (implicit
   def getGoTerms(ids: Seq[String]): Future[IndexedSeq[GeneOntologyTerm]] = {
     val targetIndexName = getIndexOrDefault("go")
 
+    logger.debug(s"querying go terms", keyValue("ids", ids), keyValue("index", targetIndexName))
+
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[GeneOntologyTerm])
   }
 
@@ -164,6 +170,9 @@ class Backend @Inject() (implicit
                         pagination: Option[Pagination]
   ): Future[IndexedSeq[L2GPredictions]] = {
     val indexName = getIndexOrDefault("l2g_predictions")
+
+    logger.debug(s"querying l2g predictions", keyValue("ids", ids), keyValue("index", indexName))
+
     val pag = pagination.getOrElse(Pagination.mkDefault)
     val queries = ids.map { studyLocusId =>
       IndexQuery(
@@ -192,6 +201,9 @@ class Backend @Inject() (implicit
 
   def getVariants(ids: Seq[String]): Future[IndexedSeq[VariantIndex]] = {
     val indexName = getIndexOrDefault("variant")
+
+    logger.debug(s"querying variants", keyValue("ids", ids), keyValue("index", indexName))
+
     val r = esRetriever
       .getByIndexedTermsMust(indexName,
                              Map("variantId.keyword" -> ids),
@@ -204,6 +216,9 @@ class Backend @Inject() (implicit
 
   def getBiosamples(ids: Seq[String]): Future[IndexedSeq[Biosample]] = {
     val indexName = getIndexOrDefault("biosample", Some("biosample"))
+
+    logger.debug(s"querying biosamples", keyValue("ids", ids), keyValue("index", indexName))
+
     esRetriever
       .getByIndexedTermsMust(
         indexName,
@@ -216,6 +231,9 @@ class Backend @Inject() (implicit
 
   def getStudy(ids: Seq[String]): Future[IndexedSeq[Study]] = {
     val indexName = getIndexOrDefault("study")
+
+    logger.debug(s"querying studies by id", keyValue("ids", ids), keyValue("index", indexName))
+
     val termsQuery = Map("studyId.keyword" -> ids)
     val retriever =
       esRetriever
@@ -231,6 +249,13 @@ class Backend @Inject() (implicit
   def getStudies(queryArgs: StudyQueryArgs, pagination: Option[Pagination]): Future[Studies] = {
     val pag = pagination.getOrElse(Pagination.mkDefault)
     val indexName = getIndexOrDefault("study")
+
+    logger.debug(s"querying studies by disease",
+                 keyValue("id", queryArgs.id),
+                 keyValue("diseases", queryArgs.diseaseIds),
+                 keyValue("index", indexName)
+    )
+
     val diseaseIds: Seq[String] =
       if (queryArgs.enableIndirect) {
         val diseases = getDiseases(queryArgs.diseaseIds)
@@ -266,6 +291,13 @@ class Backend @Inject() (implicit
                          pagination: Option[Pagination]
   ): Future[IndexedSeq[Colocalisations]] = {
     val indexName = getIndexOrDefault("colocalisation")
+
+    logger.debug(s"querying colocalisations",
+                 keyValue("study_locus_ids", studyLocusIds),
+                 keyValue("studyType", studyTypes),
+                 keyValue("index", indexName)
+    )
+
     val pag = pagination.getOrElse(Pagination.mkDefault)
     val boolQueries: Seq[IndexBoolQuery] = studyLocusIds.map { studyLocusId =>
       val leftStudyLocusQuery = must(
@@ -326,6 +358,13 @@ class Backend @Inject() (implicit
                pagination: Option[Pagination]
   ): Future[IndexedSeq[Loci]] = {
     val indexName = getIndexOrDefault("credible_set")
+
+    logger.debug(s"querying locus",
+                 keyValue("ids", studyLocusIds),
+                 keyValue("variant_ids", variantIds),
+                 keyValue("index", indexName)
+    )
+
     val limitClause = pagination.getOrElse(Pagination.mkDefault).toES
     val termsQuerySeq = Seq(Map("studyLocusId.keyword" -> studyLocusIds))
     val termsQueryIter = termsQuerySeq.map { termsQuerySeq =>
@@ -371,6 +410,9 @@ class Backend @Inject() (implicit
 
   def getCredibleSet(ids: Seq[String]): Future[IndexedSeq[CredibleSet]] = {
     val indexName = getIndexOrDefault("credible_set")
+
+    logger.debug(s"querying credible sets", keyValue("ids", ids), keyValue("index", indexName))
+
     val termsQuery = Map("studyLocusId.keyword" -> ids)
     val retriever =
       esRetriever
@@ -390,6 +432,16 @@ class Backend @Inject() (implicit
   ): Future[CredibleSets] = {
     val pag = pagination.getOrElse(Pagination.mkDefault)
     val indexName = getIndexOrDefault("credible_set")
+
+    logger.debug(
+      s"querying credible sets",
+      keyValue("studyLocusId", queryArgs.ids),
+      keyValue("studyId", queryArgs.studyIds),
+      keyValue("studyType", queryArgs.studyTypes),
+      keyValue("region", queryArgs.regions),
+      keyValue("index", indexName)
+    )
+
     val termsQuerySeq = Map(
       "studyLocusId.keyword" -> queryArgs.ids,
       "studyId.keyword" -> queryArgs.studyIds,
@@ -436,6 +488,12 @@ class Backend @Inject() (implicit
   ): Future[IndexedSeq[CredibleSets]] = {
     val pag = pagination.getOrElse(Pagination.mkDefault)
     val indexName = getIndexOrDefault("credible_set")
+
+    logger.debug(s"querying credible sets by study ids",
+                 keyValue("ids", studyIds),
+                 keyValue("index", indexName)
+    )
+
     val queries = studyIds.map { studyId =>
       IndexQuery(
         esIndex = indexName,
@@ -469,6 +527,13 @@ class Backend @Inject() (implicit
   ): Future[IndexedSeq[CredibleSets]] = {
     val pag = pagination.getOrElse(Pagination.mkDefault)
     val indexName = getIndexOrDefault("credible_set")
+
+    logger.debug(s"querying credible sets by variant ids",
+                 keyValue("ids", variantIds),
+                 keyValue("study_types", studyTypes),
+                 keyValue("index", indexName)
+    )
+
     val termsQueryIter: Option[Iterable[queries.Query]] = studyTypes match {
       case Some(studyTypes) => Some(Iterable(should(termsQuery("studyType.keyword", studyTypes))))
       case None             => None
@@ -511,11 +576,21 @@ class Backend @Inject() (implicit
   def getTargetEssentiality(ids: Seq[String]): Future[IndexedSeq[TargetEssentiality]] = {
     val targetIndexName = getIndexOrDefault("target_essentiality")
 
+    logger.debug(s"querying target essentiality",
+                 keyValue("ids", ids),
+                 keyValue("index", targetIndexName)
+    )
+
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[TargetEssentiality])
   }
 
   def getTargetsPrioritisation(id: String): Future[IndexedSeq[JsValue]] = {
     val targetsPrioritisationIndexName = getIndexOrDefault("target_prioritisation")
+
+    logger.debug(s"querying credible sets",
+                 keyValue("id", id),
+                 keyValue("index", targetsPrioritisationIndexName)
+    )
 
     esRetriever.getByIds(targetsPrioritisationIndexName, Seq(id), fromJsValue[JsValue])
   }
@@ -575,6 +650,11 @@ class Backend @Inject() (implicit
     val pag = Pagination(0, sizeLimit.getOrElse(Pagination.sizeDefault))
     val sortByField = sort.FieldSort(field = "phase").desc()
     val cbIndex = getIndexOrDefault("known_drugs")
+
+    val mappedValues =
+      Seq(keyValue("index", cbIndex)) ++ kv.map(pair => keyValue(pair._1, pair._2)).toSeq
+
+    logger.debug(s"querying known drugs", mappedValues*)
 
     val aggs = Seq(
       cardinalityAgg("uniqueTargets", "targetId.raw"),
@@ -661,6 +741,14 @@ class Backend @Inject() (implicit
       .map(_.map(cbIndexPrefix.concat).mkString(","))
       .getOrElse(cbIndexPrefix.concat("*"))
 
+    val mappedFiltered = filters.map(filter => keyValue(filter._1, filter._2)).toSeq
+
+    val loggingKeys = datasourceIds match
+      case Some(value) => mappedFiltered ++ Seq(keyValue("datasource_ids", value))
+      case None        => mappedFiltered
+
+    logger.debug(s"querying credible sets", loggingKeys*)
+
     esRetriever
       .getByMustWithSearch(
         cbIndex,
@@ -681,6 +769,8 @@ class Backend @Inject() (implicit
 
   def getHPOs(ids: Seq[String]): Future[IndexedSeq[HPO]] = {
     val targetIndexName = getIndexOrDefault("hpo")
+
+    logger.debug(s"querying hpos", keyValue("ids", ids), keyValue("index", targetIndexName))
 
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[HPO])
   }
@@ -771,11 +861,15 @@ class Backend @Inject() (implicit
   def getOtarProjects(ids: Seq[String]): Future[IndexedSeq[OtarProjects]] = {
     val otarsIndexName = getIndexOrDefault("otar_projects")
 
+    logger.debug(s"querying otar projects", keyValue("ids", ids), keyValue("index", otarsIndexName))
+
     esRetriever.getByIds(otarsIndexName, ids, fromJsValue[OtarProjects])
   }
 
   def getExpressions(ids: Seq[String]): Future[IndexedSeq[Expressions]] = {
     val targetIndexName = getIndexOrDefault("expression")
+
+    logger.debug(s"querying expressions", keyValue("ids", ids), keyValue("index", targetIndexName))
 
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[Expressions])
   }
@@ -783,11 +877,18 @@ class Backend @Inject() (implicit
   def getReactomeNodes(ids: Seq[String]): Future[IndexedSeq[Reactome]] = {
     val targetIndexName = getIndexOrDefault("reactome")
 
+    logger.debug(s"querying reactome nodes",
+                 keyValue("ids", ids),
+                 keyValue("index", targetIndexName)
+    )
+
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[Reactome])
   }
 
   def getTargets(ids: Seq[String]): Future[IndexedSeq[Target]] = {
     val targetIndexName = getIndexOrDefault("target", Some("targets"))
+
+    logger.debug(s"querying targets", keyValue("ids", ids), keyValue("index", targetIndexName))
 
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[Target])
   }
@@ -795,12 +896,16 @@ class Backend @Inject() (implicit
   def getSoTerms(ids: Seq[String]): Future[IndexedSeq[SequenceOntologyTerm]] = {
     val targetIndexName = getIndexOrDefault("so", Some("so"))
 
+    logger.debug(s"querying so terms", keyValue("ids", ids), keyValue("index", targetIndexName))
+
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[SequenceOntologyTerm])
   }
 
   def getDrugs(ids: Seq[String]): Future[IndexedSeq[Drug]] = {
     val drugIndexName = getIndexOrDefault("drug")
+
     logger.debug(s"querying drugs", keyValue("drug_ids", ids), keyValue("index", drugIndexName))
+
     val queryTerm = Map("id.keyword" -> ids)
     esRetriever
       .getByIndexedQueryShould(drugIndexName, queryTerm, Pagination(0, ids.size), fromJsValue[Drug])
@@ -858,6 +963,9 @@ class Backend @Inject() (implicit
 
   def getDiseases(ids: Seq[String]): Future[IndexedSeq[Disease]] = {
     val diseaseIndexName = getIndexOrDefault("disease")
+
+    logger.debug(s"querying diseases", keyValue("ids", ids), keyValue("index", diseaseIndexName))
+
     esRetriever.getByIds(diseaseIndexName, ids, fromJsValue[Disease])
   }
 
@@ -956,6 +1064,12 @@ class Backend @Inject() (implicit
     val weights = dss.map(s => (s.id, s.weight))
     val mustIncludeDatasources = dss.withFilter(_.required).map(_.id).toSet
     val dontPropagate = dss.withFilter(!_.propagate).map(_.id).toSet
+
+    logger.debug(s"querying credible sets",
+                 keyValue("id", fixedEntityId),
+                 keyValue("table", tableName)
+    )
+
     val aotfQ = QAOTF(
       tableName,
       fixedEntityId,
