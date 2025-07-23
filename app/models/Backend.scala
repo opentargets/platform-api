@@ -1,13 +1,13 @@
 package models
 
 import clickhouse.ClickHouseProfile
+import net.logstash.logback.argument.StructuredArguments.keyValue
 import com.sksamuel.elastic4s.*
 import com.sksamuel.elastic4s.http.JavaClient
 import com.sksamuel.elastic4s.requests.searches.*
 import com.sksamuel.elastic4s.requests.searches.aggs.*
 import com.sksamuel.elastic4s.requests.searches.sort.SortOrder
 import esecuele.*
-import gql.validators.QueryTermsValidator.*
 
 import javax.inject.Inject
 import models.Helpers.*
@@ -41,6 +41,7 @@ import java.time.LocalDate
 import scala.concurrent.*
 import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
 import models.entities.Violations.{DateFilterError, InputParameterCheckError}
+import org.slf4j.{Logger, LoggerFactory}
 import services.ApplicationStart
 
 class Backend @Inject() (implicit
@@ -50,7 +51,9 @@ class Backend @Inject() (implicit
     config: Configuration,
     env: Environment,
     cache: AsyncCacheApi
-) extends Logging {
+) {
+
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   implicit val defaultOTSettings: OTSettings = loadConfigurationObject[OTSettings]("ot", config)
   implicit val defaultESSettings: ElasticsearchSettings = defaultOTSettings.elasticsearch
@@ -111,7 +114,7 @@ class Backend @Inject() (implicit
       )
       .map {
         case Results(Seq(), _, _, _) =>
-          logger.debug(s"No adverse event found for ${kv.toString}")
+          logger.debug(s"no adverse event found", keyValue("chembl_id", kv.toString()))
           None
         case Results(seq, agg, _, _) =>
           logger.trace(Json.prettyPrint(agg))
@@ -685,7 +688,7 @@ class Backend @Inject() (implicit
   def getMousePhenotypes(ids: Seq[String]): Future[IndexedSeq[MousePhenotype]] = {
     val indexName = getIndexOrDefault("mouse_phenotypes", Some("mouse_phenotypes"))
     val queryTerm = Map("targetFromSourceId.keyword" -> ids)
-    logger.debug(s"Querying mouse phenotypes for: $ids")
+    logger.debug(s"querying mouse phenotypes", keyValue("ids", ids), keyValue("index", indexName))
 
     // The entry with the highest number of MP is ENSG00000157404 with 1828. Pagination max size is 5000, so we have plenty
     // of headroom for now.
@@ -718,7 +721,7 @@ class Backend @Inject() (implicit
                           queryTerm: Map[String, String]
   ): Future[IndexedSeq[Pharmacogenomics]] = {
     val indexName = getIndexOrDefault("pharmacogenomics", Some("pharmacogenomics"))
-    logger.debug(s"Querying pharmacogenomics for: $id")
+    logger.debug(s"querying pharmacogenomics", keyValue("id", id), keyValue("index", indexName))
     esRetriever
       .getByIndexedQueryMust(
         indexName,
@@ -747,7 +750,7 @@ class Backend @Inject() (implicit
   ): Future[ProteinCodingCoordinates] = {
     val indexName = getIndexOrDefault("proteinCodingCoordinates")
     val pag = pagination.getOrElse(Pagination(0, 2))
-    logger.debug(s"Querying protein coding coordinates for: $id")
+    logger.debug(s"querying protein coding coordinates", keyValue("id", id), keyValue("index", indexName))
     val retriever = esRetriever
       .getByIndexedQueryMust(
         indexName,
@@ -793,8 +796,8 @@ class Backend @Inject() (implicit
   }
 
   def getDrugs(ids: Seq[String]): Future[IndexedSeq[Drug]] = {
-    logger.debug(s"Querying drugs: $ids")
     val drugIndexName = getIndexOrDefault("drug")
+    logger.debug(s"querying drugs", keyValue("drug_ids", ids), keyValue("index", drugIndexName))
     val queryTerm = Map("id.keyword" -> ids)
     esRetriever
       .getByIndexedQueryShould(drugIndexName, queryTerm, Pagination(0, ids.size), fromJsValue[Drug])
@@ -803,8 +806,8 @@ class Backend @Inject() (implicit
 
   def getMechanismsOfAction(id: String): Future[MechanismsOfAction] = {
 
-    logger.debug(s"querying ES: getting mechanisms of action for $id")
     val index = getIndexOrDefault("drugMoA")
+    logger.debug(s"querying mechanisms of action", keyValue("id", id), keyValue("index", index))
     val queryTerms = Map("chemblIds.keyword" -> id)
     val mechanismsOfActionRaw: Future[Results[MechanismOfActionRaw]] =
       esRetriever.getByIndexedQueryShould(
@@ -817,8 +820,8 @@ class Backend @Inject() (implicit
   }
 
   def getIndications(ids: Seq[String]): Future[IndexedSeq[Indications]] = {
-    logger.debug(s"querying ES: getting indications for $ids")
     val index = getIndexOrDefault("drugIndications")
+    logger.debug(s"querying indications", keyValue("ids", ids), keyValue("index", index))
     val queryTerm = Map("id.keyword" -> ids)
 
     esRetriever
@@ -827,8 +830,8 @@ class Backend @Inject() (implicit
   }
 
   def getDrugWarnings(id: String): Future[IndexedSeq[DrugWarning]] = {
-    logger.debug(s"Querying drug warnings for $id")
     val indexName = getIndexOrDefault("drugWarnings")
+    logger.debug(s"querying drug warnings", keyValue("id", id), keyValue("index", indexName))
     val queryTerm = Map("chemblIds.keyword" -> id)
     esRetriever
       .getByIndexedQueryShould(indexName, queryTerm, Pagination.mkDefault, fromJsValue[DrugWarning])
@@ -1000,7 +1003,7 @@ class Backend @Inject() (implicit
       orderBy: Option[(String, String)],
       pagination: Option[Pagination]
   ): Future[Associations] = {
-    logger.debug(s"get disease id ${disease.name}")
+    logger.debug(s"querying associations with fixed disease", keyValue("disease_id", disease.name), keyValue("indirect", indirect))
     val indirectIDs = if (indirect) disease.descendants.toSet + disease.id else Set.empty[String]
     val targetIds = applyFacetFiltersToBIDs("facet_search_target", targetSet, facetFilters)
     getAssociationsEntityFixed(
@@ -1025,7 +1028,7 @@ class Backend @Inject() (implicit
       orderBy: Option[(String, String)],
       pagination: Option[Pagination]
   ): Future[Associations] = {
-    logger.debug(s"get target id ${target.approvedSymbol} ACTUALLY DISABLED!")
+    logger.debug(s"querying associations with fixed target", keyValue("target_id", target.approvedSymbol), keyValue("indirect", indirect))
     val indirectIDs = if (indirect) {
       val interactions =
         Interactions.find(target.id, None, None, pagination = Some(Pagination(0, 10000))) map {
@@ -1061,7 +1064,7 @@ class Backend @Inject() (implicit
       size: Int
   ): Future[Vector[Similarity]] = {
     val table = defaultOTSettings.clickhouse.similarities
-    logger.debug(s"query similarities in table ${table.name}")
+    logger.debug(s"querying similarities", keyValue("table", table.name), keyValue("label", label), keyValue("labels", labels))
 
     val jointLabels = labels + label
     val simQ = QW2V(table.name, categories, jointLabels, threshold, size)
@@ -1080,7 +1083,7 @@ class Backend @Inject() (implicit
       pmid: String
   ): Future[Map[String, Vector[Sentence]]] = {
     val table = defaultOTSettings.clickhouse.sentences
-    logger.debug(s"Query sentences for $pmid from table ${table.name}")
+    logger.debug(s"querying literature sentences", keyValue("pmid", pmid), keyValue("table", table.name))
     val sentenceQuery = SentenceQuery(pmid, table.name)
     val results = dbRetriever.executeQuery[Sentence, Query](sentenceQuery.query)
     results.map(vs => vs.groupMap(_.section)(identity))
@@ -1113,7 +1116,7 @@ class Backend @Inject() (implicit
   ): Future[Publications] = {
     val table = defaultOTSettings.clickhouse.literature
     val indexTable = defaultOTSettings.clickhouse.literatureIndex
-    logger.debug(s"query literature ocurrences in table ${table.name}")
+    logger.debug(s"querying literature ocurrences", keyValue("table", table.name), keyValue("ids", ids))
 
     val pag = Helpers.Cursor.to(cursor).flatMap(_.asOpt[Pagination]).getOrElse(Pagination.mkDefault)
 
@@ -1169,12 +1172,12 @@ class Backend @Inject() (implicit
           case Vector(year) =>
             runQuery(year, total)
           case _ =>
-            logger.debug(s"Cannot find the earliest year for the publications.")
+            logger.warn(s"cannot find the earliest year for the publications")
             runQuery(1900, total)
         }
 
       case _ =>
-        logger.debug(s"there is no publications with this set of ids $ids")
+        logger.warn(s"there is no publications with this set of ids", keyValue("ids", ids))
         Future.successful(Publications.empty())
     }
   }
