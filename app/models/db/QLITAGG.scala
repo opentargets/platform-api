@@ -76,7 +76,10 @@ case class QLITAGG(
       From(countQ.toColumn(None))
     )
 
-    logger.debug(q.toString, keyValue("query_name", "countQ"), keyValue("query_type", this.getClass.getName))
+    logger.debug(q.toString,
+                 keyValue("query_name", "countQ"),
+                 keyValue("query_type", this.getClass.getName)
+    )
 
     q
   }
@@ -96,7 +99,10 @@ case class QLITAGG(
       )
     )
 
-    logger.debug(q.toString, keyValue("query_name", "minDate"), keyValue("query_type", this.getClass.getName))
+    logger.debug(q.toString,
+                 keyValue("query_name", "minDate"),
+                 keyValue("query_type", this.getClass.getName)
+    )
 
     q
   }
@@ -158,7 +164,10 @@ case class QLITAGG(
       Join(litQuery.toColumn(None), None, Some("INNER"), false, Some("r"), pmid :: Nil)
     )
 
-    logger.debug(query.toString, keyValue("query_name", "query"), keyValue("query_type", this.getClass.getName))
+    logger.debug(query.toString,
+                 keyValue("query_name", "query"),
+                 keyValue("query_type", this.getClass.getName)
+    )
 
     query
   }
