@@ -25,7 +25,10 @@ class CacheController @Inject() (implicit
     restHelpers.checkCredentials(Action.async { request =>
       appStart.RequestCounter.labelValues("/api/v4/rest/cache/clear", "GET").inc()
       Future {
-        logger.info("received request to clear cache", kv("request.method", request.method), kv("request.ip", request.connection.remoteAddressString))
+        logger.info("received request to clear cache",
+                    kv("request.method", request.method),
+                    kv("request.ip", request.connection.remoteAddressString)
+        )
         Fetchers.resetCache()
         gqlQueryCache.removeAll()
         Ok("cache cleared")

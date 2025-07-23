@@ -63,7 +63,10 @@ case class QW2V(
     val qElements =
       Select(F.count(star) :: Nil) :: fromQ.get :: PreWhere(F.equals(label, literal(id))) :: Nil
     val mainQ: Query = Q(qElements)
-    logger.debug(mainQ.toString, keyValue("query_name", "existsLabel"), keyValue("query_type", this.getClass.getName))
+    logger.debug(mainQ.toString,
+                 keyValue("query_name", "existsLabel"),
+                 keyValue("query_type", this.getClass.getName)
+    )
 
     mainQ
   }
@@ -71,7 +74,10 @@ case class QW2V(
   override val query: Query = {
     val qElements = wQ :: sQ :: fromQ :: preWhereQ :: whereQ :: orderByQ :: limitQ :: Nil
     val mainQ = Q(qElements.filter(_.isDefined).map(_.get))
-    logger.debug(mainQ.toString, keyValue("query_name", "query"), keyValue("query_type", this.getClass.getName))
+    logger.debug(mainQ.toString,
+                 keyValue("query_name", "query"),
+                 keyValue("query_type", this.getClass.getName)
+    )
 
     mainQ
   }

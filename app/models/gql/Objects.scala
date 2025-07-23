@@ -664,7 +664,9 @@ object Objects {
             DeferredValue(goFetcher.deferOpt(r.value.id)).map {
               case Some(value) => value
               case None =>
-                logger.warn(s"go was not found in go index using default go name", keyValue("id", r.value.id))
+                logger.warn(s"go was not found in go index using default go name",
+                            keyValue("id", r.value.id)
+                )
                 GeneOntologyTerm(r.value.id, "Name unknown in Open Targets")
             }
         )

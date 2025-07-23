@@ -21,7 +21,8 @@ class RestHelpers @Inject() (implicit
       .collect {
         case key if key.hashCode.toString.equals(config.getString("ot.apiKeyHash")) =>
           action(request)
-        case _ => logger.error("invalid 'apiKey' provided on request to secure endpoint")
+        case _ =>
+          logger.error("invalid 'apiKey' provided on request to secure endpoint")
           Future.successful(Forbidden("invalid API key"))
       }
       .getOrElse {

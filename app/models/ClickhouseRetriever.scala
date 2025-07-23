@@ -49,7 +49,10 @@ class ClickhouseRetriever(config: OTSettings)(implicit
     val l = Limit(0, 100000)
     val q = Q(s, f, g, l)
 
-    logger.debug(s"getUniqList get distinct with query ${q.toString}", keyValue("column", of), keyValue("table", from))
+    logger.debug(s"getUniqList get distinct with query ${q.toString}",
+                 keyValue("column", of),
+                 keyValue("table", from)
+    )
     val qq = q.as[A]
 
     appStart.DatabaseCallCounter.labelValues(db_name, "getUniqList").inc()
