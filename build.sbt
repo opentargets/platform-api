@@ -47,11 +47,22 @@ lazy val cats = Seq(
 )
 libraryDependencies ++= cats
 
+lazy val doobieVersion = "1.0.0-RC10"
+libraryDependencies ++= Seq(
+  "org.tpolecat" %% "doobie-core" % doobieVersion,
+  "org.tpolecat" %% "doobie-postgres" % doobieVersion,
+  "org.tpolecat" %% "doobie-specs2" % doobieVersion
+)
+
 val s4sVersion = "8.11.5"
 libraryDependencies ++= Seq(
   "com.sksamuel.elastic4s" %% "elastic4s-core" % s4sVersion exclude ("org.slf4j", "slf4j-api"),
-  "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % s4sVersion exclude ("org.slf4j", "slf4j-api"),
-  "com.sksamuel.elastic4s" %% "elastic4s-http-streams" % s4sVersion exclude ("org.slf4j", "slf4j-api"),
+  "com.sksamuel.elastic4s" %% "elastic4s-client-esjava" % s4sVersion exclude ("org.slf4j",
+                                                                              "slf4j-api"
+  ),
+  "com.sksamuel.elastic4s" %% "elastic4s-http-streams" % s4sVersion exclude ("org.slf4j",
+                                                                             "slf4j-api"
+  ),
   "com.sksamuel.elastic4s" %% "elastic4s-json-play" % s4sVersion exclude ("org.slf4j", "slf4j-api")
 )
 
@@ -68,7 +79,8 @@ getGqlFiles := {
     // copy files
     Process(s"git clone ${frontendRepository.value} ${td.getAbsolutePath}") !
     // filter files of interest
-    val gqlFiles: Seq[File] = (td / "apps/platform/" ** "*.gql").get ++ (td / "packages/sections/" ** "*.gql").get
+    val gqlFiles: Seq[File] =
+      (td / "apps/platform/" ** "*.gql").get ++ (td / "packages/sections/" ** "*.gql").get
 
     // delete files in current gql test resources so we can identify when the FE deletes a file
     val filesToDelete: Seq[File] =
