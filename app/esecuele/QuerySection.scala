@@ -1,53 +1,66 @@
 package esecuele
+import doobie._
+import doobie.implicits._
 
 abstract class QuerySection extends Rep {
   val name: String
   val content: Seq[Column]
+  val fragment: Fragment
 }
 
 case class With(content: Seq[Column], alias: Option[String | Column] = None) extends QuerySection {
   override val name: String = "WITH"
   override val rep: String =
     s"$name${alias.map(" " + _ + " as").getOrElse("")} ${content.mkString("", ", ", "")}"
+  override val fragment: Fragment =
+    fr"$name${alias.map(" " + _ + " as").getOrElse("")} ${content.mkString("", ", ", "")}"
 }
 
 case class Select(content: Seq[Column]) extends QuerySection {
   override val name: String = "SELECT"
   override val rep: String = s"$name ${content.mkString("", ", ", "")}"
+  override val fragment: Fragment = fr"SELECT ${content.mkString(", ")}"
+
 }
 
 case class Where(col: Column) extends QuerySection {
   override val content: Seq[Column] = Seq(col)
   override val name: String = "WHERE"
   override val rep: String = s"$name ${content.mkString("(", "", ")")}"
+  override val fragment: Fragment = fr"WHERE ${content.mkString("(", "", ")")}"
 }
 
 case class PreWhere(col: Column) extends QuerySection {
   override val content: Seq[Column] = Seq(col)
   override val name: String = "PREWHERE"
   override val rep: String = s"$name ${content.mkString("(", "", ")")}"
+  override val fragment: Fragment = fr"$name ${content.mkString("(", "", ")")}"
 }
 
 case class ArrayJoin(col: Column) extends QuerySection {
   override val content: Seq[Column] = Seq(col)
   override val name: String = "ARRAY JOIN"
   override val rep: String = s"$name ${content.mkString}"
+  override val fragment: Fragment = fr"$name ${content.mkString}"
 }
 
 case class Having(col: Column) extends QuerySection {
   override val content: Seq[Column] = Seq(col)
   override val name: String = "HAVING"
   override val rep: String = s"$name ${content.mkString("(", "", ")")}"
+  override val fragment: Fragment = fr"$name ${content.mkString("(", "", ")")}"
 }
 
 case class GroupBy(content: Seq[Column]) extends QuerySection {
   override val name: String = "GROUP BY"
   override val rep: String = s"$name ${content.mkString("", ", ", "")}"
+  override val fragment: Fragment = fr"$name ${content.mkString("", ", ", "")}"
 }
 
 case class OrderBy(content: Seq[Column]) extends QuerySection {
   override val name: String = "ORDER BY"
   override val rep: String = s"$name ${content.mkString("", ", ", "")}"
+  override val fragment: Fragment = fr"$name ${content.mkString("", ", ", "")}"
 }
 
 //LIMIT 1 OFFSET 0 BY disease_id
@@ -57,18 +70,22 @@ case class Limit(offset: Int = 0, size: Int) extends QuerySection {
   override val content: Seq[Column] = Nil
   override val name: String = "LIMIT"
   override val rep: String = s"$name $size OFFSET $offset"
+  override val fragment: Fragment = fr"$name $size OFFSET $offset"
 }
 
 case class LimitBy(size: Int, offset: Int = 0, by: Seq[Column]) extends QuerySection {
   override val content: Seq[Column] = by
   override val name: String = "LIMIT"
   override val rep: String = s"$name $size OFFSET $offset BY ${content.mkString("", ", ", "")}"
+  override val fragment: Fragment =
+    fr"$name $size OFFSET $offset BY ${content.mkString("", ", ", "")}"
 }
 
 case class From(col: Column, alias: Option[String] = None) extends QuerySection {
   override val content: Seq[Column] = Seq(col)
   override val name: String = "FROM"
   override val rep: String = s"$name ${content.mkString}${alias.map(" " + _).getOrElse("")}"
+  override val fragment: Fragment = fr"FROM" ++ col.fragment
 }
 
 case class Join(
@@ -91,6 +108,8 @@ case class Join(
       alias,
       Some("USING " + using.mkString("(", ",", ")"))
     ).filter(_.isDefined).map(_.get).mkString(" ").trim
+  override val fragment: Fragment =
+    fr"$name ${content.mkString}${alias.map(" " + _).getOrElse("")} ${using.mkString("USING (", ", ", ")")}"
 }
 
 // TODO REFACTOR INTO PROPER TYPE
@@ -99,6 +118,8 @@ case class FromSelect(select: QuerySection, alias: Option[String] = None) extend
   override val name: String = "FROM"
   override val rep: String =
     s"$name (${select.name} ${content.mkString})${alias.map(" " + _).getOrElse("")}"
+  override val fragment: Fragment =
+    fr"$name (${select.name} ${content.mkString})${alias.map(" " + _).getOrElse("")}"
 }
 
 object QuerySection {}

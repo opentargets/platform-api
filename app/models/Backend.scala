@@ -72,6 +72,9 @@ class Backend @Inject() (implicit
   implicit lazy val dbRetriever: ClickhouseRetriever =
     new ClickhouseRetriever(defaultOTSettings)
 
+  implicit lazy val doobieRetriever: ClickhouseRetrieverDoobie =
+    new ClickhouseRetrieverDoobie(defaultOTSettings)
+
   def getStatus(isOk: Boolean): HealthCheck =
     if (isOk) HealthCheck(true, "All good!")
     else HealthCheck(false, "Hmm, something wrong is going on here!")
@@ -867,7 +870,7 @@ class Backend @Inject() (implicit
       page.index,
       page.size
     )
-    val total: Int = dbRetriever
+    val total: Int = doobieRetriever
       .executeQuery[Int, Query](intervalsQuery.totals)
       .map {
         case Seq(totalCount) => totalCount
@@ -879,7 +882,7 @@ class Backend @Inject() (implicit
     val results =
       if total == 0 then Future.successful(Intervals(total, Vector.empty))
       else
-        dbRetriever
+        doobieRetriever
           .executeQuery[Interval, Query](intervalsQuery.query)
           .map(intervals => Intervals(total, intervals))
     results

@@ -1,5 +1,6 @@
 package esecuele
-
+import doobie._
+import doobie.implicits._
 case class Column(raw: Expression, alias: Option[String]) extends Rep {
   val rep: String = {
     val ex = raw match {
@@ -8,6 +9,18 @@ case class Column(raw: Expression, alias: Option[String]) extends Rep {
     }
     List(ex, alias).withFilter(_.isDefined).map(_.get).mkString("", " AS ", "")
   }
+  def constructFragment(expressionString: String): Fragment = {
+    val ex = raw match {
+      case _: EmptyExpression.type => Fragment.empty
+      case _ =>
+        Fragment.const(expressionString)
+    }
+    alias match {
+      case None    => ex
+      case Some(a) => ex ++ fr" AS $a"
+    }
+  }
+  val fragment: Fragment = constructFragment(raw.rep)
 
   override def toString: String = rep
 
@@ -20,6 +33,7 @@ case class Column(raw: Expression, alias: Option[String]) extends Rep {
   def asc: Column = Column(RawExpression(name.rep + " ASC"), None)
 
   def desc: Column = Column(RawExpression(name.rep + " DESC"), None)
+
 }
 
 object Column {

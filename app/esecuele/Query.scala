@@ -1,5 +1,8 @@
 package esecuele
 
+import doobie._
+import doobie.implicits._
+
 trait AnyQuery extends Rep
 
 case class Query(sections: Seq[QuerySection]) extends AnyQuery {
@@ -11,6 +14,9 @@ case class Query(sections: Seq[QuerySection]) extends AnyQuery {
     val q = sections.map(_.rep).mkString("(", " ", ")") + s"${named.map(" " + _).getOrElse("")}"
     Column(RawExpression(q), None)
   }
+
+  val sql = Fragment.const(rep)
+  // val sql: Fragment = sections.map(_.fragment).foldLeft(Fragment.empty)(_ ++ _)
 }
 
 object Query {
