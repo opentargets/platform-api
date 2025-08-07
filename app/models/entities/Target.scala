@@ -152,93 +152,93 @@ case class Target(
 object Target extends Logging {
 
   implicit val getTargetFromDB: GetResult[Target] =
-    GetResult { r =>
-      // val id: String = r.<<
-      // val alternativeGenes: String = r.<<
-      // val approvedName: String = r.<<
-      // val approvedSymbol: String = r.<<
-      // val biotype: String = r.<<
-      // val chemicalProbes: String = r.<<
-      // val constraint: String = r.<<
-      // val dbXrefs: String = r.<<
-      // val functionDescriptions: String = r.<<
-      // val genomicLocation: String = r.<<
-      // val go: String = r.<<
-      // val hallmarks: String = r.<<?
-      // val homologues: String = r.<<
-      // val nameSynonyms: String = r.<<
-      // val obsoleteNames: String = r.<<
-      // val obsoleteSymbols: String = r.<<
-      // val pathways: String = r.<<
-      // val proteinIds: String = r.<<
-      // val safetyLiabilities: String = r.<<
-      // val studyIds: String = r.<<
-      // val subcellularLocations: String = r.<<
-      // val symbolSynonyms: String = r.<<
-      // val synonyms: String = r.<<
-      // val targetClass: String = r.<<
-      // val tep: String = r.<<?
-      // val tractability: String = r.<<
-      // val transcriptIds: String = r.<<
-      Target(
-        id = r.<<[String],
-        alternativeGenes = StrSeqRep(r.<<[String]).rep,
-        approvedName = r.<<[String],
-        approvedSymbol = r.<<[String],
-        biotype = r.<<[String],
-        chemicalProbes = TupleSeqRep[ChemicalProbe](r.<<[String], chemicalProbeParser).rep,
-        constraint = TupleSeqRep[Constraint](r.<<[String], constraintParser).rep,
-        dbXrefs = r.nextObject().asInstanceOf[Seq[IdAndSource]],
-        functionDescriptions = 
-      )
-    }
+    GetResult(r => Json.parse(r.<<[String]).as[Target])
+  // val id: String = r.<<
+  // val alternativeGenes: String = r.<<
+  // val approvedName: String = r.<<
+  // val approvedSymbol: String = r.<<
+  // val biotype: String = r.<<
+  // val chemicalProbes: String = r.<<
+  // val constraint: String = r.<<
+  // val dbXrefs: String = r.<<
+  // val functionDescriptions: String = r.<<
+  // val genomicLocation: String = r.<<
+  // val go: String = r.<<
+  // val hallmarks: String = r.<<?
+  // val homologues: String = r.<<
+  // val nameSynonyms: String = r.<<
+  // val obsoleteNames: String = r.<<
+  // val obsoleteSymbols: String = r.<<
+  // val pathways: String = r.<<
+  // val proteinIds: String = r.<<
+  // val safetyLiabilities: String = r.<<
+  // val studyIds: String = r.<<
+  // val subcellularLocations: String = r.<<
+  // val symbolSynonyms: String = r.<<
+  // val synonyms: String = r.<<
+  // val targetClass: String = r.<<
+  // val tep: String = r.<<?
+  // val tractability: String = r.<<
+  // val transcriptIds: String = r.<<
+  //     Target(
+  //       id = r.<<[String],
+  //       alternativeGenes = StrSeqRep(r.<<[String]).rep,
+  //       approvedName = r.<<[String],
+  //       approvedSymbol = r.<<[String],
+  //       biotype = r.<<[String],
+  //       chemicalProbes = TupleSeqRep[ChemicalProbe](r.<<[String], chemicalProbeParser).rep,
+  //       constraint = TupleSeqRep[Constraint](r.<<[String], constraintParser).rep,
+  //       dbXrefs = r.nextObject().asInstanceOf[Seq[IdAndSource]],
+  //       functionDescriptions =
+  //     )
+  //   }
 
-  class ChemicalProbeParser(str: String) extends StringParser[ChemicalProbe](str) {
-    override def parse: ChemicalProbe =
-      ChemicalProbe(
-        id = tokens(0),
-        control = optionalValue(tokens(1))(identity),
-        drugId = optionalValue(tokens(2))(identity),
-        mechanismOfAction = optionalValue(tokens(3))(s => StrSeqRep(s).rep),
-        isHighQuality = tokens(4).toBoolean,
-        origin = optionalValue(tokens(5))(s => StrSeqRep(s).rep),
-        probeMinerScore = optionalValue(tokens(6))(_.toDouble),
-        probesDrugsScore = optionalValue(tokens(7))(_.toDouble),
-        scoreInCells = optionalValue(tokens(8))(_.toDouble),
-        scoreInOrganisms = optionalValue(tokens(9))(_.toDouble),
-        targetFromSourceId = tokens(10),
-        urls = TupleSeqRep(tokens(11), chemicalProbeUrlParser).rep
-      )
-  }
+  // class ChemicalProbeParser(str: String) extends StringParser[ChemicalProbe](str) {
+  //   override def parse: ChemicalProbe =
+  //     ChemicalProbe(
+  //       id = tokens(0),
+  //       control = optionalValue(tokens(1))(identity),
+  //       drugId = optionalValue(tokens(2))(identity),
+  //       mechanismOfAction = optionalValue(tokens(3))(s => StrSeqRep(s).rep),
+  //       isHighQuality = tokens(4).toBoolean,
+  //       origin = optionalValue(tokens(5))(s => StrSeqRep(s).rep),
+  //       probeMinerScore = optionalValue(tokens(6))(_.toDouble),
+  //       probesDrugsScore = optionalValue(tokens(7))(_.toDouble),
+  //       scoreInCells = optionalValue(tokens(8))(_.toDouble),
+  //       scoreInOrganisms = optionalValue(tokens(9))(_.toDouble),
+  //       targetFromSourceId = tokens(10),
+  //       urls = TupleSeqRep(tokens(11), chemicalProbeUrlParser).rep
+  //     )
+  // }
 
-  class ChemicalProbeUrlParser(str: String) extends StringParser[ChemicalProbeUrl](str) {
-    override def parse: ChemicalProbeUrl =
-      ChemicalProbeUrl(
-        niceName = tokens(0),
-        url = optionalValue(tokens(1))(identity)
-      )
-  }
+  // class ChemicalProbeUrlParser(str: String) extends StringParser[ChemicalProbeUrl](str) {
+  //   override def parse: ChemicalProbeUrl =
+  //     ChemicalProbeUrl(
+  //       niceName = tokens(0),
+  //       url = optionalValue(tokens(1))(identity)
+  //     )
+  // }
 
-  class ConstraintParser(str: String) extends StringParser[Constraint](str) {
-    override def parse: Constraint =
-      Constraint(
-        constraintType = tokens(0),
-        exp = optionalValue(tokens(1))(_.toDouble),
-        obs = optionalValue(tokens(2))(_.toLong),
-        oe = optionalValue(tokens(3))(_.toDouble),
-        oeLower = optionalValue(tokens(4))(_.toDouble),
-        oeUpper = optionalValue(tokens(5))(_.toDouble),
-        score = optionalValue(tokens(6))(_.toDouble),
-        upperBin = optionalValue(tokens(7))(_.toLong),
-        upperBin6 = optionalValue(tokens(8))(_.toLong),
-        upperRank = optionalValue(tokens(9))(_.toLong)
-      )
-  }
-  // Parser functions
-  val chemicalProbeParser: String => ChemicalProbe = str => new ChemicalProbeParser(str).parse
-  val chemicalProbeUrlParser: String => ChemicalProbeUrl = str =>
-    new ChemicalProbeUrlParser(str).parse
-  val constraintParser: String => Constraint = str => new ConstraintParser(str).parse
+  // class ConstraintParser(str: String) extends StringParser[Constraint](str) {
+  //   override def parse: Constraint =
+  //     Constraint(
+  //       constraintType = tokens(0),
+  //       exp = optionalValue(tokens(1))(_.toDouble),
+  //       obs = optionalValue(tokens(2))(_.toLong),
+  //       oe = optionalValue(tokens(3))(_.toDouble),
+  //       oeLower = optionalValue(tokens(4))(_.toDouble),
+  //       oeUpper = optionalValue(tokens(5))(_.toDouble),
+  //       score = optionalValue(tokens(6))(_.toDouble),
+  //       upperBin = optionalValue(tokens(7))(_.toLong),
+  //       upperBin6 = optionalValue(tokens(8))(_.toLong),
+  //       upperRank = optionalValue(tokens(9))(_.toLong)
+  //     )
+  // }
+  // // Parser functions
+  // val chemicalProbeParser: String => ChemicalProbe = str => new ChemicalProbeParser(str).parse
+  // val chemicalProbeUrlParser: String => ChemicalProbeUrl = str =>
+  //   new ChemicalProbeUrlParser(str).parse
+  // val constraintParser: String => Constraint = str => new ConstraintParser(str).parse
 
   // val chemicalProbeParser: String => ChemicalProbe = str => {
   //   val tokens = str.split(",")
@@ -310,6 +310,18 @@ object Target extends Logging {
     Json.format[models.entities.GenomicLocation]
   implicit val reactomePathwayImpF: OFormat[ReactomePathway] =
     Json.format[models.entities.ReactomePathway]
+  implicit val chemicalProbeF: OFormat[ChemicalProbe] =
+    Json.format[models.entities.ChemicalProbe]
+  implicit val chemicalProbeUrlF: OFormat[ChemicalProbeUrl] =
+    Json.format[models.entities.ChemicalProbeUrl]
+  implicit val geneOntologyImpF: OFormat[GeneOntology] = Json.format[models.entities.GeneOntology]
+  implicit val geneOntologyLookupImpF: OFormat[GeneOntologyLookup] =
+    Json.format[models.entities.GeneOntologyLookup]
+  implicit val cancerHallmarkImpF: OFormat[CancerHallmark] =
+    Json.format[models.entities.CancerHallmark]
+  implicit val hallmarkAttributeImpF: OFormat[HallmarkAttribute] =
+    Json.format[models.entities.HallmarkAttribute]
+  implicit val hallmarksImpF: OFormat[Hallmarks] = Json.format[models.entities.Hallmarks]
   implicit val targetImpF: OFormat[Target] =
     Json.format[Target]
 }
