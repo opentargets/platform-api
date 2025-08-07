@@ -65,6 +65,12 @@ case class LimitBy(size: Int, offset: Int = 0, by: Seq[Column]) extends QuerySec
   override val rep: String = s"$name $size OFFSET $offset BY ${content.mkString("", ", ", "")}"
 }
 
+case class Format(format: String) extends QuerySection {
+  override val content: Seq[Column] = Nil
+  override val name: String = "FORMAT"
+  override val rep: String = s"$name $format"
+}
+
 case class From(col: Column, alias: Option[String] = None) extends QuerySection {
   override val content: Seq[Column] = Seq(col)
   override val name: String = "FROM"

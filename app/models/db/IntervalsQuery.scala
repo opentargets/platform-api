@@ -15,7 +15,7 @@ case class IntervalsQuery(chromosome: String,
 ) extends Queryable
     with Logging {
 
-  private val positional_query = Where(
+  private val positionalQuery = Where(
     Functions.and(
       Functions.equals(column("chromosome"), literal(chromosome)),
       Functions.lessOrEquals(column("start"), literal(start)),
@@ -27,7 +27,7 @@ case class IntervalsQuery(chromosome: String,
     Query(
       Select(Functions.count(Column.star) :: Nil),
       From(column(tableName)),
-      positional_query
+      positionalQuery
     )
 
   override val query: Query =
@@ -36,8 +36,9 @@ case class IntervalsQuery(chromosome: String,
         Column.star :: Nil
       ),
       From(column(tableName)),
-      positional_query,
+      positionalQuery,
       OrderBy(column("chromosome") :: column("start") :: column("end") :: Nil),
-      Limit(offset, size)
+      Limit(offset, size),
+      Format("JSONEachRow")
     )
 }
