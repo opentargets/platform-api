@@ -53,6 +53,7 @@ object Configuration {
     * Harmonic settings used to compute associations on the fly and LUTs for interaction expansions
     */
   case class ClickhouseSettings(
+      intervals: DbTableSettings,
       target: TargetSettings,
       disease: DiseaseSettings,
       similarities: DbTableSettings,

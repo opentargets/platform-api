@@ -858,12 +858,13 @@ class Backend @Inject() (implicit
                    end: Int,
                    pagination: Option[Pagination]
   ): Future[Intervals] = {
+    val tableName = defaultOTSettings.clickhouse.intervals.name
     val page = pagination.getOrElse(Pagination.mkDefault)
     val intervalsQuery = IntervalsQuery(
       chromosome,
       start,
       end,
-      "ot.intervals",
+      tableName,
       page.index,
       page.size
     )
