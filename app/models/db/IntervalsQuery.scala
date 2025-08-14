@@ -4,7 +4,6 @@ import esecuele.Column.column
 import esecuele.Column.literal
 import esecuele._
 import play.api.Logging
-import com.sksamuel.elastic4s.requests.common.Operator.Or
 
 case class IntervalsQuery(chromosome: String,
                           start: Int,

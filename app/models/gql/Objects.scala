@@ -106,6 +106,25 @@ object Objects extends Logging {
     DocumentField("pathways", "Reactome pathways"),
     RenameField("go", "geneOntology"),
     RenameField("constraint", "geneticConstraint"),
+    ReplaceField(
+      "studyLocusIds",
+      Field(
+        "credibleSets",
+        credibleSetsImp,
+        description = None,
+        arguments = pageArg :: Nil,
+        complexity = Some(complexityCalculator(pageArg)),
+        resolve = ctx =>
+          if (ctx.value.studyLocusIds.isEmpty) {
+            Future.successful(CredibleSets.empty)
+          } else {
+            val credSetQueryArgs = CredibleSetQueryArgs(
+              ctx.value.studyLocusIds
+            )
+            ctx.ctx.getCredibleSets(credSetQueryArgs, ctx.arg(pageArg))
+          }
+      )
+    ),
     AddFields(
       Field(
         "similarEntities",
@@ -681,6 +700,8 @@ object Objects extends Logging {
     deriveObjectType[Backend, TargetClass]()
   implicit val doseTypeImp: ObjectType[Backend, SafetyEffects] =
     deriveObjectType[Backend, SafetyEffects]()
+  implicit val canonicalTranscriptImp: ObjectType[Backend, CanonicalTranscript] =
+    deriveObjectType[Backend, CanonicalTranscript]()
   implicit val constraintImp: ObjectType[Backend, Constraint] =
     deriveObjectType[Backend, Constraint]()
   implicit val homologueImp: ObjectType[Backend, Homologue] = deriveObjectType[Backend, Homologue]()
