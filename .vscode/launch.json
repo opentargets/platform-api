@@ -1,0 +1,14 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "scala",
+            "request": "attach",
+            "name": "Play",
+            "buildTarget": "root",
+            "hostName": "localhost",
+            "port": 5005
+        }
+
+    ]
+}

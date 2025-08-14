@@ -11,7 +11,7 @@ import gql.validators.QueryTermsValidator.*
 
 import javax.inject.Inject
 import models.Helpers.*
-import models.db.{QAOTF, QLITAGG, QW2V, IntervalsQuery}
+import models.db.{QAOTF, QLITAGG, QW2V, IntervalsQuery, TargetsQuery}
 import models.entities.Publication.*
 import models.entities.Associations.*
 import models.entities.Biosample.*
@@ -781,9 +781,12 @@ class Backend @Inject() (implicit
   }
 
   def getTargets(ids: Seq[String]): Future[IndexedSeq[Target]] = {
-    val targetIndexName = getIndexOrDefault("target", Some("targets"))
-
-    esRetriever.getByIds(targetIndexName, ids, fromJsValue[Target])
+    val tableName = defaultOTSettings.clickhouse.target.name
+    val targetsQuery = TargetsQuery(ids, tableName, 0, Pagination.sizeMax)
+    val results = dbRetriever
+      .executeQuery[Target, Query](targetsQuery.query)
+      .map(targets => targets)
+    results
   }
 
   def getSoTerms(ids: Seq[String]): Future[IndexedSeq[SequenceOntologyTerm]] = {
