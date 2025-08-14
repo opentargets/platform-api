@@ -37,7 +37,7 @@ object Configuration {
 
   case class DbTableSettings(label: String, name: String)
 
-  case class TargetSettings(associations: DbTableSettings)
+  case class TargetSettings(label: String, name: String, associations: DbTableSettings)
 
   case class DiseaseSettings(associations: DbTableSettings)
 
