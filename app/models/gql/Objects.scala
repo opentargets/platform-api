@@ -19,6 +19,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.*
 import models.entities.CredibleSets.credibleSetsImp
 import models.entities.Study.{LdPopulationStructure, Sample, SumStatQC}
+import models.entities.Violations.{
+  InputParameterCheckError,
+  InvalidArgValueError,
+  invalidArgValueErrorMsg
+}
+
+import scala.collection.View.Empty
 
 object Objects extends Logging {
   implicit val metaDataVersionImp: ObjectType[Backend, DataVersion] =
@@ -212,7 +219,19 @@ object Objects extends Logging {
         arguments =
           BIds :: indirectTargetEvidences :: datasourceSettingsListArg :: facetFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
         complexity = Some(complexityCalculator(pageArg)),
-        resolve = ctx =>
+        resolve = ctx => {
+          (ctx arg datasourceSettingsListArg) foreach { settingsList =>
+            val invalidWeights =
+              for setting <- settingsList if setting.weight > 1 || setting.weight < 0
+              yield s"The value for '${setting.id}' was ${setting.weight}"
+            if invalidWeights.nonEmpty then
+              val errors = Vector(
+                invalidWeights.map(invWeight =>
+                  InvalidArgValueError("weight", "between 0 and 1", Some(invWeight))
+                )*
+              )
+              throw InputParameterCheckError(errors)
+          }
           ctx.ctx.getAssociationsTargetFixed(
             ctx.value,
             ctx arg datasourceSettingsListArg,
@@ -227,6 +246,7 @@ object Objects extends Logging {
             }),
             ctx arg pageArg
           )
+        }
       ),
       Field(
         "prioritisation",
@@ -453,6 +473,18 @@ object Objects extends Logging {
           BIds :: indirectEvidences :: datasourceSettingsListArg :: facetFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
         complexity = Some(complexityCalculator(pageArg)),
         resolve = ctx =>
+          (ctx arg datasourceSettingsListArg) foreach { settingsList =>
+            val invalidWeights =
+              for setting <- settingsList if setting.weight > 1 || setting.weight < 0
+              yield s"The value for '${setting.id}' was ${setting.weight}"
+            if invalidWeights.nonEmpty then
+              val errors = Vector(
+                invalidWeights.map(invWeight =>
+                  InvalidArgValueError("weight", "between 0 and 1", Some(invWeight))
+                )*
+              )
+              throw InputParameterCheckError(errors)
+          }
           ctx.ctx.getAssociationsDiseaseFixed(
             ctx.value,
             ctx arg datasourceSettingsListArg,
