@@ -24,7 +24,8 @@ object Arguments {
 
   val datasourceSettingsInputImp: InputObjectType[DatasourceSettings] =
     deriveInputObjectType[DatasourceSettings](
-      InputObjectTypeName("DatasourceSettingsInput")
+      InputObjectTypeName("DatasourceSettingsInput"),
+      DocumentInputField("weight", "Weight assigned to the datasource. Should be between 0 and 1")
     )
 
   val entityNames: Argument[Option[Seq[String]]] = Argument(
