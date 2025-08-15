@@ -223,7 +223,7 @@ object Objects extends Logging {
           (ctx arg datasourceSettingsListArg) foreach { settingsList =>
             val invalidWeights =
               for setting <- settingsList if setting.weight > 1 || setting.weight < 0
-              yield s"The value for '${setting.id}' was ${setting.weight}"
+              yield s"The assigned weight for '${setting.id}' was ${setting.weight}"
             if invalidWeights.nonEmpty then
               val errors = Vector(
                 invalidWeights.map(invWeight =>
@@ -476,7 +476,7 @@ object Objects extends Logging {
           (ctx arg datasourceSettingsListArg) foreach { settingsList =>
             val invalidWeights =
               for setting <- settingsList if setting.weight > 1 || setting.weight < 0
-              yield s"The value for '${setting.id}' was ${setting.weight}"
+              yield s"The assigned weight for '${setting.id}' was ${setting.weight}"
             if invalidWeights.nonEmpty then
               val errors = Vector(
                 invalidWeights.map(invWeight =>
