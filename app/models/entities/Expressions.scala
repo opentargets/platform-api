@@ -5,6 +5,7 @@ import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 import play.api.libs.json.JsonConfiguration.Aux
 import play.api.libs.json.JsonNaming.SnakeCase
+import slick.jdbc.GetResult
 
 case class Tissue(id: String, label: String, anatomicalSystems: Seq[String], organs: Seq[String])
 
@@ -50,4 +51,68 @@ object Expressions {
       (__ \ "id").read[String] and
         (__ \ "tissues").readWithDefault[Seq[Expression]](Seq.empty)
     )(Expressions.apply)
+}
+
+case class BaselineExpressionRow(
+    targetId: String,
+    targetFromSourceId: Option[String],
+    tissueBiosampleId: Option[String],
+    tissueBiosampleFromSource: Option[String],
+    celltypeBiosampleId: Option[String],
+    celltypeBiosampleFromSource: Option[String],
+    min: Double,
+    q1: Double,
+    median: Double,
+    q3: Double,
+    max: Double,
+    datasourceId: String,
+    datatypeId: String,
+    unit: String
+)
+
+case class BaselineExpression(
+    count: Long,
+    rows: Vector[BaselineExpressionRow]
+)
+
+object BaselineExpression {
+  val empty: BaselineExpression = BaselineExpression(0, Vector.empty)
+
+  implicit val getBaselineExpressionRowFromDB: GetResult[BaselineExpressionRow] =
+    GetResult { r =>
+      val targetId: String = r.<<
+      val targetFromSourceId: Option[String] = r.<<
+      val tissueBiosampleId: Option[String] = r.<<
+      val tissueBiosampleFromSource: Option[String] = r.<<
+      val celltypeBiosampleId: Option[String] = r.<<
+      val celltypeBiosampleFromSource: Option[String] = r.<<
+      val min: Double = r.<<
+      val q1: Double = r.<<
+      val median: Double = r.<<
+      val q3: Double = r.<<
+      val max: Double = r.<<
+      val datasourceId: String = r.<<
+      val datatypeId: String = r.<<
+      val unit: String = r.<<
+
+      BaselineExpressionRow(
+        targetId,
+        targetFromSourceId,
+        tissueBiosampleId,
+        tissueBiosampleFromSource,
+        celltypeBiosampleId,
+        celltypeBiosampleFromSource,
+        min,
+        q1,
+        median,
+        q3,
+        max,
+        datasourceId,
+        datatypeId,
+        unit
+      )
+    }
+
+  implicit val BaselineExpressionRowImp: OFormat[BaselineExpressionRow] =
+    Json.format[BaselineExpressionRow]
 }
