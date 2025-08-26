@@ -11,9 +11,10 @@ import gql.validators.QueryTermsValidator.*
 
 import javax.inject.Inject
 import models.Helpers.*
-import models.db.{QAOTF, QLITAGG, QW2V, IntervalsQuery, TargetsQuery}
+import models.db.{QAOTF, QLITAGG, QW2V, BaselineExpressionQuery, IntervalsQuery, TargetsQuery}
 import models.entities.Publication.*
 import models.entities.Associations.*
+import models.entities.BaselineExpression.*
 import models.entities.Biosample.*
 import models.entities.CredibleSet.*
 import models.entities.Configuration.*
@@ -772,6 +773,34 @@ class Backend @Inject() (implicit
     val targetIndexName = getIndexOrDefault("expression")
 
     esRetriever.getByIds(targetIndexName, ids, fromJsValue[Expressions])
+  }
+
+  def getBaselineExpression(targetId: String,
+                            pagination: Option[Pagination]
+  ): Future[BaselineExpression] = {
+    val page = pagination.getOrElse(Pagination.mkDefault)
+    val baselineExpressionQuery = BaselineExpressionQuery(
+      targetId,
+      "ot.baseline_expression",
+      page.index,
+      page.size
+    )
+    val total: Int = dbRetriever
+      .executeQuery[Int, Query](baselineExpressionQuery.totals)
+      .map {
+        case Seq(totalCount) => totalCount
+        case _               => 0
+      }
+      .await
+    logger.info(s"Total baseline expressions found: $total")
+
+    val results =
+      if total == 0 then Future.successful(BaselineExpression(total, Vector.empty))
+      else
+        dbRetriever
+          .executeQuery[BaselineExpressionRow, Query](baselineExpressionQuery.query)
+          .map(baselineExpressionRows => BaselineExpression(total, baselineExpressionRows))
+    results
   }
 
   def getReactomeNodes(ids: Seq[String]): Future[IndexedSeq[Reactome]] = {

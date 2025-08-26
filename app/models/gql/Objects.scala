@@ -215,6 +215,14 @@ object Objects extends Logging {
           }
       ),
       Field(
+        "baselineExpression",
+        baselineExpressionImp,
+        description = Some("Baseline expression"),
+        arguments = pageArg :: Nil,
+        complexity = Some(complexityCalculator(pageArg)),
+        resolve = ctx => ctx.ctx.getBaselineExpression(ctx.value.id, ctx.arg(pageArg))
+      ),
+      Field(
         "knownDrugs",
         OptionType(knownDrugsImp),
         description = Some(
@@ -622,6 +630,38 @@ object Objects extends Logging {
     deriveObjectType[Backend, Expressions](
       ExcludeFields("id")
     )
+  implicit lazy val baselineExpressionRowImp: ObjectType[Backend, BaselineExpressionRow] =
+    deriveObjectType[Backend, BaselineExpressionRow](
+      ReplaceField(
+        "tissueBiosampleId",
+        Field(
+          "tissueBiosample",
+          OptionType(biosampleImp),
+          Some("Tissue biosample entity"),
+          resolve = r =>
+            r.value.tissueBiosampleId match {
+              case Some(id) => biosamplesFetcher.deferOpt(id)
+              case None     => Future.successful(None)
+            }
+        )
+      ),
+      ReplaceField(
+        "celltypeBiosampleId",
+        Field(
+          "celltypeBiosample",
+          OptionType(biosampleImp),
+          Some("Cell type biosample entity"),
+          resolve = r =>
+            r.value.celltypeBiosampleId match {
+              case Some(id) => biosamplesFetcher.deferOpt(id)
+              case None     => Future.successful(None)
+            }
+        )
+      )
+    )
+
+  implicit lazy val baselineExpressionImp: ObjectType[Backend, BaselineExpression] =
+    deriveObjectType[Backend, BaselineExpression]()
 
   implicit val adverseEventImp: ObjectType[Backend, AdverseEvent] =
     deriveObjectType[Backend, AdverseEvent](
