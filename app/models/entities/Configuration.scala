@@ -88,6 +88,7 @@ object Configuration {
     */
   case class ClickhouseSettings(
       defaultDatabaseName: String,
+      baselineExpression: DbTableSettings,
       biosample: DbTableSettings,
       colocalisation: DbTableSettings,
       credibleSet: CredibleSetSettings,
