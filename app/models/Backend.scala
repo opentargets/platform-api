@@ -13,6 +13,7 @@ import models.Helpers.*
 import models.db.*
 import models.entities.AdverseEvent.*
 import models.entities.Associations.*
+import models.entities.BaselineExpression.*
 import models.entities.Biosample.*
 import models.entities.CredibleSets.*
 import models.entities.Colocalisations.*
@@ -661,6 +662,37 @@ class Backend @Inject() (implicit
     logger.debug(s"querying expressions", keyValue("ids", ids), keyValue("table", tableName))
     val expressionQuery = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[Expressions, Query](expressionQuery.query)
+  }
+
+  def getBaselineExpression(targetId: String,
+                            pagination: Option[Pagination]
+  ): Future[BaselineExpression] = {
+    val page = pagination.getOrElse(Pagination.mkDefault)
+    val tableName = getTableWithPrefixOrDefault(
+      defaultOTSettings.clickhouse.baselineExpression.name
+    )
+    val baselineExpressionQuery = BaselineExpressionQuery(
+      targetId,
+      tableName,
+      page.index,
+      page.size
+    )
+    val total: Int = dbRetriever
+      .executeQuery[Int, Query](baselineExpressionQuery.totals)
+      .map {
+        case Seq(totalCount) => totalCount
+        case _               => 0
+      }
+      .await
+    logger.info(s"Total baseline expressions found: $total")
+
+    val results =
+      if total == 0 then Future.successful(BaselineExpression(total, Vector.empty))
+      else
+        dbRetriever
+          .executeQuery[BaselineExpressionRow, Query](baselineExpressionQuery.query)
+          .map(baselineExpressionRows => BaselineExpression(total, baselineExpressionRows))
+    results
   }
 
   def getTargets(ids: Seq[String]): Future[IndexedSeq[Target]] = {
