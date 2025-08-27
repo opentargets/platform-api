@@ -18,6 +18,6 @@ class GQLSchemaController @Inject() (implicit ec: ExecutionContext, cc: Controll
   }
 
   def renderPlayground: mvc.Action[AnyContent] = Action {
-    Ok(views.html.playground(None))
+    Ok(views.html.playground())
   }
 }
