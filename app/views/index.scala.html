@@ -2,16 +2,94 @@
 
 @(metadata: Meta)
 
-@main("opentargets platform api beta") {
-    <h1>Open Targets Platform API BETA</h1>
+@main("opentargets platform api") {
+  <style>
+      .endpoint {
+          border-width: 1px;
+          border-style: solid;
+          border-color: #acacac;
+          border-radius: 4px;
+          padding: 4px;
+          background-color: #ececec;
+      }
+      .tooltip {
+          position: relative;
+          display: inline-block;
+      }
 
-    <p>GraphQL <a href="/api/v4/graphql">endpoint</a></p>
+      .tooltip .tooltiptext {
+          visibility: hidden;
+          width: 140px;
+          background-color: #555;
+          color: #fff;
+          text-align: center;
+          border-radius: 6px;
+          padding: 5px;
+          position: absolute;
+          z-index: 1;
+          bottom: 150%;
+          left: 50%;
+          margin-left: -75px;
+          opacity: 0;
+          transition: opacity 0.3s;
+      }
+
+      .tooltip .tooltiptext::after {
+          content: "";
+          position: absolute;
+          top: 100%;
+          left: 50%;
+          margin-left: -5px;
+          border-width: 5px;
+          border-style: solid;
+          border-color: #555 transparent transparent transparent;
+      }
+
+      .tooltip:hover .tooltiptext {
+          visibility: visible;
+          opacity: 1;
+      }
+      .endpoint-container {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+      }
+  </style>
+    <h1>Open Targets Platform API</h1>
+
+    <div class="endpoint-container">
+        <p>GraphQL API endpoint URL:</p> <span class="endpoint" id="api-endpoint">...</span>
+        <div class="tooltip">
+            <button onclick="copy()" onmouseout="outFunc()">
+                <span class="tooltiptext" id="myTooltip">Copy to clipboard</span>
+                Copy
+            </button>
+        </div>
+    </div>
     <p>GraphQL endpoint <a href="/api/v4/graphql/schema">schema</a></p>
-    <p>GraphQL endpoint <a href="/api/v4/graphql/browser">browser (GraphQL Playground)</a></p>
+    <p>GraphQL endpoint <a href="/api/v4/graphql/browser">browser IDE GraphiQL</a></p>
 
     <div style="position: absolute; bottom: 0 ">
         <p>Data: @(s"${metadata.dataVersion.year}-${metadata.dataVersion.month}-${metadata.dataVersion.iteration}")</p>
         <p>API: @(s"${metadata.apiVersion.x}-${metadata.apiVersion.y}-${metadata.apiVersion.z}")</p>
     </div>
+
+  <script>
+      var endpoint = window.location.protocol + '//' + window.location.host + '/api/v4/graphql';
+      document.getElementById("api-endpoint").innerText = endpoint;
+
+      function copy() {
+          var copyText = document.getElementById("api-endpoint");
+          navigator.clipboard.writeText(copyText.textContent);
+
+          var tooltip = document.getElementById("myTooltip");
+          tooltip.innerHTML = "Copied: " + copyText.textContent;
+      }
+
+      function outFunc() {
+          var tooltip = document.getElementById("myTooltip");
+          tooltip.innerHTML = "Copy to clipboard";
+      }
+  </script>
 
 }
