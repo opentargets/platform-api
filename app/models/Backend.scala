@@ -41,10 +41,12 @@ import java.time.LocalDate
 import scala.concurrent.*
 import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
 import models.entities.Violations.{DateFilterError, InputParameterCheckError}
+import services.ApplicationStart
 
 class Backend @Inject() (implicit
     ec: ExecutionContext,
     @NamedDatabase("default") dbConfigProvider: DatabaseConfigProvider,
+    appStart: ApplicationStart,
     config: Configuration,
     env: Environment,
     cache: AsyncCacheApi

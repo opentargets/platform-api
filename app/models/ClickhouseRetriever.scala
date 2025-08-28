@@ -1,13 +1,12 @@
 package models
 
 import clickhouse.ClickHouseProfile
-import esecuele.Column._
-import esecuele.{Query => Q, _}
-import models.db.QAOTF
-import models.entities.Associations._
-import models.entities.Configuration.{DatasourceSettings, OTSettings}
-import models.entities._
+import esecuele.Column.*
+import esecuele.{Query as Q, *}
+import models.entities.Configuration.OTSettings
+import models.entities.*
 import play.api.Logging
+import services.ApplicationStart
 import slick.basic.DatabaseConfig
 import slick.jdbc.{GetResult, SQLActionBuilder}
 
@@ -17,10 +16,13 @@ import scala.language.implicitConversions
 import scala.util.{Failure, Success}
 
 class ClickhouseRetriever(config: OTSettings)(implicit
-    val dbConfig: DatabaseConfig[ClickHouseProfile]
+    val dbConfig: DatabaseConfig[ClickHouseProfile],
+    val appStart: ApplicationStart
 ) extends Logging {
 
   import dbConfig.profile.api._
+
+  val db_name = "clickhouse"
 
   implicit private def toSQL(q: Q): SQLActionBuilder = sql"""#${q.rep}"""
 
@@ -44,6 +46,8 @@ class ClickhouseRetriever(config: OTSettings)(implicit
     logger.debug(s"getUniqList get distinct $of from $from with query ${q.toString}")
     val qq = q.as[A]
 
+    appStart.DatabaseCallCounter.labelValues(db_name, "getUniqList").inc()
+
     db.run(qq.asTry).map {
       case Success(v) => v
       case Failure(ex) =>
@@ -55,6 +59,8 @@ class ClickhouseRetriever(config: OTSettings)(implicit
   def executeQuery[A, B <: Q](q: B)(implicit rconv: GetResult[A]): Future[Vector[A]] = {
     logger.debug(s"execute query from eselecu Q ${q.toString}")
     val qq = q.as[A]
+
+    appStart.DatabaseCallCounter.labelValues(db_name, "executeQuery").inc()
 
     db.run(qq.asTry).map {
       case Success(v) => v

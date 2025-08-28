@@ -6,24 +6,26 @@ import controllers.api.v4.graphql.QueryMetadataHeaders.{
   GQL_OP_HEADER,
   GQL_VAR_HEADER
 }
+import middleware.PrometheusMetrics
 import models.Helpers.loadConfigurationObject
 import models.entities.Configuration.OTSettings
 import models.entities.TooComplexQueryError
-import models.entities.TooComplexQueryError._
+import models.entities.TooComplexQueryError.*
 import models.{Backend, GQLSchema}
 import org.apache.http.HttpStatus
 import play.api.{Configuration, Logging}
 import play.api.cache.AsyncCacheApi
-import play.api.libs.json._
-import play.api.mvc._
-import sangria.execution._
-import sangria.marshalling.playJson._
+import play.api.libs.json.*
+import play.api.mvc.*
+import sangria.execution.*
+import sangria.marshalling.playJson.*
 import sangria.parser.{QueryParser, SyntaxError}
+import services.ApplicationStart
 
 import java.sql.Timestamp
-import javax.inject._
-import scala.concurrent._
-import scala.concurrent.duration._
+import javax.inject.*
+import scala.concurrent.*
+import scala.concurrent.duration.*
 import scala.util.{Failure, Success}
 
 case class GqlQuery(query: String, variables: JsObject, operation: Option[String])
@@ -36,7 +38,9 @@ class GraphQLController @Inject() (implicit
     cache: AsyncCacheApi,
     cc: ControllerComponents,
     metadataAction: MetadataAction,
-    config: Configuration
+    config: Configuration,
+    appStart: ApplicationStart,
+    prometheusMetricsMiddleware: PrometheusMetrics
 ) extends AbstractController(cc)
     with Logging {
 
@@ -50,6 +54,8 @@ class GraphQLController @Inject() (implicit
 
   def gql(query: String, variables: Option[String], operation: Option[String]): Action[AnyContent] =
     metadataAction.async {
+      appStart.RequestCounter.labelValues("/api/v4/graphql", "GET").inc()
+      appStart.GraphqlRequestCounter.labelValues("GET", operation.getOrElse("")).inc()
       val gqlQuery =
         GqlQuery(query, (variables map parseVariables).getOrElse(Json.obj()), operation)
       runQuery(gqlQuery)
@@ -58,6 +64,8 @@ class GraphQLController @Inject() (implicit
   def gqlBody(): Action[JsValue] = metadataAction(parse.json).async { request =>
     val query = (request.body \ "query").as[String]
     val operation = (request.body \ "operationName").asOpt[String]
+    appStart.RequestCounter.labelValues("/api/v4/graphql", "POST").inc()
+    appStart.GraphqlRequestCounter.labelValues("POST", operation.getOrElse("")).inc()
 
     val variables: JsObject = (request.body \ "variables").toOption
       .map {
@@ -98,6 +106,7 @@ class GraphQLController @Inject() (implicit
         case Some(result) => Future.successful(result)
         case None =>
           logger.debug(s"Cache miss on ${gqlQuery.operation}: ${gqlQuery.variables}")
+          appStart.CacheMissedCounter.labelValues(gqlQuery.operation.getOrElse("")).inc()
           val queryResult = executeQuery(gqlQuery)
           queryResult.andThen { case Success(s) =>
             if (s.header.status == HttpStatus.SC_OK) {
@@ -116,6 +125,9 @@ class GraphQLController @Inject() (implicit
                       s"Caching 200 response on ${gqlQuery.operation}: ${gqlQuery.query.filter(_ >= ' ')}"
                     )
                     cache.set(gqlQuery.toString, s)
+                    appStart.CacheRegistrationCounter
+                      .labelValues(gqlQuery.operation.getOrElse(""))
+                      .inc()
                   }
                 case Failure(exception) => logger.error(exception.getMessage)
               }
@@ -142,6 +154,7 @@ class GraphQLController @Inject() (implicit
             GQLSchema.schema,
             queryAst,
             dbTables,
+            middleware = prometheusMetricsMiddleware :: Nil,
             operationName = gqlQuery.operation,
             variables = gqlQuery.variables,
             deferredResolver = GQLSchema.resolvers,
