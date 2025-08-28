@@ -15,7 +15,7 @@ class PrometheusController @Inject() (implicit cc: ControllerComponents)
   private val prometheusScraper = PrometheusScraper()
 
   def metrics(): Action[AnyContent] = Action { request =>
-    logger.info("Received request to /metrics")
+    logger.debug("Received request to /metrics")
 
     implicit val loggerVal = logger
 
