@@ -1,4 +1,4 @@
-package controllers.api.v4.rest
+package utils.prometheus
 
 import io.prometheus.metrics.config.PrometheusProperties
 import io.prometheus.metrics.expositionformats.ExpositionFormats
