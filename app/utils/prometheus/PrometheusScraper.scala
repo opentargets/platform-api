@@ -15,7 +15,7 @@ case class PrometheusScraper(config: PrometheusProperties = PrometheusProperties
   private val expositionFormats: ExpositionFormats =
     ExpositionFormats.init(config.getExporterProperties)
 
-  def scrape(request: MetricsRequest) = {
+  def scrape(request: MetricsRequest): ByteArrayOutputStream = {
     val snapshot = registry.scrape(request)
     val responseBuffer = new ByteArrayOutputStream(lastResponseSize.get + 1024)
     val acceptHeader = request.getHeader("Accept")
