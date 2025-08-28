@@ -148,7 +148,6 @@ class GraphQLController @Inject() (implicit
 
       // query parsed successfully, time to execute it!
       case Success(queryAst) =>
-//        val prometheusMetricsMiddleware: PrometheusMetrics = PrometheusMetrics.
         var queryComplexity = -1.0
         Executor
           .execute(
