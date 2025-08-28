@@ -26,7 +26,7 @@ class ApplicationStart @Inject() (
   val GraphqlRequestCounter: Counter = Counter
     .builder()
     .name(metric_prefix + "graphql_requests_total")
-    .help("total number of http requests")
+    .help("total number of graphql requests")
     .labelNames("method", "query_name")
     .register()
 
