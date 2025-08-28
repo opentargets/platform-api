@@ -47,7 +47,7 @@ class ApplicationStart @Inject() (
   val CacheMissedCounter: Counter = Counter
     .builder()
     .name(metric_prefix + "cache_missed_total")
-    .help("total number of times queries were not found from the query")
+    .help("total number of times queries were not found from the cache")
     .labelNames("query_name")
     .register()
 
