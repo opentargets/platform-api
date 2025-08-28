@@ -8,9 +8,7 @@ import utils.prometheus.CustomJvmMetrics
 import javax.inject.Inject
 
 @Singleton
-class ApplicationStart @Inject() (
-    // Add your dependencies here
-) {
+class ApplicationStart @Inject() () {
 
   CustomJvmMetrics.builder().register()
 
