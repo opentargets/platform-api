@@ -14,7 +14,7 @@ class ApplicationStart @Inject() (
 
   CustomJvmMetrics.builder().register()
 
-  val metric_prefix = "platform_api_"
+  private val metric_prefix = "platform_api_"
 
   val RequestCounter: Counter = Counter
     .builder()
