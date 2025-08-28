@@ -1,4 +1,4 @@
-package controllers.api.v4.rest
+package utils.prometheus
 
 import io.prometheus.metrics.exporter.common.PrometheusHttpRequest
 import play.api.mvc.{AnyContent, Request}
