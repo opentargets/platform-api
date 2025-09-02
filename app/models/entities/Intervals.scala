@@ -16,7 +16,7 @@ case class Interval(
     biosampleName: String,
     biosampleId: String,
     intervalType: String,
-    distanceToTSS: Int,
+    distanceToTss: Int,
     score: Double,
     resourceScore: Vector[ResourceScore],
     datasourceId: String,
