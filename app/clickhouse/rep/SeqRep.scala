@@ -65,15 +65,6 @@ object SeqRep {
         Vector.empty
   }
 
-  abstract class StringParser[T](str: String) {
-    protected val tokens: Array[String] = str.split(",")
-
-    protected def optionalValue[A](token: String)(f: String => A): Option[A] =
-      if (token.isEmpty) None else Some(f(token))
-
-    def parse: T
-  }
-
   object Implicits {
     implicit def seqInt(from: ISeqRep): Vector[Int] = from.rep
     implicit def seqLong(from: LSeqRep): Vector[Long] = from.rep

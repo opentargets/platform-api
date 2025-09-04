@@ -13,13 +13,6 @@ case class TargetsQuery(ids: Seq[String], tableName: String, offset: Int, size: 
     Functions.in(column("id"), Functions.set(ids.map(literal).toSeq))
   )
 
-  // val totals: Query =
-  //   Query(
-  //     Select(Functions.count(Column.star) :: Nil),
-  //     From(column(tableName)),
-  //     conditional
-  //   )
-
   override val query: Query =
     Query(
       Select(
