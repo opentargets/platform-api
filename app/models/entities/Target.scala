@@ -8,6 +8,14 @@ import play.api.libs.json._
 import slick.jdbc.GetResult
 import models.gql.Arguments.studyIds
 
+case class CanonicalTranscript(
+    id: String,
+    chromosome: String,
+    start: Long,
+    end: Long,
+    strand: String
+)
+
 case class ChemicalProbeUrl(niceName: String, url: Option[String])
 
 case class ChemicalProbe(
@@ -123,6 +131,7 @@ case class Target(
     approvedName: String,
     approvedSymbol: String,
     biotype: String,
+    canonicalTranscript: Option[CanonicalTranscript] = None,
     chemicalProbes: Seq[ChemicalProbe] = Seq.empty,
     constraint: Seq[Constraint], // = Seq.empty,
     dbXrefs: Seq[IdAndSource] = Seq.empty,
@@ -158,6 +167,8 @@ object Target extends Logging {
   implicit val locationAndSourceImpF: OFormat[LocationAndSource] = Json.format[LocationAndSource]
   implicit val targetClassImpF: OFormat[TargetClass] = Json.format[TargetClass]
   implicit val tractabilityImpF: OFormat[Tractability] = Json.format[Tractability]
+  implicit val canonicalTranscriptImpF: OFormat[CanonicalTranscript] =
+    Json.format[CanonicalTranscript]
   implicit val constraintImpF: OFormat[Constraint] = Json.format[Constraint]
   implicit val homologueImpF: OFormat[Homologue] = Json.format[Homologue]
   implicit val doseAndTypeImpF: OFormat[SafetyEffects] = Json.format[SafetyEffects]
