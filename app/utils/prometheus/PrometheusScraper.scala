@@ -11,7 +11,7 @@ case class PrometheusScraper(config: PrometheusProperties = PrometheusProperties
                              registry: PrometheusRegistry = PrometheusRegistry.defaultRegistry
 ) {
 
-  private val lastResponseSize = new AtomicInteger(2 << 9) //  0.5 MB
+  private val initialBufferSize = 16384
   private val expositionFormats: ExpositionFormats =
     ExpositionFormats.init(config.getExporterProperties)
 
