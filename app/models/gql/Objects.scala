@@ -672,9 +672,7 @@ object Objects extends Logging {
     deriveObjectType[Backend, CanonicalTranscript]()
   implicit val constraintImp: ObjectType[Backend, Constraint] =
     deriveObjectType[Backend, Constraint]()
-  implicit val homologueImp: ObjectType[Backend, Homologue] = deriveObjectType[Backend, Homologue](
-    RenameField("homologueType", "homologyType")
-  )
+  implicit val homologueImp: ObjectType[Backend, Homologue] = deriveObjectType[Backend, Homologue]()
   implicit val targetBiosampleImp: ObjectType[Backend, SafetyBiosample] =
     deriveObjectType[Backend, SafetyBiosample]()
   implicit val targetSafetyStudyImp: ObjectType[Backend, SafetyStudy] =

@@ -79,7 +79,7 @@ case class HallmarkAttribute(name: String, description: String, pmid: Option[Lon
 case class Hallmarks(cancerHallmarks: Seq[CancerHallmark], attributes: Seq[HallmarkAttribute])
 
 case class Homologue(
-    homologueType: String,
+    homologyType: String,
     queryPercentageIdentity: Double,
     speciesId: String,
     speciesName: String,
