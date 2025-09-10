@@ -105,13 +105,16 @@ class GraphQLController @Inject() (implicit
   def gqlBody(): Action[JsValue] = metadataAction(parse.json).async { request =>
     addRequestIdToLoggingContext(request)
 
+    val origin = request.headers.get("Origin").getOrElse("unknown")
+
     // TODO: remove
     logger.info(
       "GraphQL request received with body",
       kv("request.method", request.method),
       kv("request.ip", request.connection.remoteAddressString),
       kv("request.host", request.host),
-      kv("request.domain", request.domain)
+      kv("request.domain", request.domain),
+      kv("request.origin", origin)
     )
 
     val query = (request.body \ "query").as[String]
