@@ -3,15 +3,16 @@ package models.entities
 import org.apache.pekko.http.scaladsl.model.DateTime
 import models.entities.Violations.InputParameterCheckError
 import models.gql.validators.InvalidQueryTerms
-import play.api.Logging
+import org.slf4j.{Logger, LoggerFactory}
 import sangria.execution.{ExceptionHandler, HandledException, MaxQueryDepthReachedError}
 import sangria.marshalling.ResultMarshaller
 
 case object TooComplexQueryError
     extends Exception(
       "Query is too expensive. The response size is likely to be too large. Try requesting smaller page sizes or fewer items"
-    )
-    with Logging {
+    ) {
+
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   private def handleExceptionWithCode(message: String,
                                       code: String,

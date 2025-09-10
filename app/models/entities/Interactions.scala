@@ -1,24 +1,27 @@
 package models.entities
 
 import com.sksamuel.elastic4s.ElasticApi.valueCountAgg
-import com.sksamuel.elastic4s.ElasticDsl.{boolQuery, rangeQuery, should, not, existsQuery}
-import com.sksamuel.elastic4s.requests.searches._
+import com.sksamuel.elastic4s.ElasticDsl.{boolQuery, existsQuery, not, rangeQuery, should}
+import com.sksamuel.elastic4s.requests.searches.*
 import com.sksamuel.elastic4s.requests.searches.aggs.TermsAggregation
-import com.sksamuel.elastic4s.requests.searches.sort._
+import com.sksamuel.elastic4s.requests.searches.sort.*
 import models.Helpers.fromJsValue
 import models.{Backend, ElasticRetriever}
 import models.entities.Configuration.ElasticsearchSettings
 import models.gql.Objects.interactionImp
 import models.Results
-import play.api.Logging
-import play.api.libs.json._
+import org.slf4j.{Logger, LoggerFactory}
+import play.api.libs.json.*
 import sangria.schema.{Field, ListType, LongType, ObjectType, fields}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 case class Interactions(count: Long, rows: IndexedSeq[Interaction])
 
-object Interactions extends Logging {
+object Interactions {
+
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+
   val interactions: ObjectType[Backend, Interactions] = ObjectType(
     "Interactions",
     fields[Backend, Interactions](

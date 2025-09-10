@@ -2,9 +2,8 @@ package models.db
 
 import esecuele.Column.column
 import esecuele.Column.literal
-import esecuele._
-import play.api.Logging
-import com.sksamuel.elastic4s.requests.common.Operator.Or
+import esecuele.*
+import org.slf4j.{Logger, LoggerFactory}
 
 case class IntervalsQuery(chromosome: String,
                           start: Int,
@@ -12,8 +11,9 @@ case class IntervalsQuery(chromosome: String,
                           tableName: String,
                           offset: Int,
                           size: Int
-) extends Queryable
-    with Logging {
+) extends Queryable {
+
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   private val positionalQuery = Where(
     Functions.and(

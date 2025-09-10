@@ -1,8 +1,9 @@
 package controllers.api.v4.rest
 
 import com.typesafe.config.Config
+import org.slf4j.{Logger, LoggerFactory}
+
 import javax.inject.Inject
-import play.api.Logging
 import play.api.mvc.{AbstractController, Action, ControllerComponents}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -11,8 +12,9 @@ class RestHelpers @Inject() (implicit
     ec: ExecutionContext,
     cc: ControllerComponents,
     config: Config
-) extends AbstractController(cc)
-    with Logging {
+) extends AbstractController(cc) {
+
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   def checkCredentials[A](action: Action[A]): Action[A] = Action.async(action.parser) { request =>
     logger.info(s"checking admin credentials")

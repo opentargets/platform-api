@@ -3,15 +3,14 @@ package controllers.api.v4.graphql
 import QueryMetadataHeaders.{GQL_COMPLEXITY_HEADER, GQL_OP_HEADER, GQL_VAR_HEADER}
 import models.Helpers.loadConfigurationObject
 import models.entities.Configuration.{APIVersion, DataVersion, OTSettings}
-import play.api.libs.json.JsObject
-import play.api.{Configuration, Logging}
+import org.slf4j.{Logger, LoggerFactory}
+import play.api.Configuration
 import play.api.mvc.{ActionBuilderImpl, BodyParsers, Request, Result}
 
 import java.sql.Timestamp
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
-
-import play.api.libs.json._
+import play.api.libs.json.*
 
 case class GqlRequestMetadata(
     isOT: Boolean,
@@ -31,8 +30,9 @@ case class GqlRequestMetadata(
 class MetadataAction @Inject() (parser: BodyParsers.Default)(implicit
     ec: ExecutionContext,
     config: Configuration
-) extends ActionBuilderImpl(parser)
-    with Logging {
+) extends ActionBuilderImpl(parser) {
+
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   implicit val otSettings: OTSettings = loadConfigurationObject[OTSettings]("ot", config)
 

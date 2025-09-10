@@ -4,7 +4,6 @@ import esecuele.Column.column
 import esecuele.*
 import net.logstash.logback.argument.StructuredArguments.keyValue
 import org.slf4j.{Logger, LoggerFactory}
-import play.api.Logging
 
 case class SentenceQuery(pmid: String, tableName: String) extends Queryable {
 
@@ -20,7 +19,10 @@ case class SentenceQuery(pmid: String, tableName: String) extends Queryable {
   }
 }
 
-object SentenceQuery extends Logging {
+object SentenceQuery {
+
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+
   val pmidC: Column = column("pmid")
   val sectionC: Column = column("section")
   val labelC: Column = column("label")
