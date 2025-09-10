@@ -1,9 +1,10 @@
 package models.entities
 
-import play.api.Logging
-import play.api.libs.json._
-import play.api.libs.json.Reads._
-import play.api.libs.functional.syntax._
+import org.slf4j.{Logger, LoggerFactory}
+import play.api.libs.json.*
+import play.api.libs.json.Reads.*
+import play.api.libs.functional.syntax.*
+
 import scala.util.matching.Regex
 
 case class URL(url: String, name: String)
@@ -36,7 +37,10 @@ case class KnownDrugs(
     rows: Seq[KnownDrug]
 )
 
-object KnownDrug extends Logging {
+object KnownDrug {
+
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+
   val ctPattern: Regex = "NCT(\\d{8})".r
 
   implicit val KnownDrugReferenceImpJSONF: OFormat[KnownDrugReference] =

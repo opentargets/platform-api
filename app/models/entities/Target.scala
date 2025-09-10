@@ -1,10 +1,10 @@
 package models.entities
 
-import clickhouse.rep.SeqRep._
-import play.api.Logging
-import play.api.libs.functional.syntax._
-import play.api.libs.json.Reads._
-import play.api.libs.json._
+import org.slf4j.{Logger, LoggerFactory}
+import play.api.libs.functional.syntax.*
+import play.api.libs.json.Reads.*
+import play.api.libs.json.*
+import clickhouse.rep.SeqRep.*
 import slick.jdbc.GetResult
 import models.gql.Arguments.studyIds
 
@@ -156,7 +156,9 @@ case class Target(
     transcriptIds: Seq[String] = Seq.empty
 )
 
-object Target extends Logging {
+object Target {
+
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   implicit val getTargetFromDB: GetResult[Target] =
     GetResult(r => Json.parse(r.<<[String]).as[Target])

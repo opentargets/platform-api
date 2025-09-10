@@ -1,10 +1,9 @@
 package models.entities
 
-import play.api.Logging
 import models.entities.Study.{LdPopulationStructure, Sample, SumStatQC}
 import models.gql.StudyTypeEnum
+import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json.*
-import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json
 
 case class StudyQueryArgs(
@@ -44,8 +43,9 @@ case class Study(
     sumstatQCValues: Option[Seq[SumStatQC]]
 )
 
-object Study extends Logging {
-  import sangria.macros.derive._
+object Study {
+
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   case class Sample(ancestry: Option[String], sampleSize: Option[Int])
 
