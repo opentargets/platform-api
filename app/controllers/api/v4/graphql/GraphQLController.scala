@@ -105,7 +105,7 @@ class GraphQLController @Inject() (implicit
   def gqlBody(): Action[JsValue] = metadataAction(parse.json).async { request =>
     addRequestIdToLoggingContext(request)
 
-    //TODO: remove
+    // TODO: remove
     logger.info(
       "GraphQL request received with body",
       kv("request.method", request.method),
