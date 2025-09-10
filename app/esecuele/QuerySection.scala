@@ -71,6 +71,15 @@ case class Format(format: String) extends QuerySection {
   override val rep: String = s"$name $format"
 }
 
+case class Settings(settings: Map[String, String] = Map.empty) extends QuerySection {
+  override val content: Seq[Column] = Nil
+  override val name: String = "SETTINGS"
+  override val rep: String =
+    if (settings.nonEmpty)
+      s"$name ${settings.map { case (k, v) => s"$k=$v" }.mkString(", ")}"
+    else ""
+}
+
 case class From(col: Column, alias: Option[String] = None) extends QuerySection {
   override val content: Seq[Column] = Seq(col)
   override val name: String = "FROM"

@@ -22,6 +22,7 @@ case class TargetsQuery(ids: Seq[String], tableName: String, offset: Int, size: 
       conditional,
       OrderBy(column("id") :: Nil),
       Limit(offset, size),
-      Format("JSONEachRow")
+      Format("JSONEachRow"),
+      Settings(Map("output_format_json_escape_forward_slashes" -> "0"))
     )
 }
