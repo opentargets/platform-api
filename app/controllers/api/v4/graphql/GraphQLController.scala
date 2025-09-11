@@ -58,18 +58,25 @@ class GraphQLController @Inject() (implicit
   }
 
   private def logRequestReceived(operation: Option[String], request: Request[Any]): Unit =
+    val origin = request.headers.get("Origin").getOrElse("unknown").split("://").last
+    val domain = request.domain
+    // Validate origin to check if request comes from webapp
+    val isOT = origin != domain && domain.contains(origin)
+
     operation match {
       case None =>
         logger.info(s"request received",
                     kv("request.method", request.method),
-                    kv("request.ip", request.connection.remoteAddressString)
+                    kv("request.ip", request.connection.remoteAddressString),
+                    kv("isOT", isOT)
         )
       case Some(op) =>
         if (op != "IntrospectionQuery")
           logger.info(s"request received",
                       kv("operation", op),
                       kv("request.method", request.method),
-                      kv("request.ip", request.connection.remoteAddressString)
+                      kv("request.ip", request.connection.remoteAddressString),
+                      kv("isOT", isOT)
           )
     }
 
@@ -104,18 +111,6 @@ class GraphQLController @Inject() (implicit
 
   def gqlBody(): Action[JsValue] = metadataAction(parse.json).async { request =>
     addRequestIdToLoggingContext(request)
-
-    val origin = request.headers.get("Origin").getOrElse("unknown")
-
-    // TODO: remove
-    logger.info(
-      "GraphQL request received with body",
-      kv("request.method", request.method),
-      kv("request.ip", request.connection.remoteAddressString),
-      kv("request.host", request.host),
-      kv("request.domain", request.domain),
-      kv("request.origin", origin)
-    )
 
     val query = (request.body \ "query").as[String]
     val operation = (request.body \ "operationName").asOpt[String]
