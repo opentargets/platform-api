@@ -11,7 +11,7 @@ import gql.validators.QueryTermsValidator.*
 
 import javax.inject.Inject
 import models.Helpers.*
-import models.db.{QAOTF, QLITAGG, QW2V, SentenceQuery, IntervalsQuery}
+import models.db.{QAOTF, QLITAGG, QW2V, IntervalsQuery}
 import models.entities.Publication.*
 import models.entities.Associations.*
 import models.entities.Biosample.*
@@ -1074,16 +1074,6 @@ class Backend @Inject() (implicit
         )
         Future.successful(Vector.empty)
     }
-  }
-
-  def getLiteratureSentences(
-      pmid: String
-  ): Future[Map[String, Vector[Sentence]]] = {
-    val table = defaultOTSettings.clickhouse.sentences
-    logger.debug(s"Query sentences for $pmid from table ${table.name}")
-    val sentenceQuery = SentenceQuery(pmid, table.name)
-    val results = dbRetriever.executeQuery[Sentence, Query](sentenceQuery.query)
-    results.map(vs => vs.groupMap(_.section)(identity))
   }
 
   def getLiteratureOcurrences(ids: Set[String], cursor: Option[String]): Future[Publications] = {
