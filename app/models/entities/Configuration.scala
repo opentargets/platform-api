@@ -59,8 +59,7 @@ object Configuration {
       similarities: DbTableSettings,
       harmonic: HarmonicSettings,
       literature: DbTableSettings,
-      literatureIndex: DbTableSettings,
-      sentences: DbTableSettings
+      literatureIndex: DbTableSettings
   )
 
   /** main Open Targets configuration object. It keeps track of meta, elasticsearch and clickhouse
