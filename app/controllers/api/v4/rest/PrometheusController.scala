@@ -33,8 +33,8 @@ class PrometheusController @Inject() (implicit cc: ControllerComponents)
     val byteStringSource = Source.single(org.apache.pekko.util.ByteString(test.toByteArray))
 
     Result(
-      header = ResponseHeader(200, Map("Content-Type" -> "text/plain")),
+      header = ResponseHeader(200),
       body = Streamed(byteStringSource, None, Some("text/plain"))
-    )
+    ).as("text/plain")
   }
 }
