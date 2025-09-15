@@ -891,7 +891,7 @@ class Backend @Inject() (implicit
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.target.name)
     val targetsQuery = TargetsQuery(ids, tableName, 0, Pagination.sizeMax)
 
-    logger.debug(s"querying targets", keyValue("ids", ids), keyValue("index", targetIndexName))
+    logger.debug(s"querying targets", keyValue("ids", ids), keyValue("table", tableName))
 
     val results = dbRetriever
       .executeQuery[Target, Query](targetsQuery.query)
