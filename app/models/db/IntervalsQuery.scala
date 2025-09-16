@@ -36,7 +36,7 @@ case class IntervalsQuery(chromosome: String,
       ),
       From(column(tableName)),
       positionalQuery,
-      OrderBy(column("chromosome") :: column("start") :: column("end") :: Nil),
+      OrderBy(column("score").desc :: Nil),
       Limit(offset, size),
       Format("JSONEachRow")
     )
