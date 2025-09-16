@@ -864,14 +864,14 @@ class Backend @Inject() (implicit
                    pagination: Option[Pagination]
   ): Future[Intervals] = {
     val tableName = defaultOTSettings.clickhouse.intervals.name
-    val page = pagination.getOrElse(Pagination.mkDefault)
+    val page = pagination.getOrElse(Pagination.mkDefault).offsetLimit
     val intervalsQuery = IntervalsQuery(
       chromosome,
       start,
       end,
       tableName,
-      page.index,
-      page.size
+      page._1,
+      page._2
     )
     val total: Int = dbRetriever
       .executeQuery[Int, Query](intervalsQuery.totals)
