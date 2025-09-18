@@ -236,7 +236,7 @@ object Objects extends Logging {
         associatedOTFDiseasesImp,
         description = Some("associations on the fly"),
         arguments =
-          BIds :: indirectTargetEvidences :: datasourceSettingsListArg :: facetFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
+          BIds :: indirectTargetEvidences :: indirectScoreMultiplier :: datasourceSettingsListArg :: facetFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
         complexity = Some(complexityCalculator(pageArg)),
         resolve = ctx => {
           (ctx arg datasourceSettingsListArg) foreach { settingsList =>
@@ -255,6 +255,7 @@ object Objects extends Logging {
             ctx.value,
             ctx arg datasourceSettingsListArg,
             ctx arg indirectTargetEvidences getOrElse false,
+            ctx arg indirectScoreMultiplier getOrElse 1.0,
             ctx arg facetFiltersListArg getOrElse (Seq.empty),
             ctx arg BIds map (_.toSet) getOrElse Set.empty,
             ctx arg BFilterString,
@@ -489,7 +490,7 @@ object Objects extends Logging {
         associatedOTFTargetsImp,
         description = Some("associations on the fly"),
         arguments =
-          BIds :: indirectEvidences :: datasourceSettingsListArg :: facetFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
+          BIds :: indirectEvidences :: indirectScoreMultiplier :: datasourceSettingsListArg :: facetFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
         complexity = Some(complexityCalculator(pageArg)),
         resolve = ctx =>
           (ctx arg datasourceSettingsListArg) foreach { settingsList =>
@@ -508,6 +509,7 @@ object Objects extends Logging {
             ctx.value,
             ctx arg datasourceSettingsListArg,
             ctx arg indirectEvidences getOrElse (true),
+            ctx arg indirectScoreMultiplier getOrElse 0.5,
             ctx arg facetFiltersListArg getOrElse (Seq.empty),
             ctx arg BIds map (_.toSet) getOrElse (Set.empty),
             ctx arg BFilterString,

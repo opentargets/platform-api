@@ -113,6 +113,12 @@ object Arguments {
     "Use the disease ontology to retrieve all its descendants and capture their associated evidence."
   )
 
+  val indirectScoreMultiplier: Argument[Option[Double]] = Argument(
+    "indirectScoreMultiplier",
+    OptionInputType(FloatType),
+    "Multiplier applied to indirect evidence scores. Can be used to penalise indirect evidence."
+  )
+
   val indirectTargetEvidences: Argument[Option[Boolean]] = Argument(
     "enableIndirect",
     OptionInputType(BooleanType),

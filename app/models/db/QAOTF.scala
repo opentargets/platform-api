@@ -39,6 +39,7 @@ case class QAOTF(
     tableName: String,
     AId: String,
     AIDs: Set[String],
+    indirectScoreMultiplier: Double,
     BIDs: Set[String],
     BFilter: Option[String],
     orderScoreBy: Option[(String, String)],
@@ -57,12 +58,19 @@ case class QAOTF(
   val BData: Column = column("B_search")
   val T: Column = column(tableName)
   val RowID: Column = column("row_id")
-  val RowScore: Column = column("row_score")
+  val RowScore: Column =
+    F.ifThenElse(F.equals(A, literal(AId)),
+                 column("row_score"),
+                 F.multiply(column("row_score"), literal(indirectScoreMultiplier))
+    )
   val maxHS: Column = literal(Harmonic.maxValue(100000, pExponentDefault, 1.0))
     .as(Some("max_hs_score"))
 
+//  private val PropagatedScore: Column =
+//    F.ifThenElse(F.equals(A, literal(AId)), RowScore, F.multiply(RowScore, literal(0.5)))
+
   val filterExpression: Column = {
-    val BFilterQ: Option[Column] = BFilter flatMap { case matchStr =>
+    val BFilterQ: Option[Column] = BFilter flatMap { matchStr =>
       val tokens = matchStr
         .split(" ")
         .map { s =>
@@ -125,7 +133,7 @@ case class QAOTF(
     .as(Some("score_datasource"))
 
   val DSW: Column = F.ifNull(F.any(column("weight")), literal(1.0)).as(Some("datasource_weight"))
-  val DTAny = F.any(DT).as(Some(DT.rep))
+  val DTAny: Column = F.any(DT).as(Some(DT.rep))
 
   val queryGroupByDS: Query = {
     val WC = F
@@ -147,7 +155,6 @@ case class QAOTF(
       Join(q.toColumn(None), Some("LEFT"), Some("OUTER"), false, Some("r"), DS :: Nil)
     val preWhereQ = PreWhere(filterExpression)
     val groupByQ = GroupBy(B :: DS :: Nil)
-
     Q(
       withDT,
       selectDSScores,
