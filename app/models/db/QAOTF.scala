@@ -20,6 +20,8 @@ abstract class Queryable {
   *   the left ID will be fixed and it is required. It is required as no propagation is still around
   * @param AIDs
   *   a set of optional left IDs to use as unioni with the single ID
+  * @param AIDScoreMultiplier
+  *   when A is not the fixed one, the row_score is multiplied by this factor
   * @param BIDs
   *   an optional list of right IDs to fix to build the associations before the computations
   * @param BFilter
@@ -28,6 +30,8 @@ abstract class Queryable {
   *   Ordering, ist is a pair with name and mode of sorting ("score", "desc")
   * @param datasourceWeights
   *   List of weights to use
+  * @param mustIncludeDatasources
+  *   List of datasources to be mandatorily included
   * @param nonPropagatedDatasources
   *   List of datasources to not propagate
   * @param offset
@@ -39,7 +43,7 @@ case class QAOTF(
     tableName: String,
     AId: String,
     AIDs: Set[String],
-    indirectScoreMultiplier: Double,
+    AIDScoreMultiplier: Double,
     BIDs: Set[String],
     BFilter: Option[String],
     orderScoreBy: Option[(String, String)],
@@ -61,13 +65,10 @@ case class QAOTF(
   val RowScore: Column =
     F.ifThenElse(F.equals(A, literal(AId)),
                  column("row_score"),
-                 F.multiply(column("row_score"), literal(indirectScoreMultiplier))
+                 F.multiply(column("row_score"), literal(AIDScoreMultiplier))
     )
   val maxHS: Column = literal(Harmonic.maxValue(100000, pExponentDefault, 1.0))
     .as(Some("max_hs_score"))
-
-//  private val PropagatedScore: Column =
-//    F.ifThenElse(F.equals(A, literal(AId)), RowScore, F.multiply(RowScore, literal(0.5)))
 
   val filterExpression: Column = {
     val BFilterQ: Option[Column] = BFilter flatMap { matchStr =>
