@@ -65,6 +65,8 @@ case class BaselineExpressionRow(
     median: Double,
     q3: Double,
     max: Double,
+    distribution_score: Double,
+    specificity_score: Double,
     datasourceId: String,
     datatypeId: String,
     unit: String
@@ -91,6 +93,8 @@ object BaselineExpression {
       val median: Double = r.<<
       val q3: Double = r.<<
       val max: Double = r.<<
+      val distribution_score: Double = r.<<
+      val specificity_score: Double = r.<<
       val datasourceId: String = r.<<
       val datatypeId: String = r.<<
       val unit: String = r.<<
@@ -107,6 +111,8 @@ object BaselineExpression {
         median,
         q3,
         max,
+        distribution_score,
+        specificity_score,
         datasourceId,
         datatypeId,
         unit
