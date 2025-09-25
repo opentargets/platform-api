@@ -669,7 +669,9 @@ object Objects extends Logging {
   implicit val cancerHallmarkImp: ObjectType[Backend, CancerHallmark] =
     deriveObjectType[Backend, CancerHallmark]()
   implicit val hallmarksAttributeImp: ObjectType[Backend, HallmarkAttribute] =
-    deriveObjectType[Backend, HallmarkAttribute]()
+    deriveObjectType[Backend, HallmarkAttribute](
+      RenameField("attribute_name", "name")
+    )
   implicit val hallmarksImp: ObjectType[Backend, Hallmarks] = deriveObjectType[Backend, Hallmarks]()
 
   implicit val mousePhenotypeBiologicalModel: ObjectType[Backend, BiologicalModels] =
