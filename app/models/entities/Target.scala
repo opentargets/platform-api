@@ -74,7 +74,7 @@ case class SafetyLiability(
 
 case class CancerHallmark(description: String, impact: Option[String], label: String, pmid: Long)
 
-case class HallmarkAttribute(name: String, description: String, pmid: Option[Long])
+case class HallmarkAttribute(attribute_name: String, description: String, pmid: Option[Long])
 
 case class Hallmarks(cancerHallmarks: Seq[CancerHallmark], attributes: Seq[HallmarkAttribute])
 
