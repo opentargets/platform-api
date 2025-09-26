@@ -75,6 +75,6 @@ class MetaController @Inject() (implicit
   }
 
   def healthcheck(): Action[AnyContent] = Action { _ =>
-    Ok(Json.toJson(backend.getStatus(true)))
+    Ok("OK")
   }
 }

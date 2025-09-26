@@ -21,7 +21,7 @@ GET            /api/v4/rest/cache/clear        controllers.api.v4.rest.CacheCont
 GET            /metrics                        controllers.api.v4.rest.PrometheusController.metrics()
 
 # health uri
-GET            /_ah/health                     controllers.api.v4.rest.MetaController.healthcheck()
+GET            /health                     controllers.api.v4.rest.MetaController.healthcheck()
 
 #  Map static resources from the /public folder to the /assets URL path
 GET            /assets/*file                   controllers.Assets.versioned(path="/public", file: Asset)
