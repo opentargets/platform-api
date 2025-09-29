@@ -70,8 +70,8 @@
     <p>GraphQL endpoint <a href="/api/v4/graphql/browser">browser IDE GraphiQL</a></p>
 
     <div style="position: absolute; bottom: 0 ">
-        <p>Data: @(s"${metadata.dataVersion.year}-${metadata.dataVersion.month}-${metadata.dataVersion.iteration}")</p>
-        <p>API: @(s"${metadata.apiVersion.x}-${metadata.apiVersion.y}-${metadata.apiVersion.z}")</p>
+        <p>Data: @metadata.dataVersion</p>
+        <p>API: @metadata.apiVersion</p>
     </div>
 
   <script>

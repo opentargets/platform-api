@@ -1,6 +1,5 @@
 package controllers.api.v4.graphql
 
-import models.entities.Configuration.{APIVersion, DataVersion}
 import play.api.libs.json.{Json, OWrites}
 
 import java.sql.Timestamp

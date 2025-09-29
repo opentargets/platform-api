@@ -11,12 +11,15 @@ object Configuration {
 
   case class DataVersion(year: String, month: String, iteration: String)
 
-  case class APIVersion(x: String, y: String, z: String)
+  case class APIVersion(x: String, y: String, z: String, suffix: Option[String])
 
   /** meta class compile the name and version information for the application. Also, it serves as a
     * container to include future fields
     */
-  case class Meta(name: String, apiVersion: APIVersion, dataVersion: DataVersion)
+  case class Meta(name: String,
+                  apiVersion: APIVersion,
+                  dataVersion: DataVersion
+  )
 
   case class ElasticsearchEntity(name: String,
                                  index: String,
@@ -75,9 +78,34 @@ object Configuration {
   )
 
   implicit val loggingJsonImp: OFormat[Logging] = Json.format[Logging]
-  implicit val metaDataVersionJSONImp: OFormat[DataVersion] = Json.format[DataVersion]
-  implicit val metaAPIVersionJSONImp: OFormat[APIVersion] = Json.format[APIVersion]
-  implicit val metaJSONImp: OFormat[Meta] = Json.format[Meta]
+
+  implicit val apiVersionReads: Reads[APIVersion] = Reads[APIVersion] { json =>
+    json.validate[String].flatMap { versionStr =>
+      val regex = """^(\d+)\.(\d+)\.(\d+)(?:-(.+))?$""".r
+      versionStr match {
+        case regex(x, y, z, suffix) => JsSuccess(APIVersion(x, y, z, Option(suffix)))
+        case regex(x, y, z, null)   => JsSuccess(APIVersion(x, y, z, None))
+        case _                      => JsError(s"Invalid API version format: $versionStr")
+      }
+    }
+  }
+
+  implicit val dataVersionReads: Reads[DataVersion] = Reads[DataVersion] { json =>
+    json.validate[String].flatMap { versionStr =>
+      val regex = """^(\d+)\.(\d+)(?:\.(\d+))?$""".r
+      versionStr match {
+        case regex(year, month, iteration) =>
+          JsSuccess(DataVersion(year, month, Option(iteration).getOrElse("")))
+        case _ => JsError(s"Invalid data version format: $versionStr")
+      }
+    }
+  }
+
+  implicit val metaJSONImp: Reads[Meta] = (
+    (JsPath \ "name").read[String] and
+      (JsPath \ "apiVersion").read[APIVersion] and
+      (JsPath \ "dataVersion").read[DataVersion]
+  )(Meta.apply)
 
   implicit val esEntitiesJSONImp: OFormat[ElasticsearchEntity] = Json.format[ElasticsearchEntity]
   implicit val esSettingsJSONImp: Reads[ElasticsearchSettings] = ((__ \ "host").read[String] and
