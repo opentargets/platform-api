@@ -20,9 +20,7 @@ case class GqlRequestMetadata(
     operation: String,
     variables: String,
     complexity: String,
-    query: String,
-    api: APIVersion,
-    data: DataVersion
+    query: String
 ) {
   def jsonWritter: OWrites[GqlRequestMetadata] = Json.writes[GqlRequestMetadata]
   override def toString: String = jsonWritter.writes(this).toString()
@@ -72,9 +70,7 @@ class MetadataAction @Inject() (parser: BodyParsers.Default)(implicit
               responseHeaders.getOrElse(GQL_OP_HEADER, ""),
               responseHeaders.getOrElse(GQL_VAR_HEADER, ""),
               responseHeaders.getOrElse(GQL_COMPLEXITY_HEADER, ""),
-              trimmedQuery,
-              apiVersion,
-              dataVersion
+              trimmedQuery
             )
 
             logger.info(meta.toString)
