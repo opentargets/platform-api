@@ -9,17 +9,14 @@ object Configuration {
 
   case class Logging(otHeader: String, ignoredQueries: Seq[String])
 
-  case class DataVersion(year: String, month: String, iteration: String)
+  case class DataVersion(year: String, month: String, iteration: Option[String])
 
   case class APIVersion(x: String, y: String, z: String, suffix: Option[String])
 
   /** meta class compile the name and version information for the application. Also, it serves as a
     * container to include future fields
     */
-  case class Meta(name: String,
-                  apiVersion: APIVersion,
-                  dataVersion: DataVersion
-  )
+  case class Meta(name: String, apiVersion: APIVersion, dataVersion: DataVersion)
 
   case class ElasticsearchEntity(name: String,
                                  index: String,
@@ -95,7 +92,9 @@ object Configuration {
       val regex = """^(\d+)\.(\d+)(?:\.(\d+))?$""".r
       versionStr match {
         case regex(year, month, iteration) =>
-          JsSuccess(DataVersion(year, month, Option(iteration).getOrElse("")))
+          JsSuccess(DataVersion(year, month, Some(iteration)))
+        case regex(year, month, null) =>
+          JsSuccess(DataVersion(year, month, None))
         case _ => JsError(s"Invalid data version format: $versionStr")
       }
     }
