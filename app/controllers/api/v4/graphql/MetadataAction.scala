@@ -20,9 +20,31 @@ case class GqlRequestMetadata(
     operation: String,
     variables: String,
     complexity: String,
+    apiVersion: APIVersion,
+    dataVersion: DataVersion,
     query: String
 ) {
-  def jsonWritter: OWrites[GqlRequestMetadata] = Json.writes[GqlRequestMetadata]
+  def jsonWritter: OWrites[GqlRequestMetadata] = OWrites[GqlRequestMetadata] { meta =>
+    JsObject(
+      Seq(
+        "isOT" -> JsBoolean(meta.isOT),
+        "date" -> JsString(meta.date.toString),
+        "duration" -> JsNumber(meta.duration),
+        "operation" -> JsString(meta.operation),
+        "variables" -> JsString(meta.variables),
+        "complexity" -> JsString(meta.complexity),
+        "apiVersion" -> (meta.apiVersion match {
+          case APIVersion(x, y, z, Some(suffix)) => JsString(s"$x.$y.$z-$suffix")
+          case APIVersion(x, y, z, None)         => JsString(s"$x.$y.$z")
+        }),
+        "dataVersion" -> (meta.dataVersion match {
+          case DataVersion(year, month, Some(iteration)) => JsString(s"$year.$month.$iteration")
+          case DataVersion(year, month, None)            => JsString(s"$year.$month")
+        }),
+        "query" -> JsString(meta.query)
+      )
+    )
+  }
   override def toString: String = jsonWritter.writes(this).toString()
 }
 
@@ -70,6 +92,8 @@ class MetadataAction @Inject() (parser: BodyParsers.Default)(implicit
               responseHeaders.getOrElse(GQL_OP_HEADER, ""),
               responseHeaders.getOrElse(GQL_VAR_HEADER, ""),
               responseHeaders.getOrElse(GQL_COMPLEXITY_HEADER, ""),
+              apiVersion,
+              dataVersion,
               trimmedQuery
             )
 
