@@ -25,6 +25,7 @@ object CustomJvmMetrics {
       register(PrometheusRegistry.defaultRegistry)
 
     def register(registry: PrometheusRegistry): Unit =
+      registry.clear()
       if (REGISTERED.add(registry)) {
         JvmThreadsMetrics.builder(config).register(registry)
         JvmBufferPoolMetrics.builder(config).register(registry)
