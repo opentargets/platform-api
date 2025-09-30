@@ -82,7 +82,10 @@ object Configuration {
       versionStr match {
         case regex(x, y, z, suffix) => JsSuccess(APIVersion(x, y, z, Option(suffix)))
         case regex(x, y, z, null)   => JsSuccess(APIVersion(x, y, z, None))
-        case _                      => JsError(s"Invalid API version format: $versionStr")
+        case _ =>
+          JsError(
+            s"Invalid API version format: $versionStr. Value should conform to x.y.z[-suffix] where x,y,z are integers and suffix is an optional string"
+          )
       }
     }
   }
@@ -95,7 +98,10 @@ object Configuration {
           JsSuccess(DataVersion(year, month, Some(iteration)))
         case regex(year, month, null) =>
           JsSuccess(DataVersion(year, month, None))
-        case _ => JsError(s"Invalid data version format: $versionStr")
+        case _ =>
+          JsError(
+            s"Invalid data version format: $versionStr. Value should conform to year.month[.iteration] where year and month are integers and iteration is an optional integer"
+          )
       }
     }
   }
