@@ -95,7 +95,7 @@ object Configuration {
       val regex = """^(\d+)\.(\d+)(?:\.(\d+))?$""".r
       versionStr match {
         case regex(year, month, iteration) =>
-          JsSuccess(DataVersion(year, month, Some(iteration)))
+          JsSuccess(DataVersion(year, month, Option(iteration)))
         case regex(year, month, null) =>
           JsSuccess(DataVersion(year, month, None))
         case _ =>
