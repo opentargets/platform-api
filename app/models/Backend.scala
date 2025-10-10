@@ -238,7 +238,7 @@ class Backend @Inject() (implicit
       }
     val termsQuery = Map(
       "studyId.keyword" -> queryArgs.id,
-      "traitFromSourceMappedIds.keyword" -> diseaseIds
+      "diseaseIds.keyword" -> diseaseIds
     ).filter(_._2.nonEmpty)
     if (termsQuery.isEmpty) {
       Future.successful(Studies.empty)
