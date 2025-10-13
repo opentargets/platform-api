@@ -118,12 +118,20 @@ object Configuration {
       (JsPath \ "apiVersion").read[APIVersion] and
       (JsPath \ "dataRelease").read[DataVersion] and
       (JsPath \ "product").read[String] and
-      (JsPath \ "enableDataReleasePrefix").read[Boolean] and
+      (JsPath \ "enableDataReleasePrefix").read[String] and
       (JsPath \ "product").read[String].and((JsPath \ "dataRelease").read[String]) {
         (product, dataRelease) =>
           s"$product${dataRelease.replace(".", "")}"
       }
-  )(Meta.apply)
+  )((name, apiVersion, dataVersion, product, enableDataReleasePrefix, dataPrefix) =>
+    Meta(name,
+         apiVersion,
+         dataVersion,
+         product,
+         enableDataReleasePrefix.toBooleanOption.getOrElse(true),
+         dataPrefix
+    )
+  )
 
   implicit val esEntitiesJSONImp: OFormat[ElasticsearchEntity] = Json.format[ElasticsearchEntity]
   implicit val esSettingsJSONImp: Reads[ElasticsearchSettings] = ((__ \ "host").read[String] and
