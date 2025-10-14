@@ -10,9 +10,9 @@ case class LdSet(
 )
 
 case class CredibleSet(studyLocusId: String,
-                       variantId: Option[String],
-                       chromosome: Option[String],
-                       position: Option[Int],
+                       variantId: String,
+                       chromosome: String,
+                       position: Int,
                        region: Option[String],
                        studyId: Option[String],
                        beta: Option[Double],
