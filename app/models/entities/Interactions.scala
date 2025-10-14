@@ -1,17 +1,18 @@
 package models.entities
 
 import com.sksamuel.elastic4s.ElasticApi.valueCountAgg
-import com.sksamuel.elastic4s.ElasticDsl.{boolQuery, rangeQuery, should, not, existsQuery}
-import com.sksamuel.elastic4s.requests.searches._
+import com.sksamuel.elastic4s.ElasticDsl.{boolQuery, existsQuery, not, rangeQuery, should}
+import com.sksamuel.elastic4s.requests.searches.*
 import com.sksamuel.elastic4s.requests.searches.aggs.TermsAggregation
-import com.sksamuel.elastic4s.requests.searches.sort._
+import com.sksamuel.elastic4s.requests.searches.sort.*
 import models.Helpers.fromJsValue
 import models.{Backend, ElasticRetriever}
-import models.entities.Configuration.ElasticsearchSettings
+import models.entities.Configuration.{ElasticsearchSettings, OTSettings}
 import models.gql.Objects.interactionImp
 import models.Results
+import utils.MetadataUtils.getIndexWithPrefixOrDefault
 import play.api.Logging
-import play.api.libs.json._
+import play.api.libs.json.*
 import sangria.schema.{Field, ListType, LongType, ObjectType, fields}
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -34,15 +35,18 @@ object Interactions extends Logging {
   )(implicit
       ec: ExecutionContext,
       esSettings: ElasticsearchSettings,
-      esRetriever: ElasticRetriever
+      esRetriever: ElasticRetriever,
+      otSettings: OTSettings
   ): Future[Option[Interactions]] = {
 
     val pag = pagination.getOrElse(Pagination.mkDefault)
 
-    val cbIndex = esSettings.entities
+    val indexName = esSettings.entities
       .find(_.name == "interaction")
       .map(_.index)
       .getOrElse("interaction")
+
+    val cbIndex = getIndexWithPrefixOrDefault(indexName)
 
     val kv = List(
       Some("targetA.keyword" -> id),
@@ -83,13 +87,16 @@ object Interactions extends Logging {
   def listResources(implicit
       ec: ExecutionContext,
       esSettings: ElasticsearchSettings,
-      esRetriever: ElasticRetriever
+      esRetriever: ElasticRetriever,
+      otSettings: OTSettings
   ): Future[Seq[InteractionResources]] = {
 
-    val cbIndex = esSettings.entities
+    val indexName = esSettings.entities
       .find(_.name == "interaction_evidence")
       .map(_.index)
       .getOrElse("interaction_evidence")
+
+    val cbIndex = getIndexWithPrefixOrDefault(indexName)
 
     val queryAggs = Seq(
       TermsAggregation(

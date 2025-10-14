@@ -11,7 +11,7 @@ import gql.validators.QueryTermsValidator.*
 
 import javax.inject.Inject
 import models.Helpers.*
-import models.db.{QAOTF, QLITAGG, QW2V, IntervalsQuery, TargetsQuery}
+import models.db.{IntervalsQuery, QAOTF, QLITAGG, QW2V, TargetsQuery}
 import models.entities.Publication.*
 import models.entities.Associations.*
 import models.entities.Biosample.*
@@ -42,6 +42,7 @@ import scala.concurrent.*
 import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
 import models.entities.Violations.{DateFilterError, InputParameterCheckError}
 import services.ApplicationStart
+import utils.MetadataUtils.getIndexWithPrefixOrDefault
 
 class Backend @Inject() (implicit
     ec: ExecutionContext,
@@ -900,7 +901,7 @@ class Backend @Inject() (implicit
     val entities = for {
       e <- defaultESSettings.entities
       if (entityNames.contains(e.name) && e.searchIndex.isDefined)
-    } yield e.copy(searchIndex = Some(getIndexWithPrefixOrDefault(e.name)))
+    } yield e.copy(searchIndex = Some(getIndexWithPrefixOrDefault(e.searchIndex.getOrElse(""))))
     esRetriever.getTermsResultsMapping(entities, queryTerms)
   }
 
@@ -911,7 +912,7 @@ class Backend @Inject() (implicit
   ): Future[SearchResults] = {
     val entities = for {
       e <- defaultESSettings.entities if (entityNames.contains(e.name) && e.searchIndex.isDefined)
-    } yield e.copy(searchIndex = Some(getIndexWithPrefixOrDefault(e.name)))
+    } yield e.copy(searchIndex = Some(getIndexWithPrefixOrDefault(e.searchIndex.getOrElse(""))))
     esRetriever.getSearchResultSet(entities, qString, pagination.getOrElse(Pagination.mkDefault))
   }
 
@@ -924,7 +925,7 @@ class Backend @Inject() (implicit
     val entities = for {
       e <- defaultESSettings.entities
       if (entityNames.contains(e.name) && e.facetSearchIndex.isDefined)
-    } yield e.copy(searchIndex = Some(getIndexWithPrefixOrDefault(e.name)))
+    } yield e.copy(searchIndex = Some(getIndexWithPrefixOrDefault(e.searchIndex.getOrElse(""))))
     esRetriever.getSearchFacetsResultSet(entities,
                                          qString,
                                          pagination.getOrElse(Pagination.mkDefault),
@@ -1192,18 +1193,6 @@ class Backend @Inject() (implicit
       .map(_.index)
       .getOrElse(default.getOrElse(index))
     getIndexWithPrefixOrDefault(indexName)
-
-  /** Get elasticsearch index name with the data prefix if enabled.
-    * @param index
-    *   index name
-    * @return
-    *   index name with data prefix if enabled, otherwise the index name as is.
-    */
-  private def getIndexWithPrefixOrDefault(index: String): String =
-    if (getMeta.enableDataReleasePrefix)
-      getMeta.dataPrefix + "_" + index
-    else
-      index
 
   /** Get ClickHouse table name with the data prefix if enabled.
     * @param table
