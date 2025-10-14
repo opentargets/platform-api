@@ -1942,6 +1942,19 @@ object Objects extends Logging {
             logger.debug(s"Finding gwas study: $studyId")
             studyFetcher.deferOpt(studyId)
           }
+        ),
+        Field(
+          "intervals",
+          intervalsImp,
+          description = Some("Intervals for the lead variant of the credible set"),
+          arguments = pageArg :: Nil,
+          complexity = Some(complexityCalculator(pageArg)),
+          resolve = ctx =>
+            ctx.ctx.getIntervals(ctx.value.chromosome,
+                                 ctx.value.position,
+                                 ctx.value.position,
+                                 ctx.arg(pageArg)
+            )
         )
       )
     )
