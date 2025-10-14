@@ -68,6 +68,7 @@ class Backend @Inject() (implicit
   val allSearchableIndices: Seq[String] = defaultESSettings.entities
     .withFilter(_.searchIndex.isDefined)
     .map(_.searchIndex.get)
+    .map(getIndexOrDefault(_))
 
   val test = dbConfigProvider.get[ClickHouseProfile]
 
@@ -899,7 +900,7 @@ class Backend @Inject() (implicit
     val entities = for {
       e <- defaultESSettings.entities
       if (entityNames.contains(e.name) && e.searchIndex.isDefined)
-    } yield e
+    } yield e.copy(index = getIndexWithPrefixOrDefault(e.name))
     esRetriever.getTermsResultsMapping(entities, queryTerms)
   }
 
@@ -909,9 +910,8 @@ class Backend @Inject() (implicit
       entityNames: Seq[String]
   ): Future[SearchResults] = {
     val entities = for {
-      e <- defaultESSettings.entities
-      if (entityNames.contains(e.name) && e.searchIndex.isDefined)
-    } yield e
+      e <- defaultESSettings.entities if (entityNames.contains(e.name) && e.searchIndex.isDefined)
+    } yield e.copy(index = getIndexWithPrefixOrDefault(e.name))
     esRetriever.getSearchResultSet(entities, qString, pagination.getOrElse(Pagination.mkDefault))
   }
 
@@ -924,7 +924,7 @@ class Backend @Inject() (implicit
     val entities = for {
       e <- defaultESSettings.entities
       if (entityNames.contains(e.name) && e.facetSearchIndex.isDefined)
-    } yield e
+    } yield e.copy(index = getIndexWithPrefixOrDefault(e.name))
     esRetriever.getSearchFacetsResultSet(entities,
                                          qString,
                                          pagination.getOrElse(Pagination.mkDefault),
@@ -1191,10 +1191,19 @@ class Backend @Inject() (implicit
       .find(_.name == index)
       .map(_.index)
       .getOrElse(default.getOrElse(index))
+    getIndexWithPrefixOrDefault(indexName)
+
+  /** Get elasticsearch index name with the data prefix if enabled.
+    * @param index
+    *   index name
+    * @return
+    *   index name with data prefix if enabled, otherwise the index name as is.
+    */
+  private def getIndexWithPrefixOrDefault(index: String): String =
     if (getMeta.enableDataReleasePrefix)
-      getMeta.dataPrefix + "_" + indexName
+      getMeta.dataPrefix + "_" + index
     else
-      indexName
+      index
 
   /** Get ClickHouse table name with the data prefix if enabled.
     * @param table
