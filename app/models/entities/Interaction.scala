@@ -1,15 +1,13 @@
 package models.entities
 
-import models.{Backend, ElasticRetriever}
+import models.ElasticRetriever
 import models.Helpers.fromJsValue
-import models.entities.Configuration.ElasticsearchSettings
-import models.gql.Fetchers.targetsFetcher
-import models.gql.Objects.targetImp
+import models.entities.Configuration.{ElasticsearchSettings, OTSettings}
 import models.Results
+import utils.MetadataUtils.getIndexWithPrefixOrDefault
 import play.api.Logging
 import play.api.libs.functional.syntax.*
 import play.api.libs.json.*
-import sangria.schema.*
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -76,15 +74,18 @@ object Interaction extends Logging {
   def findEvidences(interaction: Interaction)(implicit
       ec: ExecutionContext,
       esSettings: ElasticsearchSettings,
-      esRetriever: ElasticRetriever
+      esRetriever: ElasticRetriever,
+      otSettings: OTSettings
   ): Future[IndexedSeq[InteractionEvidence]] = {
 
     val pag = Pagination(0, 10000)
 
-    val cbIndex = esSettings.entities
+    val indexName = esSettings.entities
       .find(_.name == "interaction_evidence")
       .map(_.index)
       .getOrElse("interaction_evidence")
+
+    val cbIndex = getIndexWithPrefixOrDefault(indexName)
 
     val kv = List(
       "interactionResources.sourceDatabase.keyword" -> interaction.sourceDatabase,

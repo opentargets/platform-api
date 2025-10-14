@@ -762,7 +762,9 @@ class ElasticRetriever @Inject() (
         logger.warn("No terms provided.")
         Future.successful(MappingResults.empty)
       case _ =>
-        val esIndices = entities.withFilter(_.searchIndex.isDefined).map(_.searchIndex.get)
+        val esIndices = entities
+          .withFilter(_.searchIndex.isDefined)
+          .map(_.searchIndex.get) // TODO: Test if withFilter is needed here
         val highlightOptions =
           HighlightOptions(highlighterType = Some("plain"), preTags = Seq(""), postTags = Seq(""))
         val highlightField = Seq(HighlightField("keywords.raw"))

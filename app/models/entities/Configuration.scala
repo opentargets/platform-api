@@ -16,7 +16,13 @@ object Configuration {
   /** meta class compile the name and version information for the application. Also, it serves as a
     * container to include future fields
     */
-  case class Meta(name: String, apiVersion: APIVersion, dataVersion: DataVersion)
+  case class Meta(name: String,
+                  apiVersion: APIVersion,
+                  dataVersion: DataVersion,
+                  product: String,
+                  enableDataReleasePrefix: Boolean,
+                  dataPrefix: String
+  )
 
   case class ElasticsearchEntity(name: String,
                                  index: String,
@@ -53,6 +59,7 @@ object Configuration {
     * Harmonic settings used to compute associations on the fly and LUTs for interaction expansions
     */
   case class ClickhouseSettings(
+      defaultDatabaseName: String,
       intervals: DbTableSettings,
       target: TargetSettings,
       disease: DiseaseSettings,
@@ -109,8 +116,22 @@ object Configuration {
   implicit val metaJSONImp: Reads[Meta] = (
     (JsPath \ "name").read[String] and
       (JsPath \ "apiVersion").read[APIVersion] and
-      (JsPath \ "dataVersion").read[DataVersion]
-  )(Meta.apply)
+      (JsPath \ "dataRelease").read[DataVersion] and
+      (JsPath \ "product").read[String] and
+      (JsPath \ "enableDataReleasePrefix").read[String] and
+      (JsPath \ "product").read[String].and((JsPath \ "dataRelease").read[String]) {
+        (product, dataRelease) =>
+          s"$product${dataRelease.replace(".", "")}"
+      }
+  )((name, apiVersion, dataVersion, product, enableDataReleasePrefix, dataPrefix) =>
+    Meta(name,
+         apiVersion,
+         dataVersion,
+         product,
+         enableDataReleasePrefix.toBooleanOption.getOrElse(true),
+         dataPrefix
+    )
+  )
 
   implicit val esEntitiesJSONImp: OFormat[ElasticsearchEntity] = Json.format[ElasticsearchEntity]
   implicit val esSettingsJSONImp: Reads[ElasticsearchSettings] = ((__ \ "host").read[String] and

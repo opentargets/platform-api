@@ -11,7 +11,7 @@ import gql.validators.QueryTermsValidator.*
 
 import javax.inject.Inject
 import models.Helpers.*
-import models.db.{QAOTF, QLITAGG, QW2V, IntervalsQuery, TargetsQuery}
+import models.db.{IntervalsQuery, QAOTF, QLITAGG, QW2V, TargetsQuery}
 import models.entities.Publication.*
 import models.entities.Associations.*
 import models.entities.Biosample.*
@@ -42,6 +42,7 @@ import scala.concurrent.*
 import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
 import models.entities.Violations.{DateFilterError, InputParameterCheckError}
 import services.ApplicationStart
+import utils.MetadataUtils.getIndexWithPrefixOrDefault
 
 class Backend @Inject() (implicit
     ec: ExecutionContext,
@@ -68,6 +69,7 @@ class Backend @Inject() (implicit
   val allSearchableIndices: Seq[String] = defaultESSettings.entities
     .withFilter(_.searchIndex.isDefined)
     .map(_.searchIndex.get)
+    .map(getIndexWithPrefixOrDefault)
 
   val test = dbConfigProvider.get[ClickHouseProfile]
 
@@ -781,7 +783,7 @@ class Backend @Inject() (implicit
   }
 
   def getTargets(ids: Seq[String]): Future[IndexedSeq[Target]] = {
-    val tableName = defaultOTSettings.clickhouse.target.name
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.target.name)
     val targetsQuery = TargetsQuery(ids, tableName, 0, Pagination.sizeMax)
     val results = dbRetriever
       .executeQuery[Target, Query](targetsQuery.query)
@@ -863,7 +865,7 @@ class Backend @Inject() (implicit
                    end: Int,
                    pagination: Option[Pagination]
   ): Future[Intervals] = {
-    val tableName = defaultOTSettings.clickhouse.intervals.name
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.intervals.name)
     val page = pagination.getOrElse(Pagination.mkDefault).offsetLimit
     val intervalsQuery = IntervalsQuery(
       chromosome,
@@ -899,7 +901,7 @@ class Backend @Inject() (implicit
     val entities = for {
       e <- defaultESSettings.entities
       if (entityNames.contains(e.name) && e.searchIndex.isDefined)
-    } yield e
+    } yield e.copy(searchIndex = Some(getIndexWithPrefixOrDefault(e.searchIndex.getOrElse(""))))
     esRetriever.getTermsResultsMapping(entities, queryTerms)
   }
 
@@ -909,9 +911,8 @@ class Backend @Inject() (implicit
       entityNames: Seq[String]
   ): Future[SearchResults] = {
     val entities = for {
-      e <- defaultESSettings.entities
-      if (entityNames.contains(e.name) && e.searchIndex.isDefined)
-    } yield e
+      e <- defaultESSettings.entities if (entityNames.contains(e.name) && e.searchIndex.isDefined)
+    } yield e.copy(searchIndex = Some(getIndexWithPrefixOrDefault(e.searchIndex.getOrElse(""))))
     esRetriever.getSearchResultSet(entities, qString, pagination.getOrElse(Pagination.mkDefault))
   }
 
@@ -924,7 +925,7 @@ class Backend @Inject() (implicit
     val entities = for {
       e <- defaultESSettings.entities
       if (entityNames.contains(e.name) && e.facetSearchIndex.isDefined)
-    } yield e
+    } yield e.copy(searchIndex = Some(getIndexWithPrefixOrDefault(e.searchIndex.getOrElse(""))))
     esRetriever.getSearchFacetsResultSet(entities,
                                          qString,
                                          pagination.getOrElse(Pagination.mkDefault),
@@ -935,7 +936,7 @@ class Backend @Inject() (implicit
   def getAssociationDatasources: Future[Vector[EvidenceSource]] =
     dbRetriever.getUniqList[EvidenceSource](
       Seq("datasource_id", "datatype_id"),
-      defaultOTSettings.clickhouse.disease.associations.name
+      getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.disease.associations.name)
     )
 
   def getAssociationsEntityFixed(
@@ -1007,7 +1008,7 @@ class Backend @Inject() (implicit
     val indirectIDs = if (indirect) disease.descendants.toSet + disease.id else Set.empty[String]
     val targetIds = applyFacetFiltersToBIDs("facet_search_target", targetSet, facetFilters)
     getAssociationsEntityFixed(
-      defaultOTSettings.clickhouse.disease.associations.name,
+      getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.disease.associations.name),
       datasources,
       disease.id,
       indirectIDs,
@@ -1045,7 +1046,7 @@ class Backend @Inject() (implicit
       applyFacetFiltersToBIDs("facet_search_disease", diseaseSet, facetFilters)
 
     getAssociationsEntityFixed(
-      defaultOTSettings.clickhouse.target.associations.name,
+      getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.target.associations.name),
       datasources,
       target.id,
       indirectIDs,
@@ -1063,11 +1064,11 @@ class Backend @Inject() (implicit
       threshold: Double,
       size: Int
   ): Future[Vector[Similarity]] = {
-    val table = defaultOTSettings.clickhouse.similarities
-    logger.debug(s"query similarities in table ${table.name}")
+    val table = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.similarities.name)
+    logger.debug(s"query similarities in table ${table}")
 
     val jointLabels = labels + label
-    val simQ = QW2V(table.name, categories, jointLabels, threshold, size)
+    val simQ = QW2V(table, categories, jointLabels, threshold, size)
     dbRetriever.executeQuery[Long, Query](simQ.existsLabel(label)).flatMap {
       case Vector(1) => dbRetriever.executeQuery[Similarity, Query](simQ.query)
       case _ =>
@@ -1104,9 +1105,9 @@ class Backend @Inject() (implicit
                             endMonth: Option[Int],
                             cursor: Option[String]
   ): Future[Publications] = {
-    val table = defaultOTSettings.clickhouse.literature
-    val indexTable = defaultOTSettings.clickhouse.literatureIndex
-    logger.debug(s"query literature ocurrences in table ${table.name}")
+    val table = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.literature.name)
+    val indexTable = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.literatureIndex.name)
+    logger.debug(s"query literature ocurrences in table ${table} and index ${indexTable}")
 
     val pag = Helpers.Cursor.to(cursor).flatMap(_.asOpt[Pagination]).getOrElse(Pagination.mkDefault)
 
@@ -1128,14 +1129,7 @@ class Backend @Inject() (implicit
       case _ => Option.empty
     }
 
-    val simQ = QLITAGG(table.name,
-                       indexTable.name,
-                       ids,
-                       pag.size,
-                       pag.offset,
-                       filterStartDate,
-                       filterEndDate
-    )
+    val simQ = QLITAGG(table, indexTable, ids, pag.size, pag.offset, filterStartDate, filterEndDate)
 
     def runQuery(year: Int, total: Long) =
       dbRetriever.executeQuery[Publication, Query](simQ.query).map { v =>
@@ -1194,10 +1188,23 @@ class Backend @Inject() (implicit
     *   elasticsearch index name resolved from application.conf or default.
     */
   private def getIndexOrDefault(index: String, default: Option[String] = None): String =
-    defaultESSettings.entities
+    val indexName = defaultESSettings.entities
       .find(_.name == index)
       .map(_.index)
       .getOrElse(default.getOrElse(index))
+    getIndexWithPrefixOrDefault(indexName)
+
+  /** Get ClickHouse table name with the data prefix if enabled.
+    * @param table
+    *   table name
+    * @return
+    *   table name with data prefix if enabled, otherwise the table name as is.
+    */
+  private def getTableWithPrefixOrDefault(table: String): String =
+    if (getMeta.enableDataReleasePrefix)
+      getMeta.dataPrefix + "." + table
+    else
+      defaultOTSettings.clickhouse.defaultDatabaseName + "." + table
 
   /** Get the entity ids for a given set of facet filters.
     * @return
