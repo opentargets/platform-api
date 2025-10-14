@@ -68,7 +68,7 @@ class Backend @Inject() (implicit
   val allSearchableIndices: Seq[String] = defaultESSettings.entities
     .withFilter(_.searchIndex.isDefined)
     .map(_.searchIndex.get)
-    .map(getIndexOrDefault(_))
+    .map(getIndexWithPrefixOrDefault)
 
   val test = dbConfigProvider.get[ClickHouseProfile]
 
