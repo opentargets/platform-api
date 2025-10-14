@@ -900,7 +900,7 @@ class Backend @Inject() (implicit
     val entities = for {
       e <- defaultESSettings.entities
       if (entityNames.contains(e.name) && e.searchIndex.isDefined)
-    } yield e.copy(index = getIndexWithPrefixOrDefault(e.name))
+    } yield e.copy(searchIndex = Some(getIndexWithPrefixOrDefault(e.name)))
     esRetriever.getTermsResultsMapping(entities, queryTerms)
   }
 
@@ -911,7 +911,7 @@ class Backend @Inject() (implicit
   ): Future[SearchResults] = {
     val entities = for {
       e <- defaultESSettings.entities if (entityNames.contains(e.name) && e.searchIndex.isDefined)
-    } yield e.copy(index = getIndexWithPrefixOrDefault(e.name))
+    } yield e.copy(searchIndex = Some(getIndexWithPrefixOrDefault(e.name)))
     esRetriever.getSearchResultSet(entities, qString, pagination.getOrElse(Pagination.mkDefault))
   }
 
@@ -924,7 +924,7 @@ class Backend @Inject() (implicit
     val entities = for {
       e <- defaultESSettings.entities
       if (entityNames.contains(e.name) && e.facetSearchIndex.isDefined)
-    } yield e.copy(index = getIndexWithPrefixOrDefault(e.name))
+    } yield e.copy(searchIndex = Some(getIndexWithPrefixOrDefault(e.name)))
     esRetriever.getSearchFacetsResultSet(entities,
                                          qString,
                                          pagination.getOrElse(Pagination.mkDefault),
