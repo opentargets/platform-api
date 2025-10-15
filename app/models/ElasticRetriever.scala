@@ -10,7 +10,7 @@ import com.sksamuel.elastic4s.requests.searches.queries.Query
 import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
 import com.sksamuel.elastic4s.requests.searches.queries.funcscorer.*
 import com.sksamuel.elastic4s.requests.searches.queries.matches.MultiMatchQueryBuilderType
-import models.entities.Configuration.ElasticsearchEntity
+import models.entities.Configuration.{ElasticsearchEntity, OTSettings}
 import models.entities.SearchResults.*
 import models.entities.SearchFacetsResults.*
 import models.entities.*
@@ -18,6 +18,7 @@ import models.Helpers.Base64Engine
 import play.api.Logging
 import play.api.libs.json.Reads.*
 import play.api.libs.json.*
+import utils.MetadataUtils.getIndexWithPrefixOrDefault
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -825,9 +826,12 @@ class ElasticRetriever @Inject() (
       qString: String,
       pagination: Pagination,
       category: Option[String]
-  ): Future[SearchFacetsResults] = {
+  )(implicit OTSettings: OTSettings): Future[SearchFacetsResults] = {
     val limitClause = pagination.toES
-    val esIndices = entities.withFilter(_.facetSearchIndex.isDefined).map(_.facetSearchIndex.get)
+    val esIndices = entities
+      .withFilter(_.facetSearchIndex.isDefined)
+      .map(_.facetSearchIndex.get)
+      .map(getIndexWithPrefixOrDefault)
     val searchFields = Seq("label", "datasourceId")
     val hlFieldSeq = searchFields.map(f => HighlightField(f))
 
