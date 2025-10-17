@@ -910,9 +910,14 @@ class Backend @Inject() (implicit
       pagination: Option[Pagination],
       entityNames: Seq[String]
   ): Future[SearchResults] = {
-    val entities = for {
-      e <- defaultESSettings.entities if (entityNames.contains(e.name) && e.searchIndex.isDefined)
-    } yield e.copy(searchIndex = Some(getIndexWithPrefixOrDefault(e.searchIndex.getOrElse(""))))
+    val entities = entityNames match {
+      case Nil => defaultESSettings.entities.filter(_.searchIndex.isDefined)
+      case _ =>
+        defaultESSettings.entities
+          .filter(e => entityNames.contains(e.name) && e.searchIndex.isDefined)
+    } map (e =>
+      e.copy(searchIndex = Some(getIndexWithPrefixOrDefault(e.searchIndex.getOrElse(""))))
+    )
     esRetriever.getSearchResultSet(entities, qString, pagination.getOrElse(Pagination.mkDefault))
   }
 
@@ -922,10 +927,14 @@ class Backend @Inject() (implicit
       entityNames: Seq[String],
       category: Option[String]
   ): Future[SearchFacetsResults] = {
-    val entities = for {
-      e <- defaultESSettings.entities
-      if (entityNames.contains(e.name) && e.facetSearchIndex.isDefined)
-    } yield e.copy(searchIndex = Some(getIndexWithPrefixOrDefault(e.searchIndex.getOrElse(""))))
+    val entities = entityNames match {
+      case Nil => defaultESSettings.entities.filter(_.facetSearchIndex.isDefined)
+      case _ =>
+        defaultESSettings.entities
+          .filter(e => entityNames.contains(e.name) && e.facetSearchIndex.isDefined)
+    } map (e =>
+      e.copy(searchIndex = Some(getIndexWithPrefixOrDefault(e.searchIndex.getOrElse(""))))
+    )
     esRetriever.getSearchFacetsResultSet(entities,
                                          qString,
                                          pagination.getOrElse(Pagination.mkDefault),
