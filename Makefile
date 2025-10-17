@@ -24,11 +24,11 @@ debug_log_standalone: ## Debugs API using the logback file specified in logfile 
 
 es_tunnel: ## Create tunnel connection to OpenSearch. E.g.: make es_tunnel zone=europe-west1-d instance=trnplt-es-0-esearch-fl6c
 	@echo "Connecting to OpenSearch"
-	@gcloud compute ssh --zone "${zone}" --tunnel-through-iap ${instance} -- -L 9200:localhost:9200 -N
+	@gcloud compute ssh --zone "${zone}" --project "${project}" --tunnel-through-iap ${instance} -- -L 9200:localhost:9200 -N
 
 ch_tunnel: ## Create tunnel connection to ClickHouse. E.g.: make ch_tunnel zone=europe-west1-d instance=trnplt-es-0-esearch-fl6c
 	@echo "Connecting to ClickHouse"
-	@gcloud compute ssh --zone "${zone}" --tunnel-through-iap ${instance} -- -L 8123:localhost:8123 -N
+	@gcloud compute ssh --zone "${zone}" --project "${project}" --tunnel-through-iap ${instance} -- -L 8123:localhost:8123 -N
 
 run_with_standalone: ## Runs API with standalone platform
 	@sbt "run 8090" -J-Xms2g -J-Xmx7g -J-XX:+UseG1GC -DPLATFORM_API_IGNORE_CACHE=true -DELASTICSEARCH_HOST=elasticsearch -DSLICK_CLICKHOUSE_URL=jdbc:clickhouse://clickhouse:8123
