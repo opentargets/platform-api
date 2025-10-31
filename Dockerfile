@@ -1,11 +1,21 @@
 FROM eclipse-temurin:21.0.4_7-jdk-alpine
+
+RUN addgroup -g 1001 -S otapigroup && \
+    adduser -u 1001 -D -S -G otapigroup otapiuser
+
 RUN mkdir -p /srv/app
 
 RUN apk add --no-cache bash alpine-sdk
 
 COPY target/universal/ot-platform-api-latest.zip /srv/app/ot-platform-api-latest.zip
 COPY production.xml /srv/app/production.xml
+
+RUN chown -R otapiuser:otapigroup /srv/app
+
+USER otapiuser
+
 WORKDIR /srv/app
+
 RUN unzip ot-platform-api-latest.zip
 
 RUN chmod +x ot-platform-api-latest/bin/ot-platform-api
