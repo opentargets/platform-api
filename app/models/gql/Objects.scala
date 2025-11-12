@@ -646,11 +646,37 @@ object Objects extends Logging {
         )
       ),
       ReplaceField(
+        "tissueBiosampleParentId",
+        Field(
+          "tissueBiosampleParent",
+          OptionType(biosampleImp),
+          Some("Tissue biosample parent entity"),
+          resolve = r =>
+            r.value.tissueBiosampleId match {
+              case Some(id) => biosamplesFetcher.deferOpt(id)
+              case None     => Future.successful(None)
+            }
+        )
+      ),
+      ReplaceField(
         "celltypeBiosampleId",
         Field(
           "celltypeBiosample",
           OptionType(biosampleImp),
           Some("Cell type biosample entity"),
+          resolve = r =>
+            r.value.celltypeBiosampleId match {
+              case Some(id) => biosamplesFetcher.deferOpt(id)
+              case None     => Future.successful(None)
+            }
+        )
+      ),
+      ReplaceField(
+        "celltypeBiosampleParentId",
+        Field(
+          "celltypeBiosampleParent",
+          OptionType(biosampleImp),
+          Some("Cell type biosample parent entity"),
           resolve = r =>
             r.value.celltypeBiosampleId match {
               case Some(id) => biosamplesFetcher.deferOpt(id)

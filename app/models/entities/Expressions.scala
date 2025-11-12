@@ -57,8 +57,10 @@ case class BaselineExpressionRow(
     targetId: String,
     targetFromSourceId: Option[String],
     tissueBiosampleId: Option[String],
+    tissueBiosampleParentId: Option[String],
     tissueBiosampleFromSource: Option[String],
     celltypeBiosampleId: Option[String],
+    celltypeBiosampleParentId: Option[String],
     celltypeBiosampleFromSource: Option[String],
     min: Double,
     q1: Double,
@@ -85,8 +87,10 @@ object BaselineExpression {
       val targetId: String = r.<<
       val targetFromSourceId: Option[String] = r.<<
       val tissueBiosampleId: Option[String] = r.<<
+      val tissueBiosampleParentId: Option[String] = r.<<
       val tissueBiosampleFromSource: Option[String] = r.<<
       val celltypeBiosampleId: Option[String] = r.<<
+      val celltypeBiosampleParentId: Option[String] = r.<<
       val celltypeBiosampleFromSource: Option[String] = r.<<
       val min: Double = r.<<
       val q1: Double = r.<<
@@ -103,8 +107,10 @@ object BaselineExpression {
         targetId,
         targetFromSourceId,
         tissueBiosampleId,
+        tissueBiosampleParentId,
         tissueBiosampleFromSource,
         celltypeBiosampleId,
+        celltypeBiosampleParentId,
         celltypeBiosampleFromSource,
         min,
         q1,
