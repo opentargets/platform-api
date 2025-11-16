@@ -14,10 +14,20 @@ object Studies {
   def empty: Studies = Studies(0, IndexedSeq.empty)
   val studiesImp: ObjectType[Backend, Studies] = ObjectType(
     "Studies",
-    "Studies",
+    "List of GWAS and molecular QTL studies with total count",
     fields[Backend, Studies](
-      Field("count", LongType, description = None, resolve = _.value.count),
-      Field("rows", ListType(studyImp), description = None, resolve = _.value.rows)
+      Field(
+        "count",
+        LongType,
+        description = Some("Total number of studies matching the query"),
+        resolve = _.value.count
+      ),
+      Field(
+        "rows",
+        ListType(studyImp),
+        description = Some("List of GWAS or molecular QTL studies"),
+        resolve = _.value.rows
+      )
     )
   )
 }

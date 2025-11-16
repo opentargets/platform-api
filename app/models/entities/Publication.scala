@@ -23,18 +23,24 @@ object Publication {
 
   val publicationImp: ObjectType[Backend, JsValue] = ObjectType(
     "Publication",
+    "Referenced publication information",
     fields[Backend, JsValue](
-      Field("pmid", StringType, description = None, resolve = js => (js.value \ "pmid").as[String]),
+      Field(
+        "pmid",
+        StringType,
+        description = Some("PubMed identifier [bioregistry:pubmed]"),
+        resolve = js => (js.value \ "pmid").as[String]
+      ),
       Field(
         "pmcid",
         OptionType(StringType),
-        description = None,
+        description = Some("PubMed Central identifier (if available)"),
         resolve = js => (js.value \ "pmcid").asOpt[String]
       ),
       Field(
         "publicationDate",
         OptionType(StringType),
-        description = Some("Publication Date"),
+        description = Some("Publication date"),
         resolve = js => (js.value \ "date").asOpt[String]
       )
     )

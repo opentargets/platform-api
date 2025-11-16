@@ -22,9 +22,10 @@ case class Interactions(count: Long, rows: IndexedSeq[Interaction])
 object Interactions extends Logging {
   val interactions: ObjectType[Backend, Interactions] = ObjectType(
     "Interactions",
+    "Molecular interactions reported between targets, with total count and rows",
     fields[Backend, Interactions](
-      Field("count", LongType, description = None, resolve = o => o.value.count),
-      Field("rows", ListType(interactionImp), description = None, resolve = o => o.value.rows)
+      Field("count", LongType, description = Some("Total number of interaction entries available for the query"), resolve = o => o.value.count),
+      Field("rows", ListType(interactionImp), description = Some("List of molecular interaction entries"), resolve = o => o.value.rows)
     )
   )
 

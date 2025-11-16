@@ -25,25 +25,26 @@ object GQLSchema {
 
   val query: ObjectType[Backend, Unit] = ObjectType(
     "Query",
+    "Root query type providing access to all entities and search functionality in the Open Targets Platform. Supports retrieval of targets, diseases, drugs, variants, studies, credible sets, and their associations. Includes full-text search, mapping, and filtering capabilities.",
     fields[Backend, Unit](
       Field(
         "meta",
         metaImp,
-        description = Some("Return Open Targets API metadata information"),
+        description = Some("Open Targets API metadata, including version and configuration information"),
         arguments = Nil,
         resolve = ctx => ctx.ctx.getMeta
       ),
       Field(
         "target",
         OptionType(targetImp),
-        description = Some("Return a Target"),
+        description = Some("Retrieve a target (gene/protein) by target identifier (e.g. ENSG00000139618)"),
         arguments = ensemblId :: Nil,
         resolve = ctx => targetsFetcher.deferOpt(ctx.arg(ensemblId))
       ),
       Field(
         "targets",
         ListType(targetImp),
-        description = Some("Return Targets"),
+        description = Some("Retrieve multiple targets by target identifiers"),
         arguments = ensemblIds :: Nil,
         complexity = Some(complexityCalculator(ensemblIds)),
         resolve = ctx => targetsFetcher.deferSeqOpt(ctx.arg(ensemblIds))
@@ -51,14 +52,14 @@ object GQLSchema {
       Field(
         "disease",
         OptionType(diseaseImp),
-        description = Some("Return a Disease"),
+        description = Some("Retrieve a disease or phenotype by identifier (e.g. EFO_0000400)"),
         arguments = efoId :: Nil,
         resolve = ctx => diseasesFetcher.deferOpt(ctx.arg(efoId))
       ),
       Field(
         "diseases",
         ListType(diseaseImp),
-        description = Some("Return Diseases"),
+        description = Some("Retrieve multiple diseases by disease or phenotype identifiers"),
         arguments = efoIds :: Nil,
         complexity = Some(complexityCalculator(efoIds)),
         resolve = ctx => diseasesFetcher.deferSeqOpt(ctx.arg(efoIds))
@@ -66,14 +67,14 @@ object GQLSchema {
       Field(
         "drug",
         OptionType(drugImp),
-        description = Some("Return a drug"),
+        description = Some("Retrieve a drug or clinical candidate by identifier (e.g. CHEMBL112)"),
         arguments = chemblId :: Nil,
         resolve = ctx => drugsFetcher.deferOpt(ctx.arg(chemblId))
       ),
       Field(
         "drugs",
         ListType(drugImp),
-        description = Some("Return drugs"),
+        description = Some("Retrieve multiple drugs or clinical candidates by identifiers"),
         arguments = chemblIds :: Nil,
         complexity = Some(complexityCalculator(chemblIds)),
         resolve = ctx => drugsFetcher.deferSeqOpt(ctx.arg(chemblIds))
@@ -81,7 +82,7 @@ object GQLSchema {
       Field(
         "search",
         searchResultsGQLImp,
-        description = Some("Multi entity search"),
+        description = Some("Full-text, multi-entity search across all types of entities (targets, diseases, drugs, variants or studies)"),
         arguments = queryString :: entityNames :: pageArg :: Nil,
         resolve = ctx => {
           val entities = ctx.arg(entityNames).getOrElse(Seq.empty)
@@ -91,7 +92,7 @@ object GQLSchema {
       Field(
         "facets",
         searchFacetsResultsGQLImp,
-        description = Some("Search facets"),
+        description = Some("Search sets of targets or diseases used to facet associations"),
         arguments = optQueryString :: entityNames :: category :: pageArg :: Nil,
         resolve = ctx => {
           val queryString = ctx.arg(optQueryString).getOrElse("")
@@ -102,7 +103,7 @@ object GQLSchema {
       Field(
         "mapIds",
         mappingResultsImp,
-        description = Some("Map terms to IDs"),
+        description = Some("Map free-text terms to canonical IDs used as primary identifiers in the Platform (targets, diseases, drugs, variants or studies). For example, mapping 'diabetes' to EFO_0000400 or 'BRCA1' to ENSG00000139618"),
         arguments = queryTerms :: entityNames :: Nil,
         resolve = ctx => {
           val entities = ctx.arg(entityNames).getOrElse(Seq.empty)
@@ -115,13 +116,13 @@ object GQLSchema {
       Field(
         "associationDatasources",
         ListType(evidenceSourceImp),
-        description = Some("The complete list of all possible datasources"),
+        description = Some("List of available evidence datasources and their datatypes"),
         resolve = ctx => ctx.ctx.getAssociationDatasources
       ),
       Field(
         "interactionResources",
         ListType(interactionResources),
-        description = Some("The complete list of all possible datasources"),
+        description = Some("List of molecular interaction resources and their versions"),
         resolve = ctx => {
           import ctx.ctx._
           Interactions.listResources
@@ -130,7 +131,7 @@ object GQLSchema {
       Field(
         "geneOntologyTerms",
         ListType(OptionType(geneOntologyTermImp)),
-        description = Some("Gene ontology terms"),
+        description = Some("Fetch Gene Ontology terms by GO identifiers"),
         arguments = goIds :: Nil,
         complexity = Some(complexityCalculator(goIds)),
         resolve = ctx => goFetcher.deferSeqOptExplicit(ctx.arg(goIds))
@@ -138,21 +139,21 @@ object GQLSchema {
       Field(
         "variant",
         OptionType(variantIndexImp),
-        description = Some("Return a Variant"),
+        description = Some("Retrieve a variant by identifier in the format of CHROM_POS_REF_ALT for SNPs and short indels (e.g. 19_44908684_T_C)"),
         arguments = variantId :: Nil,
         resolve = ctx => variantFetcher.deferOpt(ctx.arg(variantId))
       ),
       Field(
         "study",
         OptionType(studyImp),
-        description = Some("Return a Study"),
+        description = Some("Retrieve a GWAS or molecular QTL study by ID (e.g. GCST004131)"),
         arguments = studyId :: Nil,
         resolve = ctx => studyFetcher.deferOpt(ctx.arg(studyId))
       ),
       Field(
         "studies",
         studiesImp,
-        description = Some("Return a studies"),
+        description = Some("List GWAS or molecular QTL studies filtered by ID(s) and/or disease(s); supports ontology expansion"),
         arguments = pageArg :: studyId :: diseaseIds :: enableIndirect :: Nil,
         complexity = Some(complexityCalculator(pageArg)),
         resolve = ctx => {
@@ -170,14 +171,14 @@ object GQLSchema {
       Field(
         "credibleSet",
         OptionType(credibleSetImp),
-        description = Some("Return a Credible Set"),
+        description = Some("Retrieve a 95% credible set (study-locus) by identifier"),
         arguments = studyLocusId :: Nil,
         resolve = ctx => credibleSetFetcher.deferOpt(ctx.arg(studyLocusId))
       ),
       Field(
         "credibleSets",
         credibleSetsImp,
-        description = None,
+        description = Some("List credible sets filtered by study-locus IDs, study IDs, variant IDs, study types or regions"),
         arguments =
           pageArg :: studyLocusIds :: studyIds :: variantIds :: studyTypes :: regions :: Nil,
         complexity = Some(complexityCalculator(pageArg)),
