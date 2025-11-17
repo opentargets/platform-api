@@ -935,6 +935,7 @@ class Backend @Inject() (implicit
     } map (e =>
       e.copy(searchIndex = Some(getIndexWithPrefixOrDefault(e.searchIndex.getOrElse(""))))
     )
+    logger.info(s"qString: $qString, category: $category, entitieNames: $entityNames")
     esRetriever.getSearchFacetsResultSet(entities,
                                          qString,
                                          pagination.getOrElse(Pagination.mkDefault),
@@ -954,6 +955,7 @@ class Backend @Inject() (implicit
       fixedEntityId: String,
       indirectIds: Set[String],
       bIds: Set[String],
+      bIdsToExclude: Set[String],
       filter: Option[String],
       orderBy: Option[(String, String)],
       pagination: Option[Pagination]
@@ -969,6 +971,7 @@ class Backend @Inject() (implicit
       _,
       _,
       filter,
+      bIdsToExclude,
       orderBy,
       weights,
       _,
@@ -1022,6 +1025,7 @@ class Backend @Inject() (implicit
       disease.id,
       indirectIDs,
       targetIds,
+      Set.empty[String],
       filter,
       orderBy,
       pagination
@@ -1032,6 +1036,7 @@ class Backend @Inject() (implicit
       target: Target,
       datasources: Option[Seq[DatasourceSettings]],
       indirect: Boolean,
+      includeMeasurements: Boolean,
       facetFilters: Seq[String],
       diseaseSet: Set[String],
       filter: Option[String],
@@ -1051,15 +1056,36 @@ class Backend @Inject() (implicit
       interactions.await
     } else Set.empty[String]
 
+    val measurements = if (includeMeasurements == false) {
+      searchFacets("measurement",
+                   Some(Pagination.mkMax),
+                   Seq("disease"),
+                   Some("Therapeutic Area")
+      ).await.hits
+        .flatMap(facetResult => facetResult.entityIds)
+        .flatten
+        .toSet
+    } else { Set.empty[String] }
+
+    // val disease_set_filter_measuerements = if (includeMeasurements == false) {
+    //   if (diseaseSet.isEmpty) emptySetToSetOfEmptyString(diseasesInTherapeuticAreas)
+    //   else emptySetToSetOfEmptyString(diseaseSet.intersect(diseasesInTherapeuticAreas))
+    // } else {
+    //   diseaseSet
+    // }
+    // logger.info(
+    //   s"diseaseSet size after filtering out measurements: ${diseasesSetFiltered.size}"
+    // )
     val diseaseIds =
       applyFacetFiltersToBIDs("facet_search_disease", diseaseSet, facetFilters)
-
+    if diseaseIds.contains("EFO_0004309") then logger.info("Disease IDs contains EFO_0004309")
     getAssociationsEntityFixed(
       getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.target.associations.name),
       datasources,
       target.id,
       indirectIDs,
       diseaseIds,
+      measurements,
       filter,
       orderBy,
       pagination
@@ -1247,12 +1273,13 @@ class Backend @Inject() (implicit
     if (facetFilters.isEmpty) {
       bIDs
     } else {
-      val entityIdsFromFacets: Seq[Set[String]] =
-        resolveEntityIdsFromFacets(facetFilters, index)
+      val entityIdsFromFacets: Set[String] =
+        resolveEntityIdsFromFacets(facetFilters, index).reduce(_ intersect _)
       val entityIdsFromFacetsIntersect: Set[String] =
         if (entityIdsFromFacets.isEmpty) Set.empty
-        else entityIdsFromFacets.reduce(_ intersect _)
+        else entityIdsFromFacets
       if (bIDs.isEmpty) emptySetToSetOfEmptyString(entityIdsFromFacetsIntersect)
       else emptySetToSetOfEmptyString(bIDs.intersect(entityIdsFromFacetsIntersect))
     }
+
 }

@@ -331,7 +331,7 @@ object Objects extends Logging {
           "Target-disease associations calculated on-the-fly using configurable data source weights and evidence filters. Returns associations with aggregated scores and evidence counts supporting the target-disease relationship."
         ),
         arguments =
-          BIds :: indirectTargetEvidences :: datasourceSettingsListArg :: facetFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
+          BIds :: indirectTargetEvidences :: datasourceSettingsListArg :: includeMeasurements :: facetFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
         complexity = Some(complexityCalculator(pageArg)),
         resolve = ctx => {
           (ctx arg datasourceSettingsListArg) foreach { settingsList =>
@@ -350,6 +350,7 @@ object Objects extends Logging {
             ctx.value,
             ctx arg datasourceSettingsListArg,
             ctx arg indirectTargetEvidences getOrElse false,
+            ctx arg includeMeasurements getOrElse false,
             ctx arg facetFiltersListArg getOrElse (Seq.empty),
             ctx arg BIds map (_.toSet) getOrElse Set.empty,
             ctx arg BFilterString,
