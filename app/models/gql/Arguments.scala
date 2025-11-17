@@ -191,4 +191,10 @@ object Arguments {
     OptionInputType(ListInputType(StringType)),
     description = "List of the facet IDs to filter by (using AND)"
   )
+
+  val includeMeasurements: Argument[Option[Boolean]] = Argument(
+    "includeMeasurements",
+    OptionInputType(BooleanType),
+    description = "Whether to include measurements in the response"
+  )
 }
