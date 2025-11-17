@@ -41,6 +41,7 @@ case class QAOTF(
     AIDs: Set[String],
     BIDs: Set[String],
     BFilter: Option[String],
+    BIDsToExclude: Set[String],
     orderScoreBy: Option[(String, String)],
     datasourceWeights: Seq[(String, Double)],
     mustIncludeDatasources: Set[String],
@@ -99,9 +100,22 @@ case class QAOTF(
     } else {
       expressionLeft
     }
+    // optional exclude BIDs expression
+    val expressionLeftRightExcludeBIds = if (BIDsToExclude.nonEmpty) {
+      val rightIdsC = F.set(BIDsToExclude.map(literal).toSeq)
+      F.and(
+        expressionLeftRight,
+        F.not(F.in(B, rightIdsC))
+      )
+    } else {
+      expressionLeftRight
+    }
+
     val expressionLeftRighWithFilters = {
       val expressionLeftRightWithBFilter =
-        BFilterQ.map(f => F.and(f, expressionLeftRight)).getOrElse(expressionLeftRight)
+        BFilterQ
+          .map(f => F.and(f, expressionLeftRightExcludeBIds))
+          .getOrElse(expressionLeftRightExcludeBIds)
       if (mustIncludeDatasources.nonEmpty) {
         F.and(expressionLeftRightWithBFilter,
               F.in(DS, F.set(mustIncludeDatasources.map(literal).toSeq))
