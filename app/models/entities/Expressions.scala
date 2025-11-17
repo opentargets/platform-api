@@ -68,7 +68,7 @@ case class BaselineExpressionRow(
     q3: Double,
     max: Double,
     distribution_score: Double,
-    specificity_score: Double,
+    specificity_score: Option[Double],
     datasourceId: String,
     datatypeId: String,
     unit: String
@@ -98,7 +98,7 @@ object BaselineExpression {
       val q3: Double = r.<<
       val max: Double = r.<<
       val distribution_score: Double = r.<<
-      val specificity_score: Double = r.<<
+      val specificity_score: Option[Double] = r.<<
       val datasourceId: String = r.<<
       val datatypeId: String = r.<<
       val unit: String = r.<<
