@@ -781,9 +781,12 @@ class Backend @Inject() (implicit
                             pagination: Option[Pagination]
   ): Future[BaselineExpression] = {
     val page = pagination.getOrElse(Pagination.mkDefault)
+    val tableName = getTableWithPrefixOrDefault(
+      defaultOTSettings.clickhouse.baselineExpression.name
+    )
     val baselineExpressionQuery = BaselineExpressionQuery(
       targetId,
-      "ot.baseline_expression",
+      tableName,
       page.index,
       page.size
     )
