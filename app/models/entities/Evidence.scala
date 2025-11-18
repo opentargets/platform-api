@@ -143,7 +143,7 @@ case class Evidence(
     releaseVersion: Option[String],
     releaseDate: Option[String],
     warningMessage: Option[String],
-    variantEffect: Option[String],
+    directionOnTarget: Option[String],
     directionOnTrait: Option[String],
     assessments: Option[Seq[String]],
     primaryProjectHit: Option[Boolean],

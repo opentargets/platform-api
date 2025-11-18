@@ -1732,7 +1732,7 @@ object Objects extends Logging {
     DocumentField("releaseVersion", "Release version"),
     DocumentField("releaseDate", "Release date"),
     DocumentField("warningMessage", "Warning message"),
-    DocumentField("variantEffect", "Variant effect"),
+    DocumentField("directionOnTarget", "Direction on target"),
     DocumentField("directionOnTrait", "Direction On Trait"),
     DocumentField("assessments", "Assessments"),
     DocumentField("primaryProjectHit", "Primary Project Hit"),
