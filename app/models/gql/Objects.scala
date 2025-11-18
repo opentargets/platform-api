@@ -652,7 +652,7 @@ object Objects extends Logging {
           OptionType(biosampleImp),
           Some("Tissue biosample parent entity"),
           resolve = r =>
-            r.value.tissueBiosampleId match {
+            r.value.tissueBiosampleParentId match {
               case Some(id) => biosamplesFetcher.deferOpt(id)
               case None     => Future.successful(None)
             }
@@ -678,7 +678,7 @@ object Objects extends Logging {
           OptionType(biosampleImp),
           Some("Cell type biosample parent entity"),
           resolve = r =>
-            r.value.celltypeBiosampleId match {
+            r.value.celltypeBiosampleParentId match {
               case Some(id) => biosamplesFetcher.deferOpt(id)
               case None     => Future.successful(None)
             }
