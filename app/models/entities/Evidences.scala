@@ -13,9 +13,21 @@ object Evidences {
     "Evidences",
     "Target–disease evidence items with total count and pagination cursor",
     fields[Backend, Evidences](
-      Field("count", LongType, description = Some("Total number of evidence items available for the query"), resolve = _.value.count),
-      Field("cursor", OptionType(StringType), description = Some("Opaque pagination cursor to request the next page of results"), resolve = _.value.cursor),
-      Field("rows", ListType(evidenceImp), description = Some("List of evidence items supporting the target–disease association"), resolve = _.value.rows)
+      Field("count",
+            LongType,
+            description = Some("Total number of evidence items available for the query"),
+            resolve = _.value.count
+      ),
+      Field("cursor",
+            OptionType(StringType),
+            description = Some("Opaque pagination cursor to request the next page of results"),
+            resolve = _.value.cursor
+      ),
+      Field("rows",
+            ListType(evidenceImp),
+            description = Some("List of evidence items supporting the target–disease association"),
+            resolve = _.value.rows
+      )
     )
   )
 }

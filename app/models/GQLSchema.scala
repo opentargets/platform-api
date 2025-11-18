@@ -30,14 +30,16 @@ object GQLSchema {
       Field(
         "meta",
         metaImp,
-        description = Some("Open Targets API metadata, including version and configuration information"),
+        description =
+          Some("Open Targets API metadata, including version and configuration information"),
         arguments = Nil,
         resolve = ctx => ctx.ctx.getMeta
       ),
       Field(
         "target",
         OptionType(targetImp),
-        description = Some("Retrieve a target (gene/protein) by target identifier (e.g. ENSG00000139618)"),
+        description =
+          Some("Retrieve a target (gene/protein) by target identifier (e.g. ENSG00000139618)"),
         arguments = ensemblId :: Nil,
         resolve = ctx => targetsFetcher.deferOpt(ctx.arg(ensemblId))
       ),
@@ -82,7 +84,9 @@ object GQLSchema {
       Field(
         "search",
         searchResultsGQLImp,
-        description = Some("Full-text, multi-entity search across all types of entities (targets, diseases, drugs, variants or studies)"),
+        description = Some(
+          "Full-text, multi-entity search across all types of entities (targets, diseases, drugs, variants or studies)"
+        ),
         arguments = queryString :: entityNames :: pageArg :: Nil,
         resolve = ctx => {
           val entities = ctx.arg(entityNames).getOrElse(Seq.empty)
@@ -103,7 +107,9 @@ object GQLSchema {
       Field(
         "mapIds",
         mappingResultsImp,
-        description = Some("Map free-text terms to canonical IDs used as primary identifiers in the Platform (targets, diseases, drugs, variants or studies). For example, mapping 'diabetes' to EFO_0000400 or 'BRCA1' to ENSG00000139618"),
+        description = Some(
+          "Map free-text terms to canonical IDs used as primary identifiers in the Platform (targets, diseases, drugs, variants or studies). For example, mapping 'diabetes' to EFO_0000400 or 'BRCA1' to ENSG00000139618"
+        ),
         arguments = queryTerms :: entityNames :: Nil,
         resolve = ctx => {
           val entities = ctx.arg(entityNames).getOrElse(Seq.empty)
@@ -139,7 +145,9 @@ object GQLSchema {
       Field(
         "variant",
         OptionType(variantIndexImp),
-        description = Some("Retrieve a variant by identifier in the format of CHROM_POS_REF_ALT for SNPs and short indels (e.g. 19_44908684_T_C)"),
+        description = Some(
+          "Retrieve a variant by identifier in the format of CHROM_POS_REF_ALT for SNPs and short indels (e.g. 19_44908684_T_C)"
+        ),
         arguments = variantId :: Nil,
         resolve = ctx => variantFetcher.deferOpt(ctx.arg(variantId))
       ),
@@ -153,7 +161,9 @@ object GQLSchema {
       Field(
         "studies",
         studiesImp,
-        description = Some("List GWAS or molecular QTL studies filtered by ID(s) and/or disease(s); supports ontology expansion"),
+        description = Some(
+          "List GWAS or molecular QTL studies filtered by ID(s) and/or disease(s); supports ontology expansion"
+        ),
         arguments = pageArg :: studyId :: diseaseIds :: enableIndirect :: Nil,
         complexity = Some(complexityCalculator(pageArg)),
         resolve = ctx => {
@@ -178,7 +188,9 @@ object GQLSchema {
       Field(
         "credibleSets",
         credibleSetsImp,
-        description = Some("List credible sets filtered by study-locus IDs, study IDs, variant IDs, study types or regions"),
+        description = Some(
+          "List credible sets filtered by study-locus IDs, study IDs, variant IDs, study types or regions"
+        ),
         arguments =
           pageArg :: studyLocusIds :: studyIds :: variantIds :: studyTypes :: regions :: Nil,
         complexity = Some(complexityCalculator(pageArg)),

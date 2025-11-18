@@ -17,8 +17,16 @@ object Colocalisations {
     "Colocalisations",
     "GWAS-GWAS and GWAS-molQTL credible set colocalisation results. Dataset includes colocalising pairs as well as the method and statistics used to estimate the colocalisation.",
     fields[Backend, Colocalisations](
-      Field("count", LongType, description = Some("Total number of colocalisation results matching the query filters"), resolve = _.value.count),
-      Field("rows", ListType(colocalisationImp), description = Some("List of colocalisation results between study-loci pairs"), resolve = _.value.rows)
+      Field("count",
+            LongType,
+            description = Some("Total number of colocalisation results matching the query filters"),
+            resolve = _.value.count
+      ),
+      Field("rows",
+            ListType(colocalisationImp),
+            description = Some("List of colocalisation results between study-loci pairs"),
+            resolve = _.value.rows
+      )
     )
   )
 }
