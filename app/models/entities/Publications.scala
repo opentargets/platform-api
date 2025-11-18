@@ -29,15 +29,31 @@ object Publications {
     "Publications",
     "List of referenced publications with total counts, earliest year and pagination cursor",
     fields[Backend, Publications](
-      Field("count", LongType, description = Some("Total number of publications matching the query"), resolve = _.value.count),
-      Field("filteredCount", LongType, description = Some("Number of publications after applying filters"), resolve = _.value.filteredCount),
+      Field("count",
+            LongType,
+            description = Some("Total number of publications matching the query"),
+            resolve = _.value.count
+      ),
+      Field("filteredCount",
+            LongType,
+            description = Some("Number of publications after applying filters"),
+            resolve = _.value.filteredCount
+      ),
       Field("earliestPubYear",
             IntType,
             description = Some("Earliest publication year."),
             resolve = _.value.lowYear
       ),
-      Field("cursor", OptionType(StringType), description = Some("Opaque pagination cursor to request the next page of results"), resolve = _.value.cursor),
-      Field("rows", ListType(publicationImp), description = Some("List of publications"), resolve = _.value.rows)
+      Field("cursor",
+            OptionType(StringType),
+            description = Some("Opaque pagination cursor to request the next page of results"),
+            resolve = _.value.cursor
+      ),
+      Field("rows",
+            ListType(publicationImp),
+            description = Some("List of publications"),
+            resolve = _.value.rows
+      )
     )
   )
 }

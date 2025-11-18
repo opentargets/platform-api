@@ -21,19 +21,27 @@ object Arguments {
   import sangria.macros.derive._
   implicit val StudyType: EnumType[StudyTypeEnum.Value] =
     deriveEnumType[StudyTypeEnum.Value](
-      EnumTypeDescription("Study type, distinguishing GWAS from different classes of molecular QTL studies"),
+      EnumTypeDescription(
+        "Study type, distinguishing GWAS from different classes of molecular QTL studies"
+      ),
       DocumentValue("gwas", "Genome-wide association study (GWAS) of complex traits or diseases"),
       DocumentValue("eqtl", "Bulk tissue expression quantitative trait locus (eQTL) study"),
       DocumentValue("pqtl", "Bulk tissue protein quantitative trait locus (pQTL) study"),
       DocumentValue("sqtl", "Bulk tissue splicing quantitative trait locus (sQTL) study"),
-      DocumentValue("tuqtl", "Bulk tissue transcript uptake quantitative trait locus (tuQTL) study"),
+      DocumentValue("tuqtl",
+                    "Bulk tissue transcript uptake quantitative trait locus (tuQTL) study"
+      ),
       DocumentValue("sceqtl", "Single-cell expression quantitative trait locus (sc-eQTL) study"),
       DocumentValue("scpqtl", "Single-cell protein quantitative trait locus (sc-pQTL) study"),
       DocumentValue("scsqtl", "Single-cell splicing quantitative trait locus (sc-sQTL) study"),
-      DocumentValue("sctuqtl", "Single-cell transcript uptake quantitative trait locus (sc-tuQTL) study")
+      DocumentValue("sctuqtl",
+                    "Single-cell transcript uptake quantitative trait locus (sc-tuQTL) study"
+      )
     )
   val paginationGQLImp: InputObjectType[Pagination] = deriveInputObjectType[Pagination](
-    InputObjectTypeDescription("Pagination settings for controlling result set size and page navigation. Uses zero-based indexing to specify which page of results to retrieve."),
+    InputObjectTypeDescription(
+      "Pagination settings for controlling result set size and page navigation. Uses zero-based indexing to specify which page of results to retrieve."
+    ),
     DocumentInputField("index", "Zero-based page index"),
     DocumentInputField("size", "Number of items per page")
   )
@@ -41,11 +49,18 @@ object Arguments {
   val datasourceSettingsInputImp: InputObjectType[DatasourceSettings] =
     deriveInputObjectType[DatasourceSettings](
       InputObjectTypeName("DatasourceSettingsInput"),
-      InputObjectTypeDescription("Input type for datasource settings configuration. Allows customization of how individual datasources contribute to target-disease association score calculations. Weights must be between 0 and 1, and can control ontology propagation and evidence requirements."),
+      InputObjectTypeDescription(
+        "Input type for datasource settings configuration. Allows customization of how individual datasources contribute to target-disease association score calculations. Weights must be between 0 and 1, and can control ontology propagation and evidence requirements."
+      ),
       DocumentInputField("id", "Datasource identifier"),
       DocumentInputField("weight", "Weight assigned to the datasource. Should be between 0 and 1"),
-      DocumentInputField("propagate", "Whether evidence from this datasource is propagated through the ontology"),
-      DocumentInputField("required", "Whether evidence from this datasource is required to compute association scores")
+      DocumentInputField("propagate",
+                         "Whether evidence from this datasource is propagated through the ontology"
+      ),
+      DocumentInputField(
+        "required",
+        "Whether evidence from this datasource is required to compute association scores"
+      )
     )
 
   val entityNames: Argument[Option[Seq[String]]] = Argument(
@@ -85,7 +100,10 @@ object Arguments {
   val optQueryString: Argument[Option[String]] =
     Argument("queryString", OptionInputType(StringType), description = "Search query string")
   val freeTextQuery: Argument[Option[String]] =
-    Argument("freeTextQuery", OptionInputType(StringType), description = "Free-text search query string")
+    Argument("freeTextQuery",
+             OptionInputType(StringType),
+             description = "Free-text search query string"
+    )
   val efoId: Argument[String] = Argument("efoId", StringType, description = "EFO ID")
   val efoIds: Argument[Seq[String @@ FromInput.CoercedScalaResult]] =
     Argument("efoIds", ListInputType(StringType), description = "EFO ID")
@@ -104,7 +122,10 @@ object Arguments {
     Argument("goIds", ListInputType(StringType), description = "List of GO IDs, eg. GO:0005515")
   val variantId: Argument[String] = Argument("variantId", StringType, description = "Variant ID")
   val variantIds: Argument[Option[Seq[String]]] =
-    Argument("variantIds", OptionInputType(ListInputType(StringType)), description = "List of variant IDs in CHROM_POS_REF_ALT format")
+    Argument("variantIds",
+             OptionInputType(ListInputType(StringType)),
+             description = "List of variant IDs in CHROM_POS_REF_ALT format"
+    )
   val studyId: Argument[Option[String]] =
     Argument("studyId", OptionInputType(StringType), description = "Study ID")
   val studyIds: Argument[Option[Seq[String]]] =
@@ -116,7 +137,10 @@ object Arguments {
   val studyTypes =
     Argument("studyTypes", OptionInputType(ListInputType(StudyType)), description = "Study types")
   val regions: Argument[Option[Seq[String]]] =
-    Argument("regions", OptionInputType(ListInputType(StringType)), description = "List of genomic regions (e.g., 1:100000-200000)")
+    Argument("regions",
+             OptionInputType(ListInputType(StringType)),
+             description = "List of genomic regions (e.g., 1:100000-200000)"
+    )
   val studyLocusId: Argument[String] =
     Argument("studyLocusId", StringType, description = "Study-locus ID")
   val studyLocusIds: Argument[Option[Seq[String]]] =
@@ -178,9 +202,15 @@ object Arguments {
   )
 
   val AId: Argument[String] =
-    Argument("A", StringType, description = "Fixed entity A identifier (e.g., target or disease ID)")
+    Argument("A",
+             StringType,
+             description = "Fixed entity A identifier (e.g., target or disease ID)"
+    )
   val AIds: Argument[Seq[String @@ FromInput.CoercedScalaResult]] =
-    Argument("As", ListInputType(StringType), description = "List of fixed entity A identifiers (e.g., target or disease IDs)")
+    Argument("As",
+             ListInputType(StringType),
+             description = "List of fixed entity A identifiers (e.g., target or disease IDs)"
+    )
   val BIds: Argument[Option[Seq[String]]] =
     Argument("Bs",
              OptionInputType(ListInputType(StringType)),
