@@ -2033,32 +2033,6 @@ object Objects extends Logging {
       DocumentField("clpp", "Colocalisation posterior probability (CLPP) score estimating the probability of shared causal variants. Used in eCAVIAR method."),
       DocumentField("betaRatioSignAverage", "Average sign of the beta ratio between colocalised variants"),
       ReplaceField(
-        "leftStudyLocusId",
-        Field(
-          "leftStudyLocus",
-          credibleSetImp,
-          description = Some("Study-locus identifier for left-side overlapping signal"),
-          resolve = r => {
-            val studyLocusId = r.value.leftStudyLocusId
-            logger.debug(s"Finding colocalisation left credible set: $studyLocusId")
-            credibleSetFetcher.defer(studyLocusId)
-          }
-        )
-      ),
-      ReplaceField(
-        "rightStudyLocusId",
-        Field(
-          "rightStudyLocus",
-          credibleSetImp,
-          description = Some("Study-locus identifier for right-side overlapping signal"),
-          resolve = r => {
-            val studyLocusId = r.value.rightStudyLocusId
-            logger.debug(s"Finding colocalisation right credible set: $studyLocusId")
-            credibleSetFetcher.defer(studyLocusId)
-          }
-        )
-      ),
-      ReplaceField(
         "otherStudyLocusId",
         Field(
           "otherStudyLocus",
@@ -2509,7 +2483,7 @@ object Objects extends Logging {
       Field(
         "pubMedCentralIds",
         OptionType(ListType(StringType)),
-        description = Some("List of PubMed Central identifiers of full text publication"),
+        description = Some("List of PubMed Central identifiers of full text publication [bioregistry:pmc]"),
         resolve = js => js.value.pmcIds
       )
     )

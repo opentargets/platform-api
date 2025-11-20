@@ -34,7 +34,7 @@ object Publication {
       Field(
         "pmcid",
         OptionType(StringType),
-        description = Some("PubMed Central identifier (if available)"),
+        description = Some("PubMed Central identifier (if available) [bioregistry:pmc]"),
         resolve = js => (js.value \ "pmcid").asOpt[String]
       ),
       Field(
