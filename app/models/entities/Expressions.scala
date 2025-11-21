@@ -62,11 +62,11 @@ case class BaselineExpressionRow(
     celltypeBiosampleId: Option[String],
     celltypeBiosampleParentId: Option[String],
     celltypeBiosampleFromSource: Option[String],
-    min: Double,
-    q1: Double,
-    median: Double,
-    q3: Double,
-    max: Double,
+    min: Option[Double],
+    q1: Option[Double],
+    median: Option[Double],
+    q3: Option[Double],
+    max: Option[Double],
     distribution_score: Double,
     specificity_score: Option[Double],
     datasourceId: String,
@@ -92,11 +92,11 @@ object BaselineExpression {
       val celltypeBiosampleId: Option[String] = r.<<?
       val celltypeBiosampleParentId: Option[String] = r.<<?
       val celltypeBiosampleFromSource: Option[String] = r.<<?
-      val min: Double = r.<<
-      val q1: Double = r.<<
-      val median: Double = r.<<
-      val q3: Double = r.<<
-      val max: Double = r.<<
+      val min: Option[Double] = r.<<?
+      val q1: Option[Double] = r.<<?
+      val median: Option[Double] = r.<<?
+      val q3: Option[Double] = r.<<?
+      val max: Option[Double] = r.<<?
       val distribution_score: Double = r.<<
       val specificity_score: Option[Double] = r.<<?
       val datasourceId: String = r.<<
