@@ -33,7 +33,9 @@ object Objects extends Logging {
       ObjectTypeDescription("Data release version information"),
       DocumentField("year", "Year of the Platform data release"),
       DocumentField("month", "Month of the Platform data release"),
-      DocumentField("iteration", "Iteration number of the Platform data release within the year-month period")
+      DocumentField("iteration",
+                    "Iteration number of the Platform data release within the year-month period"
+      )
     )
   implicit val metaAPIVersionImp: ObjectType[Backend, APIVersion] =
     deriveObjectType[Backend, APIVersion](
@@ -44,18 +46,24 @@ object Objects extends Logging {
       DocumentField("suffix", "Optional version suffix (e.g., alpha, beta, rc)")
     )
   implicit val metaImp: ObjectType[Backend, Meta] = deriveObjectType[Backend, Meta](
-      ObjectTypeDescription("Metadata about the Open Targets Platform API including version information"),
-      DocumentField("name", "Name of the platform"),
-      DocumentField("apiVersion", "API version information"),
-      DocumentField("dataVersion", "Data release version information"),
-      DocumentField("product", "Open Targets product"),
-      DocumentField("enableDataReleasePrefix", "Flag indicating whether data release prefix is enabled"),
-      DocumentField("dataPrefix", "Data release prefix"),
+    ObjectTypeDescription(
+      "Metadata about the Open Targets Platform API including version information"
+    ),
+    DocumentField("name", "Name of the platform"),
+    DocumentField("apiVersion", "API version information"),
+    DocumentField("dataVersion", "Data release version information"),
+    DocumentField("product", "Open Targets product"),
+    DocumentField("enableDataReleasePrefix",
+                  "Flag indicating whether data release prefix is enabled"
+    ),
+    DocumentField("dataPrefix", "Data release prefix"),
     AddFields(
       Field(
         "downloads",
         OptionType(StringType),
-        description = Some("Platform datasets described following MLCroissant metadata format. Datasets are described in a JSONLD file containing extensive metadata including table and column descriptions, schemas, location and relationships."),
+        description = Some(
+          "Platform datasets described following MLCroissant metadata format. Datasets are described in a JSONLD file containing extensive metadata including table and column descriptions, schemas, location and relationships."
+        ),
         resolve = _.ctx.getDownloads
       )
     )
@@ -68,11 +76,19 @@ object Objects extends Logging {
 
   implicit val geneEssentialityScreenImp: ObjectType[Backend, GeneEssentialityScreen] =
     deriveObjectType[Backend, GeneEssentialityScreen](
-      ObjectTypeDescription("CRISPR screening experiments supporting the essentiality assessment. Represents individual cell line assays from DepMap."),
-      DocumentField("cellLineName", "Name of the cancer cell line in which the gene essentiality was assessed"),
+      ObjectTypeDescription(
+        "CRISPR screening experiments supporting the essentiality assessment. Represents individual cell line assays from DepMap."
+      ),
+      DocumentField("cellLineName",
+                    "Name of the cancer cell line in which the gene essentiality was assessed"
+      ),
       DocumentField("depmapId", "Unique identifier of the assay in DepMap"),
-      DocumentField("diseaseCellLineId", "Cell model passport identifier of a cell line modelling a disease"),
-      DocumentField("diseaseFromSource", "Disease associated with the cell line as reported in the source data"),
+      DocumentField("diseaseCellLineId",
+                    "Cell model passport identifier of a cell line modelling a disease"
+      ),
+      DocumentField("diseaseFromSource",
+                    "Disease associated with the cell line as reported in the source data"
+      ),
       DocumentField("expression", "Gene expression level in the corresponding cell line"),
       DocumentField("geneEffect", "Gene effect score indicating the impact of gene knockout"),
       DocumentField("mutation", "Background mutation the tested cell line have")
@@ -80,9 +96,16 @@ object Objects extends Logging {
 
   implicit val depMapEssentialityImp: ObjectType[Backend, DepMapEssentiality] =
     deriveObjectType[Backend, DepMapEssentiality](
-      ObjectTypeDescription("Essentiality measurements extracted from DepMap, stratified by tissue or anatomical units. Gene effects below -1 can be considered dependencies."),
-      DocumentField("screens", "List of CRISPR screening experiments supporting the essentiality assessment"),
-      DocumentField("tissueId", "Identifier of the tissue from where the cells were sampled for assay [bioregistry:uberon]"),
+      ObjectTypeDescription(
+        "Essentiality measurements extracted from DepMap, stratified by tissue or anatomical units. Gene effects below -1 can be considered dependencies."
+      ),
+      DocumentField("screens",
+                    "List of CRISPR screening experiments supporting the essentiality assessment"
+      ),
+      DocumentField(
+        "tissueId",
+        "Identifier of the tissue from where the cells were sampled for assay [bioregistry:uberon]"
+      ),
       DocumentField("tissueName", "Name of the tissue from where the cells were sampled for assay")
     )
 
@@ -91,7 +114,11 @@ object Objects extends Logging {
     "A key-value pair",
     fields[Unit, KeyValue](
       Field("key", StringType, description = Some("Key or attribute name"), resolve = _.value.key),
-      Field("value", StringType, description = Some("String representation of the value"), resolve = _.value.value.toString())
+      Field("value",
+            StringType,
+            description = Some("String representation of the value"),
+            resolve = _.value.value.toString()
+      )
     )
   )
 
@@ -100,22 +127,37 @@ object Objects extends Logging {
     "KeyValueArray",
     "An array of key-value pairs",
     fields[Unit, JsArray](
-      Field("items", ListType(KeyValueObjectType), description = Some("List of key-value entries"), resolve = _.value.as[List[KeyValue]])
+      Field("items",
+            ListType(KeyValueObjectType),
+            description = Some("List of key-value entries"),
+            resolve = _.value.as[List[KeyValue]]
+      )
     )
   )
 
   implicit lazy val targetImp: ObjectType[Backend, Target] = deriveObjectType(
-    ObjectTypeDescription("Core annotation for drug targets (gene/proteins). Targets are defined based on EMBL-EBI Ensembl database and uses the Ensembl gene ID as the  primary identifier. An Ensembl gene ID is considered potential drug target if included in the canonical assembly or if present alternative assemblies but encoding for a reviewed protein product according to the UniProt database."),
+    ObjectTypeDescription(
+      "Core annotation for drug targets (gene/proteins). Targets are defined based on EMBL-EBI Ensembl database and uses the Ensembl gene ID as the  primary identifier. An Ensembl gene ID is considered potential drug target if included in the canonical assembly or if present alternative assemblies but encoding for a reviewed protein product according to the UniProt database."
+    ),
     DocumentField("id", "Unique identifier for the target [bioregistry:ensembl]"),
     DocumentField("approvedSymbol", "Approved gene symbol of the target"),
     DocumentField("approvedName", "Approved full name of the target gene"),
-    DocumentField("biotype", "Biotype classification of the target gene, indicating if the gene is protein coding"),
+    DocumentField(
+      "biotype",
+      "Biotype classification of the target gene, indicating if the gene is protein coding"
+    ),
     DocumentField("canonicalTranscript", "The Ensembl canonical transcript of the target gene"),
-    DocumentField("alternativeGenes", "List of alternative Ensembl gene identifiers mapped to non-canonical chromosomes"),
+    DocumentField("alternativeGenes",
+                  "List of alternative Ensembl gene identifiers mapped to non-canonical chromosomes"
+    ),
     DocumentField("targetClass", "Target classification categories from ChEMBL"),
-    DocumentField("chemicalProbes", "Chemical probes with high selectivity and specificity for the target."),
+    DocumentField("chemicalProbes",
+                  "Chemical probes with high selectivity and specificity for the target."
+    ),
     DocumentField("dbXrefs", "Database cross-references for the target"),
-    DocumentField("functionDescriptions", "Functional descriptions of the target gene sourced from UniProt"),
+    DocumentField("functionDescriptions",
+                  "Functional descriptions of the target gene sourced from UniProt"
+    ),
     DocumentField("constraint", "Constraint scores for the target gene from GnomAD"),
     DocumentField("genomicLocation", "Genomic location information of the target gene"),
     DocumentField("go", "List of Gene Ontology (GO) annotations related to the target"),
@@ -129,15 +171,21 @@ object Objects extends Logging {
       "safetyLiabilities",
       "Known target safety effects and target safety risk information"
     ),
-    DocumentField("subcellularLocations", "List of subcellular locations where the target protein is found"),
+    DocumentField("subcellularLocations",
+                  "List of subcellular locations where the target protein is found"
+    ),
     DocumentField("synonyms", "List of synonyms for the target gene"),
-    DocumentField("obsoleteSymbols", "List of obsolete symbols previously used for the target gene"),
+    DocumentField("obsoleteSymbols",
+                  "List of obsolete symbols previously used for the target gene"
+    ),
     DocumentField("obsoleteNames", "List of obsolete names previously used for the target gene"),
     DocumentField("nameSynonyms", "List of name-based synonyms for the target gene"),
     DocumentField("symbolSynonyms", "List of symbol-based synonyms for the target gene"),
     DocumentField("tep", "Target Enabling Package (TEP) information"),
     DocumentField("tractability", "Tractability information for the target"),
-    DocumentField("transcriptIds", "List of Ensembl transcript identifiers associated with the target"),
+    DocumentField("transcriptIds",
+                  "List of Ensembl transcript identifiers associated with the target"
+    ),
     DocumentField("pathways", "Pathway annotations for the target"),
     RenameField("go", "geneOntology"),
     RenameField("constraint", "geneticConstraint"),
@@ -146,7 +194,9 @@ object Objects extends Logging {
       Field(
         "credibleSets",
         credibleSetsImp,
-        description = Some("95% credible sets for GWAS and molQTL studies. Credible sets include all variants in the credible set as well as the fine-mapping method and statistics used to estimate the credible set."),
+        description = Some(
+          "95% credible sets for GWAS and molQTL studies. Credible sets include all variants in the credible set as well as the fine-mapping method and statistics used to estimate the credible set."
+        ),
         arguments = pageArg :: Nil,
         complexity = Some(complexityCalculator(pageArg)),
         resolve = ctx =>
@@ -205,7 +255,9 @@ object Objects extends Logging {
       Field(
         "evidences",
         evidencesImp,
-        description = Some("Target-disease evidence from all data sources supporting associations between this target and diseases or phenotypes. Evidence entries are reported and scored according to confidence in the association."),
+        description = Some(
+          "Target-disease evidence from all data sources supporting associations between this target and diseases or phenotypes. Evidence entries are reported and scored according to confidence in the association."
+        ),
         arguments = efoIds :: datasourceIdsArg :: pageSize :: cursor :: Nil,
         complexity = Some(complexityCalculator(pageSize)),
         resolve = ctx =>
@@ -221,7 +273,9 @@ object Objects extends Logging {
       Field(
         "interactions",
         OptionType(interactions),
-        description = Some("Molecular interactions reporting experimental or functional interactions between this target and other molecules. Interactions are integrated from multiple databases capturing physical interactions (e.g., IntAct), directional interactions (e.g., Signor), pathway relationships (e.g., Reactome), or functional interactions (e.g., STRINGdb)."),
+        description = Some(
+          "Molecular interactions reporting experimental or functional interactions between this target and other molecules. Interactions are integrated from multiple databases capturing physical interactions (e.g., IntAct), directional interactions (e.g., Signor), pathway relationships (e.g., Reactome), or functional interactions (e.g., STRINGdb)."
+        ),
         arguments = scoreThreshold :: databaseName :: pageArg :: Nil,
         complexity = Some(complexityCalculator(pageArg)),
         resolve = r => {
@@ -233,7 +287,9 @@ object Objects extends Logging {
       Field(
         "mousePhenotypes",
         ListType(mousePhenotypeImp),
-        description = Some("Mouse phenotype information linking this human target to observed phenotypes in mouse models. Provides data on phenotypes observed when the target gene is modified in mouse models."),
+        description = Some(
+          "Mouse phenotype information linking this human target to observed phenotypes in mouse models. Provides data on phenotypes observed when the target gene is modified in mouse models."
+        ),
         resolve = ctx => {
           val mp = ctx.ctx.getMousePhenotypes(Seq(ctx.value.id))
           mp
@@ -242,7 +298,9 @@ object Objects extends Logging {
       Field(
         "expressions",
         ListType(expressionImp),
-        description = Some("Baseline RNA and protein expression data across tissues for this target. Expression data shows how targets are selectively expressed across different tissues and biosamples, combining values from multiple sources including Expression Atlas and Human Protein Atlas."),
+        description = Some(
+          "Baseline RNA and protein expression data across tissues for this target. Expression data shows how targets are selectively expressed across different tissues and biosamples, combining values from multiple sources including Expression Atlas and Human Protein Atlas."
+        ),
         resolve = r =>
           DeferredValue(expressionFetcher.deferOpt(r.value.id)).map {
             case Some(expressions) => expressions.rows
@@ -269,7 +327,9 @@ object Objects extends Logging {
       Field(
         "associatedDiseases",
         associatedOTFDiseasesImp,
-        description = Some("Target-disease associations calculated on-the-fly using configurable data source weights and evidence filters. Returns associations with aggregated scores and evidence counts supporting the target-disease relationship."),
+        description = Some(
+          "Target-disease associations calculated on-the-fly using configurable data source weights and evidence filters. Returns associations with aggregated scores and evidence counts supporting the target-disease relationship."
+        ),
         arguments =
           BIds :: indirectTargetEvidences :: datasourceSettingsListArg :: facetFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
         complexity = Some(complexityCalculator(pageArg)),
@@ -314,7 +374,9 @@ object Objects extends Logging {
       Field(
         "isEssential",
         OptionType(BooleanType),
-        description = Some("Flag indicating whether this target is essential based on CRISPR screening data from cancer cell line models. Essential genes are those that show dependency when knocked out in cellular models."),
+        description = Some(
+          "Flag indicating whether this target is essential based on CRISPR screening data from cancer cell line models. Essential genes are those that show dependency when knocked out in cellular models."
+        ),
         resolve = ctx => {
           val mp = ctx.ctx.getTargetEssentiality(Seq(ctx.value.id))
           mp map { case ess =>
@@ -325,7 +387,9 @@ object Objects extends Logging {
       Field(
         "depMapEssentiality",
         OptionType(ListType(depMapEssentialityImp)),
-        description = Some("Essentiality measurements extracted from DepMap, stratified by tissue or anatomical units. Gene essentiality is assessed based on dependencies exhibited when knocking out genes in cancer cellular models using CRISPR screenings from the Cancer Dependency Map (DepMap) Project. Gene effects below -1 can be considered dependencies."),
+        description = Some(
+          "Essentiality measurements extracted from DepMap, stratified by tissue or anatomical units. Gene essentiality is assessed based on dependencies exhibited when knocking out genes in cancer cellular models using CRISPR screenings from the Cancer Dependency Map (DepMap) Project. Gene effects below -1 can be considered dependencies."
+        ),
         resolve = ctx => {
           val mp = ctx.ctx.getTargetEssentiality(Seq(ctx.value.id))
           mp map { case ess =>
@@ -336,7 +400,9 @@ object Objects extends Logging {
       Field(
         "pharmacogenomics",
         ListType(pharmacogenomicsImp),
-        description = Some("Pharmacogenomics data linking genetic variants affecting this target to drug responses. Data is integrated from sources including ClinPGx and describes how genetic variants influence individual drug responses when targeting this gene product."),
+        description = Some(
+          "Pharmacogenomics data linking genetic variants affecting this target to drug responses. Data is integrated from sources including ClinPGx and describes how genetic variants influence individual drug responses when targeting this gene product."
+        ),
         arguments = pageArg :: Nil,
         complexity = Some(complexityCalculator(pageArg)),
         resolve = ctx => ctx.ctx.getPharmacogenomicsByTarget(ctx.value.id)
@@ -344,7 +410,9 @@ object Objects extends Logging {
       Field(
         "proteinCodingCoordinates",
         proteinCodingCoordinatesImp,
-        description = Some("Protein coding coordinates linking variants affecting this target to their amino acid-level consequences in protein products. Describes variant consequences at the protein level including amino acid changes and their positions for this target."),
+        description = Some(
+          "Protein coding coordinates linking variants affecting this target to their amino acid-level consequences in protein products. Describes variant consequences at the protein level including amino acid changes and their positions for this target."
+        ),
         arguments = pageArg :: Nil,
         complexity = Some(complexityCalculator(pageArg)),
         resolve = ctx => ctx.ctx.getProteinCodingCoordinatesByTarget(ctx.value.id, ctx.arg(pageArg))
@@ -360,7 +428,9 @@ object Objects extends Logging {
     )
   implicit lazy val chemicalProbeImp: ObjectType[Backend, ChemicalProbe] =
     deriveObjectType[Backend, ChemicalProbe](
-      ObjectTypeDescription("Chemical probes related to the target. High-quality chemical probes are small molecules that can be used to modulate and study the function of proteins."),
+      ObjectTypeDescription(
+        "Chemical probes related to the target. High-quality chemical probes are small molecules that can be used to modulate and study the function of proteins."
+      ),
       DocumentField("id", "Unique identifier for the chemical probe"),
       DocumentField("control", "Whether the chemical probe serves as a control"),
       DocumentField("drugId", "Drug ID associated with the chemical probe"),
@@ -391,7 +461,9 @@ object Objects extends Logging {
     )
 
   implicit lazy val diseaseImp: ObjectType[Backend, Disease] = deriveObjectType(
-    ObjectTypeDescription("Core annotation for diseases or phenotypes. A disease or phenotype in the Platform is understood as any disease, phenotype, biological process or measurement that might have any type of causality relationship with a human target. The EMBL-EBI Experimental Factor Ontology (EFO) (slim version) is used as scaffold for the disease or phenotype entity."),
+    ObjectTypeDescription(
+      "Core annotation for diseases or phenotypes. A disease or phenotype in the Platform is understood as any disease, phenotype, biological process or measurement that might have any type of causality relationship with a human target. The EMBL-EBI Experimental Factor Ontology (EFO) (slim version) is used as scaffold for the disease or phenotype entity."
+    ),
     DocumentField("id", "Open Targets disease identifier [bioregistry:efo]"),
     DocumentField("name", "Preferred disease or phenotype label"),
     DocumentField("description", "Short description of the disease or phenotype"),
@@ -400,15 +472,21 @@ object Objects extends Logging {
     ExcludeFields("ontology"),
     DocumentField("obsoleteTerms", "Obsoleted ontology terms replaced by this term"),
     DocumentField("directLocationIds", "EFO terms for direct anatomical locations"),
-    DocumentField("indirectLocationIds", "EFO terms for indirect anatomical locations (propagated)"),
-    DocumentField("ancestors", "Ancestor disease nodes in the EFO ontology up to the top-level therapeutic area"),
+    DocumentField("indirectLocationIds",
+                  "EFO terms for indirect anatomical locations (propagated)"
+    ),
+    DocumentField("ancestors",
+                  "Ancestor disease nodes in the EFO ontology up to the top-level therapeutic area"
+    ),
     DocumentField("descendants", "Descendant disease nodes in the EFO ontology below this term"),
     ReplaceField(
       "therapeuticAreas",
       Field(
         "therapeuticAreas",
         ListType(diseaseImp),
-        Some("Ancestor therapeutic area nodes the disease or phenotype term belongs in the EFO ontology"),
+        Some(
+          "Ancestor therapeutic area nodes the disease or phenotype term belongs in the EFO ontology"
+        ),
         resolve = r => diseasesFetcher.deferSeq(r.value.therapeuticAreas)
       )
     ),
@@ -461,7 +539,8 @@ object Objects extends Logging {
       Field(
         "literatureOcurrences",
         publicationsImp,
-        description = Some("Publications that mention this disease, alone or alongside other entities"),
+        description =
+          Some("Publications that mention this disease, alone or alongside other entities"),
         arguments = idsArg :: startYear :: startMonth :: endYear :: endMonth :: cursor :: Nil,
         resolve = c => {
           val ids = c.arg(idsArg).getOrElse(List.empty) ++ List(c.value.id)
@@ -489,7 +568,9 @@ object Objects extends Logging {
       Field(
         "phenotypes",
         OptionType(diseaseHPOsImp),
-        description = Some("Human Phenotype Ontology (HPO) annotations linked to this disease as clinical signs or symptoms"),
+        description = Some(
+          "Human Phenotype Ontology (HPO) annotations linked to this disease as clinical signs or symptoms"
+        ),
         arguments = pageArg :: Nil,
         complexity = Some(complexityCalculator(pageArg)),
         resolve = ctx => ctx.ctx.getDiseaseHPOs(ctx.value.id, ctx.arg(pageArg))
@@ -497,7 +578,8 @@ object Objects extends Logging {
       Field(
         "evidences",
         evidencesImp,
-        description = Some("Target–disease evidence items supporting associations for this disease"),
+        description =
+          Some("Target–disease evidence items supporting associations for this disease"),
         arguments =
           ensemblIds :: indirectEvidences :: datasourceIdsArg :: pageSize :: cursor :: Nil,
         complexity = Some(complexityCalculator(pageSize)),
@@ -518,7 +600,9 @@ object Objects extends Logging {
       Field(
         "otarProjects",
         ListType(otarProjectImp),
-        description = Some("Open Targets (OTAR) projects linked to this disease. Data only available in Partner Platform Preview (PPP)"),
+        description = Some(
+          "Open Targets (OTAR) projects linked to this disease. Data only available in Partner Platform Preview (PPP)"
+        ),
         resolve = r =>
           DeferredValue(otarProjectsFetcher.deferOpt(r.value.id)).map {
             case Some(otars) => otars.rows
@@ -528,7 +612,9 @@ object Objects extends Logging {
       Field(
         "knownDrugs",
         OptionType(knownDrugsImp),
-        description = Some("Investigational or approved drugs indicated for this disease with curated mechanisms of action"),
+        description = Some(
+          "Investigational or approved drugs indicated for this disease with curated mechanisms of action"
+        ),
         arguments = freeTextQuery :: pageSize :: cursor :: Nil,
         complexity = Some(complexityCalculator(pageSize)),
         resolve = ctx =>
@@ -545,7 +631,9 @@ object Objects extends Logging {
       Field(
         "associatedTargets",
         associatedOTFTargetsImp,
-        description = Some("Target–disease associations computed on the fly with configurable datasource weights and filters"),
+        description = Some(
+          "Target–disease associations computed on the fly with configurable datasource weights and filters"
+        ),
         arguments =
           BIds :: indirectEvidences :: datasourceSettingsListArg :: facetFiltersListArg :: BFilterString :: scoreSorting :: pageArg :: Nil,
         complexity = Some(complexityCalculator(pageArg)),
@@ -591,7 +679,9 @@ object Objects extends Logging {
 
   implicit val tractabilityImp: ObjectType[Backend, Tractability] =
     deriveObjectType[Backend, Tractability](
-      ObjectTypeDescription("Tractability information for the target. Indicates the feasibility of targeting the gene/protein with different therapeutic modalities."),
+      ObjectTypeDescription(
+        "Tractability information for the target. Indicates the feasibility of targeting the gene/protein with different therapeutic modalities."
+      ),
       RenameField("id", "label"),
       DocumentField("id", "Tractability category label"),
       DocumentField("modality", "Modality of the tractability assessment"),
@@ -602,14 +692,20 @@ object Objects extends Logging {
     deriveObjectType[Backend, ScoredComponent](
       ObjectTypeDescription("Scored component used in association scoring"),
       DocumentField("id", "Component identifier (e.g., datatype or datasource name)"),
-      DocumentField("score", "Association score for the component. Scores are normalized to a range of 0-1. The higher the score, the stronger the association."),
+      DocumentField(
+        "score",
+        "Association score for the component. Scores are normalized to a range of 0-1. The higher the score, the stronger the association."
+      )
     )
 
   implicit val associatedOTFTargetImp: ObjectType[Backend, Association] =
     deriveObjectType[Backend, Association](
       ObjectTypeName("AssociatedTarget"),
       ObjectTypeDescription("Associated target entity"),
-      DocumentField("score", "Overall association score aggregated across all evidence types. A higher score indicates a stronger association between the target and the disease. Scores are normalized to a range of 0-1."),
+      DocumentField(
+        "score",
+        "Overall association score aggregated across all evidence types. A higher score indicates a stronger association between the target and the disease. Scores are normalized to a range of 0-1."
+      ),
       DocumentField(
         "datatypeScores",
         "Association scores computed for every datatype (e.g., Genetic associations, Somatic, Literature)"
@@ -620,7 +716,11 @@ object Objects extends Logging {
       ),
       ReplaceField(
         "id",
-        Field("target", targetImp, Some("Associated target entity"), resolve = r => targetsFetcher.defer(r.value.id))
+        Field("target",
+              targetImp,
+              Some("Associated target entity"),
+              resolve = r => targetsFetcher.defer(r.value.id)
+        )
       )
     )
 
@@ -628,7 +728,10 @@ object Objects extends Logging {
     deriveObjectType[Backend, Association](
       ObjectTypeName("AssociatedDisease"),
       ObjectTypeDescription("Associated disease entity"),
-      DocumentField("score", "Overall association score aggregated across all evidence types. A higher score indicates a stronger association between the target and the disease. Scores are normalized to a range of 0-1."),
+      DocumentField(
+        "score",
+        "Overall association score aggregated across all evidence types. A higher score indicates a stronger association between the target and the disease. Scores are normalized to a range of 0-1."
+      ),
       DocumentField(
         "datatypeScores",
         "Association scores computed for every datatype (e.g., Genetic associations, Somatic, Literature)"
@@ -688,15 +791,21 @@ object Objects extends Logging {
     )
 
   implicit val tissueImp: ObjectType[Backend, Tissue] = deriveObjectType[Backend, Tissue](
-    ObjectTypeDescription("Baseline RNA and protein expression data across tissues. This data does not contain raw expression values, instead to shows how targets are selectively expressed across different tissues. This dataset combines expression values from multiple sources including Expression Atlas and Human Protein Atlas."),
+    ObjectTypeDescription(
+      "Baseline RNA and protein expression data across tissues. This data does not contain raw expression values, instead to shows how targets are selectively expressed across different tissues. This dataset combines expression values from multiple sources including Expression Atlas and Human Protein Atlas."
+    ),
     DocumentField("id", "UBERON id"),
     DocumentField("label", "Name of the biosample the expression data is from"),
-    DocumentField("anatomicalSystems", "List of anatomical systems that the biosample can be found in"),
+    DocumentField("anatomicalSystems",
+                  "List of anatomical systems that the biosample can be found in"
+    ),
     DocumentField("organs", "List of organs that the biosample can be found in")
   )
   implicit val rnaExpressionImp: ObjectType[Backend, RNAExpression] =
     deriveObjectType[Backend, RNAExpression](
-      ObjectTypeDescription("RNA expression values for a particular biosample and gene combination"),
+      ObjectTypeDescription(
+        "RNA expression values for a particular biosample and gene combination"
+      ),
       DocumentField("zscore", "Expression zscore"),
       DocumentField("value", "Expression value"),
       DocumentField("unit", "Unit for the RNA expression"),
@@ -710,28 +819,38 @@ object Objects extends Logging {
   )
   implicit val proteinExpressionImp: ObjectType[Backend, ProteinExpression] =
     deriveObjectType[Backend, ProteinExpression](
-      ObjectTypeDescription("Struct containing relevant protein expression values for a particular biosample and gene combination"),
+      ObjectTypeDescription(
+        "Struct containing relevant protein expression values for a particular biosample and gene combination"
+      ),
       DocumentField("reliability", "Reliability of the protein expression measurement"),
       DocumentField("level", "Level of protein expression normalised to 0-5 or -1 if absent"),
       DocumentField("cellType", "List of cell types were protein levels were measured")
     )
   implicit val expressionImp: ObjectType[Backend, Expression] =
     deriveObjectType[Backend, Expression](
-      ObjectTypeDescription("Array of structs containing expression data relevant to a particular gene and biosample combination"),
+      ObjectTypeDescription(
+        "Array of structs containing expression data relevant to a particular gene and biosample combination"
+      ),
       DocumentField("tissue", "Tissue/biosample information for the expression data"),
       DocumentField("rna", "RNA expression values for the biosample and gene combination"),
       DocumentField("protein", "Protein expression values for the biosample and gene combination")
     )
   implicit val expressionsImp: ObjectType[Backend, Expressions] =
     deriveObjectType[Backend, Expressions](
-      ObjectTypeDescription("Baseline RNA and protein expression data across tissues for a target gene"),
+      ObjectTypeDescription(
+        "Baseline RNA and protein expression data across tissues for a target gene"
+      ),
       ExcludeFields("id"),
-      DocumentField("rows", "Array of structs containing expression data relevant to a particular gene")
+      DocumentField("rows",
+                    "Array of structs containing expression data relevant to a particular gene"
+      )
     )
 
   implicit val adverseEventImp: ObjectType[Backend, AdverseEvent] =
     deriveObjectType[Backend, AdverseEvent](
-      ObjectTypeDescription("Significant adverse events associated with drugs sharing the same pharmacological target. This dataset is based on the FDA's Adverse Event Reporting System (FAERS) reporting post-marketing surveillance data and it's filtered to include only reports submitted by health professionals. The significance of a given target-ADR is estimated using a Likelihood Ratio Test (LRT) using all reports associated with the drugs with the same target."),
+      ObjectTypeDescription(
+        "Significant adverse events associated with drugs sharing the same pharmacological target. This dataset is based on the FDA's Adverse Event Reporting System (FAERS) reporting post-marketing surveillance data and it's filtered to include only reports submitted by health professionals. The significance of a given target-ADR is estimated using a Likelihood Ratio Test (LRT) using all reports associated with the drugs with the same target."
+      ),
       DocumentField("name", "Meddra term on adverse event"),
       DocumentField("meddraCode", "8 digit unique meddra identification number"),
       DocumentField("count", "Number of reports mentioning drug and adverse event"),
@@ -741,7 +860,9 @@ object Objects extends Logging {
 
   implicit val adverseEventsImp: ObjectType[Backend, AdverseEvents] =
     deriveObjectType[Backend, AdverseEvents](
-      ObjectTypeDescription("Significant adverse events associated with drugs sharing the same pharmacological target. This dataset is based on the FDA's Adverse Event Reporting System (FAERS) reporting post-marketing surveillance data and it's filtered to include only reports submitted by health professionals. The significance of a given target-ADR is estimated using a Likelihood Ratio Test (LRT) using all reports associated with the drugs with the same target."),
+      ObjectTypeDescription(
+        "Significant adverse events associated with drugs sharing the same pharmacological target. This dataset is based on the FDA's Adverse Event Reporting System (FAERS) reporting post-marketing surveillance data and it's filtered to include only reports submitted by health professionals. The significance of a given target-ADR is estimated using a Likelihood Ratio Test (LRT) using all reports associated with the drugs with the same target."
+      ),
       DocumentField("count", "Total significant adverse events"),
       DocumentField("criticalValue", "LLR critical value to define significance"),
       DocumentField("rows", "Significant adverse event entries")
@@ -749,12 +870,16 @@ object Objects extends Logging {
 
   implicit val otarProjectImp: ObjectType[Backend, OtarProject] =
     deriveObjectType[Backend, OtarProject](
-      ObjectTypeDescription("Open Targets (OTAR) project information associated with a disease. Data only available in Partner Platform Preview (PPP)"),
+      ObjectTypeDescription(
+        "Open Targets (OTAR) project information associated with a disease. Data only available in Partner Platform Preview (PPP)"
+      ),
       DocumentField("otarCode", "OTAR project code identifier"),
       DocumentField("status", "Status of the OTAR project"),
       DocumentField("projectName", "Name of the OTAR project"),
       DocumentField("reference", "Reference or citation for the OTAR project"),
-      DocumentField("integratesInPPP", "Whether the project integrates data in the Open Targets Partner Preview (PPP)")
+      DocumentField("integratesInPPP",
+                    "Whether the project integrates data in the Open Targets Partner Preview (PPP)"
+      )
     )
   implicit val otarProjectsImp: ObjectType[Backend, OtarProjects] =
     deriveObjectType[Backend, OtarProjects](
@@ -782,10 +907,17 @@ object Objects extends Logging {
             }
         )
       ),
-      DocumentField("aspect", "Type of the GO annotation: molecular function (F), biological process (P) and cellular localisation (C)"),
+      DocumentField(
+        "aspect",
+        "Type of the GO annotation: molecular function (F), biological process (P) and cellular localisation (C)"
+      ),
       DocumentField("evidence", "Evidence supporting the GO annotation"),
-      DocumentField("geneProduct", "Gene product associated with the GO annotation [bioregistry:uniprot]"),
-      DocumentField("source", "Source database and identifier where the ontology term was sourced from"),
+      DocumentField("geneProduct",
+                    "Gene product associated with the GO annotation [bioregistry:uniprot]"
+      ),
+      DocumentField("source",
+                    "Source database and identifier where the ontology term was sourced from"
+      )
     )
 
   implicit val cancerHallmarkImp: ObjectType[Backend, CancerHallmark] =
@@ -794,7 +926,10 @@ object Objects extends Logging {
       DocumentField("description", "Description of the cancer hallmark"),
       DocumentField("impact", "Impact of the cancer hallmark on the target"),
       DocumentField("label", "Label associated with the cancer hallmark"),
-      DocumentField("pmid", "PubMed ID of the supporting literature for the cancer hallmark [bioregistry:pubmed]")
+      DocumentField(
+        "pmid",
+        "PubMed ID of the supporting literature for the cancer hallmark [bioregistry:pubmed]"
+      )
     )
   implicit val hallmarksAttributeImp: ObjectType[Backend, HallmarkAttribute] =
     deriveObjectType[Backend, HallmarkAttribute](
@@ -802,7 +937,10 @@ object Objects extends Logging {
       RenameField("attribute_name", "name"),
       DocumentField("attribute_name", "Name of the hallmark attribute"),
       DocumentField("description", "Description of the hallmark attribute"),
-      DocumentField("pmid", "PubMed ID of the supporting literature for the hallmark attribute [bioregistry:pubmed]")
+      DocumentField(
+        "pmid",
+        "PubMed ID of the supporting literature for the hallmark attribute [bioregistry:pubmed]"
+      )
     )
   implicit val hallmarksImp: ObjectType[Backend, Hallmarks] = deriveObjectType[Backend, Hallmarks](
     ObjectTypeDescription("Hallmarks related to the target gene sourced from COSMIC"),
@@ -827,15 +965,25 @@ object Objects extends Logging {
 
   implicit val mousePhenotypeImp: ObjectType[Backend, MousePhenotype] =
     deriveObjectType[Backend, MousePhenotype](
-      ObjectTypeDescription("Mouse phenotype information linking human targets to observed phenotypes in mouse models"),
+      ObjectTypeDescription(
+        "Mouse phenotype information linking human targets to observed phenotypes in mouse models"
+      ),
       ExcludeFields("targetFromSourceId"),
       DocumentField("biologicalModels", "Container for all biological model-related attributes"),
       DocumentField("modelPhenotypeClasses", "Container for phenotype class-related attributes"),
-      DocumentField("modelPhenotypeId", "Identifier for the specific phenotype observed in the model [bioregistry:mp]"),
-      DocumentField("modelPhenotypeLabel", "Human-readable label describing the observed phenotype"),
+      DocumentField("modelPhenotypeId",
+                    "Identifier for the specific phenotype observed in the model [bioregistry:mp]"
+      ),
+      DocumentField("modelPhenotypeLabel",
+                    "Human-readable label describing the observed phenotype"
+      ),
       DocumentField("targetInModel", "Name of the target gene as represented in the mouse model"),
-      DocumentField("targetInModelEnsemblId", "Ensembl identifier for the target gene in the mouse model"),
-      DocumentField("targetInModelMgiId", "MGI identifier for the target gene in the mouse model [bioregistry:mgi]")
+      DocumentField("targetInModelEnsemblId",
+                    "Ensembl identifier for the target gene in the mouse model"
+      ),
+      DocumentField("targetInModelMgiId",
+                    "MGI identifier for the target gene in the mouse model [bioregistry:mgi]"
+      )
     )
 
   implicit val tepImp: ObjectType[Backend, Tep] = deriveObjectType[Backend, Tep](
@@ -859,7 +1007,9 @@ object Objects extends Logging {
       ObjectTypeDescription("Subcellular location information with source"),
       DocumentField("location", "Name of the subcellular compartment where the protein was found"),
       DocumentField("source", "Source database for the subcellular location"),
-      DocumentField("termSL", "Subcellular location term identifier from SwissProt [bioregistry:sl]"),
+      DocumentField("termSL",
+                    "Subcellular location term identifier from SwissProt [bioregistry:sl]"
+      ),
       DocumentField("labelSL", "Subcellular location category from SwissProt")
     )
   implicit val labelAndSourceImp: ObjectType[Backend, LabelAndSource] =
@@ -900,7 +1050,9 @@ object Objects extends Logging {
     )
   implicit val constraintImp: ObjectType[Backend, Constraint] =
     deriveObjectType[Backend, Constraint](
-      ObjectTypeDescription("Constraint scores for the target gene from GnomAD. Indicates gene intolerance to loss-of-function mutations."),
+      ObjectTypeDescription(
+        "Constraint scores for the target gene from GnomAD. Indicates gene intolerance to loss-of-function mutations."
+      ),
       DocumentField("constraintType", "Type of constraint applied to the target"),
       DocumentField("score", "Constraint score indicating gene intolerance"),
       DocumentField("exp", "Expected constraint score"),
@@ -908,20 +1060,35 @@ object Objects extends Logging {
       DocumentField("oe", "Observed/Expected (OE) constraint score"),
       DocumentField("oeLower", "Lower bound of the OE constraint score"),
       DocumentField("oeUpper", "Upper bound of the OE constraint score"),
-      DocumentField("upperBin", "Upper bin classification going from more constrained to less constrained"),
-      DocumentField("upperBin6", "Upper bin6 classification going from more constrained to less constrained"),
-      DocumentField("upperRank", "Upper rank classification for every coding gene assessed by GnomAD going from more constrained to less constrained")
+      DocumentField("upperBin",
+                    "Upper bin classification going from more constrained to less constrained"
+      ),
+      DocumentField("upperBin6",
+                    "Upper bin6 classification going from more constrained to less constrained"
+      ),
+      DocumentField(
+        "upperRank",
+        "Upper rank classification for every coding gene assessed by GnomAD going from more constrained to less constrained"
+      )
     )
   implicit val homologueImp: ObjectType[Backend, Homologue] = deriveObjectType[Backend, Homologue](
-    ObjectTypeDescription("Homologues of the target gene in other species according to Ensembl Compara"),
+    ObjectTypeDescription(
+      "Homologues of the target gene in other species according to Ensembl Compara"
+    ),
     DocumentField("homologyType", "Type of homology relationship"),
-    DocumentField("queryPercentageIdentity", "Percentage identity of the query gene in the homologue"),
+    DocumentField("queryPercentageIdentity",
+                  "Percentage identity of the query gene in the homologue"
+    ),
     DocumentField("speciesId", "Species ID for the homologue"),
     DocumentField("speciesName", "Species name for the homologue"),
     DocumentField("targetGeneId", "Gene ID of the homologue"),
     DocumentField("targetGeneSymbol", "Gene symbol of the homologous target"),
-    DocumentField("targetPercentageIdentity", "Percentage identity of the homologue in the query gene"),
-    DocumentField("isHighConfidence", "Indicates if the homology is high confidence according to Ensembl Compara")
+    DocumentField("targetPercentageIdentity",
+                  "Percentage identity of the homologue in the query gene"
+    ),
+    DocumentField("isHighConfidence",
+                  "Indicates if the homology is high confidence according to Ensembl Compara"
+    )
   )
   implicit val targetBiosampleImp: ObjectType[Backend, SafetyBiosample] =
     deriveObjectType[Backend, SafetyBiosample](
@@ -954,7 +1121,9 @@ object Objects extends Logging {
 
   // hpo
   implicit lazy val hpoImp: ObjectType[Backend, HPO] = deriveObjectType(
-    ObjectTypeDescription("Human Phenotype Ontology subset of information included in the Platform."),
+    ObjectTypeDescription(
+      "Human Phenotype Ontology subset of information included in the Platform."
+    ),
     DocumentField("id", "Open Targets hpo id"),
     DocumentField("name", "Phenotype name"),
     DocumentField("description", "Phenotype description"),
@@ -1053,7 +1222,9 @@ object Objects extends Logging {
 
   implicit val diseaseHPOsImp: ObjectType[Backend, DiseaseHPOs] =
     deriveObjectType[Backend, DiseaseHPOs](
-      ObjectTypeDescription("Human Phenotype Ontology (HPO) annotations associated with the disease"),
+      ObjectTypeDescription(
+        "Human Phenotype Ontology (HPO) annotations associated with the disease"
+      ),
       DocumentField("count", "Total number of phenotype annotations"),
       DocumentField("rows", "List of phenotype annotations for the disease")
     )
@@ -1125,7 +1296,9 @@ object Objects extends Logging {
 
   implicit lazy val variantAnnotationImp: ObjectType[Backend, VariantAnnotation] =
     deriveObjectType[Backend, VariantAnnotation](
-      ObjectTypeDescription("Genetic variants influencing individual drug responses. Pharmacogenetics data is integrated from sources including Pharmacogenomics Knowledgebase (PharmGKB)."),
+      ObjectTypeDescription(
+        "Genetic variants influencing individual drug responses. Pharmacogenetics data is integrated from sources including Pharmacogenomics Knowledgebase (PharmGKB)."
+      ),
       DocumentField("literature", "PubMed identifier (PMID) of the literature entry"),
       DocumentField("effectDescription",
                     "Summary of the impact of the allele on the drug response."
@@ -1133,38 +1306,65 @@ object Objects extends Logging {
       DocumentField("effectType", "Type of effect."),
       DocumentField("baseAlleleOrGenotype", "Allele or genotype in the base case."),
       DocumentField("comparisonAlleleOrGenotype", "Allele or genotype in the comparison case."),
-      DocumentField("directionality", "Indicates in which direction the genetic variant increases or decreases drug response"),
+      DocumentField(
+        "directionality",
+        "Indicates in which direction the genetic variant increases or decreases drug response"
+      ),
       DocumentField("effect", "Allele observed effect."),
       DocumentField("entity", "Entity affected by the effect.")
     )
 
   implicit lazy val pharmacogenomicsImp: ObjectType[Backend, Pharmacogenomics] =
     deriveObjectType[Backend, Pharmacogenomics](
-      ObjectTypeDescription("Pharmacogenomics data linking genetic variants to drug responses. Data is integrated from sources including ClinPGx."),
+      ObjectTypeDescription(
+        "Pharmacogenomics data linking genetic variants to drug responses. Data is integrated from sources including ClinPGx."
+      ),
       DocumentField("datasourceId", "Identifier for the data provider"),
-      DocumentField("datatypeId", "Classification of the type of pharmacogenomic data (e.g., clinical_annotation)"),
-      DocumentField("evidenceLevel", "Strength of the scientific support for the variant/drug response"),
+      DocumentField("datatypeId",
+                    "Classification of the type of pharmacogenomic data (e.g., clinical_annotation)"
+      ),
+      DocumentField("evidenceLevel",
+                    "Strength of the scientific support for the variant/drug response"
+      ),
       DocumentField("genotype", "Genetic variant configuration"),
-      DocumentField("genotypeAnnotationText", "Explanation of the genotype's clinical significance"),
-      DocumentField("genotypeId", "Identifier for the specific genetic variant combination (e.g., 1_1500_A_A,T)"),
+      DocumentField("genotypeAnnotationText",
+                    "Explanation of the genotype's clinical significance"
+      ),
+      DocumentField("genotypeId",
+                    "Identifier for the specific genetic variant combination (e.g., 1_1500_A_A,T)"
+      ),
       DocumentField("haplotypeFromSourceId", "Haplotype ID in the ClinPGx dataset"),
-      DocumentField("haplotypeId", "Combination of genetic variants that constitute a particular allele of a gene (e.g., CYP2C9*3)"),
-      DocumentField("literature", "PubMed identifier (PMID) of the literature entry [bioregistry:pubmed]"),
+      DocumentField(
+        "haplotypeId",
+        "Combination of genetic variants that constitute a particular allele of a gene (e.g., CYP2C9*3)"
+      ),
+      DocumentField("literature",
+                    "PubMed identifier (PMID) of the literature entry [bioregistry:pubmed]"
+      ),
       DocumentField("pgxCategory", "Classification of the drug response type (e.g., Toxicity)"),
       DocumentField("phenotypeFromSourceId", "Phenotype identifier from the source"),
       DocumentField("phenotypeText", "Description of the phenotype associated with the variant"),
-      DocumentField("variantAnnotation", "Annotation details about the variant effect on drug response"),
+      DocumentField("variantAnnotation",
+                    "Annotation details about the variant effect on drug response"
+      ),
       DocumentField("studyId", "Identifier of the study providing the pharmacogenomic evidence"),
       DocumentField("variantRsId", "dbSNP rsID identifier for the variant"),
       DocumentField("variantId", "Variant identifier in CHROM_POS_REF_ALT notation"),
-      DocumentField("variantFunctionalConsequenceId", "The sequence ontology identifier of the consequence of the variant based on Ensembl VEP in the context of the transcript [bioregistry:so]"),
-      DocumentField("targetFromSourceId", "Target (gene/protein) identifier as reported by the data source"),
+      DocumentField(
+        "variantFunctionalConsequenceId",
+        "The sequence ontology identifier of the consequence of the variant based on Ensembl VEP in the context of the transcript [bioregistry:so]"
+      ),
+      DocumentField("targetFromSourceId",
+                    "Target (gene/protein) identifier as reported by the data source"
+      ),
       DocumentField("isDirectTarget", "Whether the target is directly affected by the variant"),
       AddFields(
         Field(
           "variantFunctionalConsequence",
           OptionType(sequenceOntologyTermImp),
-          description = Some("The sequence ontology identifier of the consequence of the variant based on Ensembl VEP in the context of the transcript [bioregistry:so]"),
+          description = Some(
+            "The sequence ontology identifier of the consequence of the variant based on Ensembl VEP in the context of the transcript [bioregistry:so]"
+          ),
           resolve = r => {
             val soId = (r.value.variantFunctionalConsequenceId)
               .map(id => id.replace("_", ":"))
@@ -1184,7 +1384,8 @@ object Objects extends Logging {
         Field(
           "drugs",
           ListType(drugWithIdsImp),
-          description = Some("List of drugs or clinical candidates associated with the pharmacogenomic data"),
+          description =
+            Some("List of drugs or clinical candidates associated with the pharmacogenomic data"),
           resolve = r => r.value.drugs
         )
       )
@@ -1201,7 +1402,10 @@ object Objects extends Logging {
     deriveObjectType[Backend, MechanismOfActionRow](
       ObjectTypeDescription("Mechanism of action information for a drug"),
       DocumentField("mechanismOfAction", "Description of the mechanism of action"),
-      DocumentField("actionType", "Classification of how the drug interacts with its target (e.g., ACTIVATOR, INHIBITOR)"),
+      DocumentField(
+        "actionType",
+        "Classification of how the drug interacts with its target (e.g., ACTIVATOR, INHIBITOR)"
+      ),
       DocumentField("targetName", "Name of the target molecule"),
       DocumentField("references", "Reference information supporting the mechanism of action"),
       ReplaceField(
@@ -1209,7 +1413,9 @@ object Objects extends Logging {
         Field(
           "targets",
           ListType(targetImp),
-          description = Some("List of on-target (genes or proteins) involved in the drug or clinical candidate mechanism of action"),
+          description = Some(
+            "List of on-target (genes or proteins) involved in the drug or clinical candidate mechanism of action"
+          ),
           resolve = r => targetsFetcher.deferSeqOpt(r.value.targets.getOrElse(Seq.empty))
         )
       )
@@ -1217,8 +1423,12 @@ object Objects extends Logging {
 
   implicit lazy val indicationRowImp: ObjectType[Backend, IndicationRow] =
     deriveObjectType[Backend, IndicationRow](
-      ObjectTypeDescription("Indication information linking a drug or clinical candidate molecule to a disease"),
-      DocumentField("maxPhaseForIndication", "Maximum clinical trial phase for this drug-disease indication"),
+      ObjectTypeDescription(
+        "Indication information linking a drug or clinical candidate molecule to a disease"
+      ),
+      DocumentField("maxPhaseForIndication",
+                    "Maximum clinical trial phase for this drug-disease indication"
+      ),
       DocumentField("references", "Reference information supporting the indication"),
       ReplaceField(
         "disease",
@@ -1250,16 +1460,25 @@ object Objects extends Logging {
     )
   implicit lazy val intervalImp: ObjectType[Backend, Interval] =
     deriveObjectType[Backend, Interval](
-      ObjectTypeDescription("Regulatory enhancer/promoter regions to gene (target) predictions for a specific tissue/cell type based on the integration of experimental sources"),
+      ObjectTypeDescription(
+        "Regulatory enhancer/promoter regions to gene (target) predictions for a specific tissue/cell type based on the integration of experimental sources"
+      ),
       DocumentField("chromosome", "Chromosome containing the regulatory region"),
       DocumentField("start", "Genomic start position of the regulatory region"),
       DocumentField("end", "Genomic end position of the regulatory region"),
       DocumentField("intervalType", "Type of regulatory region (e.g., enhancer, promoter)"),
-      DocumentField("distanceToTss", "Distance from the regulatory region to the transcription start site"),
+      DocumentField("distanceToTss",
+                    "Distance from the regulatory region to the transcription start site"
+      ),
       DocumentField("score", "Combined score for the enhancer/promoter region to gene prediction"),
       DocumentField("resourceScore", "Scores from individual resources used in prediction"),
-      DocumentField("datasourceId", "Identifier of the data source providing the regulatory region to gene prediction"),
-      DocumentField("pmid", "PubMed identifier for the study providing the evidence [bioregistry:pubmed]"),
+      DocumentField(
+        "datasourceId",
+        "Identifier of the data source providing the regulatory region to gene prediction"
+      ),
+      DocumentField("pmid",
+                    "PubMed identifier for the study providing the evidence [bioregistry:pubmed]"
+      ),
       DocumentField("studyId", "Identifier of the study providing the experimental data"),
       DocumentField("biosampleName", "Name of the biosample where the interval was identified"),
       ReplaceField(
@@ -1272,16 +1491,21 @@ object Objects extends Logging {
       ),
       ReplaceField(
         "biosampleId",
-        Field("biosample",
-              OptionType(biosampleImp),
-              description = Some("Cell type or tissue where the regulatory region to gene prediction was identified"),
-              resolve = r => biosamplesFetcher.deferOpt(r.value.biosampleId)
+        Field(
+          "biosample",
+          OptionType(biosampleImp),
+          description = Some(
+            "Cell type or tissue where the regulatory region to gene prediction was identified"
+          ),
+          resolve = r => biosamplesFetcher.deferOpt(r.value.biosampleId)
         )
       )
     )
   implicit lazy val intervalsImp: ObjectType[Backend, Intervals] =
     deriveObjectType[Backend, Intervals](
-      ObjectTypeDescription("Collection of regulatory enhancer/promoter regions to gene (target) predictions for a specific tissue/cell type based on the integration of experimental sources"),
+      ObjectTypeDescription(
+        "Collection of regulatory enhancer/promoter regions to gene (target) predictions for a specific tissue/cell type based on the integration of experimental sources"
+      ),
       DocumentField("count", "Total number of enhancer/promoter region to gene predictions"),
       DocumentField("rows", "List of enhancer/promoter region to gene predictions")
     )
@@ -1310,36 +1534,53 @@ object Objects extends Logging {
 
   implicit lazy val drugWarningsImp: ObjectType[Backend, DrugWarning] =
     deriveObjectType[Backend, DrugWarning](
-      ObjectTypeDescription("Blackbox and withdrawn information for drugs molecules included in ChEMBL database."),
+      ObjectTypeDescription(
+        "Blackbox and withdrawn information for drugs molecules included in ChEMBL database."
+      ),
       DocumentField("id", "Internal identifier for the drug warning record"),
       DocumentField("chemblIds", "List of molecule identifiers associated with the warning"),
       DocumentField("toxicityClass", "Classification of toxicity type associated with the drug"),
       DocumentField("country", "Country where the warning was issued"),
       DocumentField("description", "Description of the drug adverse effect"),
       DocumentField("references", "List of sources supporting the warning information"),
-      DocumentField("warningType", "Classification of action taken (drug is withdrawn or has a black box warning)"),
+      DocumentField("warningType",
+                    "Classification of action taken (drug is withdrawn or has a black box warning)"
+      ),
       DocumentField("efoTerm", "List of disease labels associated with the warning"),
-      DocumentField("efoId", "List of disease identifiers associated with the warning [bioregistry:efo]"),
-      DocumentField("efoIdForWarningClass", "Disease identifier categorising the type of warning [bioregistry:efo]"),
+      DocumentField("efoId",
+                    "List of disease identifiers associated with the warning [bioregistry:efo]"
+      ),
+      DocumentField("efoIdForWarningClass",
+                    "Disease identifier categorising the type of warning [bioregistry:efo]"
+      ),
       DocumentField("year", "Year when the warning was issued")
     )
 
   implicit lazy val drugImp: ObjectType[Backend, Drug] = deriveObjectType[Backend, Drug](
-    ObjectTypeDescription("Core annotation for drug or clinical candidate molecules. A drug in the platform is understood as any bioactive molecule with drug-like properties included in the EMBL-EBI ChEMBL database. All ChEMBL molecules fullfilling any of the next criteria are included in the database: a) Molecules with a known indication. b) Molecules with a known mechanism of action c) ChEMBL molecules included in the DrugBank database d) Molecules that are acknowledged as chemical probes"),
+    ObjectTypeDescription(
+      "Core annotation for drug or clinical candidate molecules. A drug in the platform is understood as any bioactive molecule with drug-like properties included in the EMBL-EBI ChEMBL database. All ChEMBL molecules fullfilling any of the next criteria are included in the database: a) Molecules with a known indication. b) Molecules with a known mechanism of action c) ChEMBL molecules included in the DrugBank database d) Molecules that are acknowledged as chemical probes"
+    ),
     DocumentField("id", "Drug or clinical candidate molecule identifier"),
     DocumentField("name", "Generic name of the drug molecule"),
     DocumentField("synonyms", "List of alternative names for the drug"),
     DocumentField("tradeNames", "List of brand names for the drug"),
     DocumentField("yearOfFirstApproval", "Year when the drug received regulatory approval"),
-    DocumentField("drugType", "Classification of the molecule's therapeutic category or chemical class (e.g. Antibody)"),
+    DocumentField(
+      "drugType",
+      "Classification of the molecule's therapeutic category or chemical class (e.g. Antibody)"
+    ),
     DocumentField(
       "maximumClinicalTrialPhase",
       "Highest clinical trial phase reached by the drug or clinical candidate molecule"
     ),
-    DocumentField("isApproved", "Flag indicating whether the drug has received regulatory approval"),
+    DocumentField("isApproved",
+                  "Flag indicating whether the drug has received regulatory approval"
+    ),
     DocumentField("hasBeenWithdrawn", "Flag indicating whether the drug was removed from market"),
     DocumentField("blackBoxWarning", "Flag indicating whether the drug has safety warnings"),
-    DocumentField("crossReferences", "Cross-reference information for this molecule from external databases"),
+    DocumentField("crossReferences",
+                  "Cross-reference information for this molecule from external databases"
+    ),
     DocumentField("description", "Summary of the drug's clinical development"),
     ReplaceField(
       "parentId",
@@ -1452,7 +1693,9 @@ object Objects extends Logging {
       Field(
         "adverseEvents",
         OptionType(adverseEventsImp),
-        description = Some("Significant adverse events estimated from pharmacovigilance reports deposited in FAERS"),
+        description = Some(
+          "Significant adverse events estimated from pharmacovigilance reports deposited in FAERS"
+        ),
         arguments = pageArg :: Nil,
         complexity = Some(complexityCalculator(pageArg)),
         resolve = ctx => ctx.ctx.getAdverseEvents(ctx.value.id, ctx.arg(pageArg))
@@ -1460,7 +1703,9 @@ object Objects extends Logging {
       Field(
         "pharmacogenomics",
         ListType(pharmacogenomicsImp),
-        description = Some("Pharmacogenomics data linking genetic variants to responses to this drug. Data is integrated from sources including ClinPGx and describes how genetic variants influence individual responses to this drug."),
+        description = Some(
+          "Pharmacogenomics data linking genetic variants to responses to this drug. Data is integrated from sources including ClinPGx and describes how genetic variants influence individual responses to this drug."
+        ),
         arguments = pageArg :: Nil,
         complexity = Some(complexityCalculator(pageArg)),
         resolve = ctx => ctx.ctx.getPharmacogenomicsByDrug(ctx.value.id)
@@ -1493,11 +1738,20 @@ object Objects extends Logging {
 
   implicit val datasourceSettingsImp: ObjectType[Backend, DatasourceSettings] =
     deriveObjectType[Backend, DatasourceSettings](
-      ObjectTypeDescription("Datasource settings configuration used to compute target-disease associations. Allows customization of weights, ontology propagation, and required evidence for each datasource when calculating association scores. Weights must be between 0 and 1, and can control ontology propagation and evidence requirements."),
+      ObjectTypeDescription(
+        "Datasource settings configuration used to compute target-disease associations. Allows customization of weights, ontology propagation, and required evidence for each datasource when calculating association scores. Weights must be between 0 and 1, and can control ontology propagation and evidence requirements."
+      ),
       DocumentField("id", "Datasource identifier"),
-      DocumentField("weight", "Weight assigned to the datasource when computing association scores"),
-      DocumentField("propagate", "Whether evidence from this datasource is propagated through the ontology"),
-      DocumentField("required", "Whether evidence from this datasource is required to compute association scores")
+      DocumentField("weight",
+                    "Weight assigned to the datasource when computing association scores"
+      ),
+      DocumentField("propagate",
+                    "Whether evidence from this datasource is propagated through the ontology"
+      ),
+      DocumentField(
+        "required",
+        "Whether evidence from this datasource is required to compute association scores"
+      )
     )
   implicit val interactionSettingsImp: ObjectType[Backend, LUTableSettings] =
     deriveObjectType[Backend, LUTableSettings](
@@ -1547,15 +1801,25 @@ object Objects extends Logging {
     deriveObjectType[Backend, EvidenceSource](
       ObjectTypeDescription("Evidence datasource and datatype metadata"),
       DocumentField("datasource", "Name of the evidence datasource"),
-      DocumentField("datatype", "Datatype/category of the evidence (e.g., Genetic association, Somatic, Literature)")
+      DocumentField(
+        "datatype",
+        "Datatype/category of the evidence (e.g., Genetic association, Somatic, Literature)"
+      )
     )
 
   implicit val associatedOTFTargetsImp: ObjectType[Backend, Associations] =
     deriveObjectType[Backend, Associations](
       ObjectTypeName("AssociatedTargets"),
-      ObjectTypeDescription("Target-disease associations computed on-the-fly using configurable datasource weights and evidence filters. Returns associations with aggregated scores and evidence counts supporting the target-disease relationship."),
-      DocumentField("count", "Total number of target-disease associations matching the query filters"),
-      DocumentField("datasources", "List of datasource settings with weights and propagation rules used to compute the associations"),
+      ObjectTypeDescription(
+        "Target-disease associations computed on-the-fly using configurable datasource weights and evidence filters. Returns associations with aggregated scores and evidence counts supporting the target-disease relationship."
+      ),
+      DocumentField("count",
+                    "Total number of target-disease associations matching the query filters"
+      ),
+      DocumentField(
+        "datasources",
+        "List of datasource settings with weights and propagation rules used to compute the associations"
+      ),
       ReplaceField(
         "rows",
         Field(
@@ -1570,9 +1834,16 @@ object Objects extends Logging {
   implicit val associatedOTFDiseasesImp: ObjectType[Backend, Associations] =
     deriveObjectType[Backend, Associations](
       ObjectTypeName("AssociatedDiseases"),
-      ObjectTypeDescription("Target-disease associations computed on-the-fly using configurable datasource weights and evidence filters. Returns associations with aggregated scores and evidence counts supporting the target-disease relationship."),
-      DocumentField("count", "Total number of target-disease associations matching the query filters"),
-      DocumentField("datasources", "List of datasource settings with weights and propagation rules used to compute the associations"),
+      ObjectTypeDescription(
+        "Target-disease associations computed on-the-fly using configurable datasource weights and evidence filters. Returns associations with aggregated scores and evidence counts supporting the target-disease relationship."
+      ),
+      DocumentField("count",
+                    "Total number of target-disease associations matching the query filters"
+      ),
+      DocumentField(
+        "datasources",
+        "List of datasource settings with weights and propagation rules used to compute the associations"
+      ),
       ReplaceField(
         "rows",
         Field(
@@ -1611,7 +1882,9 @@ object Objects extends Logging {
       "approvedSymbol",
       "Approved gene symbol of the target modulated by the drug"
     ),
-    DocumentField("approvedName", "Approved full name of the gene or gene product modulated by the drug"),
+    DocumentField("approvedName",
+                  "Approved full name of the gene or gene product modulated by the drug"
+    ),
     DocumentField("label", "Disease label for the condition being treated"),
     DocumentField("prefName", "Commonly used name for the drug"),
     DocumentField("drugType", "Classification of the modality of the drug (e.g. Small molecule)"),
@@ -1621,7 +1894,9 @@ object Objects extends Logging {
     DocumentField("phase", "Clinical development stage of the drug"),
     DocumentField("mechanismOfAction", "Drug pharmacological action"),
     DocumentField("status", "Clinical trial status for the drug/indication pair"),
-    DocumentField("targetClass", "Classification category of the drug's biological target (e.g. Enzyme)"),
+    DocumentField("targetClass",
+                  "Classification category of the drug's biological target (e.g. Enzyme)"
+    ),
     DocumentField("references", "Source urls for FDA or package inserts"),
     DocumentField("ctIds", "Clinicaltrials.gov identifiers on entry trials"),
     DocumentField("urls", "List of web addresses that support the drug/indication pair"),
@@ -1670,7 +1945,7 @@ object Objects extends Logging {
       description = Some(
         "Union of core Platform entities returned by search or mappings (Target, Drug, Disease, Variant, Study)"
       ),
-              types = List(targetImp, drugImp, diseaseImp, variantIndexImp, studyImp)
+      types = List(targetImp, drugImp, diseaseImp, variantIndexImp, studyImp)
     )
 
   implicit val searchResultAggsCategoryImp: ObjectType[Backend, SearchResultAggCategory] =
@@ -1694,14 +1969,22 @@ object Objects extends Logging {
     )
   implicit val searchResultImp: ObjectType[Backend, SearchResult] =
     deriveObjectType[Backend, models.entities.SearchResult](
-      ObjectTypeDescription("Full-text search hit describing a single entity and its relevance to the query"),
+      ObjectTypeDescription(
+        "Full-text search hit describing a single entity and its relevance to the query"
+      ),
       DocumentField("id", "Entity identifier (e.g., Ensembl, EFO, ChEMBL, variant or study ID)"),
-      DocumentField("entity", "Entity type of the hit (e.g., target, disease, drug, variant, study)"),
-      DocumentField("category", "List of categories the hit belongs to (e.g., TARGET, DISEASE, DRUG)"),
+      DocumentField("entity",
+                    "Entity type of the hit (e.g., target, disease, drug, variant, study)"
+      ),
+      DocumentField("category",
+                    "List of categories the hit belongs to (e.g., TARGET, DISEASE, DRUG)"
+      ),
       DocumentField("name", "Primary display name for the entity"),
       DocumentField("description", "Short description or summary of the entity"),
       DocumentField("keywords", "Additional keywords associated with the entity to improve search"),
-      DocumentField("multiplier", "Score boosting multiplier applied to the hit during search ranking"),
+      DocumentField("multiplier",
+                    "Score boosting multiplier applied to the hit during search ranking"
+      ),
       DocumentField("prefixes", "List of name prefixes used for prefix matching"),
       DocumentField("ngrams", "List of n-grams derived from the name used for fuzzy matching"),
       DocumentField("score", "Relevance score returned by the search engine for this hit"),
@@ -1725,19 +2008,32 @@ object Objects extends Logging {
   implicit val searchFacetsResultImp: ObjectType[Backend, SearchFacetsResult] =
     deriveObjectType[Backend, models.entities.SearchFacetsResult](
       ObjectTypeDescription("Facet search hit for a single category item"),
-      DocumentField("id", "Facet identifier, which can be inputted in the associations query to filter by this facet"),
+      DocumentField(
+        "id",
+        "Facet identifier, which can be inputted in the associations query to filter by this facet"
+      ),
       DocumentField("label", "Human-readable facet label"),
       DocumentField("category", "Facet category this item belongs to (e.g., target, disease)"),
-      DocumentField("entityIds", "Optional list of underlying entity identifiers represented by this facet"),
-      DocumentField("datasourceId", "Optional identifier of the datasource contributing this facet"),
+      DocumentField("entityIds",
+                    "Optional list of underlying entity identifiers represented by this facet"
+      ),
+      DocumentField("datasourceId",
+                    "Optional identifier of the datasource contributing this facet"
+      ),
       DocumentField("score", "Relevance score of the facet hit for the current query"),
-      DocumentField("highlights", "Highlighted text snippets showing why this facet matched the query")
+      DocumentField("highlights",
+                    "Highlighted text snippets showing why this facet matched the query"
+      )
     )
 
   implicit val similarityGQLImp: ObjectType[Backend, Similarity] =
     deriveObjectType[Backend, models.entities.Similarity](
-      ObjectTypeDescription("Semantic similarity score between labels, used to suggest related entities"),
-      DocumentField("category", "Entity category this similarity refers to (e.g., target, disease, drug)"),
+      ObjectTypeDescription(
+        "Semantic similarity score between labels, used to suggest related entities"
+      ),
+      DocumentField("category",
+                    "Entity category this similarity refers to (e.g., target, disease, drug)"
+      ),
       DocumentField("id", "Identifier of the similar entity (e.g., Ensembl, EFO, ChEMBL ID)"),
       DocumentField(
         "score",
@@ -1775,7 +2071,9 @@ object Objects extends Logging {
 
   implicit val mappingResultsImp: ObjectType[Backend, MappingResults] =
     deriveObjectType[Backend, MappingResults](
-      ObjectTypeDescription("Mapping results for multiple terms with total hit count and aggregations"),
+      ObjectTypeDescription(
+        "Mapping results for multiple terms with total hit count and aggregations"
+      ),
       DocumentField("total", "Total number of mapped hits across all terms"),
       DocumentField("aggregations", "Facet aggregations over mapped entities and categories"),
       ReplaceField(
@@ -1859,7 +2157,8 @@ object Objects extends Logging {
         Field(
           "target",
           OptionType(targetImp),
-          description = Some("The target (gene/protein) on which the variant effect is interpreted"),
+          description =
+            Some("The target (gene/protein) on which the variant effect is interpreted"),
           resolve = r => targetsFetcher.deferOpt(r.value.targetId)
         )
       )
@@ -1868,24 +2167,35 @@ object Objects extends Logging {
     deriveObjectType[Backend, TranscriptConsequence](
       ObjectTypeDescription("Predicted consequences of the variant on transcript context"),
       DocumentField("aminoAcidChange", "Amino acid change caused by the variant"),
-      DocumentField("uniprotAccessions", "UniProt protein accessions for the transcript [bioregistry:uniprot]"),
-      DocumentField("isEnsemblCanonical", "Whether this is the canonical transcript according to Ensembl"),
+      DocumentField("uniprotAccessions",
+                    "UniProt protein accessions for the transcript [bioregistry:uniprot]"
+      ),
+      DocumentField("isEnsemblCanonical",
+                    "Whether this is the canonical transcript according to Ensembl"
+      ),
       DocumentField("codons", "Codons affected by the variant"),
       DocumentField("distanceFromFootprint", "Distance from the variant to the footprint region"),
       DocumentField("distanceFromTss", "Distance from the variant to the transcription start site"),
       DocumentField("impact", "Impact assessment of the variant (e.g., HIGH, MODERATE, LOW)"),
       DocumentField("transcriptId", "Ensembl transcript identifier [bioregistry:ensembl]"),
-      DocumentField("lofteePrediction", "Loss-of-function transcript effect estimator (LOFTEE) prediction"),
-      DocumentField("siftPrediction", "SIFT score predicting whether the variant affects protein function"),
-      DocumentField("polyphenPrediction", "PolyPhen score predicting the impact of the variant on protein structure"),
+      DocumentField("lofteePrediction",
+                    "Loss-of-function transcript effect estimator (LOFTEE) prediction"
+      ),
+      DocumentField("siftPrediction",
+                    "SIFT score predicting whether the variant affects protein function"
+      ),
+      DocumentField("polyphenPrediction",
+                    "PolyPhen score predicting the impact of the variant on protein structure"
+      ),
       DocumentField("transcriptIndex", "Index of the transcript"),
       DocumentField("consequenceScore", "Score indicating the severity of the consequence"),
       ReplaceField(
         "targetId",
-        Field("target",
-              OptionType(targetImp),
-              description = Some("The target (gene/protein) associated with the transcript"),
-              resolve = r => targetsFetcher.deferOpt(r.value.targetId)
+        Field(
+          "target",
+          OptionType(targetImp),
+          description = Some("The target (gene/protein) associated with the transcript"),
+          resolve = r => targetsFetcher.deferOpt(r.value.targetId)
         )
       ),
       ReplaceField(
@@ -1893,7 +2203,9 @@ object Objects extends Logging {
         Field(
           "variantConsequences",
           ListType(sequenceOntologyTermImp),
-          description = Some("The sequence ontology term of the consequence of the variant based on Ensembl VEP in the context of the transcript"),
+          description = Some(
+            "The sequence ontology term of the consequence of the variant based on Ensembl VEP in the context of the transcript"
+          ),
           resolve = r =>
             r.value.variantFunctionalConsequenceIds match {
               case Some(ids) =>
@@ -1908,11 +2220,17 @@ object Objects extends Logging {
   implicit val alleleFrequencyImp: ObjectType[Backend, AlleleFrequency] =
     deriveObjectType[Backend, AlleleFrequency](
       ObjectTypeDescription("Allele frequency of the variant in different populations"),
-      DocumentField("populationName", "Name of the population where the allele frequency was measured"),
-      DocumentField("alleleFrequency", "Frequency of the allele in the population (ranging from 0 to 1)")
+      DocumentField("populationName",
+                    "Name of the population where the allele frequency was measured"
+      ),
+      DocumentField("alleleFrequency",
+                    "Frequency of the allele in the population (ranging from 0 to 1)"
+      )
     )
   implicit val biosampleImp: ObjectType[Backend, Biosample] = deriveObjectType[Backend, Biosample](
-    ObjectTypeDescription("Integration of biosample metadata about tissues or cell types derived from multiple ontologies including EFO, UBERON, CL, GO and others."),
+    ObjectTypeDescription(
+      "Integration of biosample metadata about tissues or cell types derived from multiple ontologies including EFO, UBERON, CL, GO and others."
+    ),
     DocumentField("biosampleId", "Unique identifier for the biosample"),
     DocumentField("biosampleName", "Name of the biosample"),
     DocumentField("description", "Description of the biosample"),
@@ -1928,15 +2246,26 @@ object Objects extends Logging {
       ObjectTypeDescription("Feature used in Locus2gene model predictions"),
       DocumentField("name", "Name of the feature"),
       DocumentField("value", "Value of the feature"),
-      DocumentField("shapValue", "SHAP (SHapley Additive exPlanations) value indicating the feature's contribution to the prediction")
+      DocumentField(
+        "shapValue",
+        "SHAP (SHapley Additive exPlanations) value indicating the feature's contribution to the prediction"
+      )
     )
   implicit val l2GPredictionImp: ObjectType[Backend, L2GPrediction] =
     deriveObjectType[Backend, L2GPrediction](
-      ObjectTypeDescription("Predictions from Locus2gene model integrating multiple functional genomic features to estimate the most likely causal gene for a given credible set. The dataset contains all predictions for every combination of credible set and genes in the region as well as statistics to explain the model interpretation of the predictions."),
+      ObjectTypeDescription(
+        "Predictions from Locus2gene model integrating multiple functional genomic features to estimate the most likely causal gene for a given credible set. The dataset contains all predictions for every combination of credible set and genes in the region as well as statistics to explain the model interpretation of the predictions."
+      ),
       DocumentField("studyLocusId", "Study-locus identifier for the credible set"),
-      DocumentField("score", "Locus2gene prediction score for the gene assignment. Higher scores indicate a stronger association between the credible set and the gene. Scores range from 0 to 1."),
+      DocumentField(
+        "score",
+        "Locus2gene prediction score for the gene assignment. Higher scores indicate a stronger association between the credible set and the gene. Scores range from 0 to 1."
+      ),
       DocumentField("features", "Features used in the Locus2gene model prediction"),
-      DocumentField("shapBaseValue", "SHAP base value for the prediction. This value is common to all predictions for a given credible set."),
+      DocumentField(
+        "shapBaseValue",
+        "SHAP base value for the prediction. This value is common to all predictions for a given credible set."
+      ),
       ReplaceField(
         "geneId",
         Field(
@@ -1949,7 +2278,9 @@ object Objects extends Logging {
     )
   implicit val l2GPredictionsImp: ObjectType[Backend, L2GPredictions] =
     deriveObjectType[Backend, L2GPredictions](
-      ObjectTypeDescription("Predictions from Locus2gene gene assignment model. The dataset contains all predictions for every combination of credible set and genes in the region as well as statistics to explain the model interpretation of the predictions."),
+      ObjectTypeDescription(
+        "Predictions from Locus2gene gene assignment model. The dataset contains all predictions for every combination of credible set and genes in the region as well as statistics to explain the model interpretation of the predictions."
+      ),
       DocumentField("id", "Study-locus identifier for the credible set"),
       DocumentField("count", "Total number of Locus2gene predictions"),
       DocumentField("rows", "List of Locus2gene predictions for credible set and gene combinations")
@@ -1963,14 +2294,26 @@ object Objects extends Logging {
     )
   implicit val proteinCodingCoordinateImp: ObjectType[Backend, ProteinCodingCoordinate] =
     deriveObjectType[Backend, ProteinCodingCoordinate](
-      ObjectTypeDescription("Descriptions of variant consequences at protein level. Protein coding coordinates link variants to their amino acid-level consequences in protein products."),
-      DocumentField("uniprotAccessions", "UniProt protein accessions for the affected protein [bioregistry:uniprot]"),
-      DocumentField("aminoAcidPosition", "Position of the amino acid affected by the variant in the protein sequence"),
+      ObjectTypeDescription(
+        "Descriptions of variant consequences at protein level. Protein coding coordinates link variants to their amino acid-level consequences in protein products."
+      ),
+      DocumentField("uniprotAccessions",
+                    "UniProt protein accessions for the affected protein [bioregistry:uniprot]"
+      ),
+      DocumentField("aminoAcidPosition",
+                    "Position of the amino acid affected by the variant in the protein sequence"
+      ),
       DocumentField("alternateAminoAcid", "Amino acid resulting from the variant"),
       DocumentField("referenceAminoAcid", "Reference amino acid at this position"),
-      DocumentField("variantEffect", "Score indicating the predicted effect of the variant on the protein"),
-      DocumentField("therapeuticAreas", "Therapeutic areas associated with the variant-consequence relationship"),
-      DocumentField("datasources", "Data sources providing evidence for the protein coding coordinate"),
+      DocumentField("variantEffect",
+                    "Score indicating the predicted effect of the variant on the protein"
+      ),
+      DocumentField("therapeuticAreas",
+                    "Therapeutic areas associated with the variant-consequence relationship"
+      ),
+      DocumentField("datasources",
+                    "Data sources providing evidence for the protein coding coordinate"
+      ),
       ReplaceField(
         "diseases",
         Field(
@@ -1985,7 +2328,8 @@ object Objects extends Logging {
         Field(
           "target",
           OptionType(targetImp),
-          description = Some("Target (gene/protein) the protein coding variant has been associated with"),
+          description =
+            Some("Target (gene/protein) the protein coding variant has been associated with"),
           resolve = r => targetsFetcher.deferOpt(r.value.targetId)
         )
       ),
@@ -2003,7 +2347,9 @@ object Objects extends Logging {
         Field(
           "variantConsequences",
           ListType(sequenceOntologyTermImp),
-          description = Some("The sequence ontology term capturing the consequence of the variant based on Ensembl VEP in the context of the transcript [bioregistry:so]"),
+          description = Some(
+            "The sequence ontology term capturing the consequence of the variant based on Ensembl VEP in the context of the transcript [bioregistry:so]"
+          ),
           resolve = r =>
             r.value.variantFunctionalConsequenceIds match {
               case Some(ids) =>
@@ -2017,21 +2363,40 @@ object Objects extends Logging {
     )
   implicit val proteinCodingCoordinatesImp: ObjectType[Backend, ProteinCodingCoordinates] =
     deriveObjectType[Backend, ProteinCodingCoordinates](
-      ObjectTypeDescription("Collection of protein coding coordinates linking variants to their amino acid-level consequences"),
+      ObjectTypeDescription(
+        "Collection of protein coding coordinates linking variants to their amino acid-level consequences"
+      ),
       DocumentField("count", "Total number of phenotype-associated protein coding variants"),
       DocumentField("rows", "List of phenotype-associated protein coding variants")
     )
   implicit val colocalisationImp: ObjectType[Backend, Colocalisation] =
     deriveObjectType[Backend, Colocalisation](
-      ObjectTypeDescription("GWAS-GWAS and GWAS-molQTL credible set colocalisation results. Dataset includes colocalising pairs as well as the method and statistics used to estimate the colocalisation."),
+      ObjectTypeDescription(
+        "GWAS-GWAS and GWAS-molQTL credible set colocalisation results. Dataset includes colocalising pairs as well as the method and statistics used to estimate the colocalisation."
+      ),
       DocumentField("rightStudyType", "Type of the right-side study (e.g., gwas, eqtl, pqtl)"),
       DocumentField("chromosome", "Chromosome where the colocalisation occurs"),
-      DocumentField("colocalisationMethod", "Method used to estimate colocalisation (e.g., coloc, eCAVIAR)"),
-      DocumentField("numberColocalisingVariants", "Number of variants intersecting between two overlapping study-loci"),
-      DocumentField("h3", "Posterior probability that both traits are associated, but with different causal variants (H3). Used in coloc method."),
-      DocumentField("h4", "Posterior probability that both traits are associated and share a causal variant (H4). Used in coloc method."),
-      DocumentField("clpp", "Colocalisation posterior probability (CLPP) score estimating the probability of shared causal variants. Used in eCAVIAR method."),
-      DocumentField("betaRatioSignAverage", "Average sign of the beta ratio between colocalised variants"),
+      DocumentField("colocalisationMethod",
+                    "Method used to estimate colocalisation (e.g., coloc, eCAVIAR)"
+      ),
+      DocumentField("numberColocalisingVariants",
+                    "Number of variants intersecting between two overlapping study-loci"
+      ),
+      DocumentField(
+        "h3",
+        "Posterior probability that both traits are associated, but with different causal variants (H3). Used in coloc method."
+      ),
+      DocumentField(
+        "h4",
+        "Posterior probability that both traits are associated and share a causal variant (H4). Used in coloc method."
+      ),
+      DocumentField(
+        "clpp",
+        "Colocalisation posterior probability (CLPP) score estimating the probability of shared causal variants. Used in eCAVIAR method."
+      ),
+      DocumentField("betaRatioSignAverage",
+                    "Average sign of the beta ratio between colocalised variants"
+      ),
       ReplaceField(
         "otherStudyLocusId",
         Field(
@@ -2054,17 +2419,28 @@ object Objects extends Logging {
   implicit val variantIndexImp: ObjectType[Backend, VariantIndex] =
     deriveObjectType[Backend, VariantIndex](
       ObjectTypeName("Variant"),
-      ObjectTypeDescription("Core variant information for all variants in the Platform. Variants are included if any phenotypic information is available for the variant, including GWAS or molQTL credible sets, ClinVar, Uniprot or ClinPGx. The dataset includes variant metadata as well as variant effects derived from Ensembl VEP."),
-      DocumentField("variantId", "The unique identifier for the variant following schema CHR_POS_REF_ALT for SNPs and short indels (e.g. 1_154453788_C_T)"),
+      ObjectTypeDescription(
+        "Core variant information for all variants in the Platform. Variants are included if any phenotypic information is available for the variant, including GWAS or molQTL credible sets, ClinVar, Uniprot or ClinPGx. The dataset includes variant metadata as well as variant effects derived from Ensembl VEP."
+      ),
+      DocumentField(
+        "variantId",
+        "The unique identifier for the variant following schema CHR_POS_REF_ALT for SNPs and short indels (e.g. 1_154453788_C_T)"
+      ),
       DocumentField("chromosome", "The chromosome on which the variant is located"),
       DocumentField("position", "The position on the chromosome of the variant"),
       DocumentField("referenceAllele", "The reference allele for the variant"),
       DocumentField("alternateAllele", "The alternate allele for the variant"),
-      DocumentField("variantEffect", "List of predicted or measured effects of the variant based on various methods"),
+      DocumentField("variantEffect",
+                    "List of predicted or measured effects of the variant based on various methods"
+      ),
       DocumentField("transcriptConsequences", "Predicted consequences on transcript context"),
       DocumentField("rsIds", "The list of rsId identifiers for the variant"),
-      DocumentField("dbXrefs", "The list of cross-references for the variant in different databases"),
-      DocumentField("alleleFrequencies", "The allele frequencies of the variant in different populations"),
+      DocumentField("dbXrefs",
+                    "The list of cross-references for the variant in different databases"
+      ),
+      DocumentField("alleleFrequencies",
+                    "The allele frequencies of the variant in different populations"
+      ),
       DocumentField("hgvsId", "HGVS identifier of the variant"),
       DocumentField("variantDescription", "Short summary of the variant effect"),
       ReplaceField(
@@ -2072,7 +2448,9 @@ object Objects extends Logging {
         Field(
           "mostSevereConsequence",
           OptionType(sequenceOntologyTermImp),
-          description = Some("The sequence ontology term of the most severe consequence of the variant based on Ensembl VEP"),
+          description = Some(
+            "The sequence ontology term of the most severe consequence of the variant based on Ensembl VEP"
+          ),
           resolve = r =>
             val soId = (r.value.mostSevereConsequenceId)
               .replace("_", ":")
@@ -2084,7 +2462,9 @@ object Objects extends Logging {
         Field(
           "credibleSets",
           credibleSetsImp,
-          description = Some("95% credible sets for GWAS and molQTL studies that contain this variant. Credible sets include all variants in the credible set (locus) as well as the fine-mapping method and derived statistics."),
+          description = Some(
+            "95% credible sets for GWAS and molQTL studies that contain this variant. Credible sets include all variants in the credible set (locus) as well as the fine-mapping method and derived statistics."
+          ),
           arguments = pageArg :: studyTypes :: Nil,
           complexity = Some(complexityCalculator(pageArg)),
           resolve =
@@ -2093,7 +2473,9 @@ object Objects extends Logging {
         Field(
           "pharmacogenomics",
           ListType(pharmacogenomicsImp),
-          description = Some("Pharmacogenomics data linking this genetic variant to drug responses. Data is integrated from sources including ClinPGx and describes how genetic variants influence individual drug responses."),
+          description = Some(
+            "Pharmacogenomics data linking this genetic variant to drug responses. Data is integrated from sources including ClinPGx and describes how genetic variants influence individual drug responses."
+          ),
           arguments = pageArg :: Nil,
           complexity = Some(complexityCalculator(pageArg)),
           resolve = ctx => ctx.ctx.getPharmacogenomicsByVariant(ctx.value.variantId)
@@ -2101,7 +2483,9 @@ object Objects extends Logging {
         Field(
           "evidences",
           evidencesImp,
-          description = Some("Target-disease evidence from all data sources where this variant supports the association. Evidence entries report associations between targets (genes or proteins) and diseases or phenotypes, scored according to confidence in the association."),
+          description = Some(
+            "Target-disease evidence from all data sources where this variant supports the association. Evidence entries report associations between targets (genes or proteins) and diseases or phenotypes, scored according to confidence in the association."
+          ),
           arguments = datasourceIdsArg :: pageSize :: cursor :: Nil,
           complexity = Some(complexityCalculator(pageSize)),
           resolve = ctx =>
@@ -2116,7 +2500,9 @@ object Objects extends Logging {
         Field(
           "proteinCodingCoordinates",
           proteinCodingCoordinatesImp,
-          description = Some("Protein coding coordinates linking this variant to its amino acid-level consequences in protein products. Describes variant consequences at the protein level including amino acid changes and their positions."),
+          description = Some(
+            "Protein coding coordinates linking this variant to its amino acid-level consequences in protein products. Describes variant consequences at the protein level including amino acid changes and their positions."
+          ),
           arguments = pageArg :: Nil,
           complexity = Some(complexityCalculator(pageArg)),
           resolve = ctx =>
@@ -2125,7 +2511,9 @@ object Objects extends Logging {
         Field(
           "intervals",
           intervalsImp,
-          description = Some("Regulatory enhancer/promoter regions to gene (target) predictions overlapping with this variant's location. These intervals link regulatory regions to target genes based on experimental data for specific tissues or cell types."),
+          description = Some(
+            "Regulatory enhancer/promoter regions to gene (target) predictions overlapping with this variant's location. These intervals link regulatory regions to target genes based on experimental data for specific tissues or cell types."
+          ),
           arguments = pageArg :: Nil,
           complexity = Some(complexityCalculator(pageArg)),
           resolve = ctx =>
@@ -2158,8 +2546,12 @@ object Objects extends Logging {
   implicit val evidenceTextMiningSentenceImp: ObjectType[Backend, EvidenceTextMiningSentence] =
     deriveObjectType[Backend, EvidenceTextMiningSentence](
       ObjectTypeName("EvidenceTextMiningSentence"),
-      ObjectTypeDescription("Extracted text snippet from literature supporting a target–disease statement"),
-      DocumentField("section", "Publication section where the sentence was found (e.g., abstract, results)"),
+      ObjectTypeDescription(
+        "Extracted text snippet from literature supporting a target–disease statement"
+      ),
+      DocumentField("section",
+                    "Publication section where the sentence was found (e.g., abstract, results)"
+      ),
       DocumentField("text", "Sentence text supporting the association"),
       DocumentField("tStart", "Start character offset of the target mention in the sentence"),
       DocumentField("tEnd", "End character offset of the target mention in the sentence"),
@@ -2195,7 +2587,9 @@ object Objects extends Logging {
         Field(
           "functionalConsequence",
           OptionType(sequenceOntologyTermImp),
-          description = Some("Sequence ontology (SO) identifier of the functional consequence of the variant [bioregistry:so]"),
+          description = Some(
+            "Sequence ontology (SO) identifier of the functional consequence of the variant [bioregistry:so]"
+          ),
           resolve = js => {
             val soId = js.value.functionalConsequenceId.map(_.replace("_", ":"))
             soTermsFetcher.deferOpt(soId)
@@ -2230,7 +2624,9 @@ object Objects extends Logging {
         Field(
           "id",
           OptionType(geneOntologyTermImp),
-          description = Some("Gene Ontology (GO) identifiers of regulation or background expression processes [bioregistry:go]"),
+          description = Some(
+            "Gene Ontology (GO) identifiers of regulation or background expression processes [bioregistry:go]"
+          ),
           resolve = js => {
             val goId = js.value.id.map(_.replace('_', ':'))
             goFetcher.deferOpt(goId)
@@ -2249,7 +2645,8 @@ object Objects extends Logging {
       Field(
         "functionalConsequenceId",
         OptionType(sequenceOntologyTermImp),
-        description = Some("Functional consequence identifier of the variant biomarker [bioregistry:so]"),
+        description =
+          Some("Functional consequence identifier of the variant biomarker [bioregistry:so]"),
         resolve = js => {
           val soId = js.value.functionalConsequenceId.map(_.replace("_", ":"))
           soTermsFetcher.deferOpt(soId)
@@ -2275,45 +2672,70 @@ object Objects extends Logging {
 
   implicit val evidenceImp: ObjectType[Backend, Evidence] = deriveObjectType(
     ObjectTypeName("Evidence"),
-    ObjectTypeDescription("Target - disease evidence from all data sources. Every piece of evidence supporting an association between a target (gene or protein) and a disease or phenotype is reported and scored according to the confidence we have in the association. Multiple target-disease evidence from the same source can be reported in this dataset. The dataset is partitioned by data source, therefore evidence for individual sources can be retrieved separately. The dataset schema is a superset of all the schemas for all sources."),
+    ObjectTypeDescription(
+      "Target - disease evidence from all data sources. Every piece of evidence supporting an association between a target (gene or protein) and a disease or phenotype is reported and scored according to the confidence we have in the association. Multiple target-disease evidence from the same source can be reported in this dataset. The dataset is partitioned by data source, therefore evidence for individual sources can be retrieved separately. The dataset schema is a superset of all the schemas for all sources."
+    ),
     DocumentField("id", "Identifer of the disease/target evidence"),
-    DocumentField("score", "Score of the evidence reflecting the strength of the disease/target relationship"),
+    DocumentField("score",
+                  "Score of the evidence reflecting the strength of the disease/target relationship"
+    ),
     DocumentField("datasourceId", "Identifer of the evidence source"),
     DocumentField("datatypeId", "Type of the evidence"),
     DocumentField("biomarkerName", "Altered characteristics that influences the disease process"),
     DocumentField("biomarkers", "List of biomarkers"),
     DocumentField("diseaseCellLines", "Cancer cell lines used to generate evidence"),
-    DocumentField("cohortPhenotypes", "Clinical features/phenotypes observed in studied individuals"),
+    DocumentField("cohortPhenotypes",
+                  "Clinical features/phenotypes observed in studied individuals"
+    ),
     DocumentField("targetInModel", "Target name/synonym in animal model"),
     DocumentField("reactionId", "Pathway, gene set or reaction identifier in Reactome"),
     DocumentField("reactionName", "Name of the reaction, patway or gene set in Reactome"),
     DocumentField("projectId", "The identifer of the project that generated the data"),
     DocumentField("variantRsId", "Variant reference SNP cluster ID (Rsid)"),
-    DocumentField("oddsRatioConfidenceIntervalLower", "Lower value of the confidence interval for odds ratio"),
-    DocumentField("oddsRatioConfidenceIntervalUpper", "Upper value of the confidence interval for odds ratio"),
+    DocumentField("oddsRatioConfidenceIntervalLower",
+                  "Lower value of the confidence interval for odds ratio"
+    ),
+    DocumentField("oddsRatioConfidenceIntervalUpper",
+                  "Upper value of the confidence interval for odds ratio"
+    ),
     DocumentField("oddsRatio", "Size of effect captured as odds ratio"),
     DocumentField("studySampleSize", "Sample size of study"),
-    DocumentField("variantAminoacidDescriptions", "Descriptions of variant consequences at protein level"),
+    DocumentField("variantAminoacidDescriptions",
+                  "Descriptions of variant consequences at protein level"
+    ),
     DocumentField("mutatedSamples", "Samples with a given mutation tested"),
     DocumentField("drugFromSource", "Drug name/family in resource of origin"),
     DocumentField("cohortShortName", "Short name of the studied cohort"),
     DocumentField("cohortDescription", "Description of the studied cohort"),
     DocumentField("cohortId", "Identifier of the studied cohort"),
-    DocumentField("diseaseModelAssociatedModelPhenotypes", "Phenotypes observed in genetically-modified animal models"),
-    DocumentField("diseaseModelAssociatedHumanPhenotypes", "Human phenotypes equivalent to those observed in animal models"),
-    DocumentField("significantDriverMethods", "Methods to detect cancer driver genes producing significant results"),
+    DocumentField("diseaseModelAssociatedModelPhenotypes",
+                  "Phenotypes observed in genetically-modified animal models"
+    ),
+    DocumentField("diseaseModelAssociatedHumanPhenotypes",
+                  "Human phenotypes equivalent to those observed in animal models"
+    ),
+    DocumentField("significantDriverMethods",
+                  "Methods to detect cancer driver genes producing significant results"
+    ),
     DocumentField("pValueExponent", "Exponent of the p-value"),
     DocumentField("pValueMantissa", "Mantissa of the p-value"),
-    DocumentField("log2FoldChangePercentileRank", "Percentile of top differentially regulated genes (transcripts) within experiment"),
+    DocumentField("log2FoldChangePercentileRank",
+                  "Percentile of top differentially regulated genes (transcripts) within experiment"
+    ),
     DocumentField("log2FoldChangeValue", "Log2 fold expression change in contrast experiment"),
     DocumentField("biologicalModelAllelicComposition", "Allelic composition of the model organism"),
     DocumentField("confidence", "Confidence qualifier on the reported evidence"),
     DocumentField("clinicalPhase", "Phase of the clinical trial"),
     DocumentField("clinicalStatus", "Current stage of a clinical study"),
     DocumentField("clinicalSignificances", "Standard terms to define clinical significance"),
-    DocumentField("resourceScore", "Score provided by datasource indicating strength of target-disease association"),
+    DocumentField("resourceScore",
+                  "Score provided by datasource indicating strength of target-disease association"
+    ),
     DocumentField("biologicalModelGeneticBackground", "Genetic background of the model organism"),
-    DocumentField("urls", "Reference to linked external resource (e.g. clinical trials, studies, package inserts, reports, etc.)"),
+    DocumentField(
+      "urls",
+      "Reference to linked external resource (e.g. clinical trials, studies, package inserts, reports, etc.)"
+    ),
     DocumentField("literature", "List of PubMed or preprint reference identifiers"),
     DocumentField("studyCases", "Number of cases in case-control study"),
     DocumentField("studyOverview", "Description of the study"),
@@ -2322,12 +2744,20 @@ object Objects extends Logging {
     DocumentField("allelicRequirements", "Inheritance patterns"),
     DocumentField("alleleOrigins", "Origin of the variant allele"),
     DocumentField("publicationYear", "Year of the publication"),
-    DocumentField("publicationFirstAuthor", "Last name and initials of the first author of the publication that references the evidence"),
+    DocumentField(
+      "publicationFirstAuthor",
+      "Last name and initials of the first author of the publication that references the evidence"
+    ),
     DocumentField("diseaseFromSource", "Disease label from the original source"),
     DocumentField("diseaseFromSourceId", "Disease identifier from the original source"),
     DocumentField("diseaseFromSourceMappedId", "Mapped Open Targets disease identifier"),
-    DocumentField("targetFromSourceId", "Target ID in resource of origin (accepted sources include Ensembl gene ID, Uniprot ID, gene symbol), only capital letters are accepted"),
-    DocumentField("targetFromSource", "Target name/synonym or non HGNC symbol in resource of origin"),
+    DocumentField(
+      "targetFromSourceId",
+      "Target ID in resource of origin (accepted sources include Ensembl gene ID, Uniprot ID, gene symbol), only capital letters are accepted"
+    ),
+    DocumentField("targetFromSource",
+                  "Target name/synonym or non HGNC symbol in resource of origin"
+    ),
     DocumentField("targetModulation", "Description of target modulation event"),
     DocumentField("textMiningSentences", "Text mining sentences extracted from literature"),
     DocumentField("biologicalModelId", "Identifier of the biological model (eg. in MGI)"),
@@ -2342,14 +2772,19 @@ object Objects extends Logging {
     ),
     DocumentField("cellLineBackground", "Background of the derived cell lines"),
     DocumentField("contrast", "Experiment contrast"),
-    DocumentField("crisprScreenLibrary", "The applied screening library in the CRISPR/CAS9 project"),
+    DocumentField("crisprScreenLibrary",
+                  "The applied screening library in the CRISPR/CAS9 project"
+    ),
     DocumentField("cellType", "The studied cell type. Preferably the cell line ontology label"),
     DocumentField("statisticalTestTail", "End of the distribution the target was picked from"),
     DocumentField("interactingTargetFromSourceId", "Identifer of the interacting target"),
     DocumentField("phenotypicConsequenceLogFoldChange", "Log 2 fold change of the cell survival"),
     DocumentField("phenotypicConsequenceFDR", "False discovery rate of the genetic test"),
     DocumentField("phenotypicConsequencePValue", "P-value of the the cell survival test"),
-    DocumentField("geneticInteractionScore", "The strength of the genetic interaction. Directionality is captured as well: antagonistics < 0 < cooperative"),
+    DocumentField(
+      "geneticInteractionScore",
+      "The strength of the genetic interaction. Directionality is captured as well: antagonistics < 0 < cooperative"
+    ),
     DocumentField("geneticInteractionPValue", "P-value of the genetic interaction test"),
     DocumentField("geneticInteractionFDR", "False discovery rate of the genetic interaction test"),
     DocumentField("biomarkerList", "List of biomarkers associated with the biological model"),
@@ -2359,7 +2794,9 @@ object Objects extends Logging {
     DocumentField("interactingTargetRole", "Role of a target in the genetic interaction test"),
     DocumentField("assays", "Assays used in the study"),
     DocumentField("ancestry", "Genetic origin of a population"),
-    DocumentField("ancestryId", "Identifier of the ancestry in the HANCESTRO ontology [bioregistry:hancestro]"),
+    DocumentField("ancestryId",
+                  "Identifier of the ancestry in the HANCESTRO ontology [bioregistry:hancestro]"
+    ),
     DocumentField("statisticalMethod", "The statistical method used to calculate the association"),
     DocumentField("statisticalMethodOverview",
                   "Overview of the statistical method used to calculate the association"
@@ -2371,11 +2808,23 @@ object Objects extends Logging {
     DocumentField("releaseVersion", "Open Targets data release version"),
     DocumentField("releaseDate", "Date of the release of the data in a 'YYYY-MM-DD' format"),
     DocumentField("warningMessage", "Warning message"),
-    DocumentField("variantEffect", "Gain or loss of function annotation of the variant effect"),
+    DocumentField(
+      "directionOnTarget",
+      "Gain or loss of function effect of the evidence on the target resulting from genetic variants, pharmacological modulation, or other perturbations"
+    ),
     DocumentField("directionOnTrait", "Predicted direction of effect on the trait"),
-    DocumentField("assessments", "Assessment of a study. In the context of Validation Lab, this is the assessment of the validation gene in a given cellular context"),
-    DocumentField("primaryProjectHit", "If a given target was found to be a hit in the primary project"),
+    DocumentField(
+      "assessments",
+      "Assessment of a study. In the context of Validation Lab, this is the assessment of the validation gene in a given cellular context"
+    ),
+    DocumentField("primaryProjectHit",
+                  "If a given target was found to be a hit in the primary project"
+    ),
     DocumentField("primaryProjectId", "Open Targets project identifier of the primary project"),
+    DocumentField("directionOnTrait", "Direction On Trait"),
+    DocumentField("assessments", "Assessments"),
+    DocumentField("primaryProjectHit", "Primary Project Hit"),
+    DocumentField("primaryProjectId", "Primary Project Id"),
     ReplaceField(
       "targetId",
       Field(
@@ -2417,7 +2866,8 @@ object Objects extends Logging {
       Field(
         "variant",
         OptionType(variantIndexImp),
-        description = Some("Variant supporting the relationship between the target and the disease"),
+        description =
+          Some("Variant supporting the relationship between the target and the disease"),
         resolve = evidence => {
           val id = evidence.value.variantId
           logger.debug(s"Finding variant for id: $id")
@@ -2430,7 +2880,9 @@ object Objects extends Logging {
       Field(
         "drug",
         OptionType(drugImp),
-        description = Some("Drug or clinical candidate targeting the target and studied/approved for the specific disease as potential indication [bioregistry:chembl]"),
+        description = Some(
+          "Drug or clinical candidate targeting the target and studied/approved for the specific disease as potential indication [bioregistry:chembl]"
+        ),
         resolve = evidence => {
           val id = evidence.value.drugId
           logger.debug(s"Finding drug for id: $id")
@@ -2456,7 +2908,8 @@ object Objects extends Logging {
       Field(
         "variantFunctionalConsequence",
         OptionType(sequenceOntologyTermImp),
-        description = Some("Sequence ontology (SO) term of the functional consequence of the variant"),
+        description =
+          Some("Sequence ontology (SO) term of the functional consequence of the variant"),
         resolve = evidence => {
           val soId = evidence.value.variantFunctionalConsequenceId
             .map(id => id.replace("_", ":"))
@@ -2470,7 +2923,8 @@ object Objects extends Logging {
       Field(
         "variantFunctionalConsequenceFromQtlId",
         OptionType(sequenceOntologyTermImp),
-        description = Some("Sequence ontology (SO) term of the functional consequence of the variant from QTL"),
+        description =
+          Some("Sequence ontology (SO) term of the functional consequence of the variant from QTL"),
         resolve = evidence => {
           val soId = evidence.value.variantFunctionalConsequenceFromQtlId
             .map(id => id.replace("_", ":"))
@@ -2483,7 +2937,8 @@ object Objects extends Logging {
       Field(
         "pubMedCentralIds",
         OptionType(ListType(StringType)),
-        description = Some("List of PubMed Central identifiers of full text publication [bioregistry:pmc]"),
+        description =
+          Some("List of PubMed Central identifiers of full text publication [bioregistry:pmc]"),
         resolve = js => js.value.pmcIds
       )
     )
@@ -2491,14 +2946,22 @@ object Objects extends Logging {
 
   implicit val ldSetImp: ObjectType[Backend, LdSet] =
     deriveObjectType[Backend, LdSet](
-      ObjectTypeDescription("Variants in linkage disequilibrium (LD) with the credible set lead variant."),
-      DocumentField("tagVariantId", "The variant ID for tag variants in LD with the credible set lead variant"),
-      DocumentField("r2Overall", "The R-squared value for the tag variants with the credible set lead variant")
+      ObjectTypeDescription(
+        "Variants in linkage disequilibrium (LD) with the credible set lead variant."
+      ),
+      DocumentField("tagVariantId",
+                    "The variant ID for tag variants in LD with the credible set lead variant"
+      ),
+      DocumentField("r2Overall",
+                    "The R-squared value for the tag variants with the credible set lead variant"
+      )
     )
 
   implicit val locusImp: ObjectType[Backend, Locus] = deriveObjectType[Backend, Locus](
     ObjectTypeDescription("List of variants within the credible set"),
-    DocumentField("posteriorProbability", "Posterior inclusion probability for the variant within this credible set"),
+    DocumentField("posteriorProbability",
+                  "Posterior inclusion probability for the variant within this credible set"
+    ),
     DocumentField("pValueMantissa", "Mantissa of the P-value for this variant in the credible set"),
     DocumentField("pValueExponent", "Exponent of the P-value for this variant in the credible set"),
     DocumentField("logBF", "Log (natural) Bayes factor for the variant from fine-mapping"),
@@ -2506,7 +2969,9 @@ object Objects extends Logging {
     DocumentField("standardError", "Standard error of this variant in the credible set"),
     DocumentField("is95CredibleSet", "Boolean for if the variant is part of the 95% credible set"),
     DocumentField("is99CredibleSet", "Boolean for if the variant is part of the 99% credible set"),
-    DocumentField("r2Overall", "R-squared (LD) between this credible set variant and the lead variant"),
+    DocumentField("r2Overall",
+                  "R-squared (LD) between this credible set variant and the lead variant"
+    ),
     ReplaceField(
       "variantId",
       Field(
@@ -2532,9 +2997,14 @@ object Objects extends Logging {
   implicit val credibleSetImp: ObjectType[Backend, CredibleSet] =
     deriveObjectType[Backend, CredibleSet](
       ObjectTypeName("CredibleSet"),
-      ObjectTypeDescription("95% credible sets for GWAS and molQTL studies. Credible sets include all variants in the credible set (locus) as well as the fine-mapping method and derived statistics."),
+      ObjectTypeDescription(
+        "95% credible sets for GWAS and molQTL studies. Credible sets include all variants in the credible set (locus) as well as the fine-mapping method and derived statistics."
+      ),
       DocumentField("studyLocusId", "Identifier of the credible set (StudyLocus)"),
-      DocumentField("studyId", "Identifier of the GWAS or molQTL study in which the credible set was identified"),
+      DocumentField(
+        "studyId",
+        "Identifier of the GWAS or molQTL study in which the credible set was identified"
+      ),
       DocumentField("chromosome", "Chromosome which the credible set is located"),
       DocumentField("position", "Position of the lead variant for the credible set (GRCh38)"),
       DocumentField("region", "Start and end positions of the region used for fine-mapping"),
@@ -2542,21 +3012,42 @@ object Objects extends Logging {
       DocumentField("zScore", "Z-score of the lead variant from the GWAS"),
       DocumentField("pValueMantissa", "Mantissa value of the lead variant P-value"),
       DocumentField("pValueExponent", "Exponent value of the lead variant P-value"),
-      DocumentField("effectAlleleFrequencyFromSource", "Allele frequency of the lead variant from the GWAS"),
+      DocumentField("effectAlleleFrequencyFromSource",
+                    "Allele frequency of the lead variant from the GWAS"
+      ),
       DocumentField("standardError", "Standard error of the lead variant"),
       DocumentField("subStudyDescription", "[Deprecated]"),
       DocumentField("qualityControls", "Quality control flags for this credible set"),
       DocumentField("finemappingMethod", "Method used for fine-mapping of credible set"),
-      DocumentField("credibleSetIndex", "Integer label for the order of credible sets from study-region"),
+      DocumentField("credibleSetIndex",
+                    "Integer label for the order of credible sets from study-region"
+      ),
       DocumentField("credibleSetlog10BF", "Log10 Bayes factor for the entire credible set"),
-      DocumentField("purityMeanR2", "Mean R-squared linkage disequilibrium for variants in the credible set"),
-      DocumentField("purityMinR2", "Minimum R-squared linkage disequilibrium for variants in the credible set"),
-      DocumentField("locusStart", "Start position of the region that was fine-mapped for this credible set"),
-      DocumentField("locusEnd", "End position of the region that was fine-mapped for this credible set"),
+      DocumentField("purityMeanR2",
+                    "Mean R-squared linkage disequilibrium for variants in the credible set"
+      ),
+      DocumentField("purityMinR2",
+                    "Minimum R-squared linkage disequilibrium for variants in the credible set"
+      ),
+      DocumentField("locusStart",
+                    "Start position of the region that was fine-mapped for this credible set"
+      ),
+      DocumentField("locusEnd",
+                    "End position of the region that was fine-mapped for this credible set"
+      ),
       DocumentField("sampleSize", "Sample size of the study which this credible set is derived"),
-      DocumentField("ldSet", "Array of structs which denote the variants in LD with the credible set lead variant"),
-      DocumentField("qtlGeneId", "Ensembl identifier of the gene representing a specific gene whose molecular is being analysed in molQTL study"),
-      DocumentField("confidence", "Description of how this credible set was derived in terms of data and fine-mapping method"),
+      DocumentField(
+        "ldSet",
+        "Array of structs which denote the variants in LD with the credible set lead variant"
+      ),
+      DocumentField(
+        "qtlGeneId",
+        "Ensembl identifier of the gene representing a specific gene whose molecular is being analysed in molQTL study"
+      ),
+      DocumentField(
+        "confidence",
+        "Description of how this credible set was derived in terms of data and fine-mapping method"
+      ),
       DocumentField("isTransQtl", "Boolean for whether this credible set is a trans-pQTL or not"),
       ReplaceField(
         "variantId",
@@ -2576,7 +3067,8 @@ object Objects extends Logging {
         Field(
           "studyType",
           OptionType(StudyType),
-          description = Some("Descriptor for whether the credible set is derived from GWAS or molecular QTL."),
+          description =
+            Some("Descriptor for whether the credible set is derived from GWAS or molecular QTL."),
           resolve = js => js.value.studyType
         )
       ),
@@ -2607,7 +3099,9 @@ object Objects extends Logging {
         Field(
           "colocalisation",
           colocalisationsImp,
-          description = Some("GWAS-GWAS and GWAS-molQTL credible set colocalisation results. Dataset includes colocalising pairs as well as the method and statistics used to estimate the colocalisation."),
+          description = Some(
+            "GWAS-GWAS and GWAS-molQTL credible set colocalisation results. Dataset includes colocalising pairs as well as the method and statistics used to estimate the colocalisation."
+          ),
           arguments = studyTypes :: pageArg :: Nil,
           complexity = Some(complexityCalculator(pageArg)),
           resolve = js => {
@@ -2629,45 +3123,79 @@ object Objects extends Logging {
     )
   implicit val ldPopulationStructureImp: ObjectType[Backend, LdPopulationStructure] =
     deriveObjectType[Backend, LdPopulationStructure](
-      ObjectTypeDescription("Collection of populations referenced by the study. Used to describe the linkage disequilibrium (LD) population structure of GWAS studies."),
+      ObjectTypeDescription(
+        "Collection of populations referenced by the study. Used to describe the linkage disequilibrium (LD) population structure of GWAS studies."
+      ),
       DocumentField("ldPopulation", "Population identifier"),
-      DocumentField("relativeSampleSize", "Fraction of the total sample represented by the population")
+      DocumentField("relativeSampleSize",
+                    "Fraction of the total sample represented by the population"
+      )
     )
   implicit val sampleImp: ObjectType[Backend, Sample] = deriveObjectType[Backend, Sample](
-    ObjectTypeDescription("Sample information including ancestry and sample size. Used for both discovery and replication phases of GWAS studies."),
+    ObjectTypeDescription(
+      "Sample information including ancestry and sample size. Used for both discovery and replication phases of GWAS studies."
+    ),
     DocumentField("ancestry", "Sample ancestry name"),
     DocumentField("sampleSize", "Sample size")
   )
   implicit val sumStatQCImp: ObjectType[Backend, SumStatQC] = deriveObjectType[Backend, SumStatQC](
-    ObjectTypeDescription("Quality control flags for summary statistics. Mapping of quality control metric names to their corresponding values."),
+    ObjectTypeDescription(
+      "Quality control flags for summary statistics. Mapping of quality control metric names to their corresponding values."
+    ),
     DocumentField("QCCheckName", "Quality control metric identifier"),
     DocumentField("QCCheckValue", "Quality control metric value")
   )
 
   implicit val studyImp: ObjectType[Backend, Study] = deriveObjectType(
     ObjectTypeName("Study"),
-    ObjectTypeDescription("Metadata for all complex trait and molecular QTL GWAS studies in the Platform. The dataset includes study metadata, phenotype information, sample sizes, publication information and more. Molecular QTL studies are splitted by the affected gene, tissue or cell type and condition, potentially leading to many studies in the same publication."),
+    ObjectTypeDescription(
+      "Metadata for all complex trait and molecular QTL GWAS studies in the Platform. The dataset includes study metadata, phenotype information, sample sizes, publication information and more. Molecular QTL studies are splitted by the affected gene, tissue or cell type and condition, potentially leading to many studies in the same publication."
+    ),
     DocumentField("condition", "Reported sample conditions"),
-    DocumentField("projectId", "Identifier of the source project collection that the study information is derived from"),
-    DocumentField("traitFromSource", "Molecular or phenotypic trait, derived from source, analysed in the study"),
-    DocumentField("traitFromSourceMappedIds", "Phenotypic trait ids that map to the analysed trait reported by study"),
+    DocumentField(
+      "projectId",
+      "Identifier of the source project collection that the study information is derived from"
+    ),
+    DocumentField("traitFromSource",
+                  "Molecular or phenotypic trait, derived from source, analysed in the study"
+    ),
+    DocumentField("traitFromSourceMappedIds",
+                  "Phenotypic trait ids that map to the analysed trait reported by study"
+    ),
     DocumentField("nSamples", "The number of samples tested in GWAS analysis"),
-    DocumentField("summarystatsLocation", "Path to the source study summary statistics (if exists at the source)"),
+    DocumentField("summarystatsLocation",
+                  "Path to the source study summary statistics (if exists at the source)"
+    ),
     DocumentField("hasSumstats", "Indication whether the summary statistics exist in the source"),
     DocumentField("cohorts", "List of cohort(s) represented in the discovery sample"),
     DocumentField("initialSampleSize", "Study initial sample size"),
-    DocumentField("publicationJournal", "Abbreviated journal name where the publication referencing study was published"),
+    DocumentField("publicationJournal",
+                  "Abbreviated journal name where the publication referencing study was published"
+    ),
     DocumentField("publicationDate", "Date of the publication that references study"),
-    DocumentField("pubmedId", "PubMed identifier of the publication hat references the study [bioregistry:pubmed]"),
-    DocumentField("publicationFirstAuthor", "Last name and initials of the author of the publication that references the study"),
+    DocumentField(
+      "pubmedId",
+      "PubMed identifier of the publication hat references the study [bioregistry:pubmed]"
+    ),
+    DocumentField(
+      "publicationFirstAuthor",
+      "Last name and initials of the author of the publication that references the study"
+    ),
     DocumentField("publicationTitle", "Title of the publication that references the study"),
     DocumentField("qualityControls", "Control metrics refining study validation"),
     DocumentField("nControls", "The number of controls in this broad ancestry group"),
     DocumentField("nCases", "The number of cases in this broad ancestry group"),
-    DocumentField("analysisFlags", "Collection of flags indicating the type of the analysis conducted in the association study"),
+    DocumentField(
+      "analysisFlags",
+      "Collection of flags indicating the type of the analysis conducted in the association study"
+    ),
     DocumentField("ldPopulationStructure", "Collection of populations referenced by the study"),
-    DocumentField("discoverySamples", "Collection of ancestries reported by the study discovery phase"),
-    DocumentField("replicationSamples", "Collection of ancestries reported by the study replication phase"),
+    DocumentField("discoverySamples",
+                  "Collection of ancestries reported by the study discovery phase"
+    ),
+    DocumentField("replicationSamples",
+                  "Collection of ancestries reported by the study replication phase"
+    ),
     DocumentField("sumstatQCValues", "Quality control flags for the study (if any)"),
     ReplaceField(
       "studyId",
@@ -2744,7 +3272,9 @@ object Objects extends Logging {
         "credibleSets",
         credibleSetsImp,
         arguments = pageArg :: Nil,
-        description = Some("95% credible sets for GWAS and molQTL studies. Credible sets include all variants in the credible set as well as the fine-mapping method and statistics used to estimate the credible set."),
+        description = Some(
+          "95% credible sets for GWAS and molQTL studies. Credible sets include all variants in the credible set as well as the fine-mapping method and statistics used to estimate the credible set."
+        ),
         complexity = Some(complexityCalculator(pageArg)),
         resolve = js => {
           val studyId = js.value.studyId
@@ -2757,7 +3287,10 @@ object Objects extends Logging {
   implicit val interactionEvidencePDMImp: ObjectType[Backend, InteractionEvidencePDM] =
     deriveObjectType[Backend, InteractionEvidencePDM](
       ObjectTypeDescription("Detection method used to identify participants in the interaction"),
-      DocumentField("miIdentifier", "Molecular Interactions (MI) identifier for the detection method [bioregistry:mi]"),
+      DocumentField(
+        "miIdentifier",
+        "Molecular Interactions (MI) identifier for the detection method [bioregistry:mi]"
+      ),
       DocumentField("shortName", "Short name of the detection method")
     )
 
@@ -2772,33 +3305,67 @@ object Objects extends Logging {
   implicit val interactionResources: ObjectType[Backend, InteractionResources] =
     deriveObjectType[Backend, InteractionResources](
       ObjectTypeDescription("Databases providing evidence for the interaction"),
-      DocumentField("sourceDatabase", "Name of the source database reporting the interaction evidence"),
-      DocumentField("databaseVersion", "Version of the source database providing interaction evidence")
+      DocumentField("sourceDatabase",
+                    "Name of the source database reporting the interaction evidence"
+      ),
+      DocumentField("databaseVersion",
+                    "Version of the source database providing interaction evidence"
+      )
     )
 
   implicit val interactionEvidenceImp: ObjectType[Backend, InteractionEvidence] =
     deriveObjectType[Backend, InteractionEvidence](
-      ObjectTypeDescription("Evidence supporting molecular interactions between targets. Contains detailed information about how the interaction was detected, the experimental context, and supporting publications."),
-      DocumentField("evidenceScore", "Score indicating the confidence or strength of the interaction evidence"),
-      DocumentField("expansionMethodMiIdentifier", "Molecular Interactions (MI) identifier for the expansion method used [bioregistry:mi]"),
-      DocumentField("expansionMethodShortName", "Short name of the method used to expand the interaction dataset"),
-      DocumentField("hostOrganismScientificName", "Scientific name of the host organism in which the interaction was observed"),
+      ObjectTypeDescription(
+        "Evidence supporting molecular interactions between targets. Contains detailed information about how the interaction was detected, the experimental context, and supporting publications."
+      ),
+      DocumentField("evidenceScore",
+                    "Score indicating the confidence or strength of the interaction evidence"
+      ),
+      DocumentField(
+        "expansionMethodMiIdentifier",
+        "Molecular Interactions (MI) identifier for the expansion method used [bioregistry:mi]"
+      ),
+      DocumentField("expansionMethodShortName",
+                    "Short name of the method used to expand the interaction dataset"
+      ),
+      DocumentField("hostOrganismScientificName",
+                    "Scientific name of the host organism in which the interaction was observed"
+      ),
       DocumentField("hostOrganismTaxId", "NCBI taxon ID of the host organism"),
       DocumentField("intASource", "Source where interactor A is identified"),
       DocumentField("intBSource", "Source where interactor B is identified"),
-      DocumentField("interactionDetectionMethodMiIdentifier", "Molecular Interactions (MI) identifier for the interaction detection method [bioregistry:mi]"),
-      DocumentField("interactionDetectionMethodShortName", "Short name of the method used to detect the interaction"),
-      DocumentField("interactionIdentifier", "Unique identifier for the interaction evidence entry at the source"),
-      DocumentField("interactionTypeMiIdentifier", "Molecular Interactions (MI) identifier for the type of interaction [bioregistry:mi]"),
+      DocumentField(
+        "interactionDetectionMethodMiIdentifier",
+        "Molecular Interactions (MI) identifier for the interaction detection method [bioregistry:mi]"
+      ),
+      DocumentField("interactionDetectionMethodShortName",
+                    "Short name of the method used to detect the interaction"
+      ),
+      DocumentField("interactionIdentifier",
+                    "Unique identifier for the interaction evidence entry at the source"
+      ),
+      DocumentField(
+        "interactionTypeMiIdentifier",
+        "Molecular Interactions (MI) identifier for the type of interaction [bioregistry:mi]"
+      ),
       DocumentField("interactionTypeShortName", "Short name of the interaction type"),
-      DocumentField("participantDetectionMethodA", "Detection method used to identify participant A in the interaction"),
-      DocumentField("participantDetectionMethodB", "Detection method used to identify participant B in the interaction"),
-      DocumentField("pubmedId", "PubMed ID of the publication supporting the interaction evidence [bioregistry:pubmed]"),
+      DocumentField("participantDetectionMethodA",
+                    "Detection method used to identify participant A in the interaction"
+      ),
+      DocumentField("participantDetectionMethodB",
+                    "Detection method used to identify participant B in the interaction"
+      ),
+      DocumentField(
+        "pubmedId",
+        "PubMed ID of the publication supporting the interaction evidence [bioregistry:pubmed]"
+      )
     )
 
   implicit val interactionImp: ObjectType[Backend, Interaction] =
     deriveObjectType[Backend, Interaction](
-      ObjectTypeDescription("Integration of molecular interactions reporting experimental or functional interactions between molecules represented as Platform targets. This dataset contains pair-wise interactions deposited in several databases capturing: physical interactions (e.g. IntAct), directional interactions (e.g. Signor), pathway relationships (e.g. Reactome) or functional interactions (e.g. STRINGdb)."),
+      ObjectTypeDescription(
+        "Integration of molecular interactions reporting experimental or functional interactions between molecules represented as Platform targets. This dataset contains pair-wise interactions deposited in several databases capturing: physical interactions (e.g. IntAct), directional interactions (e.g. Signor), pathway relationships (e.g. Reactome) or functional interactions (e.g. STRINGdb)."
+      ),
       DocumentField("intA", "Identifier for target A in source"),
       DocumentField("intB", "Identifier for target B in source"),
       DocumentField("intABiologicalRole", "Biological role of target A in the interaction"),
@@ -2808,13 +3375,17 @@ object Objects extends Logging {
       DocumentField("speciesA", "Taxonomic annotation of target A"),
       DocumentField("speciesB", "Taxonomic annotation of target B"),
       RenameField("scoring", "score"),
-      DocumentField("scoring", "Scoring or confidence value assigned to the interaction. Scores are normalized to a range of 0-1. The higher the score, the stronger the support for the interaction. In IntAct, scores are captured with the MI score."),
+      DocumentField(
+        "scoring",
+        "Scoring or confidence value assigned to the interaction. Scores are normalized to a range of 0-1. The higher the score, the stronger the support for the interaction. In IntAct, scores are captured with the MI score."
+      ),
       ReplaceField(
         "targetA",
         Field(
           "targetA",
           OptionType(targetImp),
-          description = Some("Target (gene/protein) of the first molecule (target A) in the interaction"),
+          description =
+            Some("Target (gene/protein) of the first molecule (target A) in the interaction"),
           resolve = interaction => {
             val tId = interaction.value.targetA
             targetsFetcher.deferOpt(tId)
@@ -2826,7 +3397,8 @@ object Objects extends Logging {
         Field(
           "targetB",
           OptionType(targetImp),
-          description = Some("Target (gene/protein) of the second molecule (target B) in the interaction"),
+          description =
+            Some("Target (gene/protein) of the second molecule (target B) in the interaction"),
           resolve = interaction => {
             val tId = interaction.value.targetB
             targetsFetcher.deferOpt(tId)
