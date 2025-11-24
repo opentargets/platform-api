@@ -1202,7 +1202,7 @@ class Backend @Inject() (implicit
   ): Future[Vector[Similarity]] = {
     val table = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.similarities.name)
     logger.debug(s"querying similarities",
-                 keyValue("table", table.name),
+                 keyValue("table", table),
                  keyValue("label", label),
                  keyValue("labels", labels)
     )
@@ -1248,7 +1248,7 @@ class Backend @Inject() (implicit
     val table = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.literature.name)
     val indexTable = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.literatureIndex.name)
     logger.debug(s"querying literature ocurrences",
-                 keyValue("table", table.name),
+                 keyValue("table", table),
                  keyValue("ids", ids)
     )
 
