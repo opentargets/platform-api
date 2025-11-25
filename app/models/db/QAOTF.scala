@@ -41,6 +41,7 @@ case class QAOTF(
     AIDs: Set[String],
     BIDs: Set[String],
     BFilter: Option[String],
+    columnFilters: Seq[(String, Any)],
     orderScoreBy: Option[(String, String)],
     datasourceWeights: Seq[(String, Double)],
     mustIncludeDatasources: Set[String],
@@ -99,9 +100,23 @@ case class QAOTF(
     } else {
       expressionLeft
     }
+    // optional column filters
+    val expressionLeftRightWithColumnfilters = if (columnFilters.nonEmpty) {
+      val filters = columnFilters.map { case (colName, value) =>
+        F.equals(column(colName), literal(value))
+      };
+      filters.foldLeft(expressionLeftRight) { (acc, filterExp) =>
+        F.and(acc, filterExp)
+      }
+    } else {
+      expressionLeftRight
+    }
+
     val expressionLeftRighWithFilters = {
       val expressionLeftRightWithBFilter =
-        BFilterQ.map(f => F.and(f, expressionLeftRight)).getOrElse(expressionLeftRight)
+        BFilterQ
+          .map(f => F.and(f, expressionLeftRightWithColumnfilters))
+          .getOrElse(expressionLeftRightWithColumnfilters)
       if (mustIncludeDatasources.nonEmpty) {
         F.and(expressionLeftRightWithBFilter,
               F.in(DS, F.set(mustIncludeDatasources.map(literal).toSeq))

@@ -954,6 +954,7 @@ class Backend @Inject() (implicit
       fixedEntityId: String,
       indirectIds: Set[String],
       bIds: Set[String],
+      columnFilters: Seq[(String, Any)],
       filter: Option[String],
       orderBy: Option[(String, String)],
       pagination: Option[Pagination]
@@ -969,6 +970,7 @@ class Backend @Inject() (implicit
       _,
       _,
       filter,
+      columnFilters,
       orderBy,
       weights,
       _,
@@ -1022,6 +1024,7 @@ class Backend @Inject() (implicit
       disease.id,
       indirectIDs,
       targetIds,
+      Seq.empty,
       filter,
       orderBy,
       pagination
@@ -1032,6 +1035,7 @@ class Backend @Inject() (implicit
       target: Target,
       datasources: Option[Seq[DatasourceSettings]],
       indirect: Boolean,
+      includeMeasurements: Boolean,
       facetFilters: Seq[String],
       diseaseSet: Set[String],
       filter: Option[String],
@@ -1051,15 +1055,20 @@ class Backend @Inject() (implicit
       interactions.await
     } else Set.empty[String]
 
+    val columnFilters = if (includeMeasurements == false) {
+      Seq(("is_measurement", false))
+    } else {
+      Seq.empty
+    }
     val diseaseIds =
       applyFacetFiltersToBIDs("facet_search_disease", diseaseSet, facetFilters)
-
     getAssociationsEntityFixed(
       getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.target.associations.name),
       datasources,
       target.id,
       indirectIDs,
       diseaseIds,
+      columnFilters,
       filter,
       orderBy,
       pagination
@@ -1247,12 +1256,13 @@ class Backend @Inject() (implicit
     if (facetFilters.isEmpty) {
       bIDs
     } else {
-      val entityIdsFromFacets: Seq[Set[String]] =
-        resolveEntityIdsFromFacets(facetFilters, index)
+      val entityIdsFromFacets: Set[String] =
+        resolveEntityIdsFromFacets(facetFilters, index).reduce(_ intersect _)
       val entityIdsFromFacetsIntersect: Set[String] =
         if (entityIdsFromFacets.isEmpty) Set.empty
-        else entityIdsFromFacets.reduce(_ intersect _)
+        else entityIdsFromFacets
       if (bIDs.isEmpty) emptySetToSetOfEmptyString(entityIdsFromFacetsIntersect)
       else emptySetToSetOfEmptyString(bIDs.intersect(entityIdsFromFacetsIntersect))
     }
+
 }
