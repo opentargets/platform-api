@@ -2913,7 +2913,7 @@ object Objects extends Logging {
         resolve = evidence => {
           val soId = evidence.value.variantFunctionalConsequenceId
             .map(id => id.replace("_", ":"))
-          logger.error(s"Finding variant functional consequence: $soId")
+          logger.debug(s"Finding variant functional consequence: $soId")
           soTermsFetcher.deferOpt(soId)
         }
       )
