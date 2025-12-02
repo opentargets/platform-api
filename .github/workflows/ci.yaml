@@ -1,0 +1,52 @@
+name: CI
+
+on:
+    push:
+        branches:
+        - master
+    pull_request:
+        types:
+        - opened
+        - synchronize
+
+jobs:
+  validate:
+    name: Check code formatting
+    runs-on: ubuntu-22.04
+
+    steps:
+      - id: checkout
+        name: Check out repo
+        uses: actions/checkout@v4
+
+      - id: scala-setup
+        name: Install Scala
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: sbt
+
+      - id: linter
+        name: Lint code
+        run: sbt scalafmtCheckAll
+  tests:
+    name: Run tests
+    runs-on: ubuntu-22.04
+
+    steps:
+      - id: checkout
+        name: Check out repo
+        uses: actions/checkout@v4
+
+      - id: scala-setup
+        name: Install Scala
+        uses: actions/setup-java@v3
+        with:
+          distribution: temurin
+          java-version: 21
+          cache: sbt
+
+      - id: test
+        name: Run tests
+        run: sbt coverage "testOnly * -- -l test_configuration.IntegrationTestTag" coverageReport
