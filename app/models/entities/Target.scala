@@ -1,12 +1,10 @@
 package models.entities
 
-import clickhouse.rep.SeqRep._
 import play.api.Logging
 import play.api.libs.functional.syntax._
 import play.api.libs.json.Reads._
 import play.api.libs.json._
 import slick.jdbc.GetResult
-import models.gql.Arguments.studyIds
 
 case class CanonicalTranscript(
     id: String,
@@ -161,7 +159,19 @@ object Target extends Logging {
   implicit val getTargetFromDB: GetResult[Target] =
     GetResult(r => Json.parse(r.<<[String]).as[Target])
 
-  implicit val tepImpF: OFormat[Tep] = Json.format[Tep]
+  implicit val tepImpW: OWrites[Tep] = Json.writes[Tep]
+  implicit val tepImpR: Reads[Tep] =
+    (
+      (__ \ "targetFromSourceId").read[String] and
+        (__ \ "url").read[String] and
+        (__ \ "therapeuticArea").read[String] and
+        (__ \ "description").read[String]
+    )((tar, url, t, desc) =>
+      (tar, url, t, desc) match {
+        case ("", "", "", "")    => null
+        case (tar, url, t, desc) => Tep(tar, url, t, desc)
+      }
+    )
   implicit val idAndSourceImpF: OFormat[IdAndSource] = Json.format[IdAndSource]
   implicit val labelAndSourceImpF: OFormat[LabelAndSource] = Json.format[LabelAndSource]
   implicit val locationAndSourceImpF: OFormat[LocationAndSource] = Json.format[LocationAndSource]
