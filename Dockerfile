@@ -25,8 +25,7 @@ RUN unzip ot-platform-api-latest.zip
 RUN chmod +x ot-platform-api-latest/bin/ot-platform-api
 
 ENTRYPOINT ["bash", "-c", "ot-platform-api-latest/bin/ot-platform-api \
-    ${JVM_XMS:+-J-Xms${JVM_XMS}} \
-    ${JVM_XMX:+-J-Xmx${JVM_XMX}} \
+    ${JAVA_OPTS} \
     -J-server \
     -Dlogger.file=/srv/app/production.xml \
     -Dlogback.debug=true \
