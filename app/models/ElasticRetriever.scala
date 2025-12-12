@@ -946,7 +946,7 @@ class ElasticRetriever @Inject() (
     )
 
     val exactSearchFields = Seq(
-      ("id", 1000d),
+      ("id", 100d),
       ("keywords", 1000d),
       ("name", 1000d),
       ("prefixes", 500d),
@@ -1009,7 +1009,7 @@ class ElasticRetriever @Inject() (
           }
 
           val jsHits = Json.parse(hits.body.get)
-          logger.debug(Json.prettyPrint(jsHits))
+          logger.info(Json.prettyPrint(jsHits))
 
           val sresults =
             (Json.parse(hits.body.get) \ "hits" \ "hits").validate[Seq[SearchResult]] match {

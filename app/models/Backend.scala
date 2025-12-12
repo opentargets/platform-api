@@ -11,7 +11,7 @@ import gql.validators.QueryTermsValidator.*
 
 import javax.inject.Inject
 import models.Helpers.*
-import models.db.{IntervalsQuery, QAOTF, QLITAGG, QW2V, TargetsQuery}
+import models.db.{IntervalsQuery, QAOTF, QLITAGG, QW2V, TargetsQuery, CredibleSetsById}
 import models.entities.Publication.*
 import models.entities.Associations.*
 import models.entities.Biosample.*
@@ -348,7 +348,6 @@ class Backend @Inject() (implicit
                              )
           )
         )
-
     }
     val query: BoolQuery = must(termsQueryIter.flatten ++ nestedQueryIter)
     val retriever =
@@ -369,18 +368,12 @@ class Backend @Inject() (implicit
   }
 
   def getCredibleSet(ids: Seq[String]): Future[IndexedSeq[CredibleSet]] = {
-    val indexName = getIndexOrDefault("credible_set")
-    val termsQuery = Map("studyLocusId.keyword" -> ids)
-    val retriever =
-      esRetriever
-        .getByIndexedTermsMust(
-          indexName,
-          termsQuery,
-          Pagination.mkMax,
-          fromJsValue[CredibleSet],
-          excludedFields = Seq("locus", "ldSet")
-        )
-    retriever.map(_.mappedHits)
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.credibleSets.byId.name)
+    val credibleSetsQuery = CredibleSetsById(ids, tableName, 0, ids.length)
+    val results = dbRetriever
+      .executeQuery[CredibleSet, Query](credibleSetsQuery.query)
+      .map(credibleSets => credibleSets)
+    results
   }
 
   def getCredibleSets(

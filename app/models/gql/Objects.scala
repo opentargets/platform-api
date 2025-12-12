@@ -1780,6 +1780,8 @@ object Objects extends Logging {
       ObjectTypeDescription("Disease-specific database settings configuration"),
       DocumentField("associations", "Database table settings for disease associations")
     )
+  implicit val credibleSetsSettingsImp: ObjectType[Backend, CredibleSetsSettings] =
+    deriveObjectType[Backend, CredibleSetsSettings]()
   implicit val harmonicSettingsImp: ObjectType[Backend, HarmonicSettings] =
     deriveObjectType[Backend, HarmonicSettings](
       ObjectTypeDescription("Harmonic mean scoring settings for association calculations"),

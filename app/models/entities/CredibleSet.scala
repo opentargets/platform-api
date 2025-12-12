@@ -3,6 +3,7 @@ package models.entities
 import models.gql.StudyTypeEnum
 import play.api.Logging
 import play.api.libs.json.*
+import slick.jdbc.GetResult
 
 case class LdSet(
     tagVariantId: Option[String],
@@ -47,6 +48,8 @@ case class CredibleSetQueryArgs(
 )
 
 object CredibleSet extends Logging {
+  implicit val getCredibleSetFromDB: GetResult[CredibleSet] =
+    GetResult(r => Json.parse(r.<<[String]).as[CredibleSet])
 
   implicit val ldSetF: OFormat[LdSet] = Json.format[LdSet]
 

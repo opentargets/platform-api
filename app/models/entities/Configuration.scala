@@ -47,6 +47,11 @@ object Configuration {
 
   case class DiseaseSettings(associations: DbTableSettings)
 
+  case class CredibleSetsSettings(byId: DbTableSettings,
+                                  byStudy: DbTableSettings,
+                                  byVariant: DbTableSettings,
+                                  byRegion: DbTableSettings
+  )
   case class DatasourceSettings(id: String,
                                 weight: Double,
                                 propagate: Boolean,
@@ -60,6 +65,7 @@ object Configuration {
     */
   case class ClickhouseSettings(
       defaultDatabaseName: String,
+      credibleSets: CredibleSetsSettings,
       intervals: DbTableSettings,
       target: TargetSettings,
       disease: DiseaseSettings,
@@ -150,6 +156,8 @@ object Configuration {
   implicit val harmonicSettingsJSONImp: OFormat[HarmonicSettings] = Json.format[HarmonicSettings]
   implicit val targetSettingsJSONImp: OFormat[TargetSettings] = Json.format[TargetSettings]
   implicit val diseaseSettingsJSONImp: OFormat[DiseaseSettings] = Json.format[DiseaseSettings]
+  implicit val credibleSetsSettingsJSONImp: OFormat[CredibleSetsSettings] =
+    Json.format[CredibleSetsSettings]
   implicit val clickhouseSettingsJSONImp: OFormat[ClickhouseSettings] =
     Json.format[ClickhouseSettings]
 
