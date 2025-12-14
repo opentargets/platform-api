@@ -2148,7 +2148,7 @@ object Objects extends Logging {
   implicit val variantEffectImp: ObjectType[Backend, VariantEffect] =
     deriveObjectType[Backend, VariantEffect](
       ObjectTypeDescription("Predicted or measured effect of the variant based on various methods"),
-      DocumentField("method", "Method used to predict or measure the variant effect"),
+      DocumentField("method", "Method used to predict or measure the variant effect (e.g. VEP, SIFT, GERP, AlphaMissense, FoldX)"),
       DocumentField("assessment", "Assessment of the variant effect"),
       DocumentField("score", "Score indicating the severity or impact of the variant effect"),
       DocumentField("assessmentFlag", "Flag indicating the reliability of the assessment"),
