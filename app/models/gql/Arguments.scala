@@ -43,7 +43,7 @@ object Arguments {
       "Pagination settings for controlling result set size and page navigation. Uses zero-based indexing to specify which page of results to retrieve."
     ),
     DocumentInputField("index", "Zero-based page index"),
-    DocumentInputField("size", "Number of items per page")
+    DocumentInputField("size", "Number of items per page [Default: 25, Max: 3000]"),
   )
 
   val datasourceSettingsInputImp: InputObjectType[DatasourceSettings] =
@@ -81,7 +81,7 @@ object Arguments {
                                                          "Pagination settings with index and size"
   )
   val pageSize: Argument[Option[Int]] =
-    Argument("size", OptionInputType(IntType), description = "Number of items per page")
+    Argument("size", OptionInputType(IntType), description = "Number of items per page [Default: 25, Max: 3000]")
   val cursor: Argument[Option[String]] =
     Argument("cursor", OptionInputType(StringType), description = "Opaque cursor for pagination")
   val scoreThreshold: Argument[Option[Double]] = Argument(
