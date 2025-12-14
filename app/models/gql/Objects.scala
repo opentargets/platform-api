@@ -158,7 +158,7 @@ object Objects extends Logging {
     DocumentField("functionDescriptions",
                   "Functional descriptions of the target gene sourced from UniProt"
     ),
-    DocumentField("constraint", "Constraint scores for the target gene from GnomAD"),
+    DocumentField("constraint", "Constraint scores for the target gene from GnomAD based on loss-of-function intolerance."),
     DocumentField("genomicLocation", "Genomic location information of the target gene"),
     DocumentField("go", "List of Gene Ontology (GO) annotations related to the target"),
     DocumentField(
@@ -1065,7 +1065,7 @@ object Objects extends Logging {
                     "Upper bin classification going from more constrained to less constrained"
       ),
       DocumentField("upperBin6",
-                    "Upper bin6 classification going from more constrained to less constrained"
+                    "Interpretable classification of constraint based on 6 bins. [Values: 0:very high`, 1: `high`, 2: `medium`, 3: `low`, 4: `very low`, 5: `very low`]"
       ),
       DocumentField(
         "upperRank",
