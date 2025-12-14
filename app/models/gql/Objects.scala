@@ -1428,7 +1428,7 @@ object Objects extends Logging {
         "Indication information linking a drug or clinical candidate molecule to a disease"
       ),
       DocumentField("maxPhaseForIndication",
-                    "Maximum clinical trial phase for this drug-disease indication"
+                    "Maximum clinical trial phase for this drug-disease indication. [Values: -1: `Unknown`, 0: `Phase 0`, 0.5: `Phase I (Early)`, 1: `Phase I`, 2: `Phase II`, 3: `Phase III`, 4: `Phase IV`]"
       ),
       DocumentField("references", "Reference information supporting the indication"),
       ReplaceField(
@@ -1572,7 +1572,7 @@ object Objects extends Logging {
     ),
     DocumentField(
       "maximumClinicalTrialPhase",
-      "Highest clinical trial phase reached by the drug or clinical candidate molecule"
+      "Highest clinical trial phase reached by the drug or clinical candidate molecule. [Values: -1: `Unknown`, 0: `Phase 0`, 0.5: `Phase I (Early)`, 1: `Phase I`, 2: `Phase II`, 3: `Phase III`, 4: `Phase IV`]"
     ),
     DocumentField("isApproved",
                   "Flag indicating whether the drug has received regulatory approval"
@@ -1892,7 +1892,7 @@ object Objects extends Logging {
     DocumentField("targetId", "Open Targets target identifier"),
     DocumentField("diseaseId", "Open Targets disease identifier"),
     DocumentField("drugId", "Open Targets molecule identifier"),
-    DocumentField("phase", "Clinical development stage of the drug"),
+    DocumentField("phase", "Clinical development stage of the drug. [Values: -1: `Unknown`, 0: `Phase 0`, 0.5: `Phase I (Early)`, 1: `Phase I`, 2: `Phase II`, 3: `Phase III`, 4: `Phase IV`]"),
     DocumentField("mechanismOfAction", "Drug pharmacological action"),
     DocumentField("status", "Clinical trial status for the drug/indication pair"),
     DocumentField("targetClass",
@@ -2726,7 +2726,7 @@ object Objects extends Logging {
     DocumentField("log2FoldChangeValue", "Log2 fold expression change in contrast experiment"),
     DocumentField("biologicalModelAllelicComposition", "Allelic composition of the model organism"),
     DocumentField("confidence", "Confidence qualifier on the reported evidence"),
-    DocumentField("clinicalPhase", "Phase of the clinical trial"),
+    DocumentField("clinicalPhase", "Phase of the clinical trial. [Values: -1: `Unknown`, 0: `Phase 0`, 0.5: `Phase I (Early)`, 1: `Phase I`, 2: `Phase II`, 3: `Phase III`, 4: `Phase IV`]"),
     DocumentField("clinicalStatus", "Current stage of a clinical study"),
     DocumentField("clinicalSignificances", "Standard terms to define clinical significance"),
     DocumentField("resourceScore",
