@@ -198,7 +198,7 @@ object Arguments {
   val scoreSorting: Argument[Option[String]] = Argument(
     "orderByScore",
     OptionInputType(StringType),
-    description = "Ordering for the associations. It accepts a string with two words separated by a space. The first word is the column to sort by. This can be either by `score` for sorting by the overall association score (default), a datasource id (e.g. `impc`) or a datatype id (e.g. `animal_model`). The second word is the order: `desc` (default) or `asc`.",
+    description = "Ordering for the associations. Accepts a string with two words separated by a space. The first word is the column to sort by: either `score` to use the overall association score (default), a datasource id (e.g., `impc`), or a datatype id (e.g., `animal_model`). The second word is the order: `desc` (default) or `asc`.",
   )
 
   val AId: Argument[String] =
