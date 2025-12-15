@@ -1065,7 +1065,7 @@ object Objects extends Logging {
                     "Upper bin classification going from more constrained to less constrained"
       ),
       DocumentField("upperBin6",
-                    "Interpretable classification of constraint based on 6 bins. [Values: 0:very high`, 1: `high`, 2: `medium`, 3: `low`, 4: `very low`, 5: `very low`]"
+                    "Interpretable classification of constraint based on 6 bins. [Values: 0: `very high`, 1: `high`, 2: `medium`, 3: `low`, 4: `very low`, 5: `very low`]"
       ),
       DocumentField(
         "upperRank",
