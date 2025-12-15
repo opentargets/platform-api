@@ -158,7 +158,7 @@ object Objects extends Logging {
     DocumentField("functionDescriptions",
                   "Functional descriptions of the target gene sourced from UniProt"
     ),
-    DocumentField("constraint", "Constraint scores for the target gene from GnomAD"),
+    DocumentField("constraint", "Constraint scores for the target gene from GnomAD based on loss-of-function intolerance."),
     DocumentField("genomicLocation", "Genomic location information of the target gene"),
     DocumentField("go", "List of Gene Ontology (GO) annotations related to the target"),
     DocumentField(
@@ -1065,7 +1065,7 @@ object Objects extends Logging {
                     "Upper bin classification going from more constrained to less constrained"
       ),
       DocumentField("upperBin6",
-                    "Upper bin6 classification going from more constrained to less constrained"
+                    "Interpretable classification of constraint based on 6 bins. [GnomAD labels: 0: `very high`, 1: `high`, 2: `medium`, 3: `low`, 4: `very low`, 5: `very low`]"
       ),
       DocumentField(
         "upperRank",
@@ -1428,7 +1428,7 @@ object Objects extends Logging {
         "Indication information linking a drug or clinical candidate molecule to a disease"
       ),
       DocumentField("maxPhaseForIndication",
-                    "Maximum clinical trial phase for this drug-disease indication"
+                    "Maximum clinical trial phase for this drug-disease indication. [Values: -1: `Unknown`, 0: `Phase 0`, 0.5: `Phase I (Early)`, 1: `Phase I`, 2: `Phase II`, 3: `Phase III`, 4: `Phase IV`]"
       ),
       DocumentField("references", "Reference information supporting the indication"),
       ReplaceField(
@@ -1572,7 +1572,7 @@ object Objects extends Logging {
     ),
     DocumentField(
       "maximumClinicalTrialPhase",
-      "Highest clinical trial phase reached by the drug or clinical candidate molecule"
+      "Highest clinical trial phase reached by the drug or clinical candidate molecule. [Values: -1: `Unknown`, 0: `Phase 0`, 0.5: `Phase I (Early)`, 1: `Phase I`, 2: `Phase II`, 3: `Phase III`, 4: `Phase IV`]"
     ),
     DocumentField("isApproved",
                   "Flag indicating whether the drug has received regulatory approval"
@@ -1892,7 +1892,7 @@ object Objects extends Logging {
     DocumentField("targetId", "Open Targets target identifier"),
     DocumentField("diseaseId", "Open Targets disease identifier"),
     DocumentField("drugId", "Open Targets molecule identifier"),
-    DocumentField("phase", "Clinical development stage of the drug"),
+    DocumentField("phase", "Clinical development stage of the drug. [Values: -1: `Unknown`, 0: `Phase 0`, 0.5: `Phase I (Early)`, 1: `Phase I`, 2: `Phase II`, 3: `Phase III`, 4: `Phase IV`]"),
     DocumentField("mechanismOfAction", "Drug pharmacological action"),
     DocumentField("status", "Clinical trial status for the drug/indication pair"),
     DocumentField("targetClass",
@@ -2148,7 +2148,7 @@ object Objects extends Logging {
   implicit val variantEffectImp: ObjectType[Backend, VariantEffect] =
     deriveObjectType[Backend, VariantEffect](
       ObjectTypeDescription("Predicted or measured effect of the variant based on various methods"),
-      DocumentField("method", "Method used to predict or measure the variant effect"),
+      DocumentField("method", "Method used to predict or measure the variant effect (e.g. VEP, SIFT, GERP, AlphaMissense, FoldX)"),
       DocumentField("assessment", "Assessment of the variant effect"),
       DocumentField("score", "Score indicating the severity or impact of the variant effect"),
       DocumentField("assessmentFlag", "Flag indicating the reliability of the assessment"),
@@ -2726,7 +2726,7 @@ object Objects extends Logging {
     DocumentField("log2FoldChangeValue", "Log2 fold expression change in contrast experiment"),
     DocumentField("biologicalModelAllelicComposition", "Allelic composition of the model organism"),
     DocumentField("confidence", "Confidence qualifier on the reported evidence"),
-    DocumentField("clinicalPhase", "Phase of the clinical trial"),
+    DocumentField("clinicalPhase", "Phase of the clinical trial. [Values: -1: `Unknown`, 0: `Phase 0`, 0.5: `Phase I (Early)`, 1: `Phase I`, 2: `Phase II`, 3: `Phase III`, 4: `Phase IV`]"),
     DocumentField("clinicalStatus", "Current stage of a clinical study"),
     DocumentField("clinicalSignificances", "Standard terms to define clinical significance"),
     DocumentField("resourceScore",

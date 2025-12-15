@@ -43,7 +43,7 @@ object Arguments {
       "Pagination settings for controlling result set size and page navigation. Uses zero-based indexing to specify which page of results to retrieve."
     ),
     DocumentInputField("index", "Zero-based page index"),
-    DocumentInputField("size", "Number of items per page")
+    DocumentInputField("size", "Number of items per page [Default: 25, Max: 3000]"),
   )
 
   val datasourceSettingsInputImp: InputObjectType[DatasourceSettings] =
@@ -81,7 +81,7 @@ object Arguments {
                                                          "Pagination settings with index and size"
   )
   val pageSize: Argument[Option[Int]] =
-    Argument("size", OptionInputType(IntType), description = "Number of items per page")
+    Argument("size", OptionInputType(IntType), description = "Number of items per page [Default: 25, Max: 3000]")
   val cursor: Argument[Option[String]] =
     Argument("cursor", OptionInputType(StringType), description = "Opaque cursor for pagination")
   val scoreThreshold: Argument[Option[Double]] = Argument(
@@ -198,7 +198,7 @@ object Arguments {
   val scoreSorting: Argument[Option[String]] = Argument(
     "orderByScore",
     OptionInputType(StringType),
-    description = "Ordering for the associations. By default is score desc"
+    description = "Ordering for the associations. Accepts a string with two words separated by a space. The first word is the column to sort by: either `score` to use the overall association score (default), a datasource id (e.g., `impc`), or a datatype id (e.g., `animal_model`). The second word is the order: `desc` (default) or `asc`.",
   )
 
   val AId: Argument[String] =
