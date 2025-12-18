@@ -19,7 +19,7 @@ jobs:
       id-token: write
 
     env:
-      TAG: ${{ github.ref_name }}
+      TAG: ${{ github.event.release.tag_name }}
       REPO: ${{ github.event.repository.name }}
 
     steps:
