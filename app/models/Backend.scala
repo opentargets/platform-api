@@ -11,7 +11,7 @@ import gql.validators.QueryTermsValidator.*
 
 import javax.inject.Inject
 import models.Helpers.*
-import models.db.{IntervalsQuery, QAOTF, QLITAGG, QW2V, TargetsQuery}
+import models.db.*
 import models.entities.Publication.*
 import models.entities.Associations.*
 import models.entities.Biosample.*
@@ -190,15 +190,12 @@ class Backend @Inject() (implicit
   }
 
   def getVariants(ids: Seq[String]): Future[IndexedSeq[VariantIndex]] = {
-    val indexName = getIndexOrDefault("variant")
-    val r = esRetriever
-      .getByIndexedTermsMust(indexName,
-                             Map("variantId.keyword" -> ids),
-                             Pagination.mkMax,
-                             fromJsValue[VariantIndex]
-      )
-      .map(_.mappedHits)
-    r
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.variant.name)
+    val variantsQuery = VariantsQuery(ids, tableName, 0, Pagination.sizeMax)
+    val results = dbRetriever
+      .executeQuery[VariantIndex, Query](variantsQuery.query)
+      .map(variants => variants)
+    results
   }
 
   def getBiosamples(ids: Seq[String]): Future[IndexedSeq[Biosample]] = {
