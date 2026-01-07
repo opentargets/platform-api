@@ -17,6 +17,14 @@ object StudyTypeEnum extends Enumeration {
   implicit val studyTypeF: Format[StudyType] = Json.formatEnum(this)
 }
 
+object InteractionSourceEnum extends Enumeration {
+
+  type InteractionSource = Value
+  val intact, reactome, signor, string = Value
+
+  implicit val interactionSourceF: Format[InteractionSource] = Json.formatEnum(this)
+}
+
 object Arguments {
   import sangria.macros.derive._
   implicit val StudyType: EnumType[StudyTypeEnum.Value] =
@@ -37,6 +45,14 @@ object Arguments {
       DocumentValue("sctuqtl",
                     "Single-cell transcript uptake quantitative trait locus (sc-tuQTL) study"
       )
+    )
+  implicit val InteractionSource: EnumType[InteractionSourceEnum.Value] =
+    deriveEnumType[InteractionSourceEnum.Value](
+      EnumTypeDescription("Source database for molecular interaction evidence"),
+      DocumentValue("intact", "IntAct molecular interaction database"),
+      DocumentValue("reactome", "Reactome pathway database"),
+      DocumentValue("signor", "SIGNOR, the SIGnaling Network Open Resource database"),
+      DocumentValue("string", "STRING, protein-protein interactions database")
     )
   val paginationGQLImp: InputObjectType[Pagination] = deriveInputObjectType[Pagination](
     InputObjectTypeDescription(
@@ -92,8 +108,11 @@ object Arguments {
     OptionInputType(FloatType),
     description = "Threshold similarity between 0 and 1"
   )
-  val databaseName: Argument[Option[String]] =
-    Argument("sourceDatabase", OptionInputType(StringType), description = "Source database name")
+  val databaseName =
+    Argument("sourceDatabase",
+             OptionInputType(InteractionSource),
+             description = "Source database name"
+    )
   val queryString: Argument[String] =
     Argument("queryString", StringType, description = "Search query string")
   val category: Argument[Option[String]] =

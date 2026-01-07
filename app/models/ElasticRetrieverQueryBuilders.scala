@@ -1,10 +1,10 @@
 package models
 
-import com.sksamuel.elastic4s.ElasticDsl.{multi, search}
+import com.sksamuel.elastic4s.ElasticDsl.search
 import com.sksamuel.elastic4s.api.QueryApi
 import com.sksamuel.elastic4s.requests.searches.aggs.AbstractAggregation
 import com.sksamuel.elastic4s.requests.searches.queries.Query
-import com.sksamuel.elastic4s.requests.searches.{MultiSearchRequest, SearchRequest}
+import com.sksamuel.elastic4s.requests.searches.SearchRequest
 import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
 import models.entities.Pagination
 import utils.OTLogging
@@ -52,21 +52,6 @@ trait ElasticRetrieverQueryBuilders extends OTLogging with QueryApi {
       indexQuery: IndexQuery[V]
   ): SearchRequest =
     getByIndexQueryBuilder(indexQuery, should)
-
-  def IndexTermsMust[V](
-      indexQuery: IndexQuery[V]
-  ): SearchRequest =
-    getByIndexTermsBuilder(indexQuery, must)
-
-  def IndexTermsShould[V](
-      indexQuery: IndexQuery[V]
-  ): SearchRequest =
-    getByIndexTermsBuilder(indexQuery, should)
-
-  def MultiIndexTermsMust[V](
-      indexQueries: Seq[IndexQuery[V]]
-  ): MultiSearchRequest =
-    multiSearchTermsBuilder(indexQueries, must)
 
   def getByIndexQueryBuilder[V](
       indexQuery: IndexQuery[V],
@@ -128,24 +113,5 @@ trait ElasticRetrieverQueryBuilders extends OTLogging with QueryApi {
       .sourceExclude(indexQuery.excludedFields)
 
     searchRequest
-  }
-
-  def multiBoolQueryBuilder(
-      indexQueries: Seq[IndexBoolQuery]
-  ): MultiSearchRequest = {
-    val searchRequests = indexQueries.map { query =>
-      BoolQueryBuilder(query)
-    }
-    multi(searchRequests)
-  }
-
-  def multiSearchTermsBuilder[V](
-      indexQueries: Seq[IndexQuery[V]],
-      f: Iterable[Query] => BoolQuery
-  ): MultiSearchRequest = {
-    val searchRequests = indexQueries.map { query =>
-      getByIndexTermsBuilder(query, f)
-    }
-    multi(searchRequests)
   }
 }

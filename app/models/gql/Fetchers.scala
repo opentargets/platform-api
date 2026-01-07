@@ -9,11 +9,12 @@ import models.entities.{
   GeneOntologyTerm,
   HPO,
   Indications,
+  MousePhenotypes,
   OtarProjects,
-  Reactome,
   SequenceOntologyTerm,
   Study,
   Target,
+  TargetEssentiality,
   VariantIndex
 }
 import models.{Backend, entities}
@@ -42,40 +43,53 @@ object Fetchers extends OTLogging {
       FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(targetsFetcherCache),
     fetch = (ctx: Backend, ids: Seq[String]) => ctx.getTargets(ids)
   )
-  val diseasesFetcherCache = FetcherCache.simple
+
+  // target essentiality
+  implicit val targetEssentialityHasId: HasId[TargetEssentiality, String] =
+    HasId[TargetEssentiality, String](_.id)
+  val targetEssentialityFetcherCache = FetcherCache.simple
+  val targetEssentialityFetcher: Fetcher[Backend, TargetEssentiality, TargetEssentiality, String] =
+    Fetcher(
+      config = FetcherConfig
+        .maxBatchSize(entities.Configuration.batchSize)
+        .caching(targetEssentialityFetcherCache),
+      fetch = (ctx: Backend, ids: Seq[String]) => ctx.getTargetEssentiality(ids)
+    )
 
   // disease
+  val diseasesFetcherCache = FetcherCache.simple
   implicit val diseaseHasId: HasId[Disease, String] = HasId[Disease, String](_.id)
   val diseasesFetcher: Fetcher[Backend, Disease, Disease, String] = Fetcher(
     config =
       FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(diseasesFetcherCache),
     fetch = (ctx: Backend, ids: Seq[String]) => ctx.getDiseases(ids)
   )
-  val expressionFetcherCache = FetcherCache.simple
 
+  val expressionFetcherCache = FetcherCache.simple
   implicit val expressionHasId: HasId[Expressions, String] = HasId[Expressions, String](_.id)
   val expressionFetcher: Fetcher[Backend, Expressions, Expressions, String] = Fetcher(
     config =
       FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(expressionFetcherCache),
     fetch = (ctx: Backend, ids: Seq[String]) => ctx.getExpressions(ids)
   )
-  val otarProjectsFetcherCache = FetcherCache.simple
 
+  val mousePhenotypesFetcherCache = FetcherCache.simple
+  implicit val mousePhenotypesHasId: HasId[MousePhenotypes, String] =
+    HasId[MousePhenotypes, String](_.id)
+  val mousePhenotypesFetcher: Fetcher[Backend, MousePhenotypes, MousePhenotypes, String] = Fetcher(
+    config = FetcherConfig
+      .maxBatchSize(entities.Configuration.batchSize)
+      .caching(mousePhenotypesFetcherCache),
+    fetch = (ctx: Backend, ids: Seq[String]) => ctx.getMousePhenotypes(ids)
+  )
+
+  val otarProjectsFetcherCache = FetcherCache.simple
   implicit val otarProjectsHasId: HasId[OtarProjects, String] = HasId[OtarProjects, String](_.efoId)
   val otarProjectsFetcher: Fetcher[Backend, OtarProjects, OtarProjects, String] = Fetcher(
     config = FetcherConfig
       .maxBatchSize(entities.Configuration.batchSize)
       .caching(otarProjectsFetcherCache),
     fetch = (ctx: Backend, ids: Seq[String]) => ctx.getOtarProjects(ids)
-  )
-
-  val reactomeFetcherCache = FetcherCache.simple
-
-  implicit val reactomeHasId: HasId[Reactome, String] = HasId[Reactome, String](_.id)
-  val reactomeFetcher: Fetcher[Backend, Reactome, Reactome, String] = Fetcher(
-    config =
-      FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(reactomeFetcherCache),
-    fetch = (ctx: Backend, ids: Seq[String]) => ctx.getReactomeNodes(ids)
   )
 
   // hpo fetcher
@@ -107,6 +121,7 @@ object Fetchers extends OTLogging {
   )
 
   implicit val indicationHasId: HasId[Indications, String] = HasId[Indications, String](_.id)
+  val indicationFetcherCache = FetcherCache.simple
   val indicationFetcher: Fetcher[Backend, Indications, Indications, String] = Fetcher(
     config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize),
     fetch = (ctx: Backend, ids: Seq[String]) => ctx.getIndications(ids)
@@ -163,10 +178,12 @@ object Fetchers extends OTLogging {
       targetsFetcherCache,
       drugsFetcherCache,
       diseasesFetcherCache,
-      reactomeFetcherCache,
+      indicationFetcherCache,
+      mousePhenotypesFetcherCache,
       expressionFetcherCache,
       otarProjectsFetcherCache,
-      soTermsFetcherCache
+      soTermsFetcherCache,
+      targetEssentialityFetcherCache
     )
     fetchers.foreach(_.clear())
   }

@@ -1,8 +1,9 @@
 package models.entities
 
-import play.api.libs.json.*
-import play.api.libs.json.Reads.*
-import play.api.libs.functional.syntax.*
+import play.api.Logging
+import play.api.libs.json._
+import slick.jdbc.GetResult
+import models.gql.TypeWithId
 import utils.OTLogging
 
 case class BiologicalModels(
@@ -28,22 +29,18 @@ case class MousePhenotype(
     targetInModelMgiId: String
 )
 
-object MousePhenotypes extends OTLogging {
+case class MousePhenotypes(
+    count: Long,
+    rows: IndexedSeq[MousePhenotype],
+    id: String = ""
+) extends TypeWithId
 
+object MousePhenotypes extends OTLogging {
+  implicit val getFromDB: GetResult[MousePhenotypes] =
+    GetResult(r => Json.parse(r.<<[String]).as[MousePhenotypes])
   implicit val biologicalModelsF: OFormat[BiologicalModels] = Json.format[BiologicalModels]
   implicit val modelPhenotypeClassesF: OFormat[ModelPhenotypeClasses] =
     Json.format[ModelPhenotypeClasses]
-  implicit val mousePhenotypeW: OWrites[MousePhenotype] = Json.writes[MousePhenotype]
-
-  implicit val mousePhenotypeR: Reads[MousePhenotype] = (
-    (__ \ "biologicalModels").read[Seq[BiologicalModels]] and
-      (__ \ "modelPhenotypeClasses").read[Seq[ModelPhenotypeClasses]] and
-      (__ \ "modelPhenotypeId").read[String] and
-      (__ \ "modelPhenotypeLabel").read[String] and
-      (__ \ "targetFromSourceId").read[String] and
-      (__ \ "targetInModel").read[String] and
-      (__ \ "targetInModelEnsemblId").readNullable[String] and
-      (__ \ "targetInModelMgiId").read[String]
-  )(MousePhenotype.apply)
-
+  implicit val mousePhenotypeF: OFormat[MousePhenotype] = Json.format[MousePhenotype]
+  implicit val mousePhenotypesF: OFormat[MousePhenotypes] = Json.format[MousePhenotypes]
 }

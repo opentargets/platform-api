@@ -1,144 +1,77 @@
 package models.entities
 
-import com.sksamuel.elastic4s.ElasticApi.valueCountAgg
-import com.sksamuel.elastic4s.ElasticDsl.{boolQuery, existsQuery, not, rangeQuery, should}
-import com.sksamuel.elastic4s.requests.searches.*
-import com.sksamuel.elastic4s.requests.searches.aggs.TermsAggregation
-import com.sksamuel.elastic4s.requests.searches.sort.*
-import models.Helpers.fromJsValue
-import models.{Backend, ElasticRetriever}
-import models.entities.Configuration.{ElasticsearchSettings, OTSettings}
-import models.gql.Objects.interactionImp
-import models.Results
-import utils.MetadataUtils.getIndexWithPrefixOrDefault
+import models.Backend
 import play.api.libs.json.*
-import sangria.schema.{Field, ListType, LongType, ObjectType, fields}
+import play.api.libs.functional.syntax.*
+import models.gql.TypeWithId
+import slick.jdbc.GetResult
 import utils.OTLogging
 
-import scala.concurrent.{ExecutionContext, Future}
+case class Interactions(count: Long, rows: IndexedSeq[Interaction], id: String = "")
+    extends TypeWithId
 
-case class Interactions(count: Long, rows: IndexedSeq[Interaction])
+case class InteractionEvidencePDM(miIdentifier: Option[String], shortName: Option[String])
+
+case class InteractionSpecies(mnemonic: String,
+                              scientificName: Option[String],
+                              taxonId: Option[Long]
+)
+
+case class InteractionResources(databaseVersion: String, sourceDatabase: String)
+
+case class InteractionEvidence(
+    evidenceScore: Option[Double],
+    expansionMethodMiIdentifier: Option[String],
+    expansionMethodShortName: Option[String],
+    hostOrganismScientificName: Option[String],
+    hostOrganismTaxId: Option[Long],
+    intASource: String,
+    intBSource: String,
+    interactionDetectionMethodMiIdentifier: String,
+    interactionDetectionMethodShortName: String,
+    interactionIdentifier: Option[String],
+    interactionTypeMiIdentifier: Option[String],
+    interactionTypeShortName: Option[String],
+    participantDetectionMethodA: Option[Seq[InteractionEvidencePDM]],
+    participantDetectionMethodB: Option[Seq[InteractionEvidencePDM]],
+    pubmedId: Option[String]
+)
+
+case class Interaction(
+    intA: String,
+    targetA: String,
+    intB: String,
+    targetB: Option[String],
+    intABiologicalRole: String,
+    intBBiologicalRole: String,
+    scoring: Option[Double],
+    count: Long,
+    sourceDatabase: String,
+    speciesA: Option[InteractionSpecies],
+    speciesB: Option[InteractionSpecies],
+    evidences: Vector[InteractionEvidence]
+)
 
 object Interactions extends OTLogging {
+  val empty: Interactions = Interactions(0L, IndexedSeq.empty)
+  implicit val getInteractionsFromDB: GetResult[Interactions] =
+    GetResult(r => Json.parse(r.<<[String]).as[Interactions])
+  implicit val getInteractionResourcesFromDB: GetResult[InteractionResources] =
+    GetResult(r => Json.parse(r.<<[String]).as[InteractionResources])
+  implicit val interactionEvidencePDMF: OFormat[InteractionEvidencePDM] =
+    Json.format[InteractionEvidencePDM]
 
-  val interactions: ObjectType[Backend, Interactions] = ObjectType(
-    "Interactions",
-    "Molecular interactions reported between targets, with total count and rows",
-    fields[Backend, Interactions](
-      Field("count",
-            LongType,
-            description = Some("Total number of interaction entries available for the query"),
-            resolve = o => o.value.count
-      ),
-      Field("rows",
-            ListType(interactionImp),
-            description = Some("List of molecular interaction entries"),
-            resolve = o => o.value.rows
-      )
-    )
-  )
+  implicit val interactionSpeciesW: OWrites[InteractionSpecies] = Json.writes[InteractionSpecies]
+  implicit val interactionSpeciesR: Reads[InteractionSpecies] =
+    ((__ \ "mnemonic").read[String] and
+      (__ \ "scientific_name").readNullable[String] and
+      (__ \ "taxon_id").readNullable[Long])(InteractionSpecies.apply)
 
-  def find(id: String,
-           scoreThreshold: Option[Double],
-           dbName: Option[String],
-           pagination: Option[Pagination]
-  )(implicit
-      ec: ExecutionContext,
-      esSettings: ElasticsearchSettings,
-      esRetriever: ElasticRetriever,
-      otSettings: OTSettings
-  ): Future[Option[Interactions]] = {
+  implicit val interactionResourcesF: OFormat[InteractionResources] =
+    Json.format[InteractionResources]
 
-    val pag = pagination.getOrElse(Pagination.mkDefault)
+  implicit val interactionEvidenceF: OFormat[InteractionEvidence] = Json.format[InteractionEvidence]
 
-    val indexName = esSettings.entities
-      .find(_.name == "interaction")
-      .map(_.index)
-      .getOrElse("interaction")
-
-    val cbIndex = getIndexWithPrefixOrDefault(indexName)
-
-    val kv = List(
-      Some("targetA.keyword" -> id),
-      dbName.map("sourceDatabase.keyword" -> _)
-    ).flatten.toMap
-
-    val filters = Seq(
-      should(
-        rangeQuery("scoring").gte(scoreThreshold.getOrElse(0.0d)),
-        not(existsQuery("scoring"))
-      )
-    )
-
-    val aggs = Seq(
-      valueCountAgg("rowsCount", "targetA.keyword")
-    )
-
-    esRetriever
-      .getByIndexedQueryMustWithFilters(
-        cbIndex,
-        kv,
-        filters,
-        pag,
-        fromJsValue[Interaction],
-        aggs,
-        Some(sort.FieldSort("scoring", order = SortOrder.DESC))
-      )
-      .map {
-        case Results(Seq(), _, _, _) => None
-        case Results(seq, agg, _, _) =>
-          logger.debug(Json.prettyPrint(agg))
-
-          val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
-          Some(Interactions(rowsCount, seq))
-      }
-  }
-
-  def listResources(implicit
-      ec: ExecutionContext,
-      esSettings: ElasticsearchSettings,
-      esRetriever: ElasticRetriever,
-      otSettings: OTSettings
-  ): Future[Seq[InteractionResources]] = {
-
-    val indexName = esSettings.entities
-      .find(_.name == "interaction_evidence")
-      .map(_.index)
-      .getOrElse("interaction_evidence")
-
-    val cbIndex = getIndexWithPrefixOrDefault(indexName)
-
-    val queryAggs = Seq(
-      TermsAggregation(
-        "aggs",
-        Some("interactionResources.sourceDatabase.keyword"),
-        size = Some(100),
-        subaggs = Seq(
-          TermsAggregation(
-            "aggs",
-            Some("interactionResources.databaseVersion.keyword"),
-            size = Some(100)
-          )
-        )
-      )
-    )
-
-    val esQ = esRetriever.getAggregationsByQuery(cbIndex, boolQuery(), queryAggs) map {
-      case obj: JsObject =>
-        logger.debug(Json.prettyPrint(obj))
-
-        val keys = ((obj \ "aggs" \ "buckets")
-          .as[Seq[JsValue]])
-          .map { el =>
-            val k = (el \ "key").as[String]
-            val v = (el \ "aggs" \ "buckets" \\ "key").take(1).head.as[String]
-            InteractionResources(k, v)
-          }
-
-        keys
-      case _ => Seq.empty
-    }
-
-    esQ
-  }
+  implicit val interactionF: OFormat[Interaction] = Json.format[Interaction]
+  implicit val interactionsF: OFormat[Interactions] = Json.format[Interactions]
 }

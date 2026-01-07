@@ -11,23 +11,28 @@ import esecuele.*
 
 import javax.inject.Inject
 import models.Helpers.*
-import models.db.{IntervalsQuery, QAOTF, QLITAGG, QW2V, TargetsQuery}
+import models.db.*
 import models.entities.Publication.*
 import models.entities.Associations.*
 import models.entities.Biosample.*
-import models.entities.CredibleSet.*
+import models.entities.CredibleSets.*
+import models.entities.Colocalisations.*
 import models.entities.Configuration.*
 import models.entities.DiseaseHPOs.*
 import models.entities.Drug.*
+import models.entities.Interactions.*
 import models.entities.Intervals.*
 import models.entities.Loci.*
 import models.entities.MousePhenotypes.*
 import models.entities.Pharmacogenomics.*
 import models.entities.SearchFacetsResults.*
-import models.entities.Evidence.*
+import models.entities.Studies.*
+import models.entities.Evidences.*
 import models.entities.SequenceOntologyTerm.*
 import models.entities.*
-import models.gql.StudyTypeEnum
+import models.gql.{StudyTypeEnum, InteractionSourceEnum}
+import models.entities.Violations.{DateFilterError, InputParameterCheckError}
+
 import org.apache.http.impl.nio.reactor.IOReactorConfig
 import play.api.cache.AsyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
@@ -35,12 +40,11 @@ import play.api.libs.json.*
 import play.api.{Configuration, Environment}
 import play.db.NamedDatabase
 import slick.basic.DatabaseConfig
-
 import java.time.LocalDate
 import scala.concurrent.*
 import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
-import models.entities.Violations.{DateFilterError, InputParameterCheckError}
 import services.ApplicationStart
+
 import utils.MetadataUtils.getIndexWithPrefixOrDefault
 import utils.OTLogging
 
@@ -124,27 +128,21 @@ class Backend @Inject() (implicit
       }
   }
 
-  def getDiseaseHPOs(id: String, pagination: Option[Pagination]): Future[Option[DiseaseHPOs]] = {
-
-    val pag = pagination.getOrElse(Pagination.mkDefault)
-
-    val cbIndex = getIndexOrDefault("disease_hpo")
-
-    logger.debug(s"querying disease hpos", keyValue("id", id), keyValue("index", cbIndex))
-
-    val kv = Map("disease.keyword" -> id)
-
-    val aggs = Seq(
-      valueCountAgg("rowsCount", "disease.keyword")
+  def getDiseaseHPOs(ids: Seq[String],
+                     pagination: Option[Pagination]
+  ): Future[IndexedSeq[DiseaseHPOs]] = {
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.diseaseHPO.name)
+    logger.debug(s"querying disease hpos", keyValue("id", ids), keyValue("table", tableName))
+    val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
+    val diseaseHPOQuery = OneToMany(
+      ids = ids,
+      idField = "disease",
+      arrayField = "phenotypes",
+      tableName = tableName,
+      offset = pag._1,
+      size = pag._2
     )
-
-    esRetriever.getByIndexedQueryMust(cbIndex, kv, pag, fromJsValue[DiseaseHPO], aggs).map {
-      case Results(Seq(), _, _, _) => Some(DiseaseHPOs(0, Seq()))
-      case Results(seq, agg, _, _) =>
-        logger.trace(Json.prettyPrint(agg))
-        val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
-        Some(DiseaseHPOs(rowsCount, seq))
-    }
+    dbRetriever.executeQuery[DiseaseHPOs, Query](diseaseHPOQuery.query)
   }
 
   def getDownloads: Future[Option[String]] = {
@@ -159,429 +157,266 @@ class Backend @Inject() (implicit
   }
 
   def getGoTerms(ids: Seq[String]): Future[IndexedSeq[GeneOntologyTerm]] = {
-    val targetIndexName = getIndexOrDefault("go")
-
-    logger.debug(s"querying go terms", keyValue("ids", ids), keyValue("index", targetIndexName))
-
-    esRetriever.getByIds(targetIndexName, ids, fromJsValue[GeneOntologyTerm])
+    val targetIndexName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.go.name)
+    logger.debug(s"querying go terms", keyValue("ids", ids), keyValue("table", targetIndexName))
+    val query = IdsQuery(ids, "id", targetIndexName, 0, Pagination.sizeMax)
+    dbRetriever.executeQuery[GeneOntologyTerm, Query](query.query)
   }
 
   def getL2GPredictions(ids: Seq[String],
                         pagination: Option[Pagination]
   ): Future[IndexedSeq[L2GPredictions]] = {
-    val indexName = getIndexOrDefault("l2g_predictions")
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.l2gPredictions.name)
 
-    logger.debug(s"querying l2g predictions", keyValue("ids", ids), keyValue("index", indexName))
+    logger.debug(s"querying l2g predictions", keyValue("ids", ids), keyValue("table", tableName))
 
-    val pag = pagination.getOrElse(Pagination.mkDefault)
-    val queries = ids.map { studyLocusId =>
-      IndexQuery(
-        esIndex = indexName,
-        kv = Map("studyLocusId.keyword" -> Seq(studyLocusId)),
-        filters = Seq.empty,
-        pagination = pag
-      )
-    }
-    val retriever =
-      esRetriever
-        .getMultiByIndexedTermsMust(
-          queries,
-          fromJsValue[L2GPrediction],
-          ElasticRetriever.sortBy("score", SortOrder.Desc),
-          Some(ResolverField("studyLocusId"))
-        )
-    retriever.map { case r =>
-      r.map {
-        case Results(Seq(), _, _, _) => L2GPredictions.empty
-        case Results(predictions, _, counts, studyLocusId) =>
-          L2GPredictions(counts, predictions, studyLocusId.as[String])
-      }
-    }
+    val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
+    val l2gQuery = OneToMany.l2gQuery(
+      ids,
+      tableName,
+      pag._1,
+      pag._2
+    )
+    val results = dbRetriever
+      .executeQuery[L2GPredictions, Query](l2gQuery.query)
+    results
   }
 
   def getVariants(ids: Seq[String]): Future[IndexedSeq[VariantIndex]] = {
-    val indexName = getIndexOrDefault("variant")
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.variant.name)
 
-    logger.debug(s"querying variants", keyValue("ids", ids), keyValue("index", indexName))
+    logger.debug(s"querying variants", keyValue("ids", ids), keyValue("table", tableName))
 
-    val r = esRetriever
-      .getByIndexedTermsMust(indexName,
-                             Map("variantId.keyword" -> ids),
-                             Pagination.mkMax,
-                             fromJsValue[VariantIndex]
-      )
-      .map(_.mappedHits)
-    r
+    val variantsQuery = IdsQuery(ids, "variantId", tableName, 0, Pagination.sizeMax)
+    dbRetriever.executeQuery[VariantIndex, Query](variantsQuery.query)
   }
 
   def getBiosamples(ids: Seq[String]): Future[IndexedSeq[Biosample]] = {
-    val indexName = getIndexOrDefault("biosample", Some("biosample"))
-
-    logger.debug(s"querying biosamples", keyValue("ids", ids), keyValue("index", indexName))
-
-    esRetriever
-      .getByIndexedTermsMust(
-        indexName,
-        Map("biosampleId.keyword" -> ids),
-        Pagination.mkMax,
-        fromJsValue[Biosample]
-      )
-      .map(_.mappedHits)
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.biosample.name)
+    logger.debug(s"querying biosamples", keyValue("ids", ids), keyValue("table", tableName))
+    val query = IdsQuery(ids, "biosampleId", tableName, 0, Pagination.sizeMax)
+    dbRetriever.executeQuery[Biosample, Query](query.query)
   }
 
   def getStudy(ids: Seq[String]): Future[IndexedSeq[Study]] = {
-    val indexName = getIndexOrDefault("study")
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.study.name)
 
-    logger.debug(s"querying studies by id", keyValue("ids", ids), keyValue("index", indexName))
+    logger.debug(s"querying studies by id", keyValue("ids", ids), keyValue("table", tableName))
 
-    val termsQuery = Map("studyId.keyword" -> ids)
-    val retriever =
-      esRetriever
-        .getByIndexedTermsMust(
-          indexName,
-          termsQuery,
-          Pagination.mkMax,
-          fromJsValue[Study]
-        )
-    retriever.map(_.mappedHits)
+    val studiesQuery = IdsQuery(ids, "studyId", tableName, 0, Pagination.sizeMax)
+    val results = dbRetriever
+      .executeQuery[Study, Query](studiesQuery.query)
+    results
   }
 
   def getStudies(queryArgs: StudyQueryArgs, pagination: Option[Pagination]): Future[Studies] = {
-    val pag = pagination.getOrElse(Pagination.mkDefault)
-    val indexName = getIndexOrDefault("study")
-
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.study.name)
     logger.debug(s"querying studies by disease",
                  keyValue("id", queryArgs.id),
                  keyValue("diseases", queryArgs.diseaseIds),
-                 keyValue("index", indexName)
+                 keyValue("table", tableName)
     )
-
-    val diseaseIds: Seq[String] =
-      if (queryArgs.enableIndirect) {
-        val diseases = getDiseases(queryArgs.diseaseIds)
-        val descendantEfos = diseases.map(_.map(_.descendants).flatten).await
-        descendantEfos ++: queryArgs.diseaseIds
-      } else {
-        queryArgs.diseaseIds
+    val diseaseTableName =
+      getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.disease.name)
+    val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
+    val studiesQuery = StudiesQuery(queryArgs, tableName, diseaseTableName, pag._1, pag._2)
+    val results = dbRetriever
+      .executeQuery[Study, Query](studiesQuery.query)
+      .map { studies =>
+        if (studies.isEmpty) {
+          Studies.empty
+        } else {
+          Studies(studies.head.metaTotal, studies)
+        }
       }
-    val termsQuery = Map(
-      "studyId.keyword" -> queryArgs.id,
-      "diseaseIds.keyword" -> diseaseIds
-    ).filter(_._2.nonEmpty)
-    if (termsQuery.isEmpty) {
-      Future.successful(Studies.empty)
-    } else {
-      val retriever = esRetriever
-        .getByIndexedTermsMust(
-          indexName,
-          termsQuery,
-          pag,
-          fromJsValue[Study]
-        )
-      retriever.map {
-        case Results(Seq(), _, _, _) => Studies.empty
-        case Results(studies, _, count, _) =>
-          Studies(count, studies)
-      }
-    }
+    results
   }
 
   def getColocalisations(studyLocusIds: Seq[String],
-                         studyTypes: Option[Seq[StudyTypeEnum.Value]],
+                         studyTypes: Seq[StudyTypeEnum.Value] = Seq(StudyTypeEnum.gwas),
                          pagination: Option[Pagination]
   ): Future[IndexedSeq[Colocalisations]] = {
-    val indexName = getIndexOrDefault("colocalisation")
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.colocalisation.name)
 
     logger.debug(s"querying colocalisations",
                  keyValue("study_locus_ids", studyLocusIds),
                  keyValue("studyType", studyTypes),
-                 keyValue("index", indexName)
+                 keyValue("table", tableName)
     )
 
-    val pag = pagination.getOrElse(Pagination.mkDefault)
-    val boolQueries: Seq[IndexBoolQuery] = studyLocusIds.map { studyLocusId =>
-      val leftStudyLocusQuery = must(
-        termQuery("leftStudyLocusId.keyword", studyLocusId),
-        termsQuery("rightStudyType.keyword", studyTypes.getOrElse(StudyTypeEnum.values))
-      )
-      // Get the coloc based on the right study locus only if the other (left) study type is gwas
-      // because left study locus is always gwas and the field is not represented.
-      val rightStudyLocusQuery = studyTypes match {
-        case Some(st) =>
-          if (st.contains(StudyTypeEnum.gwas)) {
-            Some(termQuery("rightStudyLocusId.keyword", studyLocusId))
-          } else {
-            None
-          }
-        case None => Some(termQuery("rightStudyLocusId.keyword", studyLocusId))
-      }
-      val query: BoolQuery = {
-        rightStudyLocusQuery match {
-          case Some(rq) =>
-            should(leftStudyLocusQuery, rq)
-          case None => must(leftStudyLocusQuery)
-        }
-      }.queryName(studyLocusId)
-      IndexBoolQuery(
-        esIndex = indexName,
-        boolQuery = query,
-        pagination = pag
-      )
-    }
-    val retriever =
-      esRetriever
-        .getMultiQ(
-          boolQueries,
-          fromJsValue[Colocalisation],
-          None,
-          Some(ResolverField(matched_queries = true))
-        )
-    retriever.map { case r =>
-      r.map {
-        case Results(Seq(), _, _, _) => Colocalisations.empty
-        case Results(colocs, _, counts, studyLocusId) =>
-          val idString = studyLocusId.as[String]
-          val c = colocs.map { coloc =>
-            if (coloc.leftStudyLocusId == idString) {
-              coloc.copy(otherStudyLocusId = Some(coloc.rightStudyLocusId))
-            } else {
-              coloc.copy(otherStudyLocusId = Some(coloc.leftStudyLocusId))
-            }
-          }
-          Colocalisations(counts, c, idString)
-      }
-    }
+    val page = pagination.getOrElse(Pagination.mkDefault).offsetLimit
+    val colocQuery = OneToMany.colocQuery(
+      studyLocusIds,
+      studyTypes,
+      tableName,
+      page._1,
+      page._2
+    )
+    val results =
+      dbRetriever
+        .executeQuery[Colocalisations, Query](colocQuery.query)
+    results
   }
 
   def getLocus(studyLocusIds: Seq[String],
                variantIds: Option[Seq[String]],
                pagination: Option[Pagination]
   ): Future[IndexedSeq[Loci]] = {
-    val indexName = getIndexOrDefault("credible_set")
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.credibleSet.locus.name)
 
     logger.debug(s"querying locus",
                  keyValue("ids", studyLocusIds),
                  keyValue("variant_ids", variantIds),
-                 keyValue("index", indexName)
+                 keyValue("table", tableName)
     )
 
-    val limitClause = pagination.getOrElse(Pagination.mkDefault).toES
-    val termsQuerySeq = Seq(Map("studyLocusId.keyword" -> studyLocusIds))
-    val termsQueryIter = termsQuerySeq.map { termsQuerySeq =>
-      Iterable(must(termsQuerySeq.map { it =>
-        val terms = it._2.asInstanceOf[Iterable[String]]
-        termsQuery(it._1, terms)
-      }))
-    }
-    def nestedQueryBuilder(path: String, query: BoolQuery) =
-      nestedQuery(path, query).inner(innerHits("locus").size(limitClause._2).from(limitClause._1))
-    val nestedQueryIter = variantIds match {
-      case Some(variantIds) =>
-        Iterable(
-          nestedQueryBuilder("locus", must(termsQuery("locus.variantId.keyword", variantIds)))
-        )
-      case None =>
-        Iterable(
-          nestedQueryBuilder("locus",
-                             must(
-                               matchAllQuery()
-                             )
-          )
-        )
-
-    }
-    val query: BoolQuery = must(termsQueryIter.flatten ++ nestedQueryIter)
-    val retriever =
-      esRetriever
-        .getInnerQ(
-          indexName,
-          query,
-          Pagination.mkMax,
-          fromJsValue[Locus],
-          "locus",
-          Some("studyLocusId")
-        )
-    retriever.map { case InnerResults(locus, _, counts, studyLocusIds) =>
-      locus.zip(counts).zip(studyLocusIds).map { case ((locus, count), studyLocusId) =>
-        Loci(count, Some(locus), studyLocusId.as[String])
-      }
-    }
+    val page = pagination.getOrElse(Pagination.mkDefault).offsetLimit
+    val locusQuery = OneToMany.locusQuery(
+      studyLocusIds,
+      tableName,
+      variantIds,
+      page._1,
+      page._2
+    )
+    val results = dbRetriever
+      .executeQuery[Loci, Query](locusQuery.query)
+    results
   }
 
   def getCredibleSet(ids: Seq[String]): Future[IndexedSeq[CredibleSet]] = {
-    val indexName = getIndexOrDefault("credible_set")
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.credibleSet.name)
 
-    logger.debug(s"querying credible sets", keyValue("ids", ids), keyValue("index", indexName))
+    logger.debug(s"querying credible sets", keyValue("ids", ids), keyValue("table", tableName))
 
-    val termsQuery = Map("studyLocusId.keyword" -> ids)
-    val retriever =
-      esRetriever
-        .getByIndexedTermsMust(
-          indexName,
-          termsQuery,
-          Pagination.mkMax,
-          fromJsValue[CredibleSet],
-          excludedFields = Seq("locus", "ldSet")
-        )
-    retriever.map(_.mappedHits)
+    val credsetQuery = IdsQuery(ids, "studyLocusId", tableName, 0, Pagination.sizeMax)
+    val results = dbRetriever
+      .executeQuery[CredibleSet, Query](credsetQuery.query)
+    results
   }
 
   def getCredibleSets(
       queryArgs: CredibleSetQueryArgs,
       pagination: Option[Pagination]
   ): Future[CredibleSets] = {
-    val pag = pagination.getOrElse(Pagination.mkDefault)
-    val indexName = getIndexOrDefault("credible_set")
-
+    val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.credibleSet.name)
     logger.debug(
       s"querying credible sets",
       keyValue("studyLocusId", queryArgs.ids),
       keyValue("studyId", queryArgs.studyIds),
       keyValue("studyType", queryArgs.studyTypes),
       keyValue("region", queryArgs.regions),
-      keyValue("index", indexName)
+      keyValue("table", tableName)
     )
-
-    val termsQuerySeq = Map(
-      "studyLocusId.keyword" -> queryArgs.ids,
-      "studyId.keyword" -> queryArgs.studyIds,
-      "studyType.keyword" -> queryArgs.studyTypes,
-      "region.keyword" -> queryArgs.regions
-    ).filter(_._2.nonEmpty).toSeq
-    val termsQueryIter: Iterable[queries.Query] = Iterable(must(termsQuerySeq.map { it =>
-      val terms = it._2.asInstanceOf[Iterable[String]]
-      termsQuery(it._1, terms)
-    }))
-    val query: BoolQuery =
-      if (queryArgs.variantIds.nonEmpty) {
-        val nestedTermsQuery = Map("locus.variantId.keyword" -> queryArgs.variantIds)
-        val nestedQueryIter = Iterable(
-          nestedQuery("locus",
-                      must(nestedTermsQuery.map { it =>
-                        val terms = it._2.asInstanceOf[Iterable[String]]
-                        termsQuery(it._1, terms)
-                      })
-          )
-        )
-        must(termsQueryIter ++ nestedQueryIter)
-      } else {
-        must(termsQueryIter)
+    val studyTableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.study.name)
+    val variantTableName = getTableWithPrefixOrDefault(
+      defaultOTSettings.clickhouse.credibleSet.variant.name
+    )
+    val regionTableName = getTableWithPrefixOrDefault(
+      defaultOTSettings.clickhouse.credibleSet.region.name
+    )
+    val credsetQuery = CredibleSetQuery(
+      queryArgs,
+      tableName,
+      studyTableName,
+      variantTableName,
+      regionTableName,
+      pag._1,
+      pag._2
+    )
+    val results = dbRetriever
+      .executeQuery[CredibleSet, Query](credsetQuery.query)
+      .map { credsets =>
+        if (credsets.isEmpty) {
+          CredibleSets.empty
+        } else {
+          CredibleSets(credsets.head.metaTotal, credsets)
+        }
       }
-    val retriever =
-      esRetriever
-        .getQ(
-          indexName,
-          query,
-          pag,
-          fromJsValue[CredibleSet],
-          excludedFields = Seq("locus", "ldSet")
-        )
-    retriever.map {
-      case Results(Seq(), _, _, _) => CredibleSets.empty
-      case Results(credset, _, count, _) =>
-        CredibleSets(count, credset)
-    }
+    results
   }
 
   def getCredibleSetsByStudy(studyIds: Seq[String],
                              pagination: Option[Pagination]
   ): Future[IndexedSeq[CredibleSets]] = {
-    val pag = pagination.getOrElse(Pagination.mkDefault)
-    val indexName = getIndexOrDefault("credible_set")
-
+    val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.credibleSet.name)
     logger.debug(s"querying credible sets by study ids",
                  keyValue("ids", studyIds),
-                 keyValue("index", indexName)
+                 keyValue("table", tableName)
     )
-
-    val queries = studyIds.map { studyId =>
-      IndexQuery(
-        esIndex = indexName,
-        kv = Map("studyId.keyword" -> Seq(studyId)),
-        filters = Seq.empty,
-        pagination = pag,
-        aggs = Seq.empty,
-        excludedFields = Seq("locus", "ldSet")
-      )
-    }
-    val retriever =
-      esRetriever
-        .getMultiByIndexedTermsMust(
-          queries,
-          fromJsValue[CredibleSet],
-          None,
-          Some(ResolverField("studyId"))
-        )
-    retriever.map { case r =>
-      r.map {
-        case Results(Seq(), _, _, _) => CredibleSets.empty
-        case Results(credsets, _, counts, studyId) =>
-          CredibleSets(counts, credsets, studyId.as[String])
-      }
-    }
+    val studyTableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.study.name)
+    val credsetQuery = CredibleSetByStudyQuery(
+      studyIds,
+      tableName,
+      studyTableName,
+      pag._1,
+      pag._2
+    )
+    val results =
+      dbRetriever
+        .executeQuery[CredibleSet, Query](credsetQuery.query)
+        .map { credsets =>
+          studyIds.map { studyId =>
+            val filteredCredsets = credsets.filter(_.studyId.contains(studyId))
+            if (filteredCredsets.nonEmpty) {
+              CredibleSets(filteredCredsets.head.metaTotal, filteredCredsets, studyId)
+            } else {
+              CredibleSets.empty
+            }
+          }.toIndexedSeq
+        }
+    results
   }
 
   def getCredibleSetsByVariant(variantIds: Seq[String],
                                studyTypes: Option[Seq[StudyTypeEnum.Value]],
                                pagination: Option[Pagination]
   ): Future[IndexedSeq[CredibleSets]] = {
-    val pag = pagination.getOrElse(Pagination.mkDefault)
-    val indexName = getIndexOrDefault("credible_set")
-
+    val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.credibleSet.name)
     logger.debug(s"querying credible sets by variant ids",
                  keyValue("ids", variantIds),
                  keyValue("study_types", studyTypes),
-                 keyValue("index", indexName)
+                 keyValue("table", tableName)
     )
-
-    val termsQueryIter: Option[Iterable[queries.Query]] = studyTypes match {
-      case Some(studyTypes) => Some(Iterable(should(termsQuery("studyType.keyword", studyTypes))))
-      case None             => None
-    }
-    // nested query for each variant id in variantIds
-    val boolQueries: Seq[IndexBoolQuery] = variantIds.map { variantId =>
-      val query: BoolQuery = {
-        val nestedTermsQuery = termQuery("locus.variantId.keyword", variantId)
-        val nestedQueryIter =
-          Iterable(nestedQuery("locus", must(nestedTermsQuery)).inner(innerHits("locus").size(1)))
-        termsQueryIter match {
-          case None                 => must(nestedQueryIter)
-          case Some(termsQueryIter) => must(termsQueryIter ++ nestedQueryIter)
+    val variantTableName = getTableWithPrefixOrDefault(
+      defaultOTSettings.clickhouse.credibleSet.variant.name
+    )
+    val credsetQuery = CredibleSetByVariantQuery(
+      variantIds,
+      studyTypes,
+      tableName,
+      variantTableName,
+      pag._1,
+      pag._2
+    )
+    val results =
+      dbRetriever
+        .executeQuery[CredibleSet, Query](credsetQuery.query)
+        .map { credsets =>
+          variantIds.map { variantId =>
+            val filteredCredsets = credsets.filter(_.metaGroupId.contains(variantId))
+            if (filteredCredsets.nonEmpty) {
+              CredibleSets(filteredCredsets.head.metaTotal, filteredCredsets, variantId)
+            } else {
+              CredibleSets.empty
+            }
+          }.toIndexedSeq
         }
-      }.queryName(variantId)
-      IndexBoolQuery(
-        esIndex = indexName,
-        boolQuery = query,
-        pagination = pag,
-        excludedFields = Seq("ldSet", "locus")
-      )
-    }
-    val retriever =
-      esRetriever
-        .getMultiQ(
-          boolQueries,
-          fromJsValue[CredibleSet],
-          None,
-          Some(ResolverField(matched_queries = true))
-        )
-    retriever.map { case r =>
-      r.map {
-        case Results(Seq(), _, _, _) => CredibleSets.empty
-        case Results(credsets, _, counts, variantId) =>
-          CredibleSets(counts, credsets, variantId.as[String])
-      }
-    }
+    results
   }
 
   def getTargetEssentiality(ids: Seq[String]): Future[IndexedSeq[TargetEssentiality]] = {
-    val targetIndexName = getIndexOrDefault("target_essentiality")
-
+    val targetIndexName = getTableWithPrefixOrDefault(
+      defaultOTSettings.clickhouse.target.essentiality.name
+    )
     logger.debug(s"querying target essentiality",
                  keyValue("ids", ids),
-                 keyValue("index", targetIndexName)
+                 keyValue("table", targetIndexName)
     )
-
-    esRetriever.getByIds(targetIndexName, ids, fromJsValue[TargetEssentiality])
+    val query = IdsQuery(ids, "id", targetIndexName, 0, Pagination.sizeMax)
+    dbRetriever.executeQuery[TargetEssentiality, Query](query.query)
   }
 
   def getTargetsPrioritisation(id: String): Future[IndexedSeq[JsValue]] = {
@@ -694,12 +529,37 @@ class Backend @Inject() (implicit
       sizeLimit: Option[Int],
       cursor: Option[String]
   ): Future[Evidences] = {
-
-    val filters: Map[String, Seq[String]] = Map(
-      "variantId.keyword" -> Seq(variantId)
+    val evidenceTable = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.evidence.name)
+    val variantJoinTable = getTableWithPrefixOrDefault(
+      defaultOTSettings.clickhouse.evidence.variant.name
     )
-
-    getFilteredEvidences(datasourceIds, filters, orderBy, sizeLimit, cursor)
+    val pag = Helpers.Cursor
+      .to(cursor)
+      .flatMap(_.asOpt[Pagination])
+      .getOrElse(Pagination(0, sizeLimit.getOrElse(Pagination.sizeDefault)))
+    val evidenceQuery = EvidenceQuery.byVariant(
+      variantId,
+      datasourceIds,
+      evidenceTable,
+      variantJoinTable,
+      pag.offset,
+      pag.size
+    )
+    dbRetriever
+      .executeQuery[Evidence, Query](evidenceQuery.query)
+      .map { evidences =>
+        if (evidences.isEmpty) {
+          Evidences.empty(0)
+        } else {
+          val nCursor = if (evidences.size < pag.size) {
+            None
+          } else {
+            val npag = pag.next
+            Helpers.Cursor.from(Some(Json.toJson(npag)))
+          }
+          Evidences(evidences.head.metaTotal, nCursor, evidences)
+        }
+      }
   }
 
   def getEvidencesByEfoId(
@@ -710,86 +570,59 @@ class Backend @Inject() (implicit
       sizeLimit: Option[Int],
       cursor: Option[String]
   ): Future[Evidences] = {
-
-    val filters: Map[String, Seq[String]] = Map(
-      "targetId.keyword" -> targetIds,
-      "diseaseId.keyword" -> diseaseIds
+    val evidenceTable = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.evidence.name)
+    val diseaseTargetJoinTable = getTableWithPrefixOrDefault(
+      defaultOTSettings.clickhouse.evidence.diseaseAndTarget.name
     )
-
-    getFilteredEvidences(datasourceIds, filters, orderBy, sizeLimit, cursor)
-  }
-
-  // TODO CHECK RESULTS ARE SIZE 0 OR OPTIMISE FIELDS TO BRING BACK
-
-  /** get evidences by multiple parameters */
-  private def getFilteredEvidences(
-      datasourceIds: Option[Seq[String]],
-      filters: Map[String, Seq[String]],
-      orderBy: Option[(String, String)],
-      sizeLimit: Option[Int],
-      cursor: Option[String]
-  ): Future[Evidences] = {
-
-    val pag = sizeLimit.getOrElse(Pagination.sizeDefault)
-    val sortByField = orderBy.flatMap { p =>
-      ElasticRetriever.sortBy(p._1, if (p._2 == "desc") SortOrder.Desc else SortOrder.Asc)
-    }
-
-    val cbIndexPrefix = getIndexOrDefault("evidences", Some("evidence_"))
-
-    val cbIndex = datasourceIds
-      .map(_.map(cbIndexPrefix.concat).mkString(","))
-      .getOrElse(cbIndexPrefix.concat("*"))
-
-    val mappedFiltered = filters.map(filter => keyValue(filter._1, filter._2)).toSeq
-
-    val loggingKeys = datasourceIds match
-      case Some(value) => mappedFiltered ++ Seq(keyValue("datasource_ids", value))
-      case None        => mappedFiltered
-
-    logger.debug(s"querying credible sets", loggingKeys*)
-
-    esRetriever
-      .getByMustWithSearch(
-        cbIndex,
-        filters,
-        pag,
-        fromJsValue[Evidence],
-        Seq.empty,
-        sortByField,
-        Seq.empty,
-        cursor
-      )
-      .map {
-        case (Seq(), n, _) => Evidences.empty(withTotal = n)
-        case (seq, n, nextCursor) =>
-          Evidences(n, nextCursor, seq)
+    val pag = Helpers.Cursor
+      .to(cursor)
+      .flatMap(_.asOpt[Pagination])
+      .getOrElse(Pagination(0, sizeLimit.getOrElse(Pagination.sizeDefault)))
+    val evidenceQuery = EvidenceQuery.byDiseaseTarget(
+      targetIds,
+      diseaseIds,
+      datasourceIds,
+      evidenceTable,
+      diseaseTargetJoinTable,
+      pag.offset,
+      pag.size
+    )
+    dbRetriever
+      .executeQuery[Evidence, Query](evidenceQuery.query)
+      .map { evidences =>
+        if (evidences.isEmpty) {
+          Evidences.empty(0)
+        } else {
+          val nCursor = if (evidences.size < pag.size) {
+            None
+          } else {
+            val npag = pag.next
+            Helpers.Cursor.from(Some(Json.toJson(npag)))
+          }
+          Evidences(evidences.head.metaTotal, nCursor, evidences)
+        }
       }
   }
 
   def getHPOs(ids: Seq[String]): Future[IndexedSeq[HPO]] = {
-    val targetIndexName = getIndexOrDefault("hpo")
-
-    logger.debug(s"querying hpos", keyValue("ids", ids), keyValue("index", targetIndexName))
-
-    esRetriever.getByIds(targetIndexName, ids, fromJsValue[HPO])
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.hpo.name)
+    logger.debug(s"querying hpos", keyValue("ids", ids), keyValue("table", tableName))
+    val query = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
+    dbRetriever.executeQuery[HPO, Query](query.query)
   }
 
-  def getMousePhenotypes(ids: Seq[String]): Future[IndexedSeq[MousePhenotype]] = {
-    val indexName = getIndexOrDefault("mouse_phenotypes", Some("mouse_phenotypes"))
-    val queryTerm = Map("targetFromSourceId.keyword" -> ids)
-    logger.debug(s"querying mouse phenotypes", keyValue("ids", ids), keyValue("index", indexName))
-
-    // The entry with the highest number of MP is ENSG00000157404 with 1828. Pagination max size is 5000, so we have plenty
-    // of headroom for now.
-    esRetriever
-      .getByIndexedQueryMust(
-        indexName,
-        queryTerm,
-        Pagination(0, Pagination.sizeMax),
-        fromJsValue[MousePhenotype]
-      )
-      .map(_.mappedHits)
+  def getMousePhenotypes(ids: Seq[String]): Future[IndexedSeq[MousePhenotypes]] = {
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.mousePhenotypes.name)
+    logger.debug(s"querying mouse phenotypes", keyValue("ids", ids), keyValue("table", tableName))
+    val query = OneToMany(
+      ids,
+      "targetFromSourceId",
+      "mouse_phenotypes",
+      tableName,
+      0,
+      Pagination.sizeMax
+    )
+    dbRetriever.executeQuery[MousePhenotypes, Query](query.query)
   }
 
   def getPharmacogenomicsByDrug(id: String): Future[IndexedSeq[Pharmacogenomics]] = {
@@ -822,87 +655,72 @@ class Backend @Inject() (implicit
       .map(_.mappedHits)
   }
 
-  def getProteinCodingCoordinatesByTarget(id: String,
+  def getProteinCodingCoordinatesByTarget(ids: Seq[String],
                                           pagination: Option[Pagination]
-  ): Future[ProteinCodingCoordinates] = {
-    val queryTerm: Map[String, String] = Map("targetId.keyword" -> id)
-    getProteinCodingCoordinates(id, queryTerm, pagination)
-  }
-  def getProteinCodingCoordinatesByVariantId(id: String,
-                                             pagination: Option[Pagination]
-  ): Future[ProteinCodingCoordinates] = {
-    val queryTerm: Map[String, String] = Map("variantId.keyword" -> id)
-    getProteinCodingCoordinates(id, queryTerm, pagination)
-  }
-  def getProteinCodingCoordinates(id: String,
-                                  queryTerm: Map[String, String],
-                                  pagination: Option[Pagination]
-  ): Future[ProteinCodingCoordinates] = {
-    val indexName = getIndexOrDefault("proteinCodingCoordinates")
-    val pag = pagination.getOrElse(Pagination(0, 2))
-    logger.debug(s"querying protein coding coordinates",
-                 keyValue("id", id),
-                 keyValue("index", indexName)
+  ): Future[IndexedSeq[ProteinCodingCoordinates]] = {
+    val tableName = getTableWithPrefixOrDefault(
+      defaultOTSettings.clickhouse.proteinCodingCoordinates.target.name
     )
-    val retriever = esRetriever
-      .getByIndexedQueryMust(
-        indexName,
-        queryTerm,
-        pag,
-        fromJsValue[ProteinCodingCoordinate]
-      )
-    retriever.map {
-      case Results(Seq(), _, _, _) => ProteinCodingCoordinates.empty()
-      case Results(coords, _, counts, _) =>
-        ProteinCodingCoordinates(counts, coords)
-    }
+    val pag = pagination.getOrElse(Pagination(0, 2)).offsetLimit
+    val query = OneToMany(
+      ids,
+      "targetId",
+      "proteinCodingCoords",
+      tableName,
+      pag._1,
+      pag._2
+    )
+    dbRetriever.executeQuery[ProteinCodingCoordinates, Query](query.query)
+  }
+  def getProteinCodingCoordinatesByVariant(ids: Seq[String],
+                                           pagination: Option[Pagination]
+  ): Future[IndexedSeq[ProteinCodingCoordinates]] = {
+    val tableName = getTableWithPrefixOrDefault(
+      defaultOTSettings.clickhouse.proteinCodingCoordinates.variant.name
+    )
+    logger.debug(s"querying protein coding coordinates",
+                 keyValue("ids", ids),
+                 keyValue("table", tableName)
+    )
+    val pag = pagination.getOrElse(Pagination(0, 2)).offsetLimit
+    val query = OneToMany(
+      ids,
+      "variantId",
+      "proteinCodingCoords",
+      tableName,
+      pag._1,
+      pag._2
+    )
+    dbRetriever.executeQuery[ProteinCodingCoordinates, Query](query.query)
   }
 
   def getOtarProjects(ids: Seq[String]): Future[IndexedSeq[OtarProjects]] = {
-    val otarsIndexName = getIndexOrDefault("otar_projects")
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.otarProjects.name)
+    val query = IdsQuery(ids, "efo_id", tableName, 0, Pagination.sizeMax)
+    logger.debug(s"querying otar projects", keyValue("ids", ids), keyValue("table", tableName))
 
-    logger.debug(s"querying otar projects", keyValue("ids", ids), keyValue("index", otarsIndexName))
-
-    esRetriever.getByIds(otarsIndexName, ids, fromJsValue[OtarProjects])
+    dbRetriever.executeQuery[OtarProjects, Query](query.query)
   }
 
   def getExpressions(ids: Seq[String]): Future[IndexedSeq[Expressions]] = {
-    val targetIndexName = getIndexOrDefault("expression")
-
-    logger.debug(s"querying expressions", keyValue("ids", ids), keyValue("index", targetIndexName))
-
-    esRetriever.getByIds(targetIndexName, ids, fromJsValue[Expressions])
-  }
-
-  def getReactomeNodes(ids: Seq[String]): Future[IndexedSeq[Reactome]] = {
-    val targetIndexName = getIndexOrDefault("reactome")
-
-    logger.debug(s"querying reactome nodes",
-                 keyValue("ids", ids),
-                 keyValue("index", targetIndexName)
-    )
-
-    esRetriever.getByIds(targetIndexName, ids, fromJsValue[Reactome])
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.expression.name)
+    logger.debug(s"querying expressions", keyValue("ids", ids), keyValue("table", tableName))
+    val expressionQuery = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
+    dbRetriever.executeQuery[Expressions, Query](expressionQuery.query)
   }
 
   def getTargets(ids: Seq[String]): Future[IndexedSeq[Target]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.target.name)
-    val targetsQuery = TargetsQuery(ids, tableName, 0, Pagination.sizeMax)
-
+    val targetsQuery = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
     logger.debug(s"querying targets", keyValue("ids", ids), keyValue("table", tableName))
-
-    val results = dbRetriever
-      .executeQuery[Target, Query](targetsQuery.query)
-      .map(targets => targets)
-    results
+    dbRetriever.executeQuery[Target, Query](targetsQuery.query)
   }
 
   def getSoTerms(ids: Seq[String]): Future[IndexedSeq[SequenceOntologyTerm]] = {
-    val targetIndexName = getIndexOrDefault("so", Some("so"))
-
-    logger.debug(s"querying so terms", keyValue("ids", ids), keyValue("index", targetIndexName))
-
-    esRetriever.getByIds(targetIndexName, ids, fromJsValue[SequenceOntologyTerm])
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.so.name)
+    logger.debug(s"querying so terms", keyValue("ids", ids), keyValue("table", tableName))
+    val query = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
+    dbRetriever.executeQuery[SequenceOntologyTerm, Query](query.query)
   }
 
   def getDrugs(ids: Seq[String]): Future[IndexedSeq[Drug]] = {
@@ -966,11 +784,40 @@ class Backend @Inject() (implicit
   }
 
   def getDiseases(ids: Seq[String]): Future[IndexedSeq[Disease]] = {
-    val diseaseIndexName = getIndexOrDefault("disease")
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.disease.name)
+    logger.debug(s"querying diseases", keyValue("ids", ids), keyValue("table", tableName))
+    val diseaseQuery = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
+    val results = dbRetriever
+      .executeQuery[Disease, Query](diseaseQuery.query)
+    results
+  }
 
-    logger.debug(s"querying diseases", keyValue("ids", ids), keyValue("index", diseaseIndexName))
+  def getInteractions(ids: Seq[String],
+                      scoreThreshold: Option[Double],
+                      databaseName: Option[InteractionSourceEnum.Value],
+                      pagination: Option[Pagination]
+  ): Future[IndexedSeq[Interactions]] = {
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.interaction.name)
+    val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
+    val interactionsQuery = OneToMany.interactionQuery(
+      ids,
+      tableName,
+      scoreThreshold,
+      databaseName,
+      pag._1,
+      pag._2
+    )
+    val results = dbRetriever
+      .executeQuery[Interactions, Query](interactionsQuery.query)
+    results
+  }
 
-    esRetriever.getByIds(diseaseIndexName, ids, fromJsValue[Disease])
+  def getInteractionSources: Future[Seq[InteractionResources]] = {
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.interaction.name)
+    val interactionSourcesQuery = InteractionSourcesQuery(tableName)
+    val results = dbRetriever
+      .executeQuery[InteractionResources, Query](interactionSourcesQuery.query)
+    results
   }
 
   def getIntervals(chromosome: String,
@@ -988,21 +835,16 @@ class Backend @Inject() (implicit
       page._1,
       page._2
     )
-    val total: Int = dbRetriever
-      .executeQuery[Int, Query](intervalsQuery.totals)
-      .map {
-        case Seq(totalCount) => totalCount
-        case _               => 0
-      }
-      .await
-    logger.info(s"Total intervals found: $total")
-
     val results =
-      if total == 0 then Future.successful(Intervals(total, Vector.empty))
-      else
-        dbRetriever
-          .executeQuery[Interval, Query](intervalsQuery.query)
-          .map(intervals => Intervals(total, intervals))
+      dbRetriever
+        .executeQuery[Interval, Query](intervalsQuery.query)
+        .map { intervals =>
+          if (intervals.length) > 0 then {
+            Intervals(intervals.head.meta_total, intervals)
+          } else {
+            Intervals.empty
+          }
+        }
     results
   }
 
@@ -1170,12 +1012,12 @@ class Backend @Inject() (implicit
     )
     val indirectIDs = if (indirect) {
       val interactions =
-        Interactions.find(target.id, None, None, pagination = Some(Pagination(0, 10000))) map {
-          case Some(ints) =>
-            ints.rows
+        getInteractions(Seq(target.id), None, None, Some(Pagination(0, 10000))).map {
+          case Seq() => Set.empty + target.id
+          case Seq(intr) =>
+            intr.rows
               .flatMap(int => int.targetB.filter(_.startsWith("ENSG")))
               .toSet + target.id
-          case None => Set.empty + target.id
         }
       interactions.await
     } else Set.empty[String]

@@ -32,7 +32,7 @@ case class IntervalsQuery(chromosome: String,
   override val query: Query =
     Query(
       Select(
-        Column.star :: Nil
+        Column.star :: Functions.countOver("meta_total") :: Nil
       ),
       From(column(tableName)),
       positionalQuery,

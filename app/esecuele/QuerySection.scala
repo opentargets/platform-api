@@ -11,8 +11,20 @@ case class With(content: Seq[Column], alias: Option[String | Column] = None) ext
     s"$name${alias.map(" " + _ + " as").getOrElse("")} ${content.mkString("", ", ", "")}"
 }
 
-case class Select(content: Seq[Column]) extends QuerySection {
-  override val name: String = "SELECT"
+case class UnionAll(query: Query) extends QuerySection {
+  override val content: Seq[Column] = Nil
+  override val name: String = "UNION ALL"
+  override val rep: String = s"$name\n${query.rep}"
+}
+
+case class Intersect(query: Query) extends QuerySection {
+  override val content: Seq[Column] = Nil
+  override val name: String = "INTERSECT"
+  override val rep: String = s"$name\n${query.rep}"
+}
+
+case class Select(content: Seq[Column], distinct: Boolean = false) extends QuerySection {
+  override val name: String = if (distinct) "SELECT DISTINCT" else "SELECT"
   override val rep: String = s"$name ${content.mkString("", ", ", "")}"
 }
 
@@ -49,9 +61,6 @@ case class OrderBy(content: Seq[Column]) extends QuerySection {
   override val name: String = "ORDER BY"
   override val rep: String = s"$name ${content.mkString("", ", ", "")}"
 }
-
-//LIMIT 1 OFFSET 0 BY disease_id
-//limit 10 OFFSET 0;
 
 case class Limit(offset: Int = 0, size: Int) extends QuerySection {
   override val content: Seq[Column] = Nil

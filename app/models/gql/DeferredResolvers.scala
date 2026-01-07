@@ -5,7 +5,10 @@ import models.entities.{
   CredibleSets,
   L2GPredictions,
   Loci,
-  Pagination
+  Pagination,
+  Interactions,
+  DiseaseHPOs,
+  ProteinCodingCoordinates
 }
 import models.{Backend, entities}
 import sangria.execution.deferred.{Deferred, DeferredResolver}
@@ -22,6 +25,9 @@ enum DeferredType {
   case CredibleSets
   case Colocalisations
   case L2GPredictions
+  case DiseaseHPOs
+  case Interactions
+  case ProteinCodingCoordinates
 }
 
 case class Grouping(label: DeferredType, options: Product)
@@ -38,6 +44,82 @@ abstract class DeferredMultiTerm[+T]() extends Deferred[T] {
   val grouping: Grouping
   def empty(): T
   def resolver(ctx: Backend): (Seq[String], Grouping) => Future[IndexedSeq[T]]
+}
+
+case class ProteinCodingCoordinatesByTargetDeferred(targetId: String,
+                                                    pagination: Option[Pagination]
+) extends DeferredMultiTerm[ProteinCodingCoordinates] {
+  val id: String = targetId
+  val options = (pagination)
+  val grouping = Grouping(DeferredType.ProteinCodingCoordinates, options)
+
+  def empty(): ProteinCodingCoordinates = ProteinCodingCoordinates.empty()
+  def resolver(
+      ctx: Backend
+  ): (Seq[String], Grouping) => Future[IndexedSeq[ProteinCodingCoordinates]] = {
+    case (t: Seq[String], grouping: Grouping) =>
+      grouping.options match {
+        case (p) =>
+          ctx.getProteinCodingCoordinatesByTarget(t, p.asInstanceOf[Option[Pagination]])
+      }
+  }
+}
+
+case class ProteinCodingCoordinatesByVariantDeferred(variantId: String,
+                                                     pagination: Option[Pagination]
+) extends DeferredMultiTerm[ProteinCodingCoordinates] {
+  val id: String = variantId
+  val options = (pagination)
+  val grouping = Grouping(DeferredType.ProteinCodingCoordinates, options)
+
+  def empty(): ProteinCodingCoordinates = ProteinCodingCoordinates.empty()
+  def resolver(
+      ctx: Backend
+  ): (Seq[String], Grouping) => Future[IndexedSeq[ProteinCodingCoordinates]] = {
+    case (v: Seq[String], grouping: Grouping) =>
+      grouping.options match {
+        case (p) =>
+          ctx.getProteinCodingCoordinatesByVariant(v, p.asInstanceOf[Option[Pagination]])
+      }
+  }
+}
+
+case class DiseaseHPOsDeferred(diseaseId: String, pagination: Option[Pagination])
+    extends DeferredMultiTerm[DiseaseHPOs] {
+  val id: String = diseaseId
+  val options = (pagination)
+  val grouping = Grouping(DeferredType.DiseaseHPOs, options)
+
+  def empty(): DiseaseHPOs = DiseaseHPOs.empty
+  def resolver(ctx: Backend): (Seq[String], Grouping) => Future[IndexedSeq[DiseaseHPOs]] = {
+    case (d: Seq[String], grouping: Grouping) =>
+      grouping.options match {
+        case (p) =>
+          ctx.getDiseaseHPOs(d, p.asInstanceOf[Option[Pagination]])
+      }
+  }
+}
+
+case class InteractionsDeferred(targetId: String,
+                                scoreThreshold: Option[Double],
+                                databaseName: Option[InteractionSourceEnum.Value],
+                                pagination: Option[Pagination]
+) extends DeferredMultiTerm[Interactions] {
+  val id: String = targetId
+  val options = (scoreThreshold, databaseName, pagination)
+  val grouping = Grouping(DeferredType.Loci, options)
+  def empty(): Interactions = Interactions.empty
+  def resolver(ctx: Backend): (Seq[String], Grouping) => Future[IndexedSeq[Interactions]] = {
+    case (s: Seq[String], grouping: Grouping) =>
+      grouping.options match {
+        case (st, db, p) =>
+          ctx.getInteractions(s,
+                              st.asInstanceOf[Option[Double]],
+                              db.asInstanceOf[Option[InteractionSourceEnum.Value]],
+                              p.asInstanceOf[Option[Pagination]]
+          )
+      }
+  }
 }
 
 case class LocusDeferred(studyLocusId: String,
@@ -95,7 +177,7 @@ case class CredibleSetsByVariantDeferred(variantId: String,
 }
 
 case class ColocalisationsDeferred(studyLocusId: String,
-                                   studyTypes: Option[Seq[StudyTypeEnum.Value]],
+                                   studyTypes: Seq[StudyTypeEnum.Value] = Seq(StudyTypeEnum.gwas),
                                    pagination: Option[Pagination]
 ) extends DeferredMultiTerm[Colocalisations] {
   val id: String = studyLocusId
@@ -107,7 +189,7 @@ case class ColocalisationsDeferred(studyLocusId: String,
       grouping.options match {
         case (st, p) =>
           ctx.getColocalisations(s,
-                                 st.asInstanceOf[Option[Seq[StudyTypeEnum.Value]]],
+                                 st.asInstanceOf[Seq[StudyTypeEnum.Value]],
                                  p.asInstanceOf[Option[Pagination]]
           )
       }
@@ -166,7 +248,13 @@ class MultiTermResolver extends DeferredResolver[Backend] with OTLogging {
       case credSetByStudy: CredibleSetsByStudyDeferred     => credSetByStudy
       case credSetByVariant: CredibleSetsByVariantDeferred => credSetByVariant
       case colocalisations: ColocalisationsDeferred        => colocalisations
+      case diseaseHpos: DiseaseHPOsDeferred                => diseaseHpos
+      case interactions: InteractionsDeferred              => interactions
       case l2g: L2GPredictionsDeferred                     => l2g
+      case proteinCodingCoordinatesByTarget: ProteinCodingCoordinatesByTargetDeferred =>
+        proteinCodingCoordinatesByTarget
+      case proteinCodingCoordinatesByVariant: ProteinCodingCoordinatesByVariantDeferred =>
+        proteinCodingCoordinatesByVariant
     }
     val results = groupResults(deferredByType, ctx)
     deferred.map {
@@ -175,7 +263,13 @@ class MultiTermResolver extends DeferredResolver[Backend] with OTLogging {
       case credSetByVariant: CredibleSetsByVariantDeferred =>
         getResultForId(credSetByVariant, results)
       case colocalisations: ColocalisationsDeferred => getResultForId(colocalisations, results)
+      case diseaseHpos: DiseaseHPOsDeferred         => getResultForId(diseaseHpos, results)
+      case interactions: InteractionsDeferred       => getResultForId(interactions, results)
       case l2g: L2GPredictionsDeferred              => getResultForId(l2g, results)
+      case proteinCodingCoordinatesByTarget: ProteinCodingCoordinatesByTargetDeferred =>
+        getResultForId(proteinCodingCoordinatesByTarget, results)
+      case proteinCodingCoordinatesByVariant: ProteinCodingCoordinatesByVariantDeferred =>
+        getResultForId(proteinCodingCoordinatesByVariant, results)
     }
   }
 }
@@ -192,13 +286,14 @@ object DeferredResolvers extends OTLogging {
     Fetchers.drugsFetcher,
     Fetchers.diseasesFetcher,
     Fetchers.hposFetcher,
-    Fetchers.reactomeFetcher,
     Fetchers.expressionFetcher,
+    Fetchers.mousePhenotypesFetcher,
     Fetchers.otarProjectsFetcher,
     Fetchers.soTermsFetcher,
     Fetchers.indicationFetcher,
     Fetchers.goFetcher,
     Fetchers.variantFetcher,
-    Fetchers.studyFetcher
+    Fetchers.studyFetcher,
+    Fetchers.targetEssentialityFetcher
   )
 }

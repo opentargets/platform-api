@@ -46,6 +46,8 @@ object Functions {
 
   def array(col: Column, cols: Column*): Column = f("array", col +: cols)
 
+  def arrayUnion(cols: Seq[Column]): Column = f("arrayUnion", cols)
+
   def tuple(cols: Seq[Column]): Column = f("tuple", cols)
 
   def tuple(col: Column, cols: Column*): Column = f("tuple", col +: cols)
@@ -63,6 +65,8 @@ object Functions {
 
   def arraySort(col: Column): Column = f("arraySort", col)
 
+  def reverse(col: Column): Column = f("reverse", col)
+
   def arrayReverseSort(lambda: Option[String] = None, col: Column): Column = {
     val params = lambda match {
       case Some(lambdaF) => Column(lambdaF) +: col +: Nil
@@ -73,10 +77,15 @@ object Functions {
 
   def replicate(value: Column, array: Column): Column = f("replicate", value, array)
 
+  def arrayFilter(lambda: String, col: Column): Column =
+    f("arrayFilter", Column(lambda), col)
+
   def arraySlice(col: Column, pos: Int, size: Int): Column =
     f("arraySlice", col, literal(pos), literal(size))
 
   def length(col: Column): Column = f("length", col)
+
+  def cast(col: Column, toType: String): Column = f("CAST", col, literal(toType))
 
   def concat(col1: Column, col2: Column, cols: Column*): Column = f("concat", col1 +: col2 +: cols)
 
@@ -97,6 +106,8 @@ object Functions {
   def arrayJoin(col: Column): Column = f("arrayJoin", col)
 
   def count(col: Column): Column = f("count", col)
+
+  def countOver(col: String): Column = Column("(count() over())::UInt32", col)
 
   def toNullable(col: Column): Column = f("toNullable", col)
 
@@ -130,6 +141,8 @@ object Functions {
 
   def ifNull(col1: Column, col2: Column): Column = f("ifNull", col1, col2)
 
+  def isNull(col: Column): Column = f("isNull", col)
+
   def equals(col1: Column, col2: Column): Column = f("equals", col1, col2)
 
   def notEquals(col1: Column, col2: Column): Column = f("notEquals", col1, col2)
@@ -147,4 +160,5 @@ object Functions {
 
   def ngramSearchCaseInsensitive(col1: Column, col2: Column): Column =
     f("ngramSearchCaseInsensitive", col1, col2)
+
 }
