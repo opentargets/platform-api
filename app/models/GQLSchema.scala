@@ -2,8 +2,6 @@ package models
 
 import sangria.schema.*
 import entities.*
-import models.entities.CredibleSets.credibleSetsImp
-import models.entities.Studies.studiesImp
 import sangria.execution.deferred.*
 import gql.validators.QueryTermsValidator.*
 
@@ -129,10 +127,7 @@ object GQLSchema {
         "interactionResources",
         ListType(interactionResources),
         description = Some("List of molecular interaction resources and their versions"),
-        resolve = ctx => {
-          import ctx.ctx._
-          Interactions.listResources
-        }
+        resolve = ctx => ctx.ctx.getInteractionSources
       ),
       Field(
         "geneOntologyTerms",

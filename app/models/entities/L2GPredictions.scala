@@ -2,6 +2,7 @@ package models.entities
 
 import play.api.libs.json.*
 import models.gql.TypeWithId
+import slick.jdbc.GetResult
 import utils.OTLogging
 
 case class L2GPrediction(
@@ -28,4 +29,7 @@ case class L2GPredictions(
 
 object L2GPredictions {
   def empty: L2GPredictions = L2GPredictions(0, IndexedSeq.empty)
+  implicit val l2GPredictionsF: OFormat[L2GPredictions] = Json.format[L2GPredictions]
+  implicit val getFromDB: GetResult[L2GPredictions] =
+    GetResult(r => Json.parse(r.<<[String]).as[L2GPredictions])
 }

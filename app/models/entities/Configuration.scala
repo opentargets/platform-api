@@ -43,9 +43,28 @@ object Configuration {
 
   case class DbTableSettings(label: String, name: String)
 
-  case class TargetSettings(label: String, name: String, associations: DbTableSettings)
+  case class CredibleSetSettings(label: String,
+                                 name: String,
+                                 variant: DbTableSettings,
+                                 region: DbTableSettings,
+                                 locus: DbTableSettings
+  )
 
-  case class DiseaseSettings(associations: DbTableSettings)
+  case class EvidenceSettings(label: String,
+                              name: String,
+                              variant: DbTableSettings,
+                              diseaseAndTarget: DbTableSettings
+  )
+
+  case class ProteinCodingCoordinatesSettings(variant: DbTableSettings, target: DbTableSettings)
+
+  case class TargetSettings(label: String,
+                            name: String,
+                            associations: DbTableSettings,
+                            essentiality: DbTableSettings
+  )
+
+  case class DiseaseSettings(label: String, name: String, associations: DbTableSettings)
 
   case class DatasourceSettings(id: String,
                                 weight: Double,
@@ -60,13 +79,29 @@ object Configuration {
     */
   case class ClickhouseSettings(
       defaultDatabaseName: String,
-      intervals: DbTableSettings,
-      target: TargetSettings,
+      biosample: DbTableSettings,
+      colocalisation: DbTableSettings,
+      credibleSet: CredibleSetSettings,
       disease: DiseaseSettings,
-      similarities: DbTableSettings,
+      diseaseHPO: DbTableSettings,
+      evidence: EvidenceSettings,
+      expression: DbTableSettings,
+      hpo: DbTableSettings,
+      interaction: DbTableSettings,
+      intervals: DbTableSettings,
+      go: DbTableSettings,
       harmonic: HarmonicSettings,
+      l2gPredictions: DbTableSettings,
       literature: DbTableSettings,
-      literatureIndex: DbTableSettings
+      literatureIndex: DbTableSettings,
+      mousePhenotypes: DbTableSettings,
+      otarProjects: DbTableSettings,
+      proteinCodingCoordinates: ProteinCodingCoordinatesSettings,
+      similarities: DbTableSettings,
+      study: DbTableSettings,
+      so: DbTableSettings,
+      target: TargetSettings,
+      variant: DbTableSettings
   )
 
   /** main Open Targets configuration object. It keeps track of meta, elasticsearch and clickhouse
@@ -148,6 +183,12 @@ object Configuration {
   implicit val datasourceSettingsJSONImp: OFormat[DatasourceSettings] =
     Json.format[DatasourceSettings]
   implicit val harmonicSettingsJSONImp: OFormat[HarmonicSettings] = Json.format[HarmonicSettings]
+  implicit val credibleSetSettingsJSONImp: OFormat[CredibleSetSettings] =
+    Json.format[CredibleSetSettings]
+  implicit val evidenceSettingsJSONImp: OFormat[EvidenceSettings] =
+    Json.format[EvidenceSettings]
+  implicit val proteinCodingCoordinatesSettingsJSONImp: OFormat[ProteinCodingCoordinatesSettings] =
+    Json.format[ProteinCodingCoordinatesSettings]
   implicit val targetSettingsJSONImp: OFormat[TargetSettings] = Json.format[TargetSettings]
   implicit val diseaseSettingsJSONImp: OFormat[DiseaseSettings] = Json.format[DiseaseSettings]
   implicit val clickhouseSettingsJSONImp: OFormat[ClickhouseSettings] =

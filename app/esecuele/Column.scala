@@ -48,4 +48,10 @@ object Column {
       case e: String => Column(RawExpression(s"'$e'"))
       case _         => Column(RawExpression(v.toString))
     }
+
+  def inSet(col: String, values: Seq[String]): Column =
+    Functions.in(
+      column(col),
+      Functions.set(values.map(literal).toSeq)
+    )
 }

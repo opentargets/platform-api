@@ -71,7 +71,7 @@ class ClickhouseRetriever(config: OTSettings)(implicit
     db.run(qq.asTry).map {
       case Success(v) => v
       case Failure(ex) =>
-        val qStr = qq.statements.mkString("\n")
+        lazy val qStr = qq.statements.mkString("\n")
         logger.error(s"executeQuery an exception was thrown ${ex.getMessage} with Query $qStr")
         Vector.empty
     }

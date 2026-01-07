@@ -1,21 +1,20 @@
 package models.entities
 
-import play.api.libs.json.*
-import play.api.libs.json.{JsValue, Json, OFormat, OWrites, Reads}
-import play.api.libs.functional.syntax.*
+import play.api.Logging
+import play.api.libs.json._
 import models.gql.TypeWithId
+import slick.jdbc.GetResult
 import utils.OTLogging
-
 case class Locus(
-    variantId: Option[String],
-    posteriorProbability: Option[Double],
+    variantId: String,
+    posteriorProbability: Double,
     pValueMantissa: Option[Double],
     pValueExponent: Option[Int],
     logBF: Option[Double],
     beta: Option[Double],
     standardError: Option[Double],
-    is95CredibleSet: Option[Boolean],
-    is99CredibleSet: Option[Boolean],
+    is95CredibleSet: Boolean,
+    is99CredibleSet: Boolean,
     r2Overall: Option[Double]
 )
 
@@ -29,12 +28,8 @@ object Loci extends OTLogging {
   import sangria.macros.derive._
 
   def empty(): Loci = Loci(0, None, "")
-
+  implicit val getResultLoci: GetResult[Loci] =
+    GetResult(r => Json.parse(r.<<[String]).as[Loci])
   implicit val locusF: OFormat[Locus] = Json.format[Locus]
-  implicit val lociR: Reads[Loci] = (
-    (JsPath \ "count").read[Long] and
-      (JsPath \ "locus").readNullable[Seq[Locus]] and
-      (JsPath \ "studyLocusId").read[String]
-  )(Loci.apply)
-
+  implicit val lociF: OFormat[Loci] = Json.format[Loci]
 }

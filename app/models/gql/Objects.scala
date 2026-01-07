@@ -3,9 +3,7 @@ package models.gql
 import models.*
 import models.entities.Configuration.*
 import models.entities.Evidences.*
-import models.entities.Interactions.*
 import models.entities.Publications.publicationsImp
-import models.entities.Colocalisations.*
 import models.entities.*
 import models.gql.Arguments.*
 import models.gql.Fetchers.*
@@ -16,8 +14,6 @@ import sangria.schema.*
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.*
-import models.entities.CredibleSets.credibleSetsImp
-import models.entities.Study.{LdPopulationStructure, Sample, SumStatQC}
 import models.entities.Violations.{
   InputParameterCheckError,
   InvalidArgValueError,
@@ -277,17 +273,18 @@ object Objects extends OTLogging {
       ),
       Field(
         "interactions",
-        OptionType(interactions),
+        OptionType(interactionsImp),
         description = Some(
           "Molecular interactions reporting experimental or functional interactions between this target and other molecules. Interactions are integrated from multiple databases capturing physical interactions (e.g., IntAct), directional interactions (e.g., Signor), pathway relationships (e.g., Reactome), or functional interactions (e.g., STRINGdb)."
         ),
         arguments = scoreThreshold :: databaseName :: pageArg :: Nil,
         complexity = Some(complexityCalculator(pageArg)),
-        resolve = r => {
-          import r.ctx._
-
-          Interactions.find(r.value.id, r arg scoreThreshold, r arg databaseName, r arg pageArg)
-        }
+        resolve = ctx =>
+          InteractionsDeferred(ctx.value.id,
+                               ctx.arg(scoreThreshold),
+                               ctx.arg(databaseName),
+                               ctx.arg(pageArg)
+          )
       ),
       Field(
         "mousePhenotypes",
@@ -295,10 +292,11 @@ object Objects extends OTLogging {
         description = Some(
           "Mouse phenotype information linking this human target to observed phenotypes in mouse models. Provides data on phenotypes observed when the target gene is modified in mouse models."
         ),
-        resolve = ctx => {
-          val mp = ctx.ctx.getMousePhenotypes(Seq(ctx.value.id))
-          mp
-        }
+        resolve = r =>
+          DeferredValue(mousePhenotypesFetcher.deferOpt(r.value.id)).map {
+            case Some(phenotypes) => phenotypes.rows
+            case None             => Seq.empty
+          }
       ),
       Field(
         "expressions",
@@ -383,12 +381,10 @@ object Objects extends OTLogging {
         description = Some(
           "Flag indicating whether this target is essential based on CRISPR screening data from cancer cell line models. Essential genes are those that show dependency when knocked out in cellular models."
         ),
-        resolve = ctx => {
-          val mp = ctx.ctx.getTargetEssentiality(Seq(ctx.value.id))
-          mp map { case ess =>
-            if (ess.isEmpty) null else ess.head.geneEssentiality.head.isEssential
+        resolve = ctx =>
+          DeferredValue(targetEssentialityFetcher.deferOpt(ctx.value.id)).map { case Some(ess) =>
+            ess.geneEssentiality.head.isEssential
           }
-        }
       ),
       Field(
         "depMapEssentiality",
@@ -396,12 +392,10 @@ object Objects extends OTLogging {
         description = Some(
           "Essentiality measurements extracted from DepMap, stratified by tissue or anatomical units. Gene essentiality is assessed based on dependencies exhibited when knocking out genes in cancer cellular models using CRISPR screenings from the Cancer Dependency Map (DepMap) Project. Gene effects below -1 can be considered dependencies."
         ),
-        resolve = ctx => {
-          val mp = ctx.ctx.getTargetEssentiality(Seq(ctx.value.id))
-          mp map { case ess =>
-            if (ess.isEmpty) null else ess.head.geneEssentiality.flatMap(_.depMapEssentiality)
+        resolve = ctx =>
+          DeferredValue(targetEssentialityFetcher.deferOpt(ctx.value.id)).map { case Some(ess) =>
+            ess.geneEssentiality.flatMap(_.depMapEssentiality)
           }
-        }
       ),
       Field(
         "pharmacogenomics",
@@ -421,7 +415,7 @@ object Objects extends OTLogging {
         ),
         arguments = pageArg :: Nil,
         complexity = Some(complexityCalculator(pageArg)),
-        resolve = ctx => ctx.ctx.getProteinCodingCoordinatesByTarget(ctx.value.id, ctx.arg(pageArg))
+        resolve = ctx => ProteinCodingCoordinatesByTargetDeferred(ctx.value.id, ctx.arg(pageArg))
       )
     )
   )
@@ -475,7 +469,6 @@ object Objects extends OTLogging {
     DocumentField("description", "Short description of the disease or phenotype"),
     DocumentField("synonyms", "Synonymous disease or phenotype labels"),
     DocumentField("dbXRefs", "Cross-references to external disease ontologies"),
-    ExcludeFields("ontology"),
     DocumentField("obsoleteTerms", "Obsoleted ontology terms replaced by this term"),
     DocumentField("directLocationIds", "EFO terms for direct anatomical locations"),
     DocumentField("indirectLocationIds",
@@ -566,20 +559,14 @@ object Objects extends OTLogging {
         }
       ),
       Field(
-        "isTherapeuticArea",
-        BooleanType,
-        description = Some("Whether this disease node is a top-level therapeutic area"),
-        resolve = ctx => ctx.value.ontology.isTherapeuticArea
-      ),
-      Field(
         "phenotypes",
-        OptionType(diseaseHPOsImp),
+        diseaseHPOsImp,
         description = Some(
           "Human Phenotype Ontology (HPO) annotations linked to this disease as clinical signs or symptoms"
         ),
         arguments = pageArg :: Nil,
         complexity = Some(complexityCalculator(pageArg)),
-        resolve = ctx => ctx.ctx.getDiseaseHPOs(ctx.value.id, ctx.arg(pageArg))
+        resolve = ctx => DiseaseHPOsDeferred(ctx.value.id, ctx.arg(pageArg))
       ),
       Field(
         "evidences",
@@ -757,42 +744,15 @@ object Objects extends OTLogging {
       )
     )
 
-  implicit lazy val reactomeImp: ObjectType[Backend, Reactome] =
-    deriveObjectType[Backend, Reactome](
-      AddFields(
-        Field(
-          "isRoot",
-          BooleanType,
-          description = Some("If the node is root"),
-          resolve = _.value.isRoot
-        )
+  implicit val credibleSetsImp: ObjectType[Backend, CredibleSets] =
+    deriveObjectType[Backend, CredibleSets](
+      ObjectTypeDescription(
+        "95% credible sets for GWAS and molQTL studies. Credible sets include all variants in the credible set as well as the fine-mapping method and statistics used to estimate the credible set."
       ),
-      ReplaceField(
-        "children",
-        Field(
-          "children",
-          ListType(reactomeImp),
-          Some("Direct child pathway nodes that descend from this pathway"),
-          resolve = r => reactomeFetcher.deferSeqOpt(r.value.children)
-        )
-      ),
-      ReplaceField(
-        "parents",
-        Field(
-          "parents",
-          ListType(reactomeImp),
-          Some("Immediate parent pathway nodes of this pathway"),
-          resolve = r => reactomeFetcher.deferSeqOpt(r.value.parents)
-        )
-      ),
-      ReplaceField(
-        "ancestors",
-        Field(
-          "ancestors",
-          ListType(reactomeImp),
-          Some("All ancestor pathway nodes up to the root of the hierarchy"),
-          resolve = r => reactomeFetcher.deferSeqOpt(r.value.ancestors)
-        )
+      DocumentField("count", "Total number of credible sets matching the query filters"),
+      DocumentField(
+        "rows",
+        "List of credible set entries with their associated statistics and fine-mapping information"
       )
     )
 
@@ -1127,6 +1087,11 @@ object Objects extends OTLogging {
       DocumentField("url", "URL linking to more details on safety liabilities"),
       DocumentField("studies", "Studies related to safety assessments")
     )
+  implicit val studiesImp: ObjectType[Backend, Studies] = deriveObjectType[Backend, Studies](
+    ObjectTypeDescription("List of GWAS and molecular QTL studies with total count"),
+    DocumentField("count", "Total number of studies matching the query"),
+    DocumentField("rows", "List of GWAS or molecular QTL studies")
+  )
 
   // hpo
   implicit lazy val hpoImp: ObjectType[Backend, HPO] = deriveObjectType(
@@ -1509,7 +1474,8 @@ object Objects extends OTLogging {
           ),
           resolve = r => biosamplesFetcher.deferOpt(r.value.biosampleId)
         )
-      )
+      ),
+      ExcludeFields("meta_total")
     )
   implicit lazy val intervalsImp: ObjectType[Backend, Intervals] =
     deriveObjectType[Backend, Intervals](
@@ -1784,6 +1750,9 @@ object Objects extends OTLogging {
       DocumentField("name", "Name identifier for target settings"),
       DocumentField("associations", "Database table settings for target associations")
     )
+  implicit val credibleSetSettingsImp: ObjectType[Backend, CredibleSetSettings] =
+    deriveObjectType[Backend, CredibleSetSettings](
+    )
   implicit val diseaseSettingsImp: ObjectType[Backend, DiseaseSettings] =
     deriveObjectType[Backend, DiseaseSettings](
       ObjectTypeDescription("Disease-specific database settings configuration"),
@@ -1795,18 +1764,13 @@ object Objects extends OTLogging {
       DocumentField("pExponent", "Power exponent used in harmonic mean calculation"),
       DocumentField("datasources", "List of datasource settings with weights and propagation rules")
     )
+  implicit val evidenceSettingsImp: ObjectType[Backend, EvidenceSettings] =
+    deriveObjectType[Backend, EvidenceSettings]()
+  implicit val proteinCodingCoordinatesSettingsImp
+      : ObjectType[Backend, ProteinCodingCoordinatesSettings] =
+    deriveObjectType[Backend, ProteinCodingCoordinatesSettings]()
   implicit val clickhouseSettingsImp: ObjectType[Backend, ClickhouseSettings] =
-    deriveObjectType[Backend, ClickhouseSettings](
-      ObjectTypeDescription("ClickHouse database configuration settings"),
-      DocumentField("defaultDatabaseName", "Default database name for ClickHouse connections"),
-      DocumentField("intervals", "Database table settings for genomic intervals"),
-      DocumentField("target", "Target-specific database settings"),
-      DocumentField("disease", "Disease-specific database settings"),
-      DocumentField("similarities", "Database table settings for entity similarities"),
-      DocumentField("harmonic", "Harmonic mean scoring settings"),
-      DocumentField("literature", "Database table settings for literature data"),
-      DocumentField("literatureIndex", "Database table settings for literature index")
-    )
+    deriveObjectType[Backend, ClickhouseSettings]()
   implicit val evidenceSourceImp: ObjectType[Backend, EvidenceSource] =
     deriveObjectType[Backend, EvidenceSource](
       ObjectTypeDescription("Evidence datasource and datatype metadata"),
@@ -2385,6 +2349,15 @@ object Objects extends OTLogging {
       DocumentField("count", "Total number of phenotype-associated protein coding variants"),
       DocumentField("rows", "List of phenotype-associated protein coding variants")
     )
+
+  implicit val colocalisationsImp: ObjectType[Backend, Colocalisations] =
+    deriveObjectType[Backend, Colocalisations](
+      ObjectTypeDescription(
+        "GWAS-GWAS and GWAS-molQTL credible set colocalisation results. Dataset includes colocalising pairs as well as the method and statistics used to estimate the colocalisation."
+      ),
+      DocumentField("count", "Total number of colocalisation results matching the query filters"),
+      DocumentField("rows", "List of colocalisation results between study-loci pairs")
+    )
   implicit val colocalisationImp: ObjectType[Backend, Colocalisation] =
     deriveObjectType[Backend, Colocalisation](
       ObjectTypeDescription(
@@ -2420,7 +2393,7 @@ object Objects extends OTLogging {
           OptionType(credibleSetImp),
           description = Some("The other credible set (study-locus) in the colocalisation pair"),
           resolve = r =>
-            val studyLocusId = r.value.otherStudyLocusId.getOrElse("")
+            val studyLocusId = r.value.otherStudyLocusId
             logger.debug(s"finding colocalisation credible set", keyValue("id", studyLocusId))
             credibleSetFetcher.deferOpt(studyLocusId)
         )
@@ -2521,8 +2494,8 @@ object Objects extends OTLogging {
           ),
           arguments = pageArg :: Nil,
           complexity = Some(complexityCalculator(pageArg)),
-          resolve = ctx =>
-            ctx.ctx.getProteinCodingCoordinatesByVariantId(ctx.value.variantId, ctx.arg(pageArg))
+          resolve =
+            ctx => ProteinCodingCoordinatesByVariantDeferred(ctx.value.variantId, ctx.arg(pageArg))
         ),
         Field(
           "intervals",
@@ -2963,6 +2936,15 @@ object Objects extends OTLogging {
     )
   )
 
+  implicit val evidencesImp: ObjectType[Backend, Evidences] = deriveObjectType[Backend, Evidences](
+    ObjectTypeDescription(
+      "Target–disease evidence items with total count and pagination cursor"
+    ),
+    DocumentField("count", "Total number of evidence items available for the query"),
+    DocumentField("cursor", "Opaque pagination cursor to request the next page of results"),
+    DocumentField("rows", "List of evidence items supporting the target–disease association")
+  )
+
   implicit val ldSetImp: ObjectType[Backend, LdSet] =
     deriveObjectType[Backend, LdSet](
       ObjectTypeDescription(
@@ -2998,7 +2980,7 @@ object Objects extends OTLogging {
         OptionType(variantIndexImp),
         description = Some("Variant in the credible set"),
         resolve = r => {
-          val variantId = r.value.variantId.getOrElse("")
+          val variantId = r.value.variantId
           logger.debug(s"finding variant index", keyValue("id", variantId))
           variantFetcher.deferOpt(variantId)
         }
@@ -3068,6 +3050,7 @@ object Objects extends OTLogging {
         "Description of how this credible set was derived in terms of data and fine-mapping method"
       ),
       DocumentField("isTransQtl", "Boolean for whether this credible set is a trans-pQTL or not"),
+      ExcludeFields("metaTotal", "metaGroupId"),
       ReplaceField(
         "variantId",
         Field(
@@ -3125,7 +3108,10 @@ object Objects extends OTLogging {
           complexity = Some(complexityCalculator(pageArg)),
           resolve = js => {
             val id = js.value.studyLocusId
-            ColocalisationsDeferred(id, js.arg(studyTypes), js.arg(pageArg))
+            ColocalisationsDeferred(id,
+                                    js.arg(studyTypes).getOrElse(Seq(StudyTypeEnum.gwas)),
+                                    js.arg(pageArg)
+            )
           }
         ),
         Field(
@@ -3216,6 +3202,7 @@ object Objects extends OTLogging {
                   "Collection of ancestries reported by the study replication phase"
     ),
     DocumentField("sumstatQCValues", "Quality control flags for the study (if any)"),
+    ExcludeFields("metaTotal"),
     ReplaceField(
       "studyId",
       Field(
@@ -3380,6 +3367,15 @@ object Objects extends OTLogging {
       )
     )
 
+  implicit val interactionsImp: ObjectType[Backend, Interactions] =
+    deriveObjectType[Backend, Interactions](
+      ObjectTypeDescription(
+        "Molecular interactions reported between targets, with total count and rows"
+      ),
+      DocumentField("count", "Total number of interaction entries available for the query"),
+      DocumentField("rows", "List of molecular interaction entries")
+    )
+
   implicit val interactionImp: ObjectType[Backend, Interaction] =
     deriveObjectType[Backend, Interaction](
       ObjectTypeDescription(
@@ -3421,20 +3417,6 @@ object Objects extends OTLogging {
           resolve = interaction => {
             val tId = interaction.value.targetB
             targetsFetcher.deferOpt(tId)
-          }
-        )
-      ),
-      AddFields(
-        Field(
-          "evidences",
-          ListType(interactionEvidenceImp),
-          description = Some("List of evidences for this interaction"),
-          resolve = r => {
-            import scala.concurrent.ExecutionContext.Implicits.global
-            import r.ctx._
-
-            val ev = r.value
-            Interaction.findEvidences(ev)
           }
         )
       )
