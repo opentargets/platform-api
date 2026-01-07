@@ -1792,17 +1792,7 @@ object Objects extends Logging {
       DocumentField("datasources", "List of datasource settings with weights and propagation rules")
     )
   implicit val clickhouseSettingsImp: ObjectType[Backend, ClickhouseSettings] =
-    deriveObjectType[Backend, ClickhouseSettings](
-      ObjectTypeDescription("ClickHouse database configuration settings"),
-      DocumentField("defaultDatabaseName", "Default database name for ClickHouse connections"),
-      DocumentField("intervals", "Database table settings for genomic intervals"),
-      DocumentField("target", "Target-specific database settings"),
-      DocumentField("disease", "Disease-specific database settings"),
-      DocumentField("similarities", "Database table settings for entity similarities"),
-      DocumentField("harmonic", "Harmonic mean scoring settings"),
-      DocumentField("literature", "Database table settings for literature data"),
-      DocumentField("literatureIndex", "Database table settings for literature index")
-    )
+    deriveObjectType[Backend, ClickhouseSettings]()
   implicit val evidenceSourceImp: ObjectType[Backend, EvidenceSource] =
     deriveObjectType[Backend, EvidenceSource](
       ObjectTypeDescription("Evidence datasource and datatype metadata"),

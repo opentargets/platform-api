@@ -2,6 +2,7 @@ package models.entities
 
 import play.api.Logging
 import play.api.libs.json.{OFormat, OWrites, Json}
+import slick.jdbc.GetResult
 
 case class VariantEffect(method: Option[String],
                          assessment: Option[String],
@@ -48,6 +49,8 @@ case class VariantIndex(variantId: String,
 )
 
 object VariantIndex extends Logging {
+  implicit val getTargetFromDB: GetResult[VariantIndex] =
+    GetResult(r => Json.parse(r.<<[String]).as[VariantIndex])
   implicit val variantEffectF: OFormat[VariantEffect] = Json.format[VariantEffect]
   implicit val transcriptConsequenceF: OFormat[TranscriptConsequence] =
     Json.format[TranscriptConsequence]
