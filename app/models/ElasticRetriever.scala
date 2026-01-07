@@ -205,6 +205,17 @@ class ElasticRetriever @Inject() (
   private def encodeSearchAfter(jsArray: Option[JsValue]): Option[String] =
     jsArray.map(jsv => Base64Engine.encode(Json.stringify(jsv))).map(new String(_))
 
+  private def handleRequestError[T](err: RequestFailure, q: T)(implicit
+      handler: Handler[T, ?]
+  ): Nothing =
+    err.error.rootCause.foreach { rc =>
+      logger.error(
+        s"Elasticsearch error: query=${client.show(q)} type=${rc.`type`}, reason=${rc.reason}, " +
+          s"index=${rc.index}, causedBy=${rc.causedBy}"
+      )
+    }
+    throw new Exception(err.error.reason)
+
   /** This fn represents a query where each kv from the map is used in a bool must. Based on the
     * query asked by `getByIndexedQuery` and aggregation is applied
     */
@@ -231,8 +242,8 @@ class ElasticRetriever @Inject() (
     }
 
     elems.map {
-      case _: RequestFailure => JsNull
-      case results           =>
+      case err: RequestFailure => handleRequestError(err, q)
+      case results             =>
         // parse the full body response into JsValue
         // thus, we can apply Json Transformations from JSON Play
         val result = Json.parse(results.body.get)
@@ -432,10 +443,7 @@ class ElasticRetriever @Inject() (
       buildF: JsValue => Option[A]
   ): Results[A] =
     searchResponse match {
-      case rf: RequestFailure =>
-        logger.debug(s"Request failure for query: $searchQuery")
-        logger.error(s"Elasticsearch error: ${rf.error}")
-        Results.empty
+      case err: RequestFailure        => handleRequestError(err, searchQuery)
       case results: RequestSuccess[_] =>
         // parse the full body response into JsValue
         val result = Json.parse(results.body.get)
@@ -452,10 +460,7 @@ class ElasticRetriever @Inject() (
       resolverField: Option[ResolverField]
   ): IndexedSeq[Results[A]] =
     searchResponse match {
-      case rf: RequestFailure =>
-        logger.debug(s"Request failure for query: $searchQuery")
-        logger.error(s"Elasticsearch error: ${rf.error}")
-        IndexedSeq.empty
+      case err: RequestFailure => handleRequestError(err, searchQuery)
       case results: RequestSuccess[_] =>
         val result = Json.parse(results.body.get)
         logger.trace(Json.prettyPrint(result))
@@ -474,10 +479,7 @@ class ElasticRetriever @Inject() (
       parentField: Option[String]
   ): InnerResults[A] =
     searchResponse match {
-      case rf: RequestFailure =>
-        logger.debug(s"Request failure for query: $searchQuery")
-        logger.error(s"Elasticsearch error: ${rf.error}")
-        InnerResults.empty
+      case err: RequestFailure => handleRequestError(err, searchQuery)
       case results: RequestSuccess[_] =>
         val result = Json.parse(results.body.get)
         logger.trace(Json.prettyPrint(result))
@@ -590,8 +592,8 @@ class ElasticRetriever @Inject() (
     }
 
     elems.map {
-      case _: RequestFailure => (IndexedSeq.empty, 0, None)
-      case results           =>
+      case err: RequestFailure => handleRequestError(err, q)
+      case results             =>
         // parse the full body response into JsValue
         // thus, we can apply Json Transformations from JSON Play
         val result = Json.parse(results.body.get)
@@ -678,8 +680,8 @@ class ElasticRetriever @Inject() (
       }
 
     elems.map {
-      case _: RequestFailure => (IndexedSeq.empty, JsNull, None)
-      case results           =>
+      case err: RequestFailure => handleRequestError(err, q)
+      case results             =>
         // parse the full body response into JsValue
         // thus, we can apply Json Transformations from JSON Play
         val result = Json.parse(results.body.get)
@@ -722,18 +724,18 @@ class ElasticRetriever @Inject() (
       case _ =>
         appStart.DatabaseCallCounter.labelValues(db_name, "getByIds").inc()
 
-        val elems: Future[Response[SearchResponse]] = client.execute {
-          val q = search(esIndex).query {
-            idsQuery(ids)
-          } limit (Configuration.batchSize) trackTotalHits (true) sourceExclude (excludedFields)
+        val q = search(esIndex).query {
+          idsQuery(ids)
+        } limit (Configuration.batchSize) trackTotalHits (true) sourceExclude (excludedFields)
 
+        val elems: Future[Response[SearchResponse]] = client.execute {
           logger.debug(s"Elasticsearch query to execute: ${client.show(q)}")
           q
         }
 
         elems.map {
-          case _: RequestFailure => IndexedSeq.empty
-          case results           =>
+          case err: RequestFailure => handleRequestError(err, q)
+          case results             =>
             // parse the full body response into JsValue
             // thus, we can apply Json Transformations from JSON Play
             val result = Json.parse(results.body.get)
