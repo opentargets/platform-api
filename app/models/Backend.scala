@@ -872,21 +872,16 @@ class Backend @Inject() (implicit
       page._1,
       page._2
     )
-    val total: Int = dbRetriever
-      .executeQuery[Int, Query](intervalsQuery.totals)
-      .map {
-        case Seq(totalCount) => totalCount
-        case _               => 0
-      }
-      .await
-    logger.info(s"Total intervals found: $total")
-
     val results =
-      if total == 0 then Future.successful(Intervals(total, Vector.empty))
-      else
-        dbRetriever
-          .executeQuery[Interval, Query](intervalsQuery.query)
-          .map(intervals => Intervals(total, intervals))
+      dbRetriever
+        .executeQuery[Interval, Query](intervalsQuery.query)
+        .map { intervals =>
+          if (intervals.length) > 0 then {
+            Intervals(intervals.head.meta_total, intervals)
+          } else {
+            Intervals.empty
+          }
+        }
     results
   }
 

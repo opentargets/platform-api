@@ -21,7 +21,8 @@ case class Interval(
     resourceScore: Vector[ResourceScore],
     datasourceId: String,
     pmid: String,
-    studyId: String
+    studyId: String,
+    meta_total: Long
 )
 
 case class Intervals(

@@ -4,6 +4,7 @@ import esecuele.Column.column
 import esecuele.Column.literal
 import esecuele._
 import play.api.Logging
+import play.libs.F
 
 case class IntervalsQuery(chromosome: String,
                           start: Int,
@@ -32,7 +33,7 @@ case class IntervalsQuery(chromosome: String,
   override val query: Query =
     Query(
       Select(
-        Column.star :: Nil
+        Column.star :: Functions.countOver("meta_total") :: Nil
       ),
       From(column(tableName)),
       positionalQuery,
