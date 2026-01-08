@@ -1505,7 +1505,8 @@ object Objects extends Logging {
           ),
           resolve = r => biosamplesFetcher.deferOpt(r.value.biosampleId)
         )
-      )
+      ),
+      ExcludeFields("meta_total")
     )
   implicit lazy val intervalsImp: ObjectType[Backend, Intervals] =
     deriveObjectType[Backend, Intervals](

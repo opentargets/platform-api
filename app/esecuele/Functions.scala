@@ -98,6 +98,8 @@ object Functions {
 
   def count(col: Column): Column = f("count", col)
 
+  def countOver(col: String): Column = Column("(count() over())::UInt32", col)
+
   def toNullable(col: Column): Column = f("toNullable", col)
 
   def divide(col1: Column, col2: Column): Column = f("divide", col1, col2)
