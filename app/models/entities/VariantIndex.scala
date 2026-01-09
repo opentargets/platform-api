@@ -1,7 +1,7 @@
 package models.entities
 
-import play.api.Logging
-import play.api.libs.json.{OFormat, OWrites, Json}
+import org.slf4j.{Logger, LoggerFactory}
+import play.api.libs.json.{Json, OFormat, OWrites}
 
 case class VariantEffect(method: Option[String],
                          assessment: Option[String],
@@ -47,7 +47,10 @@ case class VariantIndex(variantId: String,
                         variantDescription: String
 )
 
-object VariantIndex extends Logging {
+object VariantIndex {
+
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+
   implicit val variantEffectF: OFormat[VariantEffect] = Json.format[VariantEffect]
   implicit val transcriptConsequenceF: OFormat[TranscriptConsequence] =
     Json.format[TranscriptConsequence]

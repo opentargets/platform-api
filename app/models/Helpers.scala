@@ -1,18 +1,24 @@
 package models
 
 import com.typesafe.config.{ConfigObject, ConfigRenderOptions}
-import play.api.libs.json._
-import play.api._
+import play.api.libs.json.*
+import play.api.*
 
 import annotation.targetName
 import scala.util.Try
 import sangria.marshalling.FromInput
 import sangria.util.tag.@@
 import sangria.schema.*
-import entities._
+import entities.*
+import org.slf4j.{Logger, LoggerFactory}
 
-object Helpers extends Logging {
-  object Cursor extends Logging {
+object Helpers {
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+
+  object Cursor {
+
+    private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+
     def to(searchAfter: Option[String]): Option[JsValue] =
       searchAfter
         .flatMap { sa =>
@@ -41,7 +47,10 @@ object Helpers extends Logging {
       obj.map(jsv => Base64Engine.encode(Json.stringify(jsv))).map(new String(_))
   }
 
-  object Base64Engine extends Logging {
+  object Base64Engine {
+
+    private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+
     def encode(msg: String): String =
       java.util.Base64.getEncoder.encode(msg.getBytes).map(_.toChar).mkString
 

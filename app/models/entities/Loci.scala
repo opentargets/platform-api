@@ -1,10 +1,10 @@
 package models.entities
 
-import play.api.Logging
-import play.api.libs.json._
-import play.api.libs.json.{Reads, JsValue, Json, OFormat, OWrites}
-import play.api.libs.functional.syntax._
+import play.api.libs.json.*
+import play.api.libs.json.{JsValue, Json, OFormat, OWrites, Reads}
+import play.api.libs.functional.syntax.*
 import models.gql.TypeWithId
+import org.slf4j.{Logger, LoggerFactory}
 
 case class Locus(
     variantId: Option[String],
@@ -25,8 +25,11 @@ case class Loci(
     id: String
 ) extends TypeWithId
 
-object Loci extends Logging {
+object Loci {
   import sangria.macros.derive._
+
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+
   def empty(): Loci = Loci(0, None, "")
 
   implicit val locusF: OFormat[Locus] = Json.format[Locus]

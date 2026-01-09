@@ -1,15 +1,15 @@
 package controllers.api.v4.rest
 
-import javax.inject._
+import javax.inject.*
 import models.entities.TooComplexQueryError
-import models.entities.TooComplexQueryError._
+import models.entities.TooComplexQueryError.*
 import models.{Backend, GQLSchema}
-import play.api.Logging
-import play.api.libs.json._
-import play.api.mvc._
-import sangria.macros._
+import org.slf4j.{Logger, LoggerFactory}
+import play.api.libs.json.*
+import play.api.mvc.*
+import sangria.macros.*
 import sangria.execution.{ErrorWithResolver, Executor, QueryAnalysisError, QueryReducer}
-import sangria.marshalling.playJson._
+import sangria.marshalling.playJson.*
 import sangria.marshalling.InputUnmarshaller
 
 import scala.concurrent.ExecutionContext
@@ -20,8 +20,9 @@ class MetaController @Inject() (implicit
     ec: ExecutionContext,
     backend: Backend,
     cc: ControllerComponents
-) extends AbstractController(cc)
-    with Logging {
+) extends AbstractController(cc) {
+
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   val metaGQLQ: Document =
     gql"""

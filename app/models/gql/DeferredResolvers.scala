@@ -1,18 +1,17 @@
 package models.gql
 import models.entities.{
-  Loci,
-  Pagination,
-  CredibleSets,
-  CredibleSetQueryArgs,
   Colocalisations,
-  L2GPredictions
+  CredibleSetQueryArgs,
+  CredibleSets,
+  L2GPredictions,
+  Loci,
+  Pagination
 }
 import models.{Backend, entities}
-import play.api.Logging
 import sangria.execution.deferred.{Deferred, DeferredResolver}
-import scala.concurrent._
-import models.gql.Arguments.studyId
-import models.gql.Objects.locationAndSourceImp
+
+import scala.concurrent.*
+import org.slf4j.{Logger, LoggerFactory}
 
 trait TypeWithId {
   val id: String
@@ -133,7 +132,10 @@ case class L2GPredictionsDeferred(studyLocusId: String, pagination: Option[Pagin
 /** A deferred resolver for cases where we can't use the Fetch API because we resolve the values on
   * multiple terms/filters.
   */
-class MultiTermResolver extends DeferredResolver[Backend] with Logging {
+class MultiTermResolver extends DeferredResolver[Backend] {
+
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+
   def groupResults[T](deferred: Vector[DeferredMultiTerm[T]],
                       ctx: Backend
   ): Map[Grouping, Future[IndexedSeq[T]]] = {
@@ -180,7 +182,10 @@ class MultiTermResolver extends DeferredResolver[Backend] with Logging {
   }
 }
 
-object DeferredResolvers extends Logging {
+object DeferredResolvers {
+
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+
   val multiTermResolver = new MultiTermResolver()
   // add fetchers and locusResolver to the resolvers
   val deferredResolvers: DeferredResolver[Backend] = DeferredResolver.fetchersWithFallback(

@@ -13,7 +13,7 @@ import models.entities.TooComplexQueryError
 import models.entities.TooComplexQueryError.*
 import models.{Backend, GQLSchema}
 import org.apache.http.HttpStatus
-import play.api.{Configuration, Logging}
+import play.api.Configuration
 import play.api.cache.AsyncCacheApi
 import play.api.libs.json.*
 import play.api.mvc.*
@@ -27,6 +27,10 @@ import javax.inject.*
 import scala.concurrent.*
 import scala.concurrent.duration.*
 import scala.util.{Failure, Success}
+import org.slf4j.{Logger, LoggerFactory, MDC}
+import net.logstash.logback.argument.StructuredArguments._
+
+import java.util.UUID
 
 case class GqlQuery(query: String, variables: JsObject, operation: Option[String])
 
@@ -41,8 +45,9 @@ class GraphQLController @Inject() (implicit
     config: Configuration,
     appStart: ApplicationStart,
     prometheusMetricsMiddleware: PrometheusMetrics
-) extends AbstractController(cc)
-    with Logging {
+) extends AbstractController(cc) {
+
+  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   implicit val otSettings: OTSettings = loadConfigurationObject[OTSettings]("ot", config)
 
@@ -52,20 +57,67 @@ class GraphQLController @Inject() (implicit
     NoContent
   }
 
+  private def logRequestReceived(operation: Option[String], request: Request[Any]): Unit =
+    val origin = request.headers.get("Origin").getOrElse("unknown").split("://").last
+    val domain = request.domain
+    // Validate origin to check if request comes from webapp
+    val isOT = origin != domain && domain.contains(origin)
+
+    operation match {
+      case None =>
+        logger.info(s"request received",
+                    kv("request.method", request.method),
+                    kv("request.ip", request.connection.remoteAddressString),
+                    kv("isOT", isOT)
+        )
+      case Some(op) =>
+        if (op != "IntrospectionQuery")
+          logger.info(s"request received",
+                      kv("operation", op),
+                      kv("request.method", request.method),
+                      kv("request.ip", request.connection.remoteAddressString),
+                      kv("isOT", isOT)
+          )
+    }
+
+  /** Adds a request id value to the logging context so that all logs for the same request have this
+    * id. This id can later be used to correlate the log messages. If the request headers contain
+    * `request-id` this value will be used if not a GUID will be generated
+    * @param request
+    *   HTTP request.
+    */
+  private def addRequestIdToLoggingContext(request: Request[Any]): Unit =
+    val headerReqId = request.headers.get("request-id")
+    val requestId = headerReqId match
+      case Some(id) => id
+      case None     => UUID.randomUUID().toString
+    MDC.put("request.id", requestId)
+
+  // request.connection.remoteAddress.getHostAddress
   def gql(query: String, variables: Option[String], operation: Option[String]): Action[AnyContent] =
-    metadataAction.async {
+    metadataAction.async { request =>
       appStart.RequestCounter.labelValues("/api/v4/graphql", "GET").inc()
       appStart.GraphqlRequestCounter.labelValues("GET", operation.getOrElse("")).inc()
+
+      addRequestIdToLoggingContext(request)
+
+      logRequestReceived(operation, request)
+
       val gqlQuery =
         GqlQuery(query, (variables map parseVariables).getOrElse(Json.obj()), operation)
+
       runQuery(gqlQuery)
     }
 
   def gqlBody(): Action[JsValue] = metadataAction(parse.json).async { request =>
+    addRequestIdToLoggingContext(request)
+
     val query = (request.body \ "query").as[String]
     val operation = (request.body \ "operationName").asOpt[String]
     appStart.RequestCounter.labelValues("/api/v4/graphql", "POST").inc()
     appStart.GraphqlRequestCounter.labelValues("POST", operation.getOrElse("")).inc()
+
+    logRequestReceived(operation, request)
 
     val variables: JsObject = (request.body \ "variables").toOption
       .map {
@@ -105,7 +157,7 @@ class GraphQLController @Inject() (implicit
       val cacheResult: Future[Result] = fromCache.flatMap {
         case Some(result) => Future.successful(result)
         case None =>
-          logger.debug(s"Cache miss on ${gqlQuery.operation}: ${gqlQuery.variables}")
+          logger.debug(s"cache miss: ${gqlQuery.variables}", kv("operation", gqlQuery.operation))
           appStart.CacheMissedCounter.labelValues(gqlQuery.operation.getOrElse("")).inc()
           val queryResult = executeQuery(gqlQuery)
           queryResult.andThen { case Success(s) =>
@@ -117,19 +169,23 @@ class GraphQLController @Inject() (implicit
               responseContainsErrors(s).onComplete {
                 case Success((hasErrors, errorMessagesOpt)) =>
                   if (hasErrors) {
-                    logger.info(s"Temporarily caching 200 response with errors")
-                    errorMessagesOpt.foreach(errors => logger.error(s"Errors in response: $errors"))
+                    logger.info(s"temporarily caching 200 response with errors",
+                                kv("operation", gqlQuery.operation)
+                    )
+                    errorMessagesOpt.foreach(errors => logger.error(s"errors in response: $errors"))
                     cache.set(gqlQuery.toString, s, non200CacheDuration)
                   } else {
                     logger.info(
-                      s"Caching 200 response on ${gqlQuery.operation}: ${gqlQuery.query.filter(_ >= ' ')}"
+                      s"Caching 200 response: ${gqlQuery.query.filter(_ >= ' ')}",
+                      kv("operation", gqlQuery.operation)
                     )
                     cache.set(gqlQuery.toString, s)
                     appStart.CacheRegistrationCounter
                       .labelValues(gqlQuery.operation.getOrElse(""))
                       .inc()
                   }
-                case Failure(exception) => logger.error(exception.getMessage)
+                case Failure(exception) =>
+                  logger.error(exception.getMessage) // TODO: log stacktrace
               }
             }
           }
@@ -185,12 +241,12 @@ class GraphQLController @Inject() (implicit
             case error: QueryAnalysisError =>
               val graphQLError: GraphQLError =
                 getErrorObject(gqlQuery, queryComplexity, error.getMessage())
-              logger.error(graphQLError.toString)
+              logger.error(graphQLError.toString) // TODO: log stacktrace
               BadRequest(error.resolveError)
             case error: ErrorWithResolver =>
               val graphQLError: GraphQLError =
                 getErrorObject(gqlQuery, queryComplexity, error.getMessage())
-              logger.error(graphQLError.toString)
+              logger.error(graphQLError.toString) // TODO: log stacktrace
               InternalServerError(error.resolveError)
           }
 
