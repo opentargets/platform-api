@@ -2377,7 +2377,7 @@ object Objects extends Logging {
       ObjectTypeDescription(
         "GWAS-GWAS and GWAS-molQTL credible set colocalisation results. Dataset includes colocalising pairs as well as the method and statistics used to estimate the colocalisation."
       ),
-      DocumentField("rightStudyType", "Type of the right-side study (e.g., gwas, eqtl, pqtl)"),
+      DocumentField("otherStudyType", "Type of the right-side study (e.g., gwas, eqtl, pqtl)"),
       DocumentField("chromosome", "Chromosome where the colocalisation occurs"),
       DocumentField("colocalisationMethod",
                     "Method used to estimate colocalisation (e.g., coloc, eCAVIAR)"
@@ -2407,11 +2407,12 @@ object Objects extends Logging {
           OptionType(credibleSetImp),
           description = Some("The other credible set (study-locus) in the colocalisation pair"),
           resolve = r =>
-            val studyLocusId = r.value.otherStudyLocusId.getOrElse("")
+            val studyLocusId = r.value.otherStudyLocusId
             logger.debug(s"Finding colocalisation credible set: $studyLocusId")
             credibleSetFetcher.deferOpt(studyLocusId)
         )
-      )
+      ),
+      ExcludeFields("metaTotal")
     )
 
   implicit val dbXrefImp: ObjectType[Backend, DbXref] = deriveObjectType[Backend, DbXref](
@@ -3112,7 +3113,10 @@ object Objects extends Logging {
           complexity = Some(complexityCalculator(pageArg)),
           resolve = js => {
             val id = js.value.studyLocusId
-            ColocalisationsDeferred(id, js.arg(studyTypes), js.arg(pageArg))
+            ColocalisationsDeferred(id,
+                                    js.arg(studyTypes).getOrElse(Seq(StudyTypeEnum.gwas)),
+                                    js.arg(pageArg)
+            )
           }
         ),
         Field(

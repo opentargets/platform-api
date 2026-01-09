@@ -3,8 +3,23 @@ package models.entities
 import models.Backend
 import models.gql.Objects.colocalisationImp
 import models.gql.TypeWithId
+import slick.jdbc.GetResult
+import play.api.libs.json.{Reads, JsValue, Json, OFormat, OWrites}
 import sangria.schema.{Field, ListType, LongType, ObjectType, fields}
 
+case class Colocalisation(
+    studyLocusId: String,
+    otherStudyLocusId: String,
+    otherStudyType: String,
+    chromosome: String,
+    colocalisationMethod: String,
+    numberColocalisingVariants: Long,
+    h3: Option[Double],
+    h4: Option[Double],
+    clpp: Option[Double],
+    betaRatioSignAverage: Option[Double],
+    metaTotal: Int
+)
 case class Colocalisations(
     count: Long,
     rows: IndexedSeq[Colocalisation],
@@ -12,6 +27,9 @@ case class Colocalisations(
 ) extends TypeWithId
 
 object Colocalisations {
+  implicit val getRowFromDB: GetResult[Colocalisation] =
+    GetResult(r => Json.parse(r.<<[String]).as[Colocalisation])
+  implicit val colocalisationF: OFormat[Colocalisation] = Json.format[Colocalisation]
   def empty: Colocalisations = Colocalisations(0, IndexedSeq.empty)
   val colocalisationsImp: ObjectType[Backend, Colocalisations] = ObjectType(
     "Colocalisations",
