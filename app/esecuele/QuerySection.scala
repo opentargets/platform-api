@@ -11,6 +11,11 @@ case class With(content: Seq[Column], alias: Option[String | Column] = None) ext
     s"$name${alias.map(" " + _ + " as").getOrElse("")} ${content.mkString("", ", ", "")}"
 }
 
+case class UnionAll(queries: Seq[Query]) extends QuerySection {
+  override val content: Seq[Column] = Nil
+  override val name: String = "UNION ALL"
+  override val rep: String = queries.map(_.rep).mkString(s"$name\n")
+}
 case class Select(content: Seq[Column]) extends QuerySection {
   override val name: String = "SELECT"
   override val rep: String = s"$name ${content.mkString("", ", ", "")}"

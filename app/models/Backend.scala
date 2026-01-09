@@ -258,64 +258,88 @@ class Backend @Inject() (implicit
   }
 
   def getColocalisations(studyLocusIds: Seq[String],
-                         studyTypes: Option[Seq[StudyTypeEnum.Value]],
+                         studyTypes: Seq[StudyTypeEnum.Value] = Seq(StudyTypeEnum.gwas),
                          pagination: Option[Pagination]
   ): Future[IndexedSeq[Colocalisations]] = {
-    val indexName = getIndexOrDefault("colocalisation")
-    val pag = pagination.getOrElse(Pagination.mkDefault)
-    val boolQueries: Seq[IndexBoolQuery] = studyLocusIds.map { studyLocusId =>
-      val leftStudyLocusQuery = must(
-        termQuery("leftStudyLocusId.keyword", studyLocusId),
-        termsQuery("rightStudyType.keyword", studyTypes.getOrElse(StudyTypeEnum.values))
-      )
-      // Get the coloc based on the right study locus only if the other (left) study type is gwas
-      // because left study locus is always gwas and the field is not represented.
-      val rightStudyLocusQuery = studyTypes match {
-        case Some(st) =>
-          if (st.contains(StudyTypeEnum.gwas)) {
-            Some(termQuery("rightStudyLocusId.keyword", studyLocusId))
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.colocalisation.name)
+    val page = pagination.getOrElse(Pagination.mkDefault).offsetLimit
+    val colocQuery = ColocalisationQuery(
+      studyLocusIds,
+      studyTypes,
+      tableName,
+      page._1,
+      page._2
+    )
+    val results =
+      dbRetriever
+        .executeQuery[Colocalisation, Query](colocQuery.query)
+        .map { colocs =>
+          logger.info(s"Found ${colocs.length} colocalisations for ${studyLocusIds.head}")
+          if (colocs.length) > 0 then {
+            IndexedSeq(Colocalisations(colocs.head.meta_total, colocs, studyLocusIds.head))
           } else {
-            None
+            IndexedSeq(Colocalisations.empty)
           }
-        case None => Some(termQuery("rightStudyLocusId.keyword", studyLocusId))
-      }
-      val query: BoolQuery = {
-        rightStudyLocusQuery match {
-          case Some(rq) =>
-            should(leftStudyLocusQuery, rq)
-          case None => must(leftStudyLocusQuery)
         }
-      }.queryName(studyLocusId)
-      IndexBoolQuery(
-        esIndex = indexName,
-        boolQuery = query,
-        pagination = pag
-      )
-    }
-    val retriever =
-      esRetriever
-        .getMultiQ(
-          boolQueries,
-          fromJsValue[Colocalisation],
-          None,
-          Some(ResolverField(matched_queries = true))
-        )
-    retriever.map { case r =>
-      r.map {
-        case Results(Seq(), _, _, _) => Colocalisations.empty
-        case Results(colocs, _, counts, studyLocusId) =>
-          val idString = studyLocusId.as[String]
-          val c = colocs.map { coloc =>
-            if (coloc.leftStudyLocusId == idString) {
-              coloc.copy(otherStudyLocusId = Some(coloc.rightStudyLocusId))
-            } else {
-              coloc.copy(otherStudyLocusId = Some(coloc.leftStudyLocusId))
-            }
-          }
-          Colocalisations(counts, c, idString)
-      }
-    }
+    results
   }
+
+  // ----
+  //   val indexName = getIndexOrDefault("colocalisation")
+  //   val pag = pagination.getOrElse(Pagination.mkDefault)
+  //   val boolQueries: Seq[IndexBoolQuery] = studyLocusIds.map { studyLocusId =>
+  //     val leftStudyLocusQuery = must(
+  //       termQuery("leftStudyLocusId.keyword", studyLocusId),
+  //       termsQuery("rightStudyType.keyword", studyTypes.getOrElse(StudyTypeEnum.values))
+  //     )
+  //     // Get the coloc based on the right study locus only if the other (left) study type is gwas
+  //     // because left study locus is always gwas and the field is not represented.
+  //     val rightStudyLocusQuery = studyTypes match {
+  //       case Some(st) =>
+  //         if (st.contains(StudyTypeEnum.gwas)) {
+  //           Some(termQuery("rightStudyLocusId.keyword", studyLocusId))
+  //         } else {
+  //           None
+  //         }
+  //       case None => Some(termQuery("rightStudyLocusId.keyword", studyLocusId))
+  //     }
+  //     val query: BoolQuery = {
+  //       rightStudyLocusQuery match {
+  //         case Some(rq) =>
+  //           should(leftStudyLocusQuery, rq)
+  //         case None => must(leftStudyLocusQuery)
+  //       }
+  //     }.queryName(studyLocusId)
+  //     IndexBoolQuery(
+  //       esIndex = indexName,
+  //       boolQuery = query,
+  //       pagination = pag
+  //     )
+  //   }
+  //   val retriever =
+  //     esRetriever
+  //       .getMultiQ(
+  //         boolQueries,
+  //         fromJsValue[Colocalisation],
+  //         None,
+  //         Some(ResolverField(matched_queries = true))
+  //       )
+  //   retriever.map { case r =>
+  //     r.map {
+  //       case Results(Seq(), _, _, _) => Colocalisations.empty
+  //       case Results(colocs, _, counts, studyLocusId) =>
+  //         val idString = studyLocusId.as[String]
+  //         val c = colocs.map { coloc =>
+  //           if (coloc.leftStudyLocusId == idString) {
+  //             coloc.copy(otherStudyLocusId = Some(coloc.rightStudyLocusId))
+  //           } else {
+  //             coloc.copy(otherStudyLocusId = Some(coloc.leftStudyLocusId))
+  //           }
+  //         }
+  //         Colocalisations(counts, c, idString)
+  //     }
+  //   }
+  // }
 
   def getLocus(studyLocusIds: Seq[String],
                variantIds: Option[Seq[String]],
