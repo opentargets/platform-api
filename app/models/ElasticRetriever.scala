@@ -211,8 +211,8 @@ class ElasticRetriever @Inject() (
   ): Nothing =
     err.error.rootCause.foreach { rc =>
       logger.error(
-        s"Elasticsearch error: query=${client.show(q)} type=${rc.`type`}, reason=${rc.reason}, " +
-          s"index=${rc.index}, causedBy=${rc.causedBy}"
+        s"elasticsearch error type=${rc.`type`} reason=${rc.reason} " +
+          s"index=${rc.index} causedBy=${rc.causedBy} query=${client.show(q)}"
       )
     }
     throw new Exception(err.error.reason)
@@ -414,7 +414,7 @@ class ElasticRetriever @Inject() (
         case None    => searchRequest
       }
 
-      logger.info(s"Elasticsearch query: ${client.show(sortedSearchRequest)}")
+      logger.info(s"elasticsearch query: ${client.show(sortedSearchRequest)}")
       sortedSearchRequest
     }
 

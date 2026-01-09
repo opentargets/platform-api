@@ -1256,10 +1256,7 @@ class Backend @Inject() (implicit
   ): Future[Publications] = {
     val table = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.literature.name)
     val indexTable = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.literatureIndex.name)
-    logger.debug(s"querying literature ocurrences",
-                 keyValue("table", table),
-                 keyValue("ids", ids)
-    )
+    logger.debug(s"querying literature ocurrences", keyValue("table", table), keyValue("ids", ids))
 
     val pag = Helpers.Cursor.to(cursor).flatMap(_.asOpt[Pagination]).getOrElse(Pagination.mkDefault)
 
