@@ -96,7 +96,7 @@ case class CredibleSetsByVariantDeferred(variantId: String,
 }
 
 case class ColocalisationsDeferred(studyLocusId: String,
-                                   studyTypes: Option[Seq[StudyTypeEnum.Value]],
+                                   studyTypes: Seq[StudyTypeEnum.Value] = Seq(StudyTypeEnum.gwas),
                                    pagination: Option[Pagination]
 ) extends DeferredMultiTerm[Colocalisations] {
   val id: String = studyLocusId
@@ -108,7 +108,7 @@ case class ColocalisationsDeferred(studyLocusId: String,
       grouping.options match {
         case (st, p) =>
           ctx.getColocalisations(s,
-                                 st.asInstanceOf[Option[Seq[StudyTypeEnum.Value]]],
+                                 st.asInstanceOf[Seq[StudyTypeEnum.Value]],
                                  p.asInstanceOf[Option[Pagination]]
           )
       }
