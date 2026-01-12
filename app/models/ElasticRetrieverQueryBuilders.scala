@@ -7,7 +7,7 @@ import com.sksamuel.elastic4s.requests.searches.queries.Query
 import com.sksamuel.elastic4s.requests.searches.{MultiSearchRequest, SearchRequest}
 import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
 import models.entities.Pagination
-import org.slf4j.{Logger, LoggerFactory}
+import utils.OTLogging
 
 /** IndexQuery is a case class that represents a query to be executed on an Elasticsearch index.
   * @param esIndex
@@ -43,9 +43,7 @@ case class IndexBoolQuery(
     excludedFields: Seq[String] = Seq.empty
 )
 
-trait ElasticRetrieverQueryBuilders extends QueryApi {
-
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+trait ElasticRetrieverQueryBuilders extends OTLogging with QueryApi {
 
   def IndexQueryMust[V](indexQuery: IndexQuery[V]): SearchRequest =
     getByIndexQueryBuilder(indexQuery, must)

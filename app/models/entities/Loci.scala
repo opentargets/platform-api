@@ -4,7 +4,7 @@ import play.api.libs.json.*
 import play.api.libs.json.{JsValue, Json, OFormat, OWrites, Reads}
 import play.api.libs.functional.syntax.*
 import models.gql.TypeWithId
-import org.slf4j.{Logger, LoggerFactory}
+import utils.OTLogging
 
 case class Locus(
     variantId: Option[String],
@@ -25,10 +25,8 @@ case class Loci(
     id: String
 ) extends TypeWithId
 
-object Loci {
+object Loci extends OTLogging {
   import sangria.macros.derive._
-
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   def empty(): Loci = Loci(0, None, "")
 

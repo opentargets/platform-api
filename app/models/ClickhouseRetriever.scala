@@ -8,11 +8,10 @@ import models.entities.Associations.*
 import models.entities.Configuration.{DatasourceSettings, OTSettings}
 import models.entities.*
 import net.logstash.logback.argument.StructuredArguments.keyValue
-import org.slf4j.{Logger, LoggerFactory}
-import play.api.Logging
 import services.ApplicationStart
 import slick.basic.DatabaseConfig
 import slick.jdbc.{GetResult, SQLActionBuilder}
+import utils.OTLogging
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -22,9 +21,7 @@ import scala.util.{Failure, Success}
 class ClickhouseRetriever(config: OTSettings)(implicit
     val dbConfig: DatabaseConfig[ClickHouseProfile],
     val appStart: ApplicationStart
-) {
-
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+) extends OTLogging {
 
   import dbConfig.profile.api._
 

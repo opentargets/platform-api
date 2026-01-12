@@ -10,7 +10,6 @@ import models.entities.*
 import models.gql.Arguments.*
 import models.gql.Fetchers.*
 import models.Helpers.ComplexityCalculator.*
-import play.api.Logging
 import play.api.libs.json.*
 import sangria.macros.derive.{DocumentField, *}
 import sangria.schema.*
@@ -27,11 +26,9 @@ import models.entities.Violations.{
 
 import scala.collection.View.Empty
 import net.logstash.logback.argument.StructuredArguments.keyValue
-import org.slf4j.{Logger, LoggerFactory}
+import utils.OTLogging
 
-object Objects {
-
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+object Objects extends OTLogging {
 
   implicit val metaDataVersionImp: ObjectType[Backend, DataVersion] =
     deriveObjectType[Backend, DataVersion](

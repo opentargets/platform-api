@@ -1,9 +1,9 @@
 package models.entities
 
-import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json.*
 import play.api.libs.json.Reads.*
 import play.api.libs.functional.syntax.*
+import utils.OTLogging
 
 import scala.util.matching.Regex
 
@@ -37,9 +37,7 @@ case class KnownDrugs(
     rows: Seq[KnownDrug]
 )
 
-object KnownDrug {
-
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+object KnownDrug extends OTLogging {
 
   val ctPattern: Regex = "NCT(\\d{8})".r
 

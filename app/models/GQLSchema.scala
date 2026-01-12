@@ -16,11 +16,9 @@ import models.gql.DeferredResolvers.*
 import scala.concurrent.*
 import scala.util.{Failure, Success}
 import models.Helpers.ComplexityCalculator.*
-import org.slf4j.{Logger, LoggerFactory}
+import utils.OTLogging
 
-trait GQLEntities {
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
-}
+trait GQLEntities extends OTLogging {}
 
 object GQLSchema {
   val resolvers: DeferredResolver[Backend] = deferredResolvers

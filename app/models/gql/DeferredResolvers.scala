@@ -11,7 +11,7 @@ import models.{Backend, entities}
 import sangria.execution.deferred.{Deferred, DeferredResolver}
 
 import scala.concurrent.*
-import org.slf4j.{Logger, LoggerFactory}
+import utils.OTLogging
 
 trait TypeWithId {
   val id: String
@@ -132,9 +132,7 @@ case class L2GPredictionsDeferred(studyLocusId: String, pagination: Option[Pagin
 /** A deferred resolver for cases where we can't use the Fetch API because we resolve the values on
   * multiple terms/filters.
   */
-class MultiTermResolver extends DeferredResolver[Backend] {
-
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+class MultiTermResolver extends DeferredResolver[Backend] with OTLogging {
 
   def groupResults[T](deferred: Vector[DeferredMultiTerm[T]],
                       ctx: Backend
@@ -182,9 +180,7 @@ class MultiTermResolver extends DeferredResolver[Backend] {
   }
 }
 
-object DeferredResolvers {
-
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+object DeferredResolvers extends OTLogging {
 
   val multiTermResolver = new MultiTermResolver()
   // add fetchers and locusResolver to the resolvers

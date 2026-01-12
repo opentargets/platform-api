@@ -5,10 +5,9 @@ import models.Helpers.fromJsValue
 import models.entities.Configuration.{ElasticsearchSettings, OTSettings}
 import models.Results
 import utils.MetadataUtils.getIndexWithPrefixOrDefault
-import play.api.Logging
-import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.functional.syntax.*
 import play.api.libs.json.*
+import utils.OTLogging
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -54,9 +53,7 @@ case class Interaction(
     // TODO: Implement evidence gathering
 )
 
-object Interaction {
-
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+object Interaction extends OTLogging {
 
   implicit val interactionEvidencePDMF: OFormat[InteractionEvidencePDM] =
     Json.format[InteractionEvidencePDM]

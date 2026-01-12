@@ -7,8 +7,7 @@ import esecuele.Query as Q
 import models.entities.Harmonic
 import models.entities.Harmonic.pExponentDefault
 import net.logstash.logback.argument.StructuredArguments.keyValue
-import org.slf4j.{Logger, LoggerFactory}
-import play.api.Logging
+import utils.OTLogging
 
 abstract class Queryable {
   def query: Query
@@ -50,9 +49,8 @@ case class QAOTF(
     nonPropagatedDatasources: Set[String],
     offset: Int,
     size: Int
-) extends Queryable {
-
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+) extends Queryable
+    with OTLogging {
 
   val A: Column = column("A")
   val B: Column = column("B")

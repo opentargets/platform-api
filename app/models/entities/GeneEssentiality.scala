@@ -1,9 +1,8 @@
 package models.entities
 
-import org.slf4j.{Logger, LoggerFactory}
-import play.api.Logging
 import play.api.libs.functional.syntax.*
 import play.api.libs.json.*
+import utils.OTLogging
 
 case class GeneEssentialityScreen(cellLineName: Option[String],
                                   depmapId: Option[String],
@@ -25,9 +24,7 @@ case class GeneEssentiality(isEssential: Option[Boolean],
 
 case class TargetEssentiality(id: Option[String], geneEssentiality: Seq[GeneEssentiality])
 
-object TargetEssentiality {
-
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+object TargetEssentiality extends OTLogging {
 
   implicit val geneEssentialityScreenImpW: OWrites[GeneEssentialityScreen] =
     Json.writes[models.entities.GeneEssentialityScreen]

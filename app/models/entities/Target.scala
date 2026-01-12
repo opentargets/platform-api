@@ -1,11 +1,11 @@
 package models.entities
 
-import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.functional.syntax.*
 import play.api.libs.json.Reads.*
 import play.api.libs.json.*
 import clickhouse.rep.SeqRep.*
 import slick.jdbc.GetResult
+import utils.OTLogging
 
 case class CanonicalTranscript(
     id: String,
@@ -155,9 +155,7 @@ case class Target(
     transcriptIds: Seq[String] = Seq.empty
 )
 
-object Target {
-
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+object Target extends OTLogging {
 
   implicit val getTargetFromDB: GetResult[Target] =
     GetResult(r => Json.parse(r.<<[String]).as[Target])

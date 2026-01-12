@@ -4,8 +4,6 @@ import javax.inject.*
 import models.entities.TooComplexQueryError
 import models.entities.TooComplexQueryError.*
 import models.{Backend, GQLSchema}
-import org.slf4j.{Logger, LoggerFactory}
-import play.api.libs.json.*
 import play.api.mvc.*
 import sangria.macros.*
 import sangria.execution.{ErrorWithResolver, Executor, QueryAnalysisError, QueryReducer}
@@ -14,15 +12,15 @@ import sangria.marshalling.InputUnmarshaller
 
 import scala.concurrent.ExecutionContext
 import sangria.ast.Document
+import utils.OTLogging
 
 @Singleton
 class MetaController @Inject() (implicit
     ec: ExecutionContext,
     backend: Backend,
     cc: ControllerComponents
-) extends AbstractController(cc) {
-
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+) extends AbstractController(cc)
+    with OTLogging {
 
   val metaGQLQ: Document =
     gql"""

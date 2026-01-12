@@ -5,8 +5,7 @@ import esecuele.Functions as F
 import esecuele.Column.*
 import esecuele.Query as Q
 import net.logstash.logback.argument.StructuredArguments.keyValue
-import org.slf4j.{Logger, LoggerFactory}
-import play.api.Logging
+import utils.OTLogging
 
 case class QW2V(
     tableName: String,
@@ -14,9 +13,8 @@ case class QW2V(
     labels: Set[String],
     threshold: Double,
     size: Int
-) extends Queryable {
-
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+) extends Queryable
+    with OTLogging {
 
   require(labels.nonEmpty)
 

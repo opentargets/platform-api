@@ -1,7 +1,6 @@
 package controllers.api.v4.rest
 
 import org.apache.pekko.stream.scaladsl.Source
-import org.slf4j.{Logger, LoggerFactory}
 import play.api.http.HttpEntity.Streamed
 import play.api.mvc.{
   AbstractController,
@@ -12,14 +11,14 @@ import play.api.mvc.{
   ResponseHeader,
   Result
 }
+import utils.OTLogging
 import utils.prometheus.{MetricsRequest, PrometheusScraper}
 
 import javax.inject.Inject
 
 class PrometheusController @Inject() (implicit cc: ControllerComponents)
-    extends AbstractController(cc) {
-
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+    extends AbstractController(cc)
+    with OTLogging {
 
   private val prometheusScraper = PrometheusScraper()
 

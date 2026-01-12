@@ -40,9 +40,9 @@ import java.time.LocalDate
 import scala.concurrent.*
 import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
 import models.entities.Violations.{DateFilterError, InputParameterCheckError}
-import org.slf4j.{Logger, LoggerFactory}
 import services.ApplicationStart
 import utils.MetadataUtils.getIndexWithPrefixOrDefault
+import utils.OTLogging
 
 class Backend @Inject() (implicit
     ec: ExecutionContext,
@@ -51,9 +51,7 @@ class Backend @Inject() (implicit
     config: Configuration,
     env: Environment,
     cache: AsyncCacheApi
-) {
-
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+) extends OTLogging {
 
   implicit val defaultOTSettings: OTSettings = loadConfigurationObject[OTSettings]("ot", config)
   implicit val defaultESSettings: ElasticsearchSettings = defaultOTSettings.elasticsearch
