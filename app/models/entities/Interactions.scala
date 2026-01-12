@@ -11,17 +11,15 @@ import models.entities.Configuration.{ElasticsearchSettings, OTSettings}
 import models.gql.Objects.interactionImp
 import models.Results
 import utils.MetadataUtils.getIndexWithPrefixOrDefault
-import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json.*
 import sangria.schema.{Field, ListType, LongType, ObjectType, fields}
+import utils.OTLogging
 
 import scala.concurrent.{ExecutionContext, Future}
 
 case class Interactions(count: Long, rows: IndexedSeq[Interaction])
 
-object Interactions {
-
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+object Interactions extends OTLogging {
 
   val interactions: ObjectType[Backend, Interactions] = ObjectType(
     "Interactions",

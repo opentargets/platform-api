@@ -2,12 +2,12 @@ package models.db
 
 import esecuele.Column.column
 import esecuele.Column.literal
-import esecuele._
-import play.api.Logging
+import esecuele.*
+import utils.OTLogging
 
 case class TargetsQuery(ids: Seq[String], tableName: String, offset: Int, size: Int)
     extends Queryable
-    with Logging {
+    with OTLogging {
 
   private val conditional = Where(
     Functions.in(column("id"), Functions.set(ids.map(literal).toSeq))

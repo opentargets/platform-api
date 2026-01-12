@@ -10,14 +10,11 @@ import sangria.marshalling.FromInput
 import sangria.util.tag.@@
 import sangria.schema.*
 import entities.*
-import org.slf4j.{Logger, LoggerFactory}
+import utils.OTLogging
 
-object Helpers {
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+object Helpers extends OTLogging {
 
-  object Cursor {
-
-    private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+  object Cursor extends OTLogging {
 
     def to(searchAfter: Option[String]): Option[JsValue] =
       searchAfter
@@ -47,9 +44,7 @@ object Helpers {
       obj.map(jsv => Base64Engine.encode(Json.stringify(jsv))).map(new String(_))
   }
 
-  object Base64Engine {
-
-    private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+  object Base64Engine extends OTLogging {
 
     def encode(msg: String): String =
       java.util.Base64.getEncoder.encode(msg.getBytes).map(_.toChar).mkString

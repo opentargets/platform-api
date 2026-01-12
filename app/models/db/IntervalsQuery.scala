@@ -3,7 +3,7 @@ package models.db
 import esecuele.Column.column
 import esecuele.Column.literal
 import esecuele.*
-import org.slf4j.{Logger, LoggerFactory}
+import utils.OTLogging
 
 case class IntervalsQuery(chromosome: String,
                           start: Int,
@@ -11,9 +11,8 @@ case class IntervalsQuery(chromosome: String,
                           tableName: String,
                           offset: Int,
                           size: Int
-) extends Queryable {
-
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+) extends Queryable
+    with OTLogging {
 
   private val positionalQuery = Where(
     Functions.and(

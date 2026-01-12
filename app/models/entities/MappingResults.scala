@@ -1,8 +1,7 @@
 package models.entities
 
-import org.slf4j.{Logger, LoggerFactory}
-import play.api.Logging
 import play.api.libs.json.*
+import utils.OTLogging
 
 case class MappingResult(
     term: String,
@@ -15,9 +14,7 @@ case class MappingResults(
     total: Long
 )
 
-object MappingResults {
-
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+object MappingResults extends OTLogging {
 
   val empty: MappingResults = MappingResults(Seq.empty, None, 0)
   implicit val searchResultAggsCategoryImpW: OWrites[SearchResultAggCategory] =

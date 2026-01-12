@@ -1,8 +1,8 @@
 package models.entities
 
 import models.gql.StudyTypeEnum
-import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json.*
+import utils.OTLogging
 
 case class LdSet(
     tagVariantId: Option[String],
@@ -46,9 +46,7 @@ case class CredibleSetQueryArgs(
     regions: Seq[String] = Seq.empty
 )
 
-object CredibleSet {
-
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+object CredibleSet extends OTLogging {
 
   implicit val ldSetF: OFormat[LdSet] = Json.format[LdSet]
 

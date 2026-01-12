@@ -1,7 +1,7 @@
 package models.entities
 
-import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json.*
+import utils.OTLogging
 
 case class ProteinCodingCoordinate(
     targetId: String,
@@ -23,9 +23,7 @@ case class Datasource(
     datasourceNiceName: String
 )
 
-object ProteinCodingCoordinate {
-
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+object ProteinCodingCoordinate extends OTLogging {
 
   implicit val DatasourceF: OFormat[Datasource] =
     Json.format[Datasource]
@@ -38,9 +36,7 @@ case class ProteinCodingCoordinates(
     rows: IndexedSeq[ProteinCodingCoordinate]
 )
 
-object ProteinCodingCoordinates {
-
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+object ProteinCodingCoordinates extends OTLogging {
 
   def empty(): ProteinCodingCoordinates = ProteinCodingCoordinates(0, IndexedSeq.empty)
 }

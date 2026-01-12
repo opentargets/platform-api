@@ -17,14 +17,12 @@ import models.entities.{
   VariantIndex
 }
 import models.{Backend, entities}
-import org.slf4j.{Logger, LoggerFactory}
 import sangria.execution.deferred.{Fetcher, FetcherCache, FetcherConfig, HasId, SimpleFetcherCache}
+import utils.OTLogging
 
 import scala.concurrent.*
 
-object Fetchers {
-
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+object Fetchers extends OTLogging {
 
   val soTermsFetcherCache = FetcherCache.simple
   implicit val soTermHasId: HasId[SequenceOntologyTerm, String] =

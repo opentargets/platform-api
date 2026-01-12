@@ -27,8 +27,9 @@ import javax.inject.*
 import scala.concurrent.*
 import scala.concurrent.duration.*
 import scala.util.{Failure, Success}
-import org.slf4j.{Logger, LoggerFactory, MDC}
-import net.logstash.logback.argument.StructuredArguments._
+import org.slf4j.MDC
+import net.logstash.logback.argument.StructuredArguments.*
+import utils.OTLogging
 
 import java.util.UUID
 
@@ -45,9 +46,8 @@ class GraphQLController @Inject() (implicit
     config: Configuration,
     appStart: ApplicationStart,
     prometheusMetricsMiddleware: PrometheusMetrics
-) extends AbstractController(cc) {
-
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+) extends AbstractController(cc)
+    with OTLogging {
 
   implicit val otSettings: OTSettings = loadConfigurationObject[OTSettings]("ot", config)
 
@@ -66,17 +66,18 @@ class GraphQLController @Inject() (implicit
     operation match {
       case None =>
         logger.info(s"request received",
-                    kv("request.method", request.method),
-                    kv("request.ip", request.connection.remoteAddressString),
-                    kv("isOT", isOT)
+                    keyValue("request.method", request.method),
+                    keyValue("request.ip", request.connection.remoteAddressString),
+                    keyValue("isOT", isOT)
         )
       case Some(op) =>
         if (op != "IntrospectionQuery")
-          logger.info(s"request received",
-                      kv("operation", op),
-                      kv("request.method", request.method),
-                      kv("request.ip", request.connection.remoteAddressString),
-                      kv("isOT", isOT)
+          logger.info(
+            s"request received",
+            keyValue("operation", op),
+            keyValue("request.method", request.method),
+            keyValue("request.ip", request.connection.remoteAddressString),
+            keyValue("isOT", isOT)
           )
     }
 
@@ -157,7 +158,9 @@ class GraphQLController @Inject() (implicit
       val cacheResult: Future[Result] = fromCache.flatMap {
         case Some(result) => Future.successful(result)
         case None =>
-          logger.debug(s"cache miss: ${gqlQuery.variables}", kv("operation", gqlQuery.operation))
+          logger.debug(s"cache miss: ${gqlQuery.variables}",
+                       keyValue("operation", gqlQuery.operation)
+          )
           appStart.CacheMissedCounter.labelValues(gqlQuery.operation.getOrElse("")).inc()
           val queryResult = executeQuery(gqlQuery)
           queryResult.andThen { case Success(s) =>
@@ -170,14 +173,14 @@ class GraphQLController @Inject() (implicit
                 case Success((hasErrors, errorMessagesOpt)) =>
                   if (hasErrors) {
                     logger.info(s"temporarily caching 200 response with errors",
-                                kv("operation", gqlQuery.operation)
+                                keyValue("operation", gqlQuery.operation)
                     )
                     errorMessagesOpt.foreach(errors => logger.error(s"errors in response: $errors"))
                     cache.set(gqlQuery.toString, s, non200CacheDuration)
                   } else {
                     logger.info(
                       s"Caching 200 response: ${gqlQuery.query.filter(_ >= ' ')}",
-                      kv("operation", gqlQuery.operation)
+                      keyValue("operation", gqlQuery.operation)
                     )
                     cache.set(gqlQuery.toString, s)
                     appStart.CacheRegistrationCounter

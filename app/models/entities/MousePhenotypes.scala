@@ -1,9 +1,9 @@
 package models.entities
 
-import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json.*
 import play.api.libs.json.Reads.*
 import play.api.libs.functional.syntax.*
+import utils.OTLogging
 
 case class BiologicalModels(
     allelicComposition: String,
@@ -28,9 +28,7 @@ case class MousePhenotype(
     targetInModelMgiId: String
 )
 
-object MousePhenotypes {
-
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+object MousePhenotypes extends OTLogging {
 
   implicit val biologicalModelsF: OFormat[BiologicalModels] = Json.format[BiologicalModels]
   implicit val modelPhenotypeClassesF: OFormat[ModelPhenotypeClasses] =

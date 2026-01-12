@@ -1,7 +1,7 @@
 package models.entities
 
-import org.slf4j.{Logger, LoggerFactory}
 import play.api.libs.json.*
+import utils.OTLogging
 
 case class DrugWithIdentifiers(
     drugId: Option[String],
@@ -41,9 +41,7 @@ case class Pharmacogenomics(
     isDirectTarget: Boolean
 )
 
-object Pharmacogenomics {
-
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+object Pharmacogenomics extends OTLogging {
 
   implicit val drugW: OWrites[DrugWithIdentifiers] = Json.writes[DrugWithIdentifiers]
   implicit val drugF: OFormat[DrugWithIdentifiers] = Json.format[DrugWithIdentifiers]

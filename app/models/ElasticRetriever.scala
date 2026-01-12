@@ -23,8 +23,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Try
 import com.sksamuel.elastic4s.requests.searches.sort.FieldSort
-import org.slf4j.{Logger, LoggerFactory}
 import services.ApplicationStart
+import utils.OTLogging
 
 case class ResolverField(fieldname: Option[String], matched_queries: Boolean = false)
 object ResolverField {
@@ -154,10 +154,9 @@ class ElasticRetriever @Inject() (
     hlFields: Seq[String],
     searchEntities: Seq[String]
 )(implicit appStart: ApplicationStart)
-    extends QueryApi
+    extends OTLogging
+    with QueryApi
     with ElasticRetrieverQueryBuilders {
-
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
 
   val db_name = "opensearch"
 
@@ -1030,9 +1029,7 @@ class ElasticRetriever @Inject() (
   }
 }
 
-object ElasticRetriever {
-
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+object ElasticRetriever extends OTLogging {
 
   /** * SortBy case class use the `fieldName` to sort by and asc if `desc` is false otherwise desc
     */

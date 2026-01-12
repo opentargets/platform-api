@@ -3,8 +3,7 @@ package models.db
 import esecuele.Column.*
 import esecuele.{Functions as F, Query as Q, *}
 import net.logstash.logback.argument.StructuredArguments.keyValue
-import org.slf4j.{Logger, LoggerFactory}
-import play.api.Logging
+import utils.OTLogging
 
 case class QLITAGG(
     tableName: String,
@@ -14,9 +13,8 @@ case class QLITAGG(
     offset: Int,
     filterStartDate: Option[(Int, Int)],
     filterEndDate: Option[(Int, Int)]
-) extends Queryable {
-
-  private val logger: Logger = LoggerFactory.getLogger(this.getClass)
+) extends Queryable
+    with OTLogging {
 
   require(ids.nonEmpty)
 
