@@ -23,7 +23,7 @@ case class ColocalisationQuery(studyLocusIds: Seq[String],
     Where(
       Functions.and(
         Functions.equals(column("studyLocusId"), literal(studyLocusId)),
-        Functions.in(column("otherStudyType"),
+        Functions.in(column("rightStudyType"),
                      Functions.set(studyType.map(st => literal(st.toString)))
         )
       )
