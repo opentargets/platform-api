@@ -3,10 +3,11 @@ package models.entities
 import play.api.Logging
 import play.api.libs.json._
 import play.api.libs.json.Reads._
+import slick.jdbc.GetResult
 
 case class DiseaseSynonyms(relation: String, terms: Seq[String])
 
-case class DiseaseOntology(isTherapeuticArea: Boolean)
+// case class DiseaseOntology(isTherapeuticArea: Boolean)
 
 case class Disease(
     id: String,
@@ -22,34 +23,13 @@ case class Disease(
     children: Seq[String],
     ancestors: Seq[String],
     descendants: Seq[String],
-    ontology: DiseaseOntology
+    isTherapeuticArea: Boolean
 )
 
 object Disease extends Logging {
-
-  implicit val DiseaseOntologyImpF: OFormat[DiseaseOntology] =
-    Json.format[models.entities.DiseaseOntology]
+  implicit val getDiseaseFromDB: GetResult[Disease] =
+    GetResult(r => Json.parse(r.<<[String]).as[Disease])
   implicit val DiseaseSynonymsImpF: OFormat[DiseaseSynonyms] =
     Json.format[models.entities.DiseaseSynonyms]
-
-  private val diseaseTransformerSynonyms: Reads[JsObject] = __.json.update(
-    /*
-    The incoming Json has an synonyms object with an array for each relation. We don't know in advance which disease
-    has which terms, so we need to flatten the object into an array of objects for conversion into case classes.
-    See: https://www.playframework.com/documentation/2.6.x/ScalaJsonTransformers
-     */
-    __.read[JsObject]
-      .map { o =>
-        if (o.fields.map(_._1).contains("synonyms")) {
-          val cr: Seq[(String, JsValue)] = o.value("synonyms").as[JsObject].fields.to(Seq)
-          val newJsonObjects: Seq[JsObject] =
-            cr.map(xref => JsObject(Seq("relation" -> JsString(xref._1), "terms" -> xref._2)))
-          (o - "synonyms") ++ Json.obj("synonyms" -> newJsonObjects)
-        } else {
-          o
-        }
-      }
-  )
-  implicit val diseaseImpR: Reads[Disease] = diseaseTransformerSynonyms.andThen(Json.reads[Disease])
-  implicit val diseaseImpW: OWrites[Disease] = Json.writes[Disease]
+  implicit val diseaseImpF: OFormat[Disease] = Json.format[Disease]
 }

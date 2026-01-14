@@ -10,7 +10,7 @@ import sangria.schema.{Field, ListType, LongType, ObjectType, fields}
 case class Colocalisation(
     studyLocusId: String,
     otherStudyLocusId: String,
-    otherStudyType: String,
+    rightStudyType: String,
     chromosome: String,
     colocalisationMethod: String,
     numberColocalisingVariants: Long,

@@ -751,7 +751,7 @@ class Backend @Inject() (implicit
 
   def getTargets(ids: Seq[String]): Future[IndexedSeq[Target]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.target.name)
-    val targetsQuery = TargetsQuery(ids, tableName, 0, Pagination.sizeMax)
+    val targetsQuery = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
     val results = dbRetriever
       .executeQuery[Target, Query](targetsQuery.query)
       .map(targets => targets)
@@ -823,8 +823,12 @@ class Backend @Inject() (implicit
   }
 
   def getDiseases(ids: Seq[String]): Future[IndexedSeq[Disease]] = {
-    val diseaseIndexName = getIndexOrDefault("disease")
-    esRetriever.getByIds(diseaseIndexName, ids, fromJsValue[Disease])
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.disease.name)
+    val diseaseQuery = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
+    val results = dbRetriever
+      .executeQuery[Disease, Query](diseaseQuery.query)
+      .map(diseases => diseases)
+    results
   }
 
   def getIntervals(chromosome: String,

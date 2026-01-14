@@ -473,7 +473,6 @@ object Objects extends Logging {
     DocumentField("description", "Short description of the disease or phenotype"),
     DocumentField("synonyms", "Synonymous disease or phenotype labels"),
     DocumentField("dbXRefs", "Cross-references to external disease ontologies"),
-    ExcludeFields("ontology"),
     DocumentField("obsoleteTerms", "Obsoleted ontology terms replaced by this term"),
     DocumentField("directLocationIds", "EFO terms for direct anatomical locations"),
     DocumentField("indirectLocationIds",
@@ -562,12 +561,6 @@ object Objects extends Logging {
                                         cur
           )
         }
-      ),
-      Field(
-        "isTherapeuticArea",
-        BooleanType,
-        description = Some("Whether this disease node is a top-level therapeutic area"),
-        resolve = ctx => ctx.value.ontology.isTherapeuticArea
       ),
       Field(
         "phenotypes",
@@ -2377,7 +2370,7 @@ object Objects extends Logging {
       ObjectTypeDescription(
         "GWAS-GWAS and GWAS-molQTL credible set colocalisation results. Dataset includes colocalising pairs as well as the method and statistics used to estimate the colocalisation."
       ),
-      DocumentField("otherStudyType", "Type of the right-side study (e.g., gwas, eqtl, pqtl)"),
+      DocumentField("rightStudyType", "Type of the right-side study (e.g., gwas, eqtl, pqtl)"),
       DocumentField("chromosome", "Chromosome where the colocalisation occurs"),
       DocumentField("colocalisationMethod",
                     "Method used to estimate colocalisation (e.g., coloc, eCAVIAR)"
