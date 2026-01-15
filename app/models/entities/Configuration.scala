@@ -62,12 +62,13 @@ object Configuration {
       defaultDatabaseName: String,
       colocalisation: DbTableSettings,
       intervals: DbTableSettings,
-      target: TargetSettings,
       disease: DiseaseSettings,
-      similarities: DbTableSettings,
       harmonic: HarmonicSettings,
       literature: DbTableSettings,
       literatureIndex: DbTableSettings,
+      similarities: DbTableSettings,
+      study: DbTableSettings,
+      target: TargetSettings,
       variant: DbTableSettings
   )
 

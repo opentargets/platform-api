@@ -3200,6 +3200,7 @@ object Objects extends Logging {
                   "Collection of ancestries reported by the study replication phase"
     ),
     DocumentField("sumstatQCValues", "Quality control flags for the study (if any)"),
+    ExcludeFields("metaTotal"),
     ReplaceField(
       "studyId",
       Field(

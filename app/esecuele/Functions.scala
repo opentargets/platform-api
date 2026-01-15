@@ -46,6 +46,8 @@ object Functions {
 
   def array(col: Column, cols: Column*): Column = f("array", col +: cols)
 
+  def arrayUnion(cols: Seq[Column]): Column = f("arrayUnion", cols)
+
   def tuple(cols: Seq[Column]): Column = f("tuple", cols)
 
   def tuple(col: Column, cols: Column*): Column = f("tuple", col +: cols)
