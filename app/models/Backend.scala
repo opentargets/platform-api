@@ -192,10 +192,9 @@ class Backend @Inject() (implicit
 
   def getVariants(ids: Seq[String]): Future[IndexedSeq[VariantIndex]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.variant.name)
-    val variantsQuery = VariantsQuery(ids, tableName, 0, Pagination.sizeMax)
+    val variantsQuery = IdsQuery(ids, "variantId", tableName, 0, Pagination.sizeMax)
     val results = dbRetriever
       .executeQuery[VariantIndex, Query](variantsQuery.query)
-      .map(variants => variants)
     results
   }
 
@@ -212,50 +211,29 @@ class Backend @Inject() (implicit
   }
 
   def getStudy(ids: Seq[String]): Future[IndexedSeq[Study]] = {
-    val indexName = getIndexOrDefault("study")
-    val termsQuery = Map("studyId.keyword" -> ids)
-    val retriever =
-      esRetriever
-        .getByIndexedTermsMust(
-          indexName,
-          termsQuery,
-          Pagination.mkMax,
-          fromJsValue[Study]
-        )
-    retriever.map(_.mappedHits)
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.study.name)
+    val studiesQuery = IdsQuery(ids, "studyId", tableName, 0, Pagination.sizeMax)
+    val results = dbRetriever
+      .executeQuery[Study, Query](studiesQuery.query)
+    results
   }
 
   def getStudies(queryArgs: StudyQueryArgs, pagination: Option[Pagination]): Future[Studies] = {
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.study.name)
+    val diseaseTableName =
+      getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.disease.name)
     val pag = pagination.getOrElse(Pagination.mkDefault)
-    val indexName = getIndexOrDefault("study")
-    val diseaseIds: Seq[String] =
-      if (queryArgs.enableIndirect) {
-        val diseases = getDiseases(queryArgs.diseaseIds)
-        val descendantEfos = diseases.map(_.map(_.descendants).flatten).await
-        descendantEfos ++: queryArgs.diseaseIds
-      } else {
-        queryArgs.diseaseIds
+    val studiesQuery = StudiesQuery(queryArgs, tableName, diseaseTableName, pag._1, pag._2)
+    val results = dbRetriever
+      .executeQuery[Study, Query](studiesQuery.query)
+      .map { studies =>
+        if (studies.isEmpty) {
+          Studies.empty
+        } else {
+          Studies(studies.head.metaTotal, studies)
+        }
       }
-    val termsQuery = Map(
-      "studyId.keyword" -> queryArgs.id,
-      "diseaseIds.keyword" -> diseaseIds
-    ).filter(_._2.nonEmpty)
-    if (termsQuery.isEmpty) {
-      Future.successful(Studies.empty)
-    } else {
-      val retriever = esRetriever
-        .getByIndexedTermsMust(
-          indexName,
-          termsQuery,
-          pag,
-          fromJsValue[Study]
-        )
-      retriever.map {
-        case Results(Seq(), _, _, _) => Studies.empty
-        case Results(studies, _, count, _) =>
-          Studies(count, studies)
-      }
-    }
+    results
   }
 
   def getColocalisations(studyLocusIds: Seq[String],
@@ -754,7 +732,6 @@ class Backend @Inject() (implicit
     val targetsQuery = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
     val results = dbRetriever
       .executeQuery[Target, Query](targetsQuery.query)
-      .map(targets => targets)
     results
   }
 
@@ -827,7 +804,6 @@ class Backend @Inject() (implicit
     val diseaseQuery = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
     val results = dbRetriever
       .executeQuery[Disease, Query](diseaseQuery.query)
-      .map(diseases => diseases)
     results
   }
 

@@ -6,6 +6,7 @@ import models.gql.StudyTypeEnum
 import play.api.libs.json.*
 import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json
+import slick.jdbc.GetResult
 
 case class StudyQueryArgs(
     id: Seq[String] = Seq.empty,
@@ -41,11 +42,14 @@ case class Study(
     discoverySamples: Option[Seq[Sample]],
     nCases: Option[Int],
     analysisFlags: Option[Seq[String]],
-    sumstatQCValues: Option[Seq[SumStatQC]]
+    sumstatQCValues: Option[Seq[SumStatQC]],
+    metaTotal: Int
 )
 
 object Study extends Logging {
   import sangria.macros.derive._
+  implicit val studiesFromDB: GetResult[Study] =
+    GetResult(r => Json.parse(r.<<[String]).as[Study])
 
   case class Sample(ancestry: Option[String], sampleSize: Option[Int])
 
