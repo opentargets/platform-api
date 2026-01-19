@@ -43,7 +43,7 @@ case class Study(
     nCases: Option[Int],
     analysisFlags: Option[Seq[String]],
     sumstatQCValues: Option[Seq[SumStatQC]],
-    metaTotal: Int
+    metaTotal: Int = 0
 )
 
 object Study extends Logging {

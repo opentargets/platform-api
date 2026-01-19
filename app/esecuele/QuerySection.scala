@@ -16,6 +16,13 @@ case class UnionAll(query: Query) extends QuerySection {
   override val name: String = "UNION ALL"
   override val rep: String = s"$name\n${query.rep}"
 }
+
+case class Intersect(query: Query) extends QuerySection {
+  override val content: Seq[Column] = Nil
+  override val name: String = "INTERSECT"
+  override val rep: String = s"$name\n${query.rep}"
+}
+
 case class Select(content: Seq[Column]) extends QuerySection {
   override val name: String = "SELECT"
   override val rep: String = s"$name ${content.mkString("", ", ", "")}"

@@ -28,6 +28,7 @@ case class ColocalisationQuery(studyLocusIds: Seq[String],
         )
       )
     ),
+    OrderBy(column("studyLocusId").desc :: Nil),
     Limit(offset, size)
   )
 
