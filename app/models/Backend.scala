@@ -314,18 +314,11 @@ class Backend @Inject() (implicit
   }
 
   def getCredibleSet(ids: Seq[String]): Future[IndexedSeq[CredibleSet]] = {
-    val indexName = getIndexOrDefault("credible_set")
-    val termsQuery = Map("studyLocusId.keyword" -> ids)
-    val retriever =
-      esRetriever
-        .getByIndexedTermsMust(
-          indexName,
-          termsQuery,
-          Pagination.mkMax,
-          fromJsValue[CredibleSet],
-          excludedFields = Seq("locus", "ldSet")
-        )
-    retriever.map(_.mappedHits)
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.credibleSet.name)
+    val credsetQuery = IdsQuery(ids, "studyLocusId", tableName, 0, Pagination.sizeMax)
+    val results = dbRetriever
+      .executeQuery[CredibleSet, Query](credsetQuery.query)
+    results
   }
 
   def getCredibleSets(
@@ -333,78 +326,62 @@ class Backend @Inject() (implicit
       pagination: Option[Pagination]
   ): Future[CredibleSets] = {
     val pag = pagination.getOrElse(Pagination.mkDefault)
-    val indexName = getIndexOrDefault("credible_set")
-    val termsQuerySeq = Map(
-      "studyLocusId.keyword" -> queryArgs.ids,
-      "studyId.keyword" -> queryArgs.studyIds,
-      "studyType.keyword" -> queryArgs.studyTypes,
-      "region.keyword" -> queryArgs.regions
-    ).filter(_._2.nonEmpty).toSeq
-    val termsQueryIter: Iterable[queries.Query] = Iterable(must(termsQuerySeq.map { it =>
-      val terms = it._2.asInstanceOf[Iterable[String]]
-      termsQuery(it._1, terms)
-    }))
-    val query: BoolQuery =
-      if (queryArgs.variantIds.nonEmpty) {
-        val nestedTermsQuery = Map("locus.variantId.keyword" -> queryArgs.variantIds)
-        val nestedQueryIter = Iterable(
-          nestedQuery("locus",
-                      must(nestedTermsQuery.map { it =>
-                        val terms = it._2.asInstanceOf[Iterable[String]]
-                        termsQuery(it._1, terms)
-                      })
-          )
-        )
-        must(termsQueryIter ++ nestedQueryIter)
-      } else {
-        must(termsQueryIter)
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.credibleSet.name)
+    val studyTableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.study.name)
+    val variantTableName = getTableWithPrefixOrDefault(
+      defaultOTSettings.clickhouse.credibleSet.variant.name
+    )
+    val regionTableName = getTableWithPrefixOrDefault(
+      defaultOTSettings.clickhouse.credibleSet.region.name
+    )
+    val credsetQuery = CredibleSetQuery(
+      queryArgs,
+      tableName,
+      studyTableName,
+      variantTableName,
+      regionTableName,
+      pag._1,
+      pag._2
+    )
+    val results = dbRetriever
+      .executeQuery[CredibleSet, Query](credsetQuery.query)
+      .map { credsets =>
+        if (credsets.isEmpty) {
+          CredibleSets.empty
+        } else {
+          CredibleSets(credsets.head.metaTotal, credsets)
+        }
       }
-    val retriever =
-      esRetriever
-        .getQ(
-          indexName,
-          query,
-          pag,
-          fromJsValue[CredibleSet],
-          excludedFields = Seq("locus", "ldSet")
-        )
-    retriever.map {
-      case Results(Seq(), _, _, _) => CredibleSets.empty
-      case Results(credset, _, count, _) =>
-        CredibleSets(count, credset)
-    }
+    results
   }
 
   def getCredibleSetsByStudy(studyIds: Seq[String],
                              pagination: Option[Pagination]
   ): Future[IndexedSeq[CredibleSets]] = {
     val pag = pagination.getOrElse(Pagination.mkDefault)
-    val indexName = getIndexOrDefault("credible_set")
-    val queries = studyIds.map { studyId =>
-      IndexQuery(
-        esIndex = indexName,
-        kv = Map("studyId.keyword" -> Seq(studyId)),
-        filters = Seq.empty,
-        pagination = pag,
-        aggs = Seq.empty,
-        excludedFields = Seq("locus", "ldSet")
-      )
-    }
-    val retriever =
-      esRetriever
-        .getMultiByIndexedTermsMust(
-          queries,
-          fromJsValue[CredibleSet],
-          None,
-          Some(ResolverField("studyId"))
-        )
-    retriever.map { case r =>
-      r.map {
-        case Results(Seq(), _, _, _) => CredibleSets.empty
-        case Results(credsets, _, counts, studyId) =>
-          CredibleSets(counts, credsets, studyId.as[String])
-      }
-    }
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.credibleSet.name)
+    val studyTableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.study.name)
+    val credsetQuery = CredibleSetByStudyQuery(
+      studyIds,
+      tableName,
+      studyTableName,
+      pag._1,
+      pag._2
+    )
+    val results =
+      dbRetriever
+        .executeQuery[CredibleSet, Query](credsetQuery.query)
+        .map { credsets =>
+          studyIds.map { studyId =>
+            val filteredCredsets = credsets.filter(_.studyId.contains(studyId))
+            if (filteredCredsets.nonEmpty) {
+              CredibleSets(filteredCredsets.head.metaTotal, filteredCredsets, studyId)
+            } else {
+              CredibleSets.empty
+            }
+          }.toIndexedSeq
+        }
+    results
   }
 
   def getCredibleSetsByVariant(variantIds: Seq[String],
@@ -412,44 +389,32 @@ class Backend @Inject() (implicit
                                pagination: Option[Pagination]
   ): Future[IndexedSeq[CredibleSets]] = {
     val pag = pagination.getOrElse(Pagination.mkDefault)
-    val indexName = getIndexOrDefault("credible_set")
-    val termsQueryIter: Option[Iterable[queries.Query]] = studyTypes match {
-      case Some(studyTypes) => Some(Iterable(should(termsQuery("studyType.keyword", studyTypes))))
-      case None             => None
-    }
-    // nested query for each variant id in variantIds
-    val boolQueries: Seq[IndexBoolQuery] = variantIds.map { variantId =>
-      val query: BoolQuery = {
-        val nestedTermsQuery = termQuery("locus.variantId.keyword", variantId)
-        val nestedQueryIter =
-          Iterable(nestedQuery("locus", must(nestedTermsQuery)).inner(innerHits("locus").size(1)))
-        termsQueryIter match {
-          case None                 => must(nestedQueryIter)
-          case Some(termsQueryIter) => must(termsQueryIter ++ nestedQueryIter)
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.credibleSet.name)
+    val variantTableName = getTableWithPrefixOrDefault(
+      defaultOTSettings.clickhouse.credibleSet.variant.name
+    )
+    val credsetQuery = CredibleSetByVariantQuery(
+      variantIds,
+      studyTypes,
+      tableName,
+      variantTableName,
+      pag._1,
+      pag._2
+    )
+    val results =
+      dbRetriever
+        .executeQuery[CredibleSet, Query](credsetQuery.query)
+        .map { credsets =>
+          variantIds.map { variantId =>
+            val filteredCredsets = credsets.filter(_.metaGroupId.contains(variantId))
+            if (filteredCredsets.nonEmpty) {
+              CredibleSets(filteredCredsets.head.metaTotal, filteredCredsets, variantId)
+            } else {
+              CredibleSets.empty
+            }
+          }.toIndexedSeq
         }
-      }.queryName(variantId)
-      IndexBoolQuery(
-        esIndex = indexName,
-        boolQuery = query,
-        pagination = pag,
-        excludedFields = Seq("ldSet", "locus")
-      )
-    }
-    val retriever =
-      esRetriever
-        .getMultiQ(
-          boolQueries,
-          fromJsValue[CredibleSet],
-          None,
-          Some(ResolverField(matched_queries = true))
-        )
-    retriever.map { case r =>
-      r.map {
-        case Results(Seq(), _, _, _) => CredibleSets.empty
-        case Results(credsets, _, counts, variantId) =>
-          CredibleSets(counts, credsets, variantId.as[String])
-      }
-    }
+    results
   }
 
   def getTargetEssentiality(ids: Seq[String]): Future[IndexedSeq[TargetEssentiality]] = {

@@ -191,8 +191,11 @@ object GQLSchema {
         description = Some(
           "List credible sets filtered by study-locus IDs, study IDs, variant IDs, study types or regions"
         ),
+        // arguments need to include one of studyLocusIds :: studyIds :: variantIds :: regions
         arguments =
           pageArg :: studyLocusIds :: studyIds :: variantIds :: studyTypes :: regions :: Nil,
+        // arguments =
+        //   pageArg :: studyLocusIds :: studyIds :: variantIds :: studyTypes :: regions :: Nil,
         complexity = Some(complexityCalculator(pageArg)),
         resolve = ctx => {
           val credSetQueryArgs = CredibleSetQueryArgs(

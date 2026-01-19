@@ -1774,6 +1774,9 @@ object Objects extends Logging {
       DocumentField("name", "Name identifier for target settings"),
       DocumentField("associations", "Database table settings for target associations")
     )
+  implicit val credibleSetSettingsImp: ObjectType[Backend, CredibleSetSettings] =
+    deriveObjectType[Backend, CredibleSetSettings](
+    )
   implicit val diseaseSettingsImp: ObjectType[Backend, DiseaseSettings] =
     deriveObjectType[Backend, DiseaseSettings](
       ObjectTypeDescription("Disease-specific database settings configuration"),
@@ -3049,6 +3052,7 @@ object Objects extends Logging {
         "Description of how this credible set was derived in terms of data and fine-mapping method"
       ),
       DocumentField("isTransQtl", "Boolean for whether this credible set is a trans-pQTL or not"),
+      ExcludeFields("metaTotal", "metaGroupId"),
       ReplaceField(
         "variantId",
         Field(
