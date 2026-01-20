@@ -1238,39 +1238,6 @@ object Objects extends OTLogging {
       DocumentField("rows", "List of phenotype annotations for the disease")
     )
 
-  // howto doc https://sangria-graphql.org/learn/#macro-based-graphql-type-derivation
-  implicit lazy val linkedDiseasesImp: ObjectType[Backend, LinkedIds] =
-    deriveObjectType[Backend, LinkedIds](
-      ObjectTypeName("LinkedDiseases"),
-      ObjectTypeDescription("Diseases linked via indications"),
-      DocumentField("count", "Total number of linked diseases"),
-      ReplaceField(
-        "rows",
-        Field(
-          "rows",
-          ListType(diseaseImp),
-          Some("List of linked disease entities"),
-          resolve = r => diseasesFetcher.deferSeqOpt(r.value.rows)
-        )
-      )
-    )
-
-  implicit lazy val linkedTargetsImp: ObjectType[Backend, LinkedIds] =
-    deriveObjectType[Backend, LinkedIds](
-      ObjectTypeName("LinkedTargets"),
-      ObjectTypeDescription("Targets linked via curated mechanisms of action"),
-      DocumentField("count", "Total number of linked targets"),
-      ReplaceField(
-        "rows",
-        Field(
-          "rows",
-          ListType(targetImp),
-          Some("List of linked target entities"),
-          resolve = r => targetsFetcher.deferSeqOpt(r.value.rows)
-        )
-      )
-    )
-
   implicit lazy val drugReferenceImp: ObjectType[Backend, Reference] =
     deriveObjectType[Backend, Reference](
       ObjectTypeDescription("Reference information supporting the drug mechanisms of action"),
@@ -1735,30 +1702,6 @@ object Objects extends OTLogging {
           DeferredValue(pharmacogenomicsByDrugFetcher.deferOpt(ctx.value.id)).map {
             case Some(pgByDrug) => pgByDrug.pharmacogenomics
             case None           => Seq.empty
-          }
-      )
-    ),
-    ReplaceField(
-      "linkedDiseases",
-      Field(
-        "linkedDiseases",
-        OptionType(linkedDiseasesImp),
-        description = Some("List of molecule potential indications"),
-        resolve = r => r.value.linkedDiseases
-      )
-    ),
-    ReplaceField(
-      "linkedTargets",
-      Field(
-        "linkedTargets",
-        OptionType(linkedTargetsImp),
-        description = Some("List of molecule targets based on molecule mechanism of action"),
-        resolve = ctx =>
-          DeferredValue(mechanismsOfActionFetcher.deferOpt(ctx.value.id)).map {
-            case Some(mechanisms) =>
-              val targetIds = mechanisms.rows.flatMap(_.targets.getOrElse(Seq.empty))
-              LinkedIds(targetIds.size, targetIds)
-            case None => LinkedIds(0, Seq.empty)
           }
       )
     )
