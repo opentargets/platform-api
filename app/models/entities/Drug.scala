@@ -27,7 +27,6 @@ case class Drug(
     synonyms: Seq[String],
     tradeNames: Seq[String],
     childChemblIds: Option[Seq[String]], // Gone?
-    yearOfFirstApproval: Option[Int],
     drugType: String,
     isApproved: Option[Boolean],
     crossReferences: Option[Seq[DrugReferences]],
