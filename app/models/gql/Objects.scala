@@ -1541,7 +1541,6 @@ object Objects extends OTLogging {
     DocumentField("name", "Generic name of the drug molecule"),
     DocumentField("synonyms", "List of alternative names for the drug"),
     DocumentField("tradeNames", "List of brand names for the drug"),
-    DocumentField("yearOfFirstApproval", "Year when the drug received regulatory approval"),
     DocumentField(
       "drugType",
       "Classification of the molecule's therapeutic category or chemical class (e.g. Antibody)"
