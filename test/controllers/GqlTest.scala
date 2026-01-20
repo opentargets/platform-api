@@ -138,7 +138,7 @@ class GqlTest
     "return valid response for Bibliography summary fragment" taggedAs (IntegrationTestTag,
                                                                         ClickhouseTestTag
     ) in {
-      testQueryAgainstGqlEndpoint(DiseaseDrugFragment("Bibliography_BibliographySummaryFragment"))
+      testQueryAgainstGqlEndpoint(DrugFragment("Bibliography_BibliographySummaryFragment"))
     }
     "return valid response for Bibliography similar entities summary fragment" taggedAs (
       IntegrationTestTag,
@@ -330,9 +330,6 @@ class GqlTest
     "return a valid response for disease profile header" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(DiseaseFragment("DiseasePage_ProfileHeader"))
     }
-    "return a valid response for known drugs" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(DiseaseDrugFragment("KnownDrugs_KnownDrugsSummaryFragment"))
-    }
     "return a valid response for ontology summary fragment" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(DiseaseFragment("Ontology_OntologySummaryFragment"))
     }
@@ -428,12 +425,6 @@ class GqlTest
     }
   }
 
-  "Known Drugs query" must {
-    "return a valid response" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(KnownDrugs("KnownDrugs_KnownDrugsQuery"))
-    }
-  }
-
   "MolecularInteractions" must {
     "return a valid response for interaction stats" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(Target("MolecularInteractions_InteractionsStats"))
@@ -521,9 +512,6 @@ class GqlTest
     }
     "return valid gene ontology response" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetFragment("GeneOntology_GeneOntologySummary"))
-    }
-    "return valid known drugs fragment response" taggedAs IntegrationTestTag in {
-      testQueryAgainstGqlEndpoint(TargetFragment("KnownDrugs_KnownDrugsSummary"))
     }
     "return valid response for molecular interactions" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetFragment("MolecularInteractions_InteractionsSummary"))
