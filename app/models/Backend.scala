@@ -640,53 +640,6 @@ class Backend @Inject() (implicit
     prioritisationFt.flatMap(identity)
   }
 
-  def getKnownDrugs(
-      queryString: String,
-      kv: Map[String, String],
-      sizeLimit: Option[Int],
-      cursor: Option[String]
-  ): Future[Option[KnownDrugs]] = {
-
-    val pag = Pagination(0, sizeLimit.getOrElse(Pagination.sizeDefault))
-    val sortByField = sort.FieldSort(field = "phase").desc()
-    val cbIndex = getIndexOrDefault("known_drugs")
-
-    val mappedValues =
-      Seq(keyValue("index", cbIndex)) ++ kv.map(pair => keyValue(pair._1, pair._2)).toSeq
-
-    logger.debug(s"querying known drugs", mappedValues*)
-
-    val aggs = Seq(
-      cardinalityAgg("uniqueTargets", "targetId.raw"),
-      cardinalityAgg("uniqueDiseases", "diseaseId.raw"),
-      cardinalityAgg("uniqueDrugs", "drugId.raw"),
-      valueCountAgg("rowsCount", "drugId.raw")
-    )
-
-    esRetriever
-      .getByFreeQuery(
-        cbIndex,
-        queryString,
-        kv,
-        pag,
-        fromJsValue[KnownDrug],
-        aggs,
-        Some(sortByField),
-        Seq("ancestors", "descendants"),
-        cursor
-      )
-      .map {
-        case (Seq(), _, _) => Some(KnownDrugs(0, 0, 0, 0, cursor, Seq()))
-        case (seq, agg, nextCursor) =>
-          logger.trace(Json.prettyPrint(agg))
-          val drugs = (agg \ "uniqueDrugs" \ "value").as[Long]
-          val diseases = (agg \ "uniqueDiseases" \ "value").as[Long]
-          val targets = (agg \ "uniqueTargets" \ "value").as[Long]
-          val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
-          Some(KnownDrugs(drugs, diseases, targets, rowsCount, nextCursor, seq))
-      }
-  }
-
   def getEvidencesByVariantId(
       datasourceIds: Option[Seq[String]],
       variantId: String,

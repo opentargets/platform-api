@@ -313,23 +313,6 @@ object Objects extends OTLogging {
           }
       ),
       Field(
-        "knownDrugs",
-        OptionType(knownDrugsImp),
-        description = Some(
-          "Set of clinical precedence for drugs with investigational or approved indications " +
-            "targeting this gene product according to their curated mechanism of action"
-        ),
-        arguments = freeTextQuery :: pageSize :: cursor :: Nil,
-        complexity = Some(complexityCalculator(pageSize)),
-        resolve = ctx =>
-          ctx.ctx.getKnownDrugs(
-            ctx.arg(freeTextQuery).getOrElse(""),
-            Map("targetId.raw" -> ctx.value.id),
-            ctx.arg(pageSize),
-            ctx.arg(cursor)
-          )
-      ),
-      Field(
         "associatedDiseases",
         associatedOTFDiseasesImp,
         description = Some(
@@ -614,25 +597,6 @@ object Objects extends OTLogging {
             case Some(otars) => otars.rows
             case None        => Seq.empty
           }
-      ),
-      Field(
-        "knownDrugs",
-        OptionType(knownDrugsImp),
-        description = Some(
-          "Investigational or approved drugs indicated for this disease with curated mechanisms of action"
-        ),
-        arguments = freeTextQuery :: pageSize :: cursor :: Nil,
-        complexity = Some(complexityCalculator(pageSize)),
-        resolve = ctx =>
-          ctx.ctx.getKnownDrugs(
-            ctx.arg(freeTextQuery).getOrElse(""),
-            Map(
-              "diseaseId.raw" -> ctx.value.id,
-              "ancestors.raw" -> ctx.value.id
-            ),
-            ctx.arg(pageSize),
-            ctx.arg(cursor)
-          )
       ),
       Field(
         "associatedTargets",
@@ -1650,23 +1614,6 @@ object Objects extends OTLogging {
         resolve = ctx => DeferredValue(indicationFetcher.deferOpt(ctx.value.id))
       ),
       Field(
-        "knownDrugs",
-        OptionType(knownDrugsImp),
-        description = Some(
-          "Curated Clinical trial records and and post-marketing package inserts " +
-            "with a known mechanism of action"
-        ),
-        arguments = freeTextQuery :: pageSize :: cursor :: Nil,
-        complexity = Some(complexityCalculator(pageSize)),
-        resolve = ctx =>
-          ctx.ctx.getKnownDrugs(
-            ctx.arg(freeTextQuery).getOrElse(""),
-            Map("drugId.raw" -> ctx.value.id),
-            ctx.arg(pageSize),
-            ctx.arg(cursor)
-          )
-      ),
-      Field(
         "adverseEvents",
         OptionType(adverseEventsImp),
         description = Some(
@@ -1812,87 +1759,6 @@ object Objects extends OTLogging {
       ObjectTypeDescription("Gene ontology (GO) term [bioregistry:go]"),
       DocumentField("id", "Gene ontology term identifier [bioregistry:go]"),
       DocumentField("name", "Gene ontology term name")
-    )
-  implicit val knownDrugReferenceImp: ObjectType[Backend, KnownDrugReference] =
-    deriveObjectType[Backend, KnownDrugReference](
-      ObjectTypeDescription("Reference information for known drug indications"),
-      DocumentField("source", "Source of the reference (e.g., PubMed, FDA, package inserts)"),
-      DocumentField("ids", "List of reference identifiers"),
-      DocumentField("urls", "List of URLs linking to the reference")
-    )
-
-  implicit val URLImp: ObjectType[Backend, URL] = deriveObjectType[Backend, URL](
-    ObjectTypeDescription("Source URL for clinical trials, FDA and package inserts"),
-    DocumentField("url", "List of web addresses that support the drug/indication pair"),
-    DocumentField("name", "List of human readable names for the reference source")
-  )
-
-  implicit val knownDrugImp: ObjectType[Backend, KnownDrug] = deriveObjectType[Backend, KnownDrug](
-    ObjectTypeDescription(
-      "For any approved or clinical candidate drug, includes information on the target gene product and indication. It is derived from the ChEMBL target/disease evidence."
-    ),
-    DocumentField(
-      "approvedSymbol",
-      "Approved gene symbol of the target modulated by the drug"
-    ),
-    DocumentField("approvedName",
-                  "Approved full name of the gene or gene product modulated by the drug"
-    ),
-    DocumentField("label", "Disease label for the condition being treated"),
-    DocumentField("prefName", "Commonly used name for the drug"),
-    DocumentField("drugType", "Classification of the modality of the drug (e.g. Small molecule)"),
-    DocumentField("targetId", "Open Targets target identifier"),
-    DocumentField("diseaseId", "Open Targets disease identifier"),
-    DocumentField("drugId", "Open Targets molecule identifier"),
-    DocumentField(
-      "phase",
-      "Clinical development stage of the drug. [Values: -1: `Unknown`, 0: `Phase 0`, 0.5: `Phase I (Early)`, 1: `Phase I`, 2: `Phase II`, 3: `Phase III`, 4: `Phase IV`]"
-    ),
-    DocumentField("mechanismOfAction", "Drug pharmacological action"),
-    DocumentField("status", "Clinical trial status for the drug/indication pair"),
-    DocumentField("targetClass",
-                  "Classification category of the drug's biological target (e.g. Enzyme)"
-    ),
-    DocumentField("references", "Source urls for FDA or package inserts"),
-    DocumentField("ctIds", "Clinicaltrials.gov identifiers on entry trials"),
-    DocumentField("urls", "List of web addresses that support the drug/indication pair"),
-    AddFields(
-      Field(
-        "disease",
-        OptionType(diseaseImp),
-        description = Some("Curated disease indication entity"),
-        resolve = r => diseasesFetcher.deferOpt(r.value.diseaseId)
-      ),
-      Field(
-        "target",
-        OptionType(targetImp),
-        description = Some("Drug target entity based on curated mechanism of action"),
-        resolve = r => targetsFetcher.deferOpt(r.value.targetId)
-      ),
-      Field(
-        "drug",
-        OptionType(drugImp),
-        description = Some("Curated drug entity"),
-        resolve = r => drugsFetcher.deferOpt(r.value.drugId)
-      )
-    )
-  )
-
-  implicit val knownDrugsImp: ObjectType[Backend, KnownDrugs] =
-    deriveObjectType[Backend, KnownDrugs](
-      ObjectTypeDescription(
-        "Set of clinical precedence for drugs with investigational or " +
-          "approved indications targeting gene products according to their curated mechanism of action"
-      ),
-      DocumentField("uniqueDrugs", "Total unique drug or clinical candidate molecules"),
-      DocumentField("uniqueDiseases", "Total unique diseases or phenotypes"),
-      DocumentField(
-        "uniqueTargets",
-        "Total unique known mechanism of action targets"
-      ),
-      DocumentField("cursor", "Opaque pagination cursor to request the next page of results"),
-      DocumentField("count", "Total number of entries"),
-      DocumentField("rows", "Clinical precedence entries with known mechanism of action")
     )
 
   lazy val mUnionType: UnionType[Backend] =
