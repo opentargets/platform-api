@@ -37,8 +37,6 @@ case class IndicationRow(
     references: Option[Seq[IndicationReference]]
 )
 
-case class LinkedIds(count: Int, rows: Seq[String])
-
 case class Indications(
     id: String,
     indications: Seq[IndicationRow],
@@ -77,14 +75,11 @@ case class Drug(
     parentId: Option[String],
     maximumClinicalTrialPhase: Option[Double],
     hasBeenWithdrawn: Boolean,
-    linkedDiseases: Option[LinkedIds],
-    linkedTargets: Option[LinkedIds],
     blackBoxWarning: Boolean,
     description: Option[String]
 )
 
 object Drug {
-  implicit val linkedIdsImpW: OFormat[LinkedIds] = Json.format[models.entities.LinkedIds]
   //  implicit val drugWarningRefenceImpW = Json.format[models.entities.DrugWarningReference]
   implicit val drugWarningsReferenceImpR: Reads[models.entities.DrugWarningReference] = (
     (JsPath \ "ref_id").read[String] and
