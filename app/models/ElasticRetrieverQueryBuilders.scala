@@ -63,11 +63,6 @@ trait ElasticRetrieverQueryBuilders extends QueryApi with Logging {
   ): SearchRequest =
     getByIndexTermsBuilder(indexQuery, should)
 
-  def MultiIndexTermsMust[V](
-      indexQueries: Seq[IndexQuery[V]]
-  ): MultiSearchRequest =
-    multiSearchTermsBuilder(indexQueries, must)
-
   def getByIndexQueryBuilder[V](
       indexQuery: IndexQuery[V],
       f: Iterable[Query] => BoolQuery

@@ -151,4 +151,5 @@ object Functions {
 
   def ngramSearchCaseInsensitive(col1: Column, col2: Column): Column =
     f("ngramSearchCaseInsensitive", col1, col2)
+
 }

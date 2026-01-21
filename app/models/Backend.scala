@@ -163,31 +163,30 @@ class Backend @Inject() (implicit
   def getL2GPredictions(ids: Seq[String],
                         pagination: Option[Pagination]
   ): Future[IndexedSeq[L2GPredictions]] = {
-    val indexName = getIndexOrDefault("l2g_predictions")
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.l2gPredictions.name)
     val pag = pagination.getOrElse(Pagination.mkDefault)
-    val queries = ids.map { studyLocusId =>
-      IndexQuery(
-        esIndex = indexName,
-        kv = Map("studyLocusId.keyword" -> Seq(studyLocusId)),
-        filters = Seq.empty,
-        pagination = pag
-      )
-    }
-    val retriever =
-      esRetriever
-        .getMultiByIndexedTermsMust(
-          queries,
-          fromJsValue[L2GPrediction],
-          ElasticRetriever.sortBy("score", SortOrder.Desc),
-          Some(ResolverField("studyLocusId"))
-        )
-    retriever.map { case r =>
-      r.map {
-        case Results(Seq(), _, _, _) => L2GPredictions.empty
-        case Results(predictions, _, counts, studyLocusId) =>
-          L2GPredictions(counts, predictions, studyLocusId.as[String])
+    val l2gQuery = OneToManyQuery(
+      ids,
+      "studyLocusId",
+      tableName,
+      pag._1,
+      pag._2,
+      orderBy = Some(orderBy("score", sortDirection.DESC)),
+      countField = Some("metaTotal")
+    )
+    val results = dbRetriever
+      .executeQuery[L2GPrediction, Query](l2gQuery.query)
+      .map { predictions =>
+        ids.map { studyLocusId =>
+          val filteredPredictions = predictions.filter(_.studyLocusId == studyLocusId)
+          if (filteredPredictions.nonEmpty) {
+            L2GPredictions(filteredPredictions.head.metaTotal, filteredPredictions, studyLocusId)
+          } else {
+            L2GPredictions.empty
+          }
+        }.toIndexedSeq
       }
-    }
+    results
   }
 
   def getVariants(ids: Seq[String]): Future[IndexedSeq[VariantIndex]] = {
@@ -242,7 +241,7 @@ class Backend @Inject() (implicit
   ): Future[IndexedSeq[Colocalisations]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.colocalisation.name)
     val page = pagination.getOrElse(Pagination.mkDefault)
-    val colocQuery = ColocalisationQuery(
+    val colocQuery = OneToManyQuery.colocQuery(
       studyLocusIds,
       studyTypes,
       tableName,
@@ -271,10 +270,10 @@ class Backend @Inject() (implicit
   ): Future[IndexedSeq[Loci]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.credibleSet.locus.name)
     val page = pagination.getOrElse(Pagination.mkDefault)
-    val locusQuery = LocusQuery(
+    val locusQuery = OneToManyQuery.locusQuery(
       studyLocusIds,
-      variantIds,
       tableName,
+      variantIds,
       page._1,
       page._2
     )

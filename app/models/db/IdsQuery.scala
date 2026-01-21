@@ -4,6 +4,19 @@ import esecuele.Column.literal
 import esecuele._
 import play.api.Logging
 
+/** Query to get rows by a list of unique IDs (one to one mapping)
+  *
+  * @param ids
+  *   list of IDs to query
+  * @param idField
+  *   name of the ID field in the table
+  * @param tableName
+  *   name of the table to query
+  * @param offset
+  *   pagination offset
+  * @param size
+  *   pagination size
+  */
 case class IdsQuery(ids: Seq[String], idField: String, tableName: String, offset: Int, size: Int)
     extends Queryable
     with Logging {
