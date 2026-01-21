@@ -5,18 +5,21 @@ import play.api.libs.json._
 import play.api.libs.json.{Reads, JsValue, Json, OFormat, OWrites}
 import play.api.libs.functional.syntax._
 import models.gql.TypeWithId
+import slick.jdbc.GetResult
 
 case class Locus(
-    variantId: Option[String],
-    posteriorProbability: Option[Double],
+    studyLocusId: String,
+    variantId: String,
+    posteriorProbability: Double,
     pValueMantissa: Option[Double],
     pValueExponent: Option[Int],
     logBF: Option[Double],
     beta: Option[Double],
     standardError: Option[Double],
-    is95CredibleSet: Option[Boolean],
-    is99CredibleSet: Option[Boolean],
-    r2Overall: Option[Double]
+    is95CredibleSet: Boolean,
+    is99CredibleSet: Boolean,
+    r2Overall: Option[Double],
+    metaTotal: Int = 0
 )
 
 case class Loci(
@@ -28,6 +31,8 @@ case class Loci(
 object Loci extends Logging {
   import sangria.macros.derive._
   def empty(): Loci = Loci(0, None, "")
+  implicit val getResultLoci: GetResult[Locus] =
+    GetResult(r => Json.parse(r.<<[String]).as[Locus])
 
   implicit val locusF: OFormat[Locus] = Json.format[Locus]
   implicit val lociR: Reads[Loci] = (

@@ -6,20 +6,20 @@ import play.api.libs.json.*
 import slick.jdbc.GetResult
 
 case class LdSet(
-    tagVariantId: Option[String],
-    r2Overall: Option[Double]
+    tagVariantId: String,
+    r2Overall: Double
 )
 
 case class CredibleSet(studyLocusId: String,
-                       variantId: Option[String],
-                       chromosome: Option[String],
-                       position: Option[Int],
+                       variantId: String,
+                       chromosome: String,
+                       position: Int,
                        region: Option[String],
-                       studyId: Option[String],
+                       studyId: String,
                        beta: Option[Double],
                        zScore: Option[Double],
-                       pValueMantissa: Option[Double],
-                       pValueExponent: Option[Int],
+                       pValueMantissa: Double,
+                       pValueExponent: Int,
                        effectAlleleFrequencyFromSource: Option[Double],
                        standardError: Option[Double],
                        subStudyDescription: Option[String],
@@ -33,7 +33,7 @@ case class CredibleSet(studyLocusId: String,
                        locusEnd: Option[Int],
                        sampleSize: Option[Int],
                        ldSet: Option[Seq[LdSet]],
-                       studyType: Option[StudyTypeEnum.Value],
+                       studyType: StudyTypeEnum.Value,
                        qtlGeneId: Option[String],
                        confidence: Option[String],
                        isTransQtl: Option[Boolean],

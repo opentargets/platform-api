@@ -2975,6 +2975,7 @@ object Objects extends Logging {
     DocumentField("r2Overall",
                   "R-squared (LD) between this credible set variant and the lead variant"
     ),
+    ExcludeFields("studyLocusId", "metaTotal"),
     ReplaceField(
       "variantId",
       Field(
@@ -2982,7 +2983,7 @@ object Objects extends Logging {
         OptionType(variantIndexImp),
         description = Some("Variant in the credible set"),
         resolve = r => {
-          val variantId = r.value.variantId.getOrElse("")
+          val variantId = r.value.variantId
           logger.debug(s"Finding variant index: $variantId")
           variantFetcher.deferOpt(variantId)
         }
