@@ -72,6 +72,7 @@ object Configuration {
       intervals: DbTableSettings,
       disease: DiseaseSettings,
       harmonic: HarmonicSettings,
+      l2gPredictions: DbTableSettings,
       literature: DbTableSettings,
       literatureIndex: DbTableSettings,
       similarities: DbTableSettings,
