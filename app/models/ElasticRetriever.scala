@@ -50,28 +50,9 @@ object Results {
   def empty[A] = Results[A](IndexedSeq.empty, JsNull, 0, JsNull)
 }
 
-case class InnerResults[A](
-    mappedHits: IndexedSeq[IndexedSeq[A]],
-    aggs: JsValue,
-    total: IndexedSeq[Long],
-    parentFields: IndexedSeq[JsValue]
-)
-object InnerResults {
-  def apply[A](
-      mappedHits: IndexedSeq[IndexedSeq[A]],
-      aggs: JsValue,
-      total: IndexedSeq[Long],
-      parentFields: IndexedSeq[JsValue]
-  ): InnerResults[A] =
-    new InnerResults(mappedHits, aggs, total, parentFields)
-  def empty[A] = InnerResults[A](IndexedSeq.empty, JsNull, IndexedSeq.empty, IndexedSeq.empty)
-}
-
 class ResultHandler[A](result: JsValue,
                        buildF: JsValue => Option[A],
-                       resolverField: Option[ResolverField],
-                       parentField: Option[String],
-                       innerHitsName: Option[String]
+                       resolverField: Option[ResolverField]
 ) {
   lazy val hits: JsArray = (result \ "hits" \ "hits").get.as[JsArray]
   lazy val aggs: JsValue = (result \ "aggregations").getOrElse(JsNull)
@@ -100,53 +81,16 @@ class ResultHandler[A](result: JsValue,
         .getOrElse(JsNull)
     case _ => JsNull
   }
-  lazy val parents = parentField match {
-    case Some(pf) =>
-      hits.value
-        .map { jObj =>
-          (jObj \ "_source" \ pf).as[JsValue]
-        }
-        .to(IndexedSeq)
-    case None => hits.value.map(jObj => JsNull).to(IndexedSeq)
-  }
-  lazy val innerHits = hits.value.map { jObj =>
-    (jObj \ "inner_hits" \ innerHitsName.get \ "hits" \ "hits").get.as[JsArray].value
-  }
-  lazy val innerHitsTotal = hits.value
-    .map { jObj =>
-      (jObj \ "inner_hits" \ innerHitsName.get \ "hits" \ "total" \ "value").as[Long]
-    }
-    .to(IndexedSeq)
-  lazy val innerMappedHits = innerHits
-    .map { jObj =>
-      jObj
-        .map { innerJObj =>
-          buildF(innerJObj)
-        }
-        .withFilter(_.isDefined)
-        .map(_.get)
-        .to(IndexedSeq)
-    }
-    .to(IndexedSeq)
   lazy val results: Results[A] = Results[A](mappedHits, aggs, total, resolver)
-  lazy val innerResults: InnerResults[A] =
-    InnerResults[A](innerMappedHits, aggs, innerHitsTotal, parents)
-
 }
 object ResultHandler {
   def apply[A](result: JsValue, buildF: JsValue => Option[A]): ResultHandler[A] =
-    new ResultHandler(result, buildF, None, None, None)
+    new ResultHandler(result, buildF, None)
   def apply[A](result: JsValue,
                buildF: JsValue => Option[A],
                resolverField: Option[ResolverField]
   ): ResultHandler[A] =
-    new ResultHandler(result, buildF, resolverField, None, None)
-  def apply[A](result: JsValue,
-               buildF: JsValue => Option[A],
-               parentField: Option[String],
-               innerHitsName: String
-  ): ResultHandler[A] =
-    new ResultHandler(result, buildF, None, parentField, Some(innerHitsName))
+    new ResultHandler(result, buildF, resolverField)
 }
 
 class ElasticRetriever @Inject() (
@@ -466,25 +410,6 @@ class ElasticRetriever @Inject() (
         }.toIndexedSeq
     }
 
-  private def handleInnerSearchResponse[A](
-      searchResponse: Response[SearchResponse],
-      searchQuery: SearchRequest,
-      buildF: JsValue => Option[A],
-      innerHitsName: String,
-      parentField: Option[String]
-  ): InnerResults[A] =
-    searchResponse match {
-      case rf: RequestFailure =>
-        logger.debug(s"Request failure for query: $searchQuery")
-        logger.error(s"Elasticsearch error: ${rf.error}")
-        InnerResults.empty
-      case results: RequestSuccess[_] =>
-        val result = Json.parse(results.body.get)
-        logger.trace(Json.prettyPrint(result))
-        val r = ResultHandler(result, buildF, parentField, innerHitsName)
-        r.innerResults
-    }
-
   def getMultiByIndexedTermsMust[V, A](
       indexQueries: Seq[IndexQuery[V]],
       buildF: JsValue => Option[A],
@@ -523,31 +448,6 @@ class ElasticRetriever @Inject() (
     )
     val searchRequest: SearchRequest = BoolQueryBuilder(indexQuery)
     getByIndexedQuery(searchRequest, sortByField, buildF)
-  }
-
-  def getInnerQ[A](
-      esIndex: String,
-      boolQ: BoolQuery,
-      pagination: Pagination,
-      buildF: JsValue => Option[A],
-      innerHitsName: String,
-      parentField: Option[String],
-      aggs: Iterable[AbstractAggregation] = Iterable.empty,
-      sortByField: Option[sort.FieldSort] = None,
-      excludedFields: Seq[String] = Seq.empty
-  ): Future[InnerResults[A]] = {
-    val limitClause = pagination.toES
-    val searchRequest: SearchRequest = search(esIndex)
-      .bool(boolQ)
-      .start(limitClause._1)
-      .limit(limitClause._2)
-      .aggs(aggs)
-      .trackTotalHits(true)
-      .sourceInclude(parentField.get)
-    val searchResponse: Future[Response[SearchResponse]] = executeQuery(searchRequest, sortByField)
-    searchResponse.map {
-      handleInnerSearchResponse(_, searchRequest, buildF, innerHitsName, parentField)
-    }
   }
 
   def getByMustWithSearch[A](
