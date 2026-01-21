@@ -241,7 +241,7 @@ class Backend @Inject() (implicit
                          pagination: Option[Pagination]
   ): Future[IndexedSeq[Colocalisations]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.colocalisation.name)
-    val page = pagination.getOrElse(Pagination.mkDefault).offsetLimit
+    val page = pagination.getOrElse(Pagination.mkDefault)
     val colocQuery = ColocalisationQuery(
       studyLocusIds,
       studyTypes,
@@ -269,48 +269,29 @@ class Backend @Inject() (implicit
                variantIds: Option[Seq[String]],
                pagination: Option[Pagination]
   ): Future[IndexedSeq[Loci]] = {
-    val indexName = getIndexOrDefault("credible_set")
-    val limitClause = pagination.getOrElse(Pagination.mkDefault).toES
-    val termsQuerySeq = Seq(Map("studyLocusId.keyword" -> studyLocusIds))
-    val termsQueryIter = termsQuerySeq.map { termsQuerySeq =>
-      Iterable(must(termsQuerySeq.map { it =>
-        val terms = it._2.asInstanceOf[Iterable[String]]
-        termsQuery(it._1, terms)
-      }))
-    }
-    def nestedQueryBuilder(path: String, query: BoolQuery) =
-      nestedQuery(path, query).inner(innerHits("locus").size(limitClause._2).from(limitClause._1))
-    val nestedQueryIter = variantIds match {
-      case Some(variantIds) =>
-        Iterable(
-          nestedQueryBuilder("locus", must(termsQuery("locus.variantId.keyword", variantIds)))
-        )
-      case None =>
-        Iterable(
-          nestedQueryBuilder("locus",
-                             must(
-                               matchAllQuery()
-                             )
-          )
-        )
-
-    }
-    val query: BoolQuery = must(termsQueryIter.flatten ++ nestedQueryIter)
-    val retriever =
-      esRetriever
-        .getInnerQ(
-          indexName,
-          query,
-          Pagination.mkMax,
-          fromJsValue[Locus],
-          "locus",
-          Some("studyLocusId")
-        )
-    retriever.map { case InnerResults(locus, _, counts, studyLocusIds) =>
-      locus.zip(counts).zip(studyLocusIds).map { case ((locus, count), studyLocusId) =>
-        Loci(count, Some(locus), studyLocusId.as[String])
-      }
-    }
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.credibleSet.locus.name)
+    val page = pagination.getOrElse(Pagination.mkDefault)
+    val locusQuery = LocusQuery(
+      studyLocusIds,
+      variantIds,
+      tableName,
+      page._1,
+      page._2
+    )
+    val results =
+      dbRetriever
+        .executeQuery[Locus, Query](locusQuery.query)
+        .map { locus =>
+          studyLocusIds.map { studyLocusId =>
+            val filteredLocus = locus.filter(_.studyLocusId == studyLocusId)
+            if (filteredLocus.nonEmpty) {
+              Loci(filteredLocus.head.metaTotal, Some(filteredLocus), studyLocusId)
+            } else {
+              Loci.empty()
+            }
+          }.toIndexedSeq
+        }
+    results
   }
 
   def getCredibleSet(ids: Seq[String]): Future[IndexedSeq[CredibleSet]] = {

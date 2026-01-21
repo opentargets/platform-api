@@ -46,7 +46,8 @@ object Configuration {
   case class CredibleSetSettings(label: String,
                                  name: String,
                                  variant: DbTableSettings,
-                                 region: DbTableSettings
+                                 region: DbTableSettings,
+                                 locus: DbTableSettings
   )
 
   case class TargetSettings(label: String, name: String, associations: DbTableSettings)
