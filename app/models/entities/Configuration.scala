@@ -60,6 +60,7 @@ object Configuration {
     */
   case class ClickhouseSettings(
       defaultDatabaseName: String,
+      baselineExpression: DbTableSettings,
       intervals: DbTableSettings,
       target: TargetSettings,
       disease: DiseaseSettings,
