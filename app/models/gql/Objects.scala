@@ -17,8 +17,6 @@ import sangria.schema.*
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.*
-import models.entities.CredibleSets.credibleSetsImp
-import models.entities.Study.{LdPopulationStructure, Sample, SumStatQC}
 import models.entities.Violations.{
   InputParameterCheckError,
   InvalidArgValueError,
@@ -748,6 +746,18 @@ object Objects extends Logging {
       )
     )
 
+  implicit val credibleSetsImp: ObjectType[Backend, CredibleSets] =
+    deriveObjectType[Backend, CredibleSets](
+      ObjectTypeDescription(
+        "95% credible sets for GWAS and molQTL studies. Credible sets include all variants in the credible set as well as the fine-mapping method and statistics used to estimate the credible set."
+      ),
+      DocumentField("count", "Total number of credible sets matching the query filters"),
+      DocumentField(
+        "rows",
+        "List of credible set entries with their associated statistics and fine-mapping information"
+      )
+    )
+
   implicit lazy val reactomeImp: ObjectType[Backend, Reactome] =
     deriveObjectType[Backend, Reactome](
       AddFields(
@@ -1116,6 +1126,11 @@ object Objects extends Logging {
       DocumentField("url", "URL linking to more details on safety liabilities"),
       DocumentField("studies", "Studies related to safety assessments")
     )
+  implicit val studiesImp: ObjectType[Backend, Studies] = deriveObjectType[Backend, Studies](
+    ObjectTypeDescription("List of GWAS and molecular QTL studies with total count"),
+    DocumentField("count", "Total number of studies matching the query"),
+    DocumentField("rows", "List of GWAS or molecular QTL studies")
+  )
 
   // hpo
   implicit lazy val hpoImp: ObjectType[Backend, HPO] = deriveObjectType(

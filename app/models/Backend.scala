@@ -15,7 +15,7 @@ import models.db.*
 import models.entities.Publication.*
 import models.entities.Associations.*
 import models.entities.Biosample.*
-import models.entities.CredibleSet.*
+import models.entities.CredibleSets.*
 import models.entities.Colocalisations.*
 import models.entities.Configuration.*
 import models.entities.DiseaseHPOs.*
@@ -26,6 +26,7 @@ import models.entities.MousePhenotypes.*
 import models.entities.Pharmacogenomics.*
 import models.entities.ProteinCodingCoordinates.*
 import models.entities.SearchFacetsResults.*
+import models.entities.Studies.*
 import models.entities.Evidence.*
 import models.entities.SequenceOntologyTerm.*
 import models.entities.*

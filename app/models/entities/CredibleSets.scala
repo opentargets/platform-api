@@ -4,7 +4,10 @@ import models.Backend
 import play.api.libs.json.JsValue
 import sangria.schema.{ObjectType, Field, ListType, LongType, fields}
 import models.gql.TypeWithId
-import models.gql.Objects.credibleSetImp
+import models.gql.StudyTypeEnum
+import play.api.Logging
+import play.api.libs.json.*
+import slick.jdbc.GetResult
 
 case class CredibleSets(
     count: Long,
@@ -12,25 +15,55 @@ case class CredibleSets(
     id: String = ""
 ) extends TypeWithId
 
-object CredibleSets {
+case class LdSet(
+    tagVariantId: String,
+    r2Overall: Double
+)
+
+case class CredibleSet(studyLocusId: String,
+                       variantId: String,
+                       chromosome: String,
+                       position: Int,
+                       region: Option[String],
+                       studyId: String,
+                       beta: Option[Double],
+                       zScore: Option[Double],
+                       pValueMantissa: Double,
+                       pValueExponent: Int,
+                       effectAlleleFrequencyFromSource: Option[Double],
+                       standardError: Option[Double],
+                       subStudyDescription: Option[String],
+                       qualityControls: Option[Seq[String]],
+                       finemappingMethod: Option[String],
+                       credibleSetIndex: Option[Int],
+                       credibleSetlog10BF: Option[Double],
+                       purityMeanR2: Option[Double],
+                       purityMinR2: Option[Double],
+                       locusStart: Option[Int],
+                       locusEnd: Option[Int],
+                       sampleSize: Option[Int],
+                       ldSet: Option[Seq[LdSet]],
+                       studyType: StudyTypeEnum.Value,
+                       qtlGeneId: Option[String],
+                       confidence: Option[String],
+                       isTransQtl: Option[Boolean],
+                       metaTotal: Int = 0,
+                       metaGroupId: Option[String] = None
+)
+
+case class CredibleSetQueryArgs(
+    ids: Seq[String] = Seq.empty,
+    studyIds: Seq[String] = Seq.empty,
+    variantIds: Seq[String] = Seq.empty,
+    studyTypes: Seq[StudyTypeEnum.Value] = Seq.empty,
+    regions: Seq[String] = Seq.empty
+)
+
+object CredibleSets extends Logging {
   def empty: CredibleSets = CredibleSets(0, IndexedSeq.empty)
-  val credibleSetsImp: ObjectType[Backend, CredibleSets] = ObjectType(
-    "CredibleSets",
-    "95% credible sets for GWAS and molQTL studies. Credible sets include all variants in the credible set as well as the fine-mapping method and statistics used to estimate the credible set.",
-    fields[Backend, CredibleSets](
-      Field("count",
-            LongType,
-            description = Some("Total number of credible sets matching the query filters"),
-            resolve = _.value.count
-      ),
-      Field(
-        "rows",
-        ListType(credibleSetImp),
-        description = Some(
-          "List of credible set entries with their associated statistics and fine-mapping information"
-        ),
-        resolve = _.value.rows
-      )
-    )
-  )
+  implicit val getResultCredibleSet: GetResult[CredibleSet] =
+    GetResult(r => Json.parse(r.<<[String]).as[CredibleSet])
+  implicit val ldSetF: OFormat[LdSet] = Json.format[LdSet]
+
+  implicit val credibleSetF: OFormat[CredibleSet] = Json.format[CredibleSet]
 }
