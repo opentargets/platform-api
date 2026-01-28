@@ -14,7 +14,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 case class InteractionEvidencePDM(miIdentifier: Option[String], shortName: Option[String])
 
-case class InteractionSpecies(mnemonic: Option[String],
+case class InteractionSpecies(mnemonic: String,
                               scientificName: Option[String],
                               taxonId: Option[Long]
 )
@@ -64,7 +64,7 @@ object Interaction extends Logging {
 
   implicit val interactionSpeciesW: OWrites[InteractionSpecies] = Json.writes[InteractionSpecies]
   implicit val interactionSpeciesR: Reads[InteractionSpecies] =
-    ((__ \ "mnemonic").readNullable[String] and
+    ((__ \ "mnemonic").read[String] and
       (__ \ "scientific_name").readNullable[String] and
       (__ \ "taxon_id").readNullable[Long])(InteractionSpecies.apply)
 

@@ -21,17 +21,17 @@ case class StudyQueryArgs(
     enableIndirect: Boolean = false
 )
 
-case class Sample(ancestry: Option[String], sampleSize: Option[Int])
+case class Sample(ancestry: String, sampleSize: Int)
 
-case class LdPopulationStructure(ldPopulation: Option[String], relativeSampleSize: Option[Double])
+case class LdPopulationStructure(ldPopulation: String, relativeSampleSize: Option[Double])
 
 case class SumStatQC(QCCheckName: String, QCCheckValue: Double)
 case class Study(
     studyId: String,
     condition: Option[String],
-    projectId: Option[String],
-    studyType: Option[StudyTypeEnum.Value],
-    traitFromSource: Option[String],
+    projectId: String,
+    studyType: StudyTypeEnum.Value,
+    traitFromSource: String,
     geneId: Option[String],
     biosampleFromSourceId: Option[String],
     nSamples: Option[Int],
