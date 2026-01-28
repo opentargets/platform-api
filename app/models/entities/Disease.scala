@@ -7,8 +7,6 @@ import slick.jdbc.GetResult
 
 case class DiseaseSynonyms(relation: String, terms: Seq[String])
 
-// case class DiseaseOntology(isTherapeuticArea: Boolean)
-
 case class Disease(
     id: String,
     name: String,

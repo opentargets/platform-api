@@ -62,9 +62,6 @@ case class OrderBy(content: Seq[Column]) extends QuerySection {
   override val rep: String = s"$name ${content.mkString("", ", ", "")}"
 }
 
-//LIMIT 1 OFFSET 0 BY disease_id
-//limit 10 OFFSET 0;
-
 case class Limit(offset: Int = 0, size: Int) extends QuerySection {
   override val content: Seq[Column] = Nil
   override val name: String = "LIMIT"
