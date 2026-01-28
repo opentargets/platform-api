@@ -69,6 +69,7 @@ object Configuration {
       defaultDatabaseName: String,
       colocalisation: DbTableSettings,
       credibleSet: CredibleSetSettings,
+      interaction: DbTableSettings,
       intervals: DbTableSettings,
       disease: DiseaseSettings,
       harmonic: HarmonicSettings,

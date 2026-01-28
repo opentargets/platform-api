@@ -16,10 +16,13 @@ import play.api.libs.json.*
 import sangria.schema.{Field, ListType, LongType, ObjectType, fields}
 
 import scala.concurrent.{ExecutionContext, Future}
+import models.gql.TypeWithId
 
-case class Interactions(count: Long, rows: IndexedSeq[Interaction])
+case class Interactions(count: Long, rows: IndexedSeq[Interaction], id: String = "")
+    extends TypeWithId
 
 object Interactions extends Logging {
+  val empty: Interactions = Interactions(0L, IndexedSeq.empty)
   val interactions: ObjectType[Backend, Interactions] = ObjectType(
     "Interactions",
     "Molecular interactions reported between targets, with total count and rows",
@@ -36,62 +39,6 @@ object Interactions extends Logging {
       )
     )
   )
-
-  def find(id: String,
-           scoreThreshold: Option[Double],
-           dbName: Option[String],
-           pagination: Option[Pagination]
-  )(implicit
-      ec: ExecutionContext,
-      esSettings: ElasticsearchSettings,
-      esRetriever: ElasticRetriever,
-      otSettings: OTSettings
-  ): Future[Option[Interactions]] = {
-
-    val pag = pagination.getOrElse(Pagination.mkDefault)
-
-    val indexName = esSettings.entities
-      .find(_.name == "interaction")
-      .map(_.index)
-      .getOrElse("interaction")
-
-    val cbIndex = getIndexWithPrefixOrDefault(indexName)
-
-    val kv = List(
-      Some("targetA.keyword" -> id),
-      dbName.map("sourceDatabase.keyword" -> _)
-    ).flatten.toMap
-
-    val filters = Seq(
-      should(
-        rangeQuery("scoring").gte(scoreThreshold.getOrElse(0.0d)),
-        not(existsQuery("scoring"))
-      )
-    )
-
-    val aggs = Seq(
-      valueCountAgg("rowsCount", "targetA.keyword")
-    )
-
-    esRetriever
-      .getByIndexedQueryMustWithFilters(
-        cbIndex,
-        kv,
-        filters,
-        pag,
-        fromJsValue[Interaction],
-        aggs,
-        Some(sort.FieldSort("scoring", order = SortOrder.DESC))
-      )
-      .map {
-        case Results(Seq(), _, _, _) => None
-        case Results(seq, agg, _, _) =>
-          logger.debug(Json.prettyPrint(agg))
-
-          val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
-          Some(Interactions(rowsCount, seq))
-      }
-  }
 
   def listResources(implicit
       ec: ExecutionContext,

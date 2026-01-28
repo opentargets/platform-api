@@ -5,7 +5,8 @@ import models.entities.{
   CredibleSets,
   CredibleSetQueryArgs,
   Colocalisations,
-  L2GPredictions
+  L2GPredictions,
+  Interactions
 }
 import models.{Backend, entities}
 import play.api.Logging
@@ -39,6 +40,28 @@ abstract class DeferredMultiTerm[+T]() extends Deferred[T] {
   val grouping: Grouping
   def empty(): T
   def resolver(ctx: Backend): (Seq[String], Grouping) => Future[IndexedSeq[T]]
+}
+
+case class InteractionsDeferred(targetId: String,
+                                scoreThreshold: Option[Double],
+                                databaseName: Option[InteractionSourceEnum.Value],
+                                pagination: Option[Pagination]
+) extends DeferredMultiTerm[Interactions] {
+  val id: String = targetId
+  val options = (scoreThreshold, databaseName, pagination)
+  val grouping = Grouping(DeferredType.Loci, options)
+  def empty(): Interactions = Interactions.empty
+  def resolver(ctx: Backend): (Seq[String], Grouping) => Future[IndexedSeq[Interactions]] = {
+    case (s: Seq[String], grouping: Grouping) =>
+      grouping.options match {
+        case (st, db, p) =>
+          ctx.getInteractions(s,
+                              st.asInstanceOf[Option[Double]],
+                              db.asInstanceOf[Option[InteractionSourceEnum.Value]],
+                              p.asInstanceOf[Option[Pagination]]
+          )
+      }
+  }
 }
 
 case class LocusDeferred(studyLocusId: String,
@@ -166,6 +189,7 @@ class MultiTermResolver extends DeferredResolver[Backend] with Logging {
       case credSetByStudy: CredibleSetsByStudyDeferred     => credSetByStudy
       case credSetByVariant: CredibleSetsByVariantDeferred => credSetByVariant
       case colocalisations: ColocalisationsDeferred        => colocalisations
+      case interactions: InteractionsDeferred              => interactions
       case l2g: L2GPredictionsDeferred                     => l2g
     }
     val results = groupResults(deferredByType, ctx)
@@ -175,6 +199,7 @@ class MultiTermResolver extends DeferredResolver[Backend] with Logging {
       case credSetByVariant: CredibleSetsByVariantDeferred =>
         getResultForId(credSetByVariant, results)
       case colocalisations: ColocalisationsDeferred => getResultForId(colocalisations, results)
+      case interactions: InteractionsDeferred       => getResultForId(interactions, results)
       case l2g: L2GPredictionsDeferred              => getResultForId(l2g, results)
     }
   }

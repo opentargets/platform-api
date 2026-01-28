@@ -30,7 +30,7 @@ import models.entities.Studies.*
 import models.entities.Evidence.*
 import models.entities.SequenceOntologyTerm.*
 import models.entities.*
-import models.gql.StudyTypeEnum
+import models.gql.{StudyTypeEnum, InteractionSourceEnum}
 import org.apache.http.impl.nio.reactor.IOReactorConfig
 import play.api.cache.AsyncCacheApi
 import play.api.db.slick.DatabaseConfigProvider
@@ -45,6 +45,8 @@ import com.sksamuel.elastic4s.requests.searches.queries.compound.BoolQuery
 import models.entities.Violations.{DateFilterError, InputParameterCheckError}
 import services.ApplicationStart
 import utils.MetadataUtils.getIndexWithPrefixOrDefault
+import models.gql.InteractionSourceEnum.InteractionSource
+import com.sksamuel.elastic4s.requests.searches.suggestion.Fuzziness.One
 
 class Backend @Inject() (implicit
     ec: ExecutionContext,
@@ -165,7 +167,7 @@ class Backend @Inject() (implicit
                         pagination: Option[Pagination]
   ): Future[IndexedSeq[L2GPredictions]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.l2gPredictions.name)
-    val pag = pagination.getOrElse(Pagination.mkDefault)
+    val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
     val l2gQuery = OneToManyQuery(
       ids,
       "studyLocusId",
@@ -222,7 +224,7 @@ class Backend @Inject() (implicit
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.study.name)
     val diseaseTableName =
       getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.disease.name)
-    val pag = pagination.getOrElse(Pagination.mkDefault)
+    val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
     val studiesQuery = StudiesQuery(queryArgs, tableName, diseaseTableName, pag._1, pag._2)
     val results = dbRetriever
       .executeQuery[Study, Query](studiesQuery.query)
@@ -241,7 +243,7 @@ class Backend @Inject() (implicit
                          pagination: Option[Pagination]
   ): Future[IndexedSeq[Colocalisations]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.colocalisation.name)
-    val page = pagination.getOrElse(Pagination.mkDefault)
+    val page = pagination.getOrElse(Pagination.mkDefault).offsetLimit
     val colocQuery = OneToManyQuery.colocQuery(
       studyLocusIds,
       studyTypes,
@@ -270,7 +272,7 @@ class Backend @Inject() (implicit
                pagination: Option[Pagination]
   ): Future[IndexedSeq[Loci]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.credibleSet.locus.name)
-    val page = pagination.getOrElse(Pagination.mkDefault)
+    val page = pagination.getOrElse(Pagination.mkDefault).offsetLimit
     val locusQuery = OneToManyQuery.locusQuery(
       studyLocusIds,
       tableName,
@@ -306,7 +308,7 @@ class Backend @Inject() (implicit
       queryArgs: CredibleSetQueryArgs,
       pagination: Option[Pagination]
   ): Future[CredibleSets] = {
-    val pag = pagination.getOrElse(Pagination.mkDefault)
+    val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.credibleSet.name)
     val studyTableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.study.name)
     val variantTableName = getTableWithPrefixOrDefault(
@@ -339,7 +341,7 @@ class Backend @Inject() (implicit
   def getCredibleSetsByStudy(studyIds: Seq[String],
                              pagination: Option[Pagination]
   ): Future[IndexedSeq[CredibleSets]] = {
-    val pag = pagination.getOrElse(Pagination.mkDefault)
+    val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.credibleSet.name)
     val studyTableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.study.name)
     val credsetQuery = CredibleSetByStudyQuery(
@@ -369,7 +371,7 @@ class Backend @Inject() (implicit
                                studyTypes: Option[Seq[StudyTypeEnum.Value]],
                                pagination: Option[Pagination]
   ): Future[IndexedSeq[CredibleSets]] = {
-    val pag = pagination.getOrElse(Pagination.mkDefault)
+    val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.credibleSet.name)
     val variantTableName = getTableWithPrefixOrDefault(
       defaultOTSettings.clickhouse.credibleSet.variant.name
@@ -750,6 +752,36 @@ class Backend @Inject() (implicit
     val diseaseQuery = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
     val results = dbRetriever
       .executeQuery[Disease, Query](diseaseQuery.query)
+    results
+  }
+
+  def getInteractions(ids: Seq[String],
+                      scoreThreshold: Option[Double],
+                      databaseName: Option[InteractionSourceEnum.Value],
+                      pagination: Option[Pagination]
+  ): Future[IndexedSeq[Interactions]] = {
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.interaction.name)
+    val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
+    val interactionsQuery = OneToManyQuery.interactionQuery(
+      ids,
+      tableName,
+      scoreThreshold,
+      databaseName,
+      pag._1,
+      pag._2
+    )
+    val results = dbRetriever
+      .executeQuery[Interaction, Query](interactionsQuery.query)
+      .map { interactions =>
+        ids.map { targetId =>
+          val filteredInteractions = interactions.filter(_.targetA == targetId)
+          if (filteredInteractions.nonEmpty) {
+            Interactions(filteredInteractions.head.metaTotal, filteredInteractions, targetId)
+          } else {
+            Interactions.empty
+          }
+        }.toIndexedSeq
+      }
     results
   }
 

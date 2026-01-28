@@ -279,11 +279,12 @@ object Objects extends Logging {
         ),
         arguments = scoreThreshold :: databaseName :: pageArg :: Nil,
         complexity = Some(complexityCalculator(pageArg)),
-        resolve = r => {
-          import r.ctx._
-
-          Interactions.find(r.value.id, r arg scoreThreshold, r arg databaseName, r arg pageArg)
-        }
+        resolve = ctx =>
+          InteractionsDeferred(ctx.value.id,
+                               ctx.arg(scoreThreshold),
+                               ctx.arg(databaseName),
+                               ctx.arg(pageArg)
+          )
       ),
       Field(
         "mousePhenotypes",

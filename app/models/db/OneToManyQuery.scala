@@ -3,7 +3,7 @@ import esecuele.Column.column
 import esecuele.Column.literal
 import esecuele._
 import play.api.Logging
-import models.gql.StudyTypeEnum
+import models.gql.{StudyTypeEnum, InteractionSourceEnum}
 
 enum sortDirection:
   case ASC, DESC
@@ -123,6 +123,40 @@ object OneToManyQuery {
         case Some(vids) => Some(Column.inSet("variantId", vids))
         case None       => None
       },
+      countField = Some("metaTotal")
+    )
+
+  def interactionQuery(targetIds: Seq[String],
+                       tableName: String,
+                       scoreThreshold: Option[Double],
+                       sourceDatabase: Option[InteractionSourceEnum.Value],
+                       offset: Int,
+                       size: Int
+  ): OneToManyQuery =
+    OneToManyQuery(
+      targetIds,
+      "targetA",
+      tableName,
+      offset,
+      size,
+      Some(
+        Functions.and(
+          scoreThreshold match {
+            case Some(threshold) =>
+              Functions.or(
+                Functions.greaterOrEquals(column("scoring"), literal(threshold)),
+                Functions.isNull(column("scoring"))
+              )
+            case None => literal(true)
+          },
+          sourceDatabase match {
+            case Some(dbName) =>
+              Functions.equals(column("sourceDatabase"), literal(dbName.toString()))
+            case None => literal(true)
+          }
+        )
+      ),
+      orderBy = Some(orderBy("scoring", sortDirection.DESC)),
       countField = Some("metaTotal")
     )
 }

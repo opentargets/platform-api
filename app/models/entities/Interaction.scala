@@ -8,6 +8,7 @@ import utils.MetadataUtils.getIndexWithPrefixOrDefault
 import play.api.Logging
 import play.api.libs.functional.syntax.*
 import play.api.libs.json.*
+import slick.jdbc.GetResult
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -49,11 +50,14 @@ case class Interaction(
     count: Long,
     sourceDatabase: String,
     speciesA: Option[InteractionSpecies],
-    speciesB: Option[InteractionSpecies]
+    speciesB: Option[InteractionSpecies],
+    metaTotal: Int = 0
     // TODO: Implement evidence gathering
 )
 
 object Interaction extends Logging {
+  implicit val getFromDB: GetResult[Interaction] =
+    GetResult(r => Json.parse(r.<<[String]).as[Interaction])
 
   implicit val interactionEvidencePDMF: OFormat[InteractionEvidencePDM] =
     Json.format[InteractionEvidencePDM]

@@ -134,6 +134,8 @@ object Functions {
 
   def ifNull(col1: Column, col2: Column): Column = f("ifNull", col1, col2)
 
+  def isNull(col: Column): Column = f("isNull", col)
+
   def equals(col1: Column, col2: Column): Column = f("equals", col1, col2)
 
   def notEquals(col1: Column, col2: Column): Column = f("notEquals", col1, col2)
