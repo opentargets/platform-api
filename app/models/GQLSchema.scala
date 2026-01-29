@@ -6,8 +6,6 @@ import sangria.schema._
 import entities._
 import sangria.execution.deferred._
 import gql.validators.QueryTermsValidator._
-import scala.concurrent.ExecutionContext.Implicits.global
-import models.entities.Interaction._
 import models.gql.Objects._
 import models.gql.Arguments._
 import models.gql.Fetchers._
@@ -127,10 +125,7 @@ object GQLSchema {
         "interactionResources",
         ListType(interactionResources),
         description = Some("List of molecular interaction resources and their versions"),
-        resolve = ctx => {
-          import ctx.ctx._
-          Interactions.listResources
-        }
+        resolve = ctx => ctx.ctx.getInteractionSources
       ),
       Field(
         "geneOntologyTerms",
@@ -189,11 +184,8 @@ object GQLSchema {
         description = Some(
           "List credible sets filtered by study-locus IDs, study IDs, variant IDs, study types or regions"
         ),
-        // arguments need to include one of studyLocusIds :: studyIds :: variantIds :: regions
         arguments =
           pageArg :: studyLocusIds :: studyIds :: variantIds :: studyTypes :: regions :: Nil,
-        // arguments =
-        //   pageArg :: studyLocusIds :: studyIds :: variantIds :: studyTypes :: regions :: Nil,
         complexity = Some(complexityCalculator(pageArg)),
         resolve = ctx => {
           val credSetQueryArgs = CredibleSetQueryArgs(
