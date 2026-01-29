@@ -20,6 +20,7 @@ import models.entities.Colocalisations.*
 import models.entities.Configuration.*
 import models.entities.DiseaseHPOs.*
 import models.entities.Drug.*
+import models.entities.Interactions.*
 import models.entities.Intervals.*
 import models.entities.Loci.*
 import models.entities.MousePhenotypes.*
@@ -782,6 +783,14 @@ class Backend @Inject() (implicit
           }
         }.toIndexedSeq
       }
+    results
+  }
+
+  def getInteractionSources: Future[Seq[InteractionResources]] = {
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.interaction.name)
+    val interactionSourcesQuery = InteractionSourcesQuery(tableName)
+    val results = dbRetriever
+      .executeQuery[InteractionResources, Query](interactionSourcesQuery.query)
     results
   }
 

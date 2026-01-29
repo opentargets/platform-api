@@ -3,9 +3,7 @@ package models.gql
 import models.*
 import models.entities.Configuration.*
 import models.entities.Evidences.*
-import models.entities.Interactions.*
 import models.entities.Publications.publicationsImp
-import models.entities.Colocalisations.*
 import models.entities.*
 import models.gql.Arguments.*
 import models.gql.Fetchers.*
@@ -273,7 +271,7 @@ object Objects extends Logging {
       ),
       Field(
         "interactions",
-        OptionType(interactions),
+        OptionType(interactionsImp),
         description = Some(
           "Molecular interactions reporting experimental or functional interactions between this target and other molecules. Interactions are integrated from multiple databases capturing physical interactions (e.g., IntAct), directional interactions (e.g., Signor), pathway relationships (e.g., Reactome), or functional interactions (e.g., STRINGdb)."
         ),
@@ -2384,6 +2382,15 @@ object Objects extends Logging {
       DocumentField("count", "Total number of phenotype-associated protein coding variants"),
       DocumentField("rows", "List of phenotype-associated protein coding variants")
     )
+
+  implicit val colocalisationsImp: ObjectType[Backend, Colocalisations] =
+    deriveObjectType[Backend, Colocalisations](
+      ObjectTypeDescription(
+        "GWAS-GWAS and GWAS-molQTL credible set colocalisation results. Dataset includes colocalising pairs as well as the method and statistics used to estimate the colocalisation."
+      ),
+      DocumentField("count", "Total number of colocalisation results matching the query filters"),
+      DocumentField("rows", "List of colocalisation results between study-loci pairs")
+    )
   implicit val colocalisationImp: ObjectType[Backend, Colocalisation] =
     deriveObjectType[Backend, Colocalisation](
       ObjectTypeDescription(
@@ -3386,6 +3393,15 @@ object Objects extends Logging {
       )
     )
 
+  implicit val interactionsImp: ObjectType[Backend, Interactions] =
+    deriveObjectType[Backend, Interactions](
+      ObjectTypeDescription(
+        "Molecular interactions reported between targets, with total count and rows"
+      ),
+      DocumentField("count", "Total number of interaction entries available for the query"),
+      DocumentField("rows", "List of molecular interaction entries")
+    )
+
   implicit val interactionImp: ObjectType[Backend, Interaction] =
     deriveObjectType[Backend, Interaction](
       ObjectTypeDescription(
@@ -3427,20 +3443,6 @@ object Objects extends Logging {
           resolve = interaction => {
             val tId = interaction.value.targetB
             targetsFetcher.deferOpt(tId)
-          }
-        )
-      ),
-      AddFields(
-        Field(
-          "evidences",
-          ListType(interactionEvidenceImp),
-          description = Some("List of evidences for this interaction"),
-          resolve = r => {
-            import scala.concurrent.ExecutionContext.Implicits.global
-            import r.ctx._
-
-            val ev = r.value
-            Interaction.findEvidences(ev)
           }
         )
       )

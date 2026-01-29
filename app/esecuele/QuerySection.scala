@@ -23,8 +23,8 @@ case class Intersect(query: Query) extends QuerySection {
   override val rep: String = s"$name\n${query.rep}"
 }
 
-case class Select(content: Seq[Column]) extends QuerySection {
-  override val name: String = "SELECT"
+case class Select(content: Seq[Column], distinct: Boolean = false) extends QuerySection {
+  override val name: String = if (distinct) "SELECT DISTINCT" else "SELECT"
   override val rep: String = s"$name ${content.mkString("", ", ", "")}"
 }
 

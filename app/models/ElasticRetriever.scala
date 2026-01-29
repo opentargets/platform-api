@@ -152,44 +152,6 @@ class ElasticRetriever @Inject() (
   /** This fn represents a query where each kv from the map is used in a bool must. Based on the
     * query asked by `getByIndexedQuery` and aggregation is applied
     */
-  def getAggregationsByQuery[A](
-      esIndex: String,
-      boolQuery: BoolQuery,
-      aggs: Iterable[AbstractAggregation] = Iterable.empty
-  ): Future[JsValue] = {
-    val q = search(esIndex)
-      .bool {
-        boolQuery
-      }
-      .start(0)
-      .limit(0)
-      .aggs(aggs)
-      .trackTotalHits(true)
-
-    appStart.DatabaseCallCounter.labelValues(db_name, "getAggregationsByQuery").inc()
-
-    // just log and execute the query
-    val elems: Future[Response[SearchResponse]] = client.execute {
-      logger.debug(s"Elasticsearch query to execute: ${client.show(q)}")
-      q
-    }
-
-    elems.map {
-      case _: RequestFailure => JsNull
-      case results           =>
-        // parse the full body response into JsValue
-        // thus, we can apply Json Transformations from JSON Play
-        val result = Json.parse(results.body.get)
-
-        logger.trace(Json.prettyPrint(result))
-        val aggs = (result \ "aggregations").getOrElse(JsNull)
-        aggs
-    }
-  }
-
-  /** This fn represents a query where each kv from the map is used in a bool must. Based on the
-    * query asked by `getByIndexedQuery` and aggregation is applied
-    */
   def getByIndexedQueryMust[A, V](
       esIndex: String,
       kv: Map[String, V],
@@ -202,28 +164,6 @@ class ElasticRetriever @Inject() (
     // just log and execute the query
     val indexQuery: IndexQuery[V] = IndexQuery(esIndex = esIndex,
                                                kv = kv,
-                                               pagination = pagination,
-                                               aggs = aggs,
-                                               excludedFields = excludedFields
-    )
-    val searchRequest: SearchRequest = IndexQueryMust(indexQuery)
-    getByIndexedQuery(searchRequest, sortByField, buildF)
-  }
-
-  def getByIndexedQueryMustWithFilters[A, V](
-      esIndex: String,
-      kv: Map[String, V],
-      filters: Seq[Query],
-      pagination: Pagination,
-      buildF: JsValue => Option[A],
-      aggs: Iterable[AbstractAggregation] = Iterable.empty,
-      sortByField: Option[sort.FieldSort] = None,
-      excludedFields: Seq[String] = Seq.empty
-  ): Future[Results[A]] = {
-    // just log and execute the query
-    val indexQuery: IndexQuery[V] = IndexQuery(esIndex = esIndex,
-                                               kv = kv,
-                                               filters = filters,
                                                pagination = pagination,
                                                aggs = aggs,
                                                excludedFields = excludedFields
@@ -254,31 +194,6 @@ class ElasticRetriever @Inject() (
                                                excludedFields = excludedFields
     )
     val searchRequest: SearchRequest = IndexTermsMust(indexQuery)
-    getByIndexedQuery(searchRequest, sortByField, buildF)
-  }
-
-  /** This fn represents a query where each kv from the map is used in a bool 'should' (OR) with
-    * optional filters that are 'must' (AND).
-    */
-  def getByIndexedTermsShould[A, V](
-      esIndex: String,
-      kv: Map[String, V],
-      pagination: Pagination,
-      buildF: JsValue => Option[A],
-      aggs: Iterable[AbstractAggregation] = Iterable.empty,
-      sortByField: Option[sort.FieldSort] = None,
-      excludedFields: Seq[String] = Seq.empty,
-      filter: Seq[Query] = Seq.empty
-  ): Future[Results[A]] = {
-    // just log and execute the query
-    val indexQuery: IndexQuery[V] = IndexQuery(esIndex = esIndex,
-                                               kv = kv,
-                                               filters = filter,
-                                               pagination = pagination,
-                                               aggs = aggs,
-                                               excludedFields = excludedFields
-    )
-    val searchRequest: SearchRequest = IndexTermsShould(indexQuery)
     getByIndexedQuery(searchRequest, sortByField, buildF)
   }
 
