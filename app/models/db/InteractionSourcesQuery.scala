@@ -14,22 +14,29 @@ case class InteractionSourcesQuery(
 
   override val query: Query =
     Query(
-      Select(
-        Seq(
-          column("resource.databaseVersion").as(Some("databaseVersion")),
-          column("resource.sourceDatabase").as(Some("sourceDatabase"))
-        ),
-        distinct = true
+      Select(Column.star :: Nil),
+      From(
+        Query(
+          Select(
+            Seq(
+              column("resource.databaseVersion").as(Some("databaseVersion")),
+              column("resource.sourceDatabase").as(Some("sourceDatabase"))
+            ),
+            distinct = true
+          ),
+          From(column(tableName)),
+          ArrayJoin(
+            column("evidences.interactionResources").as(Some("resource"))
+          ),
+          Where(
+            Column.inSet("resource.sourceDatabase",
+                         InteractionSourceEnum.values.map(_.toString).toSeq
+            )
+          ),
+          Limit(0, InteractionSourceEnum.values.size)
+        ).toColumn(None)
       ),
-      From(column(tableName)),
-      ArrayJoin(
-        column("evidences.interactionResources").as(Some("resource"))
-      ),
-      Where(
-        Column.inSet("resource.sourceDatabase", InteractionSourceEnum.values.map(_.toString).toSeq)
-      ),
-      OrderBy(column("resource.sourceDatabase").asc :: Nil),
-      Limit(0, InteractionSourceEnum.values.size),
+      OrderBy(column("sourceDatabase").asc :: Nil),
       Format("JSONEachRow")
     )
 }
