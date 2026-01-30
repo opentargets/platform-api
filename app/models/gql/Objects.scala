@@ -137,6 +137,19 @@ object Objects extends OTLogging {
     )
   )
 
+  implicit val transcriptImp: ObjectType[Backend, Transcript] =
+    deriveObjectType[Backend, Transcript](
+      ObjectTypeDescription("Transcript annotation for a target gene"),
+      DocumentField("transcriptId", "Ensembl transcript identifier"),
+      DocumentField("biotype", "Biotype classification of the transcript"),
+      DocumentField("isEnsemblCanonical", "Whether this is the Ensembl canonical transcript"),
+      DocumentField("uniprotId", "UniProt accession mapped to the transcript"),
+      DocumentField("isUniprotReviewed", "Whether the UniProt entry is reviewed (Swiss-Prot)"),
+      DocumentField("translationId", "Ensembl translation identifier"),
+      DocumentField("alphafoldId", "AlphaFold structure prediction identifier"),
+      DocumentField("uniprotIsoformId", "UniProt isoform identifier")
+    )
+
   implicit lazy val targetImp: ObjectType[Backend, Target] = deriveObjectType(
     ObjectTypeDescription(
       "Core annotation for drug targets (gene/proteins). Targets are defined based on EMBL-EBI Ensembl database and uses the Ensembl gene ID as the  primary identifier. An Ensembl gene ID is considered potential drug target if included in the canonical assembly or if present alternative assemblies but encoding for a reviewed protein product according to the UniProt database."
@@ -190,6 +203,10 @@ object Objects extends OTLogging {
     DocumentField("tractability", "Tractability information for the target"),
     DocumentField("transcriptIds",
                   "List of Ensembl transcript identifiers associated with the target"
+    ),
+    DocumentField(
+      "transcripts",
+      "List of transcripts associated with the target including protein and structure annotations"
     ),
     DocumentField("pathways", "Pathway annotations for the target"),
     RenameField("go", "geneOntology"),
