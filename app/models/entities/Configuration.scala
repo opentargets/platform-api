@@ -50,6 +50,11 @@ object Configuration {
                                  locus: DbTableSettings
   )
 
+  case class EvidenceSettings(label: String,
+                              name: String,
+                              variant: DbTableSettings,
+                              diseaseAndTarget: DbTableSettings
+  )
   case class TargetSettings(label: String, name: String, associations: DbTableSettings)
 
   case class DiseaseSettings(label: String, name: String, associations: DbTableSettings)
@@ -69,6 +74,7 @@ object Configuration {
       defaultDatabaseName: String,
       colocalisation: DbTableSettings,
       credibleSet: CredibleSetSettings,
+      evidence: EvidenceSettings,
       interaction: DbTableSettings,
       intervals: DbTableSettings,
       disease: DiseaseSettings,
@@ -163,6 +169,8 @@ object Configuration {
   implicit val harmonicSettingsJSONImp: OFormat[HarmonicSettings] = Json.format[HarmonicSettings]
   implicit val credibleSetSettingsJSONImp: OFormat[CredibleSetSettings] =
     Json.format[CredibleSetSettings]
+  implicit val evidenceSettingsJSONImp: OFormat[EvidenceSettings] =
+    Json.format[EvidenceSettings]
   implicit val targetSettingsJSONImp: OFormat[TargetSettings] = Json.format[TargetSettings]
   implicit val diseaseSettingsJSONImp: OFormat[DiseaseSettings] = Json.format[DiseaseSettings]
   implicit val clickhouseSettingsJSONImp: OFormat[ClickhouseSettings] =

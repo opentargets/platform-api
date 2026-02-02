@@ -1,20 +1,20 @@
 package models.entities
 
 import models.Backend
-import sangria.schema.{Field, ListType, LongType, ObjectType, OptionType, StringType, fields}
+import sangria.schema.{Field, ListType, IntType, ObjectType, OptionType, StringType, fields}
 import models.gql.Objects.evidenceImp
 
-case class Evidences(count: Long, cursor: Option[String], rows: IndexedSeq[Evidence])
+case class Evidences(count: Int, cursor: Option[String], rows: IndexedSeq[Evidence])
 
 object Evidences {
-  def empty(withTotal: Long = 0): Evidences = Evidences(withTotal, None, IndexedSeq.empty)
+  def empty(withTotal: Int = 0): Evidences = Evidences(withTotal, None, IndexedSeq.empty)
 
   val evidencesImp: ObjectType[Backend, Evidences] = ObjectType(
     "Evidences",
     "Target–disease evidence items with total count and pagination cursor",
     fields[Backend, Evidences](
       Field("count",
-            LongType,
+            IntType,
             description = Some("Total number of evidence items available for the query"),
             resolve = _.value.count
       ),
