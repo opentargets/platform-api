@@ -1427,8 +1427,8 @@ object Objects extends OTLogging {
       DocumentField("name", "Name of the resource providing the score"),
       DocumentField("value", "Score value from the resource")
     )
-  implicit lazy val intervalImp: ObjectType[Backend, Interval] =
-    deriveObjectType[Backend, Interval](
+  implicit lazy val enhancerToGeneImp: ObjectType[Backend, EnhancerToGene] =
+    deriveObjectType[Backend, EnhancerToGene](
       ObjectTypeDescription(
         "Regulatory enhancer/promoter regions to gene (target) predictions for a specific tissue/cell type based on the integration of experimental sources"
       ),
@@ -1450,6 +1450,10 @@ object Objects extends OTLogging {
       ),
       DocumentField("studyId", "Identifier of the study providing the experimental data"),
       DocumentField("biosampleName", "Name of the biosample where the interval was identified"),
+      DocumentField("biosampleFromSourceId",
+                    "Identifier of the biosample defined by the datasource provider"
+      ),
+      DocumentField("qualityControls", "Quality control flags for this interval."),
       ReplaceField(
         "geneId",
         Field("target",
@@ -1468,11 +1472,10 @@ object Objects extends OTLogging {
           ),
           resolve = r => biosamplesFetcher.deferOpt(r.value.biosampleId)
         )
-      ),
-      ExcludeFields("meta_total")
+      )
     )
-  implicit lazy val intervalsImp: ObjectType[Backend, Intervals] =
-    deriveObjectType[Backend, Intervals](
+  implicit lazy val enhancerToGenesImp: ObjectType[Backend, EnhancerToGenes] =
+    deriveObjectType[Backend, EnhancerToGenes](
       ObjectTypeDescription(
         "Collection of regulatory enhancer/promoter regions to gene (target) predictions for a specific tissue/cell type based on the integration of experimental sources"
       ),
@@ -2504,18 +2507,18 @@ object Objects extends OTLogging {
             ctx => ProteinCodingCoordinatesByVariantDeferred(ctx.value.variantId, ctx.arg(pageArg))
         ),
         Field(
-          "intervals",
-          intervalsImp,
+          "enhancerToGenes",
+          enhancerToGenesImp,
           description = Some(
             "Regulatory enhancer/promoter regions to gene (target) predictions overlapping with this variant's location. These intervals link regulatory regions to target genes based on experimental data for specific tissues or cell types."
           ),
           arguments = pageArg :: Nil,
           complexity = Some(complexityCalculator(pageArg)),
           resolve = ctx =>
-            ctx.ctx.getIntervals(ctx.value.chromosome,
-                                 ctx.value.position,
-                                 ctx.value.position,
-                                 ctx.arg(pageArg)
+            ctx.ctx.getEnhancerToGenes(ctx.value.chromosome,
+                                       ctx.value.position,
+                                       ctx.value.position,
+                                       ctx.arg(pageArg)
             )
         )
       ),
