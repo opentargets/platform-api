@@ -1802,6 +1802,8 @@ object Objects extends Logging {
       DocumentField("pExponent", "Power exponent used in harmonic mean calculation"),
       DocumentField("datasources", "List of datasource settings with weights and propagation rules")
     )
+  implicit val evidenceSettingsImp: ObjectType[Backend, EvidenceSettings] =
+    deriveObjectType[Backend, EvidenceSettings]()
   implicit val clickhouseSettingsImp: ObjectType[Backend, ClickhouseSettings] =
     deriveObjectType[Backend, ClickhouseSettings]()
   implicit val evidenceSourceImp: ObjectType[Backend, EvidenceSource] =

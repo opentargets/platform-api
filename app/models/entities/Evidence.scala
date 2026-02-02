@@ -2,6 +2,7 @@ package models.entities
 
 import play.api.Logging
 import play.api.libs.json._
+import slick.jdbc.GetResult
 
 case class NameAndDescription(name: String, description: String)
 
@@ -148,10 +149,13 @@ case class Evidence(
     assessments: Option[Seq[String]],
     primaryProjectHit: Option[Boolean],
     primaryProjectId: Option[String],
-    assays: Option[Seq[Assays]]
+    assays: Option[Seq[Assays]],
+    metaTotal: Int = 0
 )
 
 object Evidence extends Logging {
+  implicit val getEvidenceFromDB: GetResult[Evidence] =
+    GetResult(r => Json.parse(r.<<[String]).as[Evidence])
 
   implicit val nameAndDescriptionJsonFormatImp: OFormat[NameAndDescription] =
     Json.format[NameAndDescription]

@@ -507,12 +507,37 @@ class Backend @Inject() (implicit
       sizeLimit: Option[Int],
       cursor: Option[String]
   ): Future[Evidences] = {
-
-    val filters: Map[String, Seq[String]] = Map(
-      "variantId.keyword" -> Seq(variantId)
+    val evidenceTable = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.evidence.name)
+    val variantJoinTable = getTableWithPrefixOrDefault(
+      defaultOTSettings.clickhouse.evidence.variant.name
     )
-
-    getFilteredEvidences(datasourceIds, filters, orderBy, sizeLimit, cursor)
+    val pag = Helpers.Cursor
+      .to(cursor)
+      .flatMap(_.asOpt[Pagination])
+      .getOrElse(Pagination(0, sizeLimit.getOrElse(Pagination.sizeDefault)))
+    val evidenceQuery = EvidenceQuery.byVariant(
+      variantId,
+      datasourceIds,
+      evidenceTable,
+      variantJoinTable,
+      pag.offset,
+      pag.size
+    )
+    dbRetriever
+      .executeQuery[Evidence, Query](evidenceQuery.query)
+      .map { evidences =>
+        if (evidences.isEmpty) {
+          Evidences.empty(0)
+        } else {
+          val nCursor = if (evidences.size < pag.size) {
+            None
+          } else {
+            val npag = pag.next
+            Helpers.Cursor.from(Some(Json.toJson(npag)))
+          }
+          Evidences(evidences.head.metaTotal, nCursor, evidences)
+        }
+      }
   }
 
   def getEvidencesByEfoId(
@@ -523,52 +548,37 @@ class Backend @Inject() (implicit
       sizeLimit: Option[Int],
       cursor: Option[String]
   ): Future[Evidences] = {
-
-    val filters: Map[String, Seq[String]] = Map(
-      "targetId.keyword" -> targetIds,
-      "diseaseId.keyword" -> diseaseIds
+    val evidenceTable = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.evidence.name)
+    val diseaseTargetJoinTable = getTableWithPrefixOrDefault(
+      defaultOTSettings.clickhouse.evidence.diseaseAndTarget.name
     )
-
-    getFilteredEvidences(datasourceIds, filters, orderBy, sizeLimit, cursor)
-  }
-
-  // TODO CHECK RESULTS ARE SIZE 0 OR OPTIMISE FIELDS TO BRING BACK
-
-  /** get evidences by multiple parameters */
-  private def getFilteredEvidences(
-      datasourceIds: Option[Seq[String]],
-      filters: Map[String, Seq[String]],
-      orderBy: Option[(String, String)],
-      sizeLimit: Option[Int],
-      cursor: Option[String]
-  ): Future[Evidences] = {
-
-    val pag = sizeLimit.getOrElse(Pagination.sizeDefault)
-    val sortByField = orderBy.flatMap { p =>
-      ElasticRetriever.sortBy(p._1, if (p._2 == "desc") SortOrder.Desc else SortOrder.Asc)
-    }
-
-    val cbIndexPrefix = getIndexOrDefault("evidences", Some("evidence_"))
-
-    val cbIndex = datasourceIds
-      .map(_.map(cbIndexPrefix.concat).mkString(","))
-      .getOrElse(cbIndexPrefix.concat("*"))
-
-    esRetriever
-      .getByMustWithSearch(
-        cbIndex,
-        filters,
-        pag,
-        fromJsValue[Evidence],
-        Seq.empty,
-        sortByField,
-        Seq.empty,
-        cursor
-      )
-      .map {
-        case (Seq(), n, _) => Evidences.empty(withTotal = n)
-        case (seq, n, nextCursor) =>
-          Evidences(n, nextCursor, seq)
+    val pag = Helpers.Cursor
+      .to(cursor)
+      .flatMap(_.asOpt[Pagination])
+      .getOrElse(Pagination(0, sizeLimit.getOrElse(Pagination.sizeDefault)))
+    val evidenceQuery = EvidenceQuery.byDiseaseTarget(
+      targetIds,
+      diseaseIds,
+      datasourceIds,
+      evidenceTable,
+      diseaseTargetJoinTable,
+      pag.offset,
+      pag.size
+    )
+    dbRetriever
+      .executeQuery[Evidence, Query](evidenceQuery.query)
+      .map { evidences =>
+        if (evidences.isEmpty) {
+          Evidences.empty(0)
+        } else {
+          val nCursor = if (evidences.size < pag.size) {
+            None
+          } else {
+            val npag = pag.next
+            Helpers.Cursor.from(Some(Json.toJson(npag)))
+          }
+          Evidences(evidences.head.metaTotal, nCursor, evidences)
+        }
       }
   }
 
