@@ -651,6 +651,16 @@ object Objects extends OTLogging {
         ),
         arguments = Nil,
         resolve = ctx => diseasesFetcher.deferSeq(ctx.value.ancestors)
+      ),
+      Field(
+        "clinIndication", // TODO: update
+        ListType(clinicalIndicationImp),
+        description = Some(
+          "Clinical indications for this drug as reported by clinical trial records."
+        ),
+        arguments = pageArg :: Nil,
+        complexity = Some(complexityCalculator(pageArg)),
+        resolve = ctx => ctx.ctx.getClinicalIndicationsByDisease(ctx.value.id, ctx.arg(pageArg))
       )
     )
   )
@@ -1649,9 +1659,22 @@ object Objects extends OTLogging {
             case Some(pgByDrug) => pgByDrug.pharmacogenomics
             case None           => Seq.empty
           }
+      ),
+      Field(
+        "clinIndications", // TODO: update
+        ListType(clinicalIndicationImp),
+        description = Some(
+          "Clinical indications for this drug as reported by clinical trial records."
+        ),
+        arguments = pageArg :: Nil,
+        complexity = Some(complexityCalculator(pageArg)),
+        resolve = ctx => ctx.ctx.getClinicalIndicationsByDrug(ctx.value.id, ctx.arg(pageArg))
       )
     )
   )
+
+  implicit val clinicalIndicationImp: ObjectType[Backend, ClinicalIndication] =
+    deriveObjectType[Backend, ClinicalIndication]()
 
   implicit val datasourceSettingsImp: ObjectType[Backend, DatasourceSettings] =
     deriveObjectType[Backend, DatasourceSettings](
