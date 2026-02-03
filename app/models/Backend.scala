@@ -505,6 +505,34 @@ class Backend @Inject() (implicit
     dbRetriever.executeQuery[MousePhenotypes, Query](query.query)
   }
 
+  def getClinicalIndicationsByDrug(id: String,
+                                   pagination: Option[Pagination]
+  ): Future[IndexedSeq[ClinicalIndication]] = getClinicalIndications(id, pagination, "drugId")
+
+  def getClinicalIndicationsByDisease(id: String,
+                                      pagination: Option[Pagination]
+  ): Future[IndexedSeq[ClinicalIndication]] = getClinicalIndications(id, pagination, "diseaseId")
+
+  private def getClinicalIndications(id: String,
+                                     pagination: Option[Pagination],
+                                     columnName: String
+  ): Future[IndexedSeq[ClinicalIndication]] = {
+    val tableName = getTableWithPrefixOrDefault(
+      defaultOTSettings.clickhouse.clinicalIndication.name
+    )
+
+    val clinicalIndicationsQuery = pagination match {
+      case Some(pag) => ClinicalIndicationQuery(id, tableName, pag.offset, pag.size, columnName)
+      case None      => ClinicalIndicationQuery(id, tableName, 0, Pagination.sizeMax, columnName)
+    }
+
+    logger.debug(s"querying clinical indications", keyValue("id", id), keyValue("table", tableName))
+
+    dbRetriever
+      .executeQuery[ClinicalIndication, Query](clinicalIndicationsQuery.query)
+      .map(clinicalIndications => clinicalIndications)
+  }
+
   def getPharmacogenomicsByDrug(ids: Seq[String]): Future[IndexedSeq[PharmacogenomicsByDrug]] = {
     val tableName = getTableWithPrefixOrDefault(
       defaultOTSettings.clickhouse.pharmacogenomics.drug.name
