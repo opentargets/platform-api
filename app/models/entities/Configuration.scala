@@ -102,6 +102,7 @@ object Configuration {
       l2gPredictions: DbTableSettings,
       literature: DbTableSettings,
       literatureIndex: DbTableSettings,
+      clinicalIndication: DbTableSettings,
       mechanismOfAction: DbTableSettings,
       mousePhenotypes: DbTableSettings,
       otarProjects: DbTableSettings,
