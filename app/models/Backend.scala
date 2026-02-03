@@ -11,7 +11,7 @@ import esecuele.*
 
 import javax.inject.Inject
 import models.Helpers.*
-import models.db.{IntervalsQuery, QAOTF, QLITAGG, QW2V, TargetsQuery}
+import models.db.{ClinicalIndicationQuery, IntervalsQuery, QAOTF, QLITAGG, QW2V, TargetsQuery}
 import models.entities.Publication.*
 import models.entities.Associations.*
 import models.entities.Biosample.*
@@ -743,6 +743,34 @@ class Backend @Inject() (implicit
         fromJsValue[MousePhenotype]
       )
       .map(_.mappedHits)
+  }
+
+  def getClinicalIndicationsByDrug(id: String,
+                                   pagination: Option[Pagination]
+  ): Future[IndexedSeq[ClinicalIndication]] = getClinicalIndications(id, pagination, "drugId")
+
+  def getClinicalIndicationsByDisease(id: String,
+                                      pagination: Option[Pagination]
+  ): Future[IndexedSeq[ClinicalIndication]] = getClinicalIndications(id, pagination, "diseaseId")
+
+  private def getClinicalIndications(id: String,
+                                     pagination: Option[Pagination],
+                                     columnName: String
+  ): Future[IndexedSeq[ClinicalIndication]] = {
+    val tableName = getTableWithPrefixOrDefault(
+      defaultOTSettings.clickhouse.clinicalIndication.name
+    )
+
+    val clinicalIndicationsQuery = pagination match {
+      case Some(pag) => ClinicalIndicationQuery(id, tableName, pag.offset, pag.size, columnName)
+      case None      => ClinicalIndicationQuery(id, tableName, 0, Pagination.sizeMax, columnName)
+    }
+
+    logger.debug(s"querying clinical indications", keyValue("id", id), keyValue("table", tableName))
+
+    dbRetriever
+      .executeQuery[ClinicalIndication, Query](clinicalIndicationsQuery.query)
+      .map(clinicalIndications => clinicalIndications)
   }
 
   def getPharmacogenomicsByDrug(id: String): Future[IndexedSeq[Pharmacogenomics]] = {
