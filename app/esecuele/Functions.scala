@@ -75,10 +75,15 @@ object Functions {
 
   def replicate(value: Column, array: Column): Column = f("replicate", value, array)
 
+  def arrayFilter(lambda: String, col: Column): Column =
+    f("arrayFilter", literal(lambda), col)
+
   def arraySlice(col: Column, pos: Int, size: Int): Column =
     f("arraySlice", col, literal(pos), literal(size))
 
   def length(col: Column): Column = f("length", col)
+
+  def cast(col: Column, toType: String): Column = f("CAST", col, literal(toType))
 
   def concat(col1: Column, col2: Column, cols: Column*): Column = f("concat", col1 +: col2 +: cols)
 

@@ -107,25 +107,6 @@ object OneToManyQuery {
       countField = Some("metaTotal")
     )
 
-  def locusQuery(studyLocusIds: Seq[String],
-                 tableName: String,
-                 variantIds: Option[Seq[String]],
-                 offset: Int,
-                 size: Int
-  ): OneToManyQuery =
-    OneToManyQuery(
-      studyLocusIds,
-      "studyLocusId",
-      tableName,
-      offset,
-      size,
-      variantIds match {
-        case Some(vids) => Some(Column.inSet("variantId", vids))
-        case None       => None
-      },
-      countField = Some("metaTotal")
-    )
-
   def interactionQuery(targetIds: Seq[String],
                        tableName: String,
                        scoreThreshold: Option[Double],

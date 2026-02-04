@@ -249,3 +249,50 @@ case class CredibleSetQuery(
     )
 
 }
+
+case class LocusQuery(studyLocusIds: Seq[String],
+                      tableName: String,
+                      variantIds: Option[Seq[String]],
+                      offset: Int,
+                      size: Int
+) extends Queryable
+    with Logging {
+  private val locusFilter: Column = variantIds match {
+    case Some(vids) =>
+      Functions.arrayFilter(
+        s"l -> (${Functions
+            .in(
+              column("l.variantId"),
+              Functions.set(vids.map(id => literal(id)))
+            )
+            .toString})",
+        column("locus")
+      )
+    case None =>
+      column("locus")
+  }
+
+  override val query: Query =
+    Query(
+      With(
+        locusFilter.as(Some("filteredLocus")) ::
+          Functions.cast(Functions.length(column("filteredLocus")), "UInt32").as(Some("count")) ::
+          Functions
+            .arraySlice(column("filteredLocus"), offset + 1, size)
+            .as(Some("rows")) ::
+          Nil
+      ),
+      Select(
+        column("count") :: column("rows")
+          :: column("studyLocusId").as(Some("id")) :: Nil
+      ),
+      From(column(tableName)),
+      Where(
+        Functions.in(
+          column("studyLocusId"),
+          Functions.set(studyLocusIds.map(id => literal(id)))
+        )
+      ),
+      Format("JSONEachRow")
+    )
+}

@@ -274,26 +274,15 @@ class Backend @Inject() (implicit
   ): Future[IndexedSeq[Loci]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.credibleSet.locus.name)
     val page = pagination.getOrElse(Pagination.mkDefault).offsetLimit
-    val locusQuery = OneToManyQuery.locusQuery(
+    val locusQuery = LocusQuery(
       studyLocusIds,
       tableName,
       variantIds,
       page._1,
       page._2
     )
-    val results =
-      dbRetriever
-        .executeQuery[Locus, Query](locusQuery.query)
-        .map { locus =>
-          studyLocusIds.map { studyLocusId =>
-            val filteredLocus = locus.filter(_.studyLocusId == studyLocusId)
-            if (filteredLocus.nonEmpty) {
-              Loci(filteredLocus.head.metaTotal, Some(filteredLocus), studyLocusId)
-            } else {
-              Loci.empty()
-            }
-          }.toIndexedSeq
-        }
+    val results = dbRetriever
+      .executeQuery[Loci, Query](locusQuery.query)
     results
   }
 

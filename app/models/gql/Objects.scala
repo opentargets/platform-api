@@ -3000,7 +3000,6 @@ object Objects extends Logging {
     DocumentField("r2Overall",
                   "R-squared (LD) between this credible set variant and the lead variant"
     ),
-    ExcludeFields("studyLocusId", "metaTotal"),
     ReplaceField(
       "variantId",
       Field(

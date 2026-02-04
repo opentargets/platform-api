@@ -8,7 +8,6 @@ import models.gql.TypeWithId
 import slick.jdbc.GetResult
 
 case class Locus(
-    studyLocusId: String,
     variantId: String,
     posteriorProbability: Double,
     pValueMantissa: Option[Double],
@@ -18,8 +17,7 @@ case class Locus(
     standardError: Option[Double],
     is95CredibleSet: Boolean,
     is99CredibleSet: Boolean,
-    r2Overall: Option[Double],
-    metaTotal: Int = 0
+    r2Overall: Option[Double]
 )
 
 case class Loci(
@@ -31,14 +29,10 @@ case class Loci(
 object Loci extends Logging {
   import sangria.macros.derive._
   def empty(): Loci = Loci(0, None, "")
-  implicit val getResultLoci: GetResult[Locus] =
+  implicit val getResultLocus: GetResult[Locus] =
     GetResult(r => Json.parse(r.<<[String]).as[Locus])
-
+  implicit val getResultLoci: GetResult[Loci] =
+    GetResult(r => Json.parse(r.<<[String]).as[Loci])
   implicit val locusF: OFormat[Locus] = Json.format[Locus]
-  implicit val lociR: Reads[Loci] = (
-    (JsPath \ "count").read[Long] and
-      (JsPath \ "locus").readNullable[Seq[Locus]] and
-      (JsPath \ "studyLocusId").read[String]
-  )(Loci.apply)
-
+  implicit val lociF: OFormat[Loci] = Json.format[Loci]
 }
