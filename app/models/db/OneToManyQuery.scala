@@ -141,3 +141,31 @@ object OneToManyQuery {
       countField = Some("metaTotal")
     )
 }
+
+case class L2GQuery(ids: Seq[String], tableName: String, offset: Int, size: Int)
+    extends Queryable
+    with Logging {
+
+  override val query: Query =
+    Query(
+      With(
+        Functions.cast(Functions.length(column("l2g_predictions")), "UInt32").as(Some("count")) ::
+          Functions
+            .arraySlice(column("l2g_predictions"), offset + 1, size)
+            .as(Some("rows")) ::
+          Nil
+      ),
+      Select(
+        column("count") :: column("rows")
+          :: column("studyLocusId").as(Some("id")) :: Nil
+      ),
+      From(column(tableName)),
+      Where(
+        Functions.in(
+          column("studyLocusId"),
+          Functions.set(ids.map(id => literal(id)))
+        )
+      ),
+      Format("JSONEachRow")
+    )
+}

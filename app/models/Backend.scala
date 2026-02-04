@@ -169,27 +169,14 @@ class Backend @Inject() (implicit
   ): Future[IndexedSeq[L2GPredictions]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.l2gPredictions.name)
     val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
-    val l2gQuery = OneToManyQuery(
+    val l2gQuery = L2GQuery(
       ids,
-      "studyLocusId",
       tableName,
       pag._1,
-      pag._2,
-      orderBy = Some(orderBy("score", sortDirection.DESC)),
-      countField = Some("metaTotal")
+      pag._2
     )
     val results = dbRetriever
-      .executeQuery[L2GPrediction, Query](l2gQuery.query)
-      .map { predictions =>
-        ids.map { studyLocusId =>
-          val filteredPredictions = predictions.filter(_.studyLocusId == studyLocusId)
-          if (filteredPredictions.nonEmpty) {
-            L2GPredictions(filteredPredictions.head.metaTotal, filteredPredictions, studyLocusId)
-          } else {
-            L2GPredictions.empty
-          }
-        }.toIndexedSeq
-      }
+      .executeQuery[L2GPredictions, Query](l2gQuery.query)
     results
   }
 

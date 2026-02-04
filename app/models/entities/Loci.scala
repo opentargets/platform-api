@@ -29,8 +29,6 @@ case class Loci(
 object Loci extends Logging {
   import sangria.macros.derive._
   def empty(): Loci = Loci(0, None, "")
-  implicit val getResultLocus: GetResult[Locus] =
-    GetResult(r => Json.parse(r.<<[String]).as[Locus])
   implicit val getResultLoci: GetResult[Loci] =
     GetResult(r => Json.parse(r.<<[String]).as[Loci])
   implicit val locusF: OFormat[Locus] = Json.format[Locus]

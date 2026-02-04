@@ -10,15 +10,12 @@ case class L2GPrediction(
     geneId: String,
     score: Double,
     features: Option[Seq[L2GFeature]],
-    shapBaseValue: Double,
-    metaTotal: Int = 0
+    shapBaseValue: Double
 )
 
 case class L2GFeature(name: String, value: Double, shapValue: Double)
 
 object L2GPrediction extends Logging {
-  implicit val getFromDB: GetResult[L2GPrediction] =
-    GetResult(r => Json.parse(r.<<[String]).as[L2GPrediction])
   implicit val l2GFeatureF: OFormat[L2GFeature] = Json.format[L2GFeature]
   implicit val l2GPredictionF: OFormat[L2GPrediction] = Json.format[L2GPrediction]
 }
@@ -31,4 +28,7 @@ case class L2GPredictions(
 
 object L2GPredictions {
   def empty: L2GPredictions = L2GPredictions(0, IndexedSeq.empty)
+  implicit val l2GPredictionsF: OFormat[L2GPredictions] = Json.format[L2GPredictions]
+  implicit val getFromDB: GetResult[L2GPredictions] =
+    GetResult(r => Json.parse(r.<<[String]).as[L2GPredictions])
 }
