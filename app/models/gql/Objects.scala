@@ -2432,8 +2432,7 @@ object Objects extends Logging {
             logger.debug(s"Finding colocalisation credible set: $studyLocusId")
             credibleSetFetcher.deferOpt(studyLocusId)
         )
-      ),
-      ExcludeFields("metaTotal")
+      )
     )
 
   implicit val dbXrefImp: ObjectType[Backend, DbXref] = deriveObjectType[Backend, DbXref](

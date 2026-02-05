@@ -169,7 +169,7 @@ class Backend @Inject() (implicit
   ): Future[IndexedSeq[L2GPredictions]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.l2gPredictions.name)
     val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
-    val l2gQuery = L2GQuery(
+    val l2gQuery = OneToMany.l2gQuery(
       ids,
       tableName,
       pag._1,
@@ -232,7 +232,7 @@ class Backend @Inject() (implicit
   ): Future[IndexedSeq[Colocalisations]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.colocalisation.name)
     val page = pagination.getOrElse(Pagination.mkDefault).offsetLimit
-    val colocQuery = OneToManyQuery.colocQuery(
+    val colocQuery = OneToMany.colocQuery(
       studyLocusIds,
       studyTypes,
       tableName,
@@ -241,17 +241,7 @@ class Backend @Inject() (implicit
     )
     val results =
       dbRetriever
-        .executeQuery[Colocalisation, Query](colocQuery.query)
-        .map { colocs =>
-          studyLocusIds.map { studyLocusId =>
-            val filteredColocs = colocs.filter(_.studyLocusId == studyLocusId)
-            if (filteredColocs.nonEmpty) {
-              Colocalisations(filteredColocs.head.metaTotal, filteredColocs, studyLocusId)
-            } else {
-              Colocalisations.empty
-            }
-          }.toIndexedSeq
-        }
+        .executeQuery[Colocalisations, Query](colocQuery.query)
     results
   }
 
@@ -261,7 +251,7 @@ class Backend @Inject() (implicit
   ): Future[IndexedSeq[Loci]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.credibleSet.locus.name)
     val page = pagination.getOrElse(Pagination.mkDefault).offsetLimit
-    val locusQuery = LocusQuery(
+    val locusQuery = OneToMany.locusQuery(
       studyLocusIds,
       tableName,
       variantIds,
@@ -749,7 +739,7 @@ class Backend @Inject() (implicit
   ): Future[IndexedSeq[Interactions]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.interaction.name)
     val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
-    val interactionsQuery = OneToManyQuery.interactionQuery(
+    val interactionsQuery = OneToMany.interactionQuery(
       ids,
       tableName,
       scoreThreshold,
@@ -758,17 +748,7 @@ class Backend @Inject() (implicit
       pag._2
     )
     val results = dbRetriever
-      .executeQuery[Interaction, Query](interactionsQuery.query)
-      .map { interactions =>
-        ids.map { targetId =>
-          val filteredInteractions = interactions.filter(_.targetA == targetId)
-          if (filteredInteractions.nonEmpty) {
-            Interactions(filteredInteractions.head.metaTotal, filteredInteractions, targetId)
-          } else {
-            Interactions.empty
-          }
-        }.toIndexedSeq
-      }
+      .executeQuery[Interactions, Query](interactionsQuery.query)
     results
   }
 

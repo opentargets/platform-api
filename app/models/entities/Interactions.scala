@@ -49,14 +49,13 @@ case class Interaction(
     sourceDatabase: String,
     speciesA: Option[InteractionSpecies],
     speciesB: Option[InteractionSpecies],
-    evidences: Seq[InteractionEvidence],
-    metaTotal: Int = 0
+    evidences: Vector[InteractionEvidence]
 )
 
 object Interactions extends Logging {
   val empty: Interactions = Interactions(0L, IndexedSeq.empty)
-  implicit val getInteractionFromDB: GetResult[Interaction] =
-    GetResult(r => Json.parse(r.<<[String]).as[Interaction])
+  implicit val getInteractionsFromDB: GetResult[Interactions] =
+    GetResult(r => Json.parse(r.<<[String]).as[Interactions])
   implicit val getInteractionResourcesFromDB: GetResult[InteractionResources] =
     GetResult(r => Json.parse(r.<<[String]).as[InteractionResources])
   implicit val interactionEvidencePDMF: OFormat[InteractionEvidencePDM] =
@@ -74,4 +73,5 @@ object Interactions extends Logging {
   implicit val interactionEvidenceF: OFormat[InteractionEvidence] = Json.format[InteractionEvidence]
 
   implicit val interactionF: OFormat[Interaction] = Json.format[Interaction]
+  implicit val interactionsF: OFormat[Interactions] = Json.format[Interactions]
 }

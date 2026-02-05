@@ -15,8 +15,7 @@ case class Colocalisation(
     h3: Option[Double],
     h4: Option[Double],
     clpp: Option[Double],
-    betaRatioSignAverage: Option[Double],
-    metaTotal: Int
+    betaRatioSignAverage: Option[Double]
 )
 case class Colocalisations(
     count: Long,
@@ -25,8 +24,10 @@ case class Colocalisations(
 ) extends TypeWithId
 
 object Colocalisations {
-  implicit val getRowFromDB: GetResult[Colocalisation] =
-    GetResult(r => Json.parse(r.<<[String]).as[Colocalisation])
+  implicit val getRowFromDB: GetResult[Colocalisations] =
+    GetResult(r => Json.parse(r.<<[String]).as[Colocalisations])
+
+  implicit val colocalisationsF: OFormat[Colocalisations] = Json.format[Colocalisations]
   implicit val colocalisationF: OFormat[Colocalisation] = Json.format[Colocalisation]
   def empty: Colocalisations = Colocalisations(0, IndexedSeq.empty)
 }

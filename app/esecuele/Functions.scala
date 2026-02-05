@@ -65,6 +65,8 @@ object Functions {
 
   def arraySort(col: Column): Column = f("arraySort", col)
 
+  def reverse(col: Column): Column = f("reverse", col)
+
   def arrayReverseSort(lambda: Option[String] = None, col: Column): Column = {
     val params = lambda match {
       case Some(lambdaF) => Column(lambdaF) +: col +: Nil
@@ -76,7 +78,7 @@ object Functions {
   def replicate(value: Column, array: Column): Column = f("replicate", value, array)
 
   def arrayFilter(lambda: String, col: Column): Column =
-    f("arrayFilter", literal(lambda), col)
+    f("arrayFilter", Column(lambda), col)
 
   def arraySlice(col: Column, pos: Int, size: Int): Column =
     f("arraySlice", col, literal(pos), literal(size))
