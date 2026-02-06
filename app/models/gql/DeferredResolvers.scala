@@ -223,6 +223,7 @@ object DeferredResolvers extends Logging {
     Fetchers.indicationFetcher,
     Fetchers.goFetcher,
     Fetchers.variantFetcher,
-    Fetchers.studyFetcher
+    Fetchers.studyFetcher,
+    Fetchers.targetEssentialityFetcher
   )
 }

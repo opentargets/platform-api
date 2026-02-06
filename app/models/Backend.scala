@@ -183,9 +183,7 @@ class Backend @Inject() (implicit
   def getVariants(ids: Seq[String]): Future[IndexedSeq[VariantIndex]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.variant.name)
     val variantsQuery = IdsQuery(ids, "variantId", tableName, 0, Pagination.sizeMax)
-    val results = dbRetriever
-      .executeQuery[VariantIndex, Query](variantsQuery.query)
-    results
+    dbRetriever.executeQuery[VariantIndex, Query](variantsQuery.query)
   }
 
   def getBiosamples(ids: Seq[String]): Future[IndexedSeq[Biosample]] = {
@@ -368,9 +366,11 @@ class Backend @Inject() (implicit
   }
 
   def getTargetEssentiality(ids: Seq[String]): Future[IndexedSeq[TargetEssentiality]] = {
-    val targetIndexName = getIndexOrDefault("target_essentiality")
-
-    esRetriever.getByIds(targetIndexName, ids, fromJsValue[TargetEssentiality])
+    val targetIndexName = getTableWithPrefixOrDefault(
+      defaultOTSettings.clickhouse.target.essentiality.name
+    )
+    val query = IdsQuery(ids, "id", targetIndexName, 0, Pagination.sizeMax)
+    dbRetriever.executeQuery[TargetEssentiality, Query](query.query)
   }
 
   def getTargetsPrioritisation(id: String): Future[IndexedSeq[JsValue]] = {
@@ -655,9 +655,7 @@ class Backend @Inject() (implicit
   def getTargets(ids: Seq[String]): Future[IndexedSeq[Target]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.target.name)
     val targetsQuery = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
-    val results = dbRetriever
-      .executeQuery[Target, Query](targetsQuery.query)
-    results
+    dbRetriever.executeQuery[Target, Query](targetsQuery.query)
   }
 
   def getSoTerms(ids: Seq[String]): Future[IndexedSeq[SequenceOntologyTerm]] = {

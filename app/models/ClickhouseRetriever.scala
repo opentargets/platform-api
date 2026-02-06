@@ -57,7 +57,7 @@ class ClickhouseRetriever(config: OTSettings)(implicit
   }
 
   def executeQuery[A, B <: Q](q: B)(implicit rconv: GetResult[A]): Future[Vector[A]] = {
-    logger.info(s"execute query from eselecu Q ${q.toString}")
+    logger.debug(s"execute query from eselecu Q ${q.toString}")
     val qq = q.as[A]
 
     appStart.DatabaseCallCounter.labelValues(db_name, "executeQuery").inc()
@@ -65,7 +65,7 @@ class ClickhouseRetriever(config: OTSettings)(implicit
     db.run(qq.asTry).map {
       case Success(v) => v
       case Failure(ex) =>
-        val qStr = qq.statements.mkString("\n")
+        lazy val qStr = qq.statements.mkString("\n")
         logger.error(s"executeQuery an exception was thrown ${ex.getMessage} with Query $qStr")
         Vector.empty
     }
