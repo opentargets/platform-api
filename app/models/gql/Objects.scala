@@ -378,12 +378,10 @@ object Objects extends Logging {
         description = Some(
           "Flag indicating whether this target is essential based on CRISPR screening data from cancer cell line models. Essential genes are those that show dependency when knocked out in cellular models."
         ),
-        resolve = ctx => {
-          val mp = ctx.ctx.getTargetEssentiality(Seq(ctx.value.id))
-          mp map { case ess =>
-            if (ess.isEmpty) null else ess.head.geneEssentiality.head.isEssential
+        resolve = ctx =>
+          DeferredValue(targetEssentialityFetcher.deferOpt(ctx.value.id)).map { case Some(ess) =>
+            ess.geneEssentiality.head.isEssential
           }
-        }
       ),
       Field(
         "depMapEssentiality",
@@ -391,12 +389,10 @@ object Objects extends Logging {
         description = Some(
           "Essentiality measurements extracted from DepMap, stratified by tissue or anatomical units. Gene essentiality is assessed based on dependencies exhibited when knocking out genes in cancer cellular models using CRISPR screenings from the Cancer Dependency Map (DepMap) Project. Gene effects below -1 can be considered dependencies."
         ),
-        resolve = ctx => {
-          val mp = ctx.ctx.getTargetEssentiality(Seq(ctx.value.id))
-          mp map { case ess =>
-            if (ess.isEmpty) null else ess.head.geneEssentiality.flatMap(_.depMapEssentiality)
+        resolve = ctx =>
+          DeferredValue(targetEssentialityFetcher.deferOpt(ctx.value.id)).map { case Some(ess) =>
+            ess.geneEssentiality.flatMap(_.depMapEssentiality)
           }
-        }
       ),
       Field(
         "pharmacogenomics",

@@ -14,6 +14,7 @@ import models.entities.{
   SequenceOntologyTerm,
   Study,
   Target,
+  TargetEssentiality,
   VariantIndex
 }
 import models.{Backend, entities}
@@ -41,9 +42,21 @@ object Fetchers extends Logging {
       FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(targetsFetcherCache),
     fetch = (ctx: Backend, ids: Seq[String]) => ctx.getTargets(ids)
   )
-  val diseasesFetcherCache = FetcherCache.simple
+
+  // target essentiality
+  implicit val targetEssentialityHasId: HasId[TargetEssentiality, String] =
+    HasId[TargetEssentiality, String](_.id)
+  val targetEssentialityFetcherCache = FetcherCache.simple
+  val targetEssentialityFetcher: Fetcher[Backend, TargetEssentiality, TargetEssentiality, String] =
+    Fetcher(
+      config = FetcherConfig
+        .maxBatchSize(entities.Configuration.batchSize)
+        .caching(targetEssentialityFetcherCache),
+      fetch = (ctx: Backend, ids: Seq[String]) => ctx.getTargetEssentiality(ids)
+    )
 
   // disease
+  val diseasesFetcherCache = FetcherCache.simple
   implicit val diseaseHasId: HasId[Disease, String] = HasId[Disease, String](_.id)
   val diseasesFetcher: Fetcher[Backend, Disease, Disease, String] = Fetcher(
     config =
