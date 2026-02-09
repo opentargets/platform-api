@@ -544,9 +544,9 @@ class Backend @Inject() (implicit
   }
 
   def getHPOs(ids: Seq[String]): Future[IndexedSeq[HPO]] = {
-    val targetIndexName = getIndexOrDefault("hpo")
-
-    esRetriever.getByIds(targetIndexName, ids, fromJsValue[HPO])
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.hpo.name)
+    val query = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
+    dbRetriever.executeQuery[HPO, Query](query.query)
   }
 
   def getMousePhenotypes(ids: Seq[String]): Future[IndexedSeq[MousePhenotype]] = {
