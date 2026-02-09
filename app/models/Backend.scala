@@ -630,21 +630,15 @@ class Backend @Inject() (implicit
   }
 
   def getOtarProjects(ids: Seq[String]): Future[IndexedSeq[OtarProjects]] = {
-    val otarsIndexName = getIndexOrDefault("otar_projects")
-
-    esRetriever.getByIds(otarsIndexName, ids, fromJsValue[OtarProjects])
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.otarProjects.name)
+    val query = IdsQuery(ids, "efo_id", tableName, 0, Pagination.sizeMax)
+    dbRetriever.executeQuery[OtarProjects, Query](query.query)
   }
 
   def getExpressions(ids: Seq[String]): Future[IndexedSeq[Expressions]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.expression.name)
     val expressionQuery = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[Expressions, Query](expressionQuery.query)
-  }
-
-  def getReactomeNodes(ids: Seq[String]): Future[IndexedSeq[Reactome]] = {
-    val targetIndexName = getIndexOrDefault("reactome")
-
-    esRetriever.getByIds(targetIndexName, ids, fromJsValue[Reactome])
   }
 
   def getTargets(ids: Seq[String]): Future[IndexedSeq[Target]] = {

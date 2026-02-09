@@ -90,6 +90,7 @@ object Configuration {
       l2gPredictions: DbTableSettings,
       literature: DbTableSettings,
       literatureIndex: DbTableSettings,
+      otarProjects: DbTableSettings,
       similarities: DbTableSettings,
       study: DbTableSettings,
       so: DbTableSettings,
