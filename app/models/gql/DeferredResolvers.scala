@@ -6,7 +6,8 @@ import models.entities.{
   CredibleSetQueryArgs,
   Colocalisations,
   L2GPredictions,
-  Interactions
+  Interactions,
+  DiseaseHPOs
 }
 import models.{Backend, entities}
 import play.api.Logging
@@ -24,6 +25,8 @@ enum DeferredType {
   case CredibleSets
   case Colocalisations
   case L2GPredictions
+  case DiseaseHPOs
+  case Interactions
 }
 
 case class Grouping(label: DeferredType, options: Product)
@@ -40,6 +43,22 @@ abstract class DeferredMultiTerm[+T]() extends Deferred[T] {
   val grouping: Grouping
   def empty(): T
   def resolver(ctx: Backend): (Seq[String], Grouping) => Future[IndexedSeq[T]]
+}
+
+case class DiseaseHPOsDeferred(diseaseId: String, pagination: Option[Pagination])
+    extends DeferredMultiTerm[DiseaseHPOs] {
+  val id: String = diseaseId
+  val options = (pagination)
+  val grouping = Grouping(DeferredType.DiseaseHPOs, options)
+
+  def empty(): DiseaseHPOs = DiseaseHPOs.empty
+  def resolver(ctx: Backend): (Seq[String], Grouping) => Future[IndexedSeq[DiseaseHPOs]] = {
+    case (d: Seq[String], grouping: Grouping) =>
+      grouping.options match {
+        case (p) =>
+          ctx.getDiseaseHPOs(d, p.asInstanceOf[Option[Pagination]])
+      }
+  }
 }
 
 case class InteractionsDeferred(targetId: String,
@@ -189,6 +208,7 @@ class MultiTermResolver extends DeferredResolver[Backend] with Logging {
       case credSetByStudy: CredibleSetsByStudyDeferred     => credSetByStudy
       case credSetByVariant: CredibleSetsByVariantDeferred => credSetByVariant
       case colocalisations: ColocalisationsDeferred        => colocalisations
+      case diseaseHpos: DiseaseHPOsDeferred                => diseaseHpos
       case interactions: InteractionsDeferred              => interactions
       case l2g: L2GPredictionsDeferred                     => l2g
     }
@@ -199,6 +219,7 @@ class MultiTermResolver extends DeferredResolver[Backend] with Logging {
       case credSetByVariant: CredibleSetsByVariantDeferred =>
         getResultForId(credSetByVariant, results)
       case colocalisations: ColocalisationsDeferred => getResultForId(colocalisations, results)
+      case diseaseHpos: DiseaseHPOsDeferred         => getResultForId(diseaseHpos, results)
       case interactions: InteractionsDeferred       => getResultForId(interactions, results)
       case l2g: L2GPredictionsDeferred              => getResultForId(l2g, results)
     }

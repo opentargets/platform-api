@@ -3,6 +3,8 @@ package models.entities
 import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
+import models.gql.TypeWithId
+import slick.jdbc.GetResult
 
 case class DiseaseHPOEvidences(
     aspect: Option[String],
@@ -22,32 +24,38 @@ case class DiseaseHPOEvidences(
 
 case class DiseaseHPO(phenotype: String, disease: String, evidence: Seq[DiseaseHPOEvidences])
 
-case class DiseaseHPOs(count: Long, rows: Seq[DiseaseHPO])
+case class DiseaseHPOs(count: Long, rows: IndexedSeq[DiseaseHPO], id: String = "")
+    extends TypeWithId
 
 object DiseaseHPOs {
+  implicit val diseaseHPOsImpGetResult: GetResult[DiseaseHPOs] =
+    GetResult(r => Json.parse(r.<<[String]).as[DiseaseHPOs])
+  def empty: DiseaseHPOs = DiseaseHPOs(0, IndexedSeq.empty)
+  // implicit val diseaseHPOEvidencesImpW: OWrites[DiseaseHPOEvidences] =
+  //   Json.writes[models.entities.DiseaseHPOEvidences]
+  // implicit val diseaseHPOEvidencesImpR: Reads[models.entities.DiseaseHPOEvidences] =
+  //   ((JsPath \ "aspect").readNullable[String] and
+  //     (JsPath \ "bioCuration").readNullable[String] and
+  //     (JsPath \ "diseaseFromSourceId").read[String] and
+  //     (JsPath \ "diseaseFromSource").read[String] and
+  //     (JsPath \ "diseaseName").read[String] and
+  //     (JsPath \ "evidenceType").readNullable[String] and
+  //     (JsPath \ "frequency").readNullable[String] and
+  //     (JsPath \ "modifiers").readWithDefault[Seq[String]](Seq.empty) and
+  //     (JsPath \ "onset").readWithDefault[Seq[String]](Seq.empty) and
+  //     (JsPath \ "qualifierNot").read[Boolean] and
+  //     (JsPath \ "references").readWithDefault[Seq[String]](Seq.empty) and
+  //     (JsPath \ "sex").readNullable[String] and
+  //     (JsPath \ "resource").read[String])(DiseaseHPOEvidences.apply)
 
-  implicit val diseaseHPOEvidencesImpW: OWrites[DiseaseHPOEvidences] =
-    Json.writes[models.entities.DiseaseHPOEvidences]
-  implicit val diseaseHPOEvidencesImpR: Reads[models.entities.DiseaseHPOEvidences] =
-    ((JsPath \ "aspect").readNullable[String] and
-      (JsPath \ "bioCuration").readNullable[String] and
-      (JsPath \ "diseaseFromSourceId").read[String] and
-      (JsPath \ "diseaseFromSource").read[String] and
-      (JsPath \ "diseaseName").read[String] and
-      (JsPath \ "evidenceType").readNullable[String] and
-      (JsPath \ "frequency").readNullable[String] and
-      (JsPath \ "modifiers").readWithDefault[Seq[String]](Seq.empty) and
-      (JsPath \ "onset").readWithDefault[Seq[String]](Seq.empty) and
-      (JsPath \ "qualifierNot").read[Boolean] and
-      (JsPath \ "references").readWithDefault[Seq[String]](Seq.empty) and
-      (JsPath \ "sex").readNullable[String] and
-      (JsPath \ "resource").read[String])(DiseaseHPOEvidences.apply)
-
-  implicit val diseaseHPOImpW: OWrites[DiseaseHPO] = Json.writes[models.entities.DiseaseHPO]
-  implicit val diseaseHPOImpR: Reads[models.entities.DiseaseHPO] =
-    ((JsPath \ "phenotype").read[String] and
-      (JsPath \ "disease").read[String] and
-      (JsPath \ "evidence").readWithDefault[Seq[DiseaseHPOEvidences]](Seq.empty))(DiseaseHPO.apply)
+  // implicit val diseaseHPOImpW: OWrites[DiseaseHPO] = Json.writes[models.entities.DiseaseHPO]
+  // implicit val diseaseHPOImpR: Reads[models.entities.DiseaseHPO] =
+  //   ((JsPath \ "phenotype").read[String] and
+  //     (JsPath \ "disease").read[String] and
+  //     (JsPath \ "evidence").readWithDefault[Seq[DiseaseHPOEvidences]](Seq.empty))(DiseaseHPO.apply)
 
   implicit val diseaseHPOsImpF: OFormat[DiseaseHPOs] = Json.format[models.entities.DiseaseHPOs]
+  implicit val diseaseHPOImpF: OFormat[DiseaseHPO] = Json.format[models.entities.DiseaseHPO]
+  implicit val diseaseHPOEvidencesImpF: OFormat[DiseaseHPOEvidences] =
+    Json.format[models.entities.DiseaseHPOEvidences]
 }
