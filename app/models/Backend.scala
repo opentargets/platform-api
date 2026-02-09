@@ -159,9 +159,9 @@ class Backend @Inject() (implicit
   }
 
   def getGoTerms(ids: Seq[String]): Future[IndexedSeq[GeneOntologyTerm]] = {
-    val targetIndexName = getIndexOrDefault("go")
-
-    esRetriever.getByIds(targetIndexName, ids, fromJsValue[GeneOntologyTerm])
+    val targetIndexName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.go.name)
+    val query = IdsQuery(ids, "id", targetIndexName, 0, Pagination.sizeMax)
+    dbRetriever.executeQuery[GeneOntologyTerm, Query](query.query)
   }
 
   def getL2GPredictions(ids: Seq[String],
