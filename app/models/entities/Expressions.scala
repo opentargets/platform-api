@@ -22,8 +22,6 @@ case class Expressions(id: String, rows: Seq[Expression])
 object Expressions {
   implicit val getExpressionsResult: GetResult[Expressions] =
     GetResult(r => Json.parse(r.<<[String]).as[Expressions])
-  // implicit val config: Aux[Json.MacroOptions] = JsonConfiguration(SnakeCase)
-
   implicit val tissueW: OWrites[Tissue] = Json.writes[Tissue]
   implicit val rnaExpressionW: OWrites[RNAExpression] = Json.writes[RNAExpression]
   implicit val cellTypeW: OWrites[CellType] = Json.writes[CellType]

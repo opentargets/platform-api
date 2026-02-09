@@ -10,7 +10,6 @@ import models.entities.{
   HPO,
   Indications,
   OtarProjects,
-  Reactome,
   SequenceOntologyTerm,
   Study,
   Target,
@@ -79,15 +78,6 @@ object Fetchers extends Logging {
       .maxBatchSize(entities.Configuration.batchSize)
       .caching(otarProjectsFetcherCache),
     fetch = (ctx: Backend, ids: Seq[String]) => ctx.getOtarProjects(ids)
-  )
-
-  val reactomeFetcherCache = FetcherCache.simple
-
-  implicit val reactomeHasId: HasId[Reactome, String] = HasId[Reactome, String](_.id)
-  val reactomeFetcher: Fetcher[Backend, Reactome, Reactome, String] = Fetcher(
-    config =
-      FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(reactomeFetcherCache),
-    fetch = (ctx: Backend, ids: Seq[String]) => ctx.getReactomeNodes(ids)
   )
 
   // hpo fetcher
@@ -175,7 +165,6 @@ object Fetchers extends Logging {
       targetsFetcherCache,
       drugsFetcherCache,
       diseasesFetcherCache,
-      reactomeFetcherCache,
       expressionFetcherCache,
       otarProjectsFetcherCache,
       soTermsFetcherCache

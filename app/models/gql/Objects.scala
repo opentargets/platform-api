@@ -753,45 +753,6 @@ object Objects extends Logging {
       )
     )
 
-  implicit lazy val reactomeImp: ObjectType[Backend, Reactome] =
-    deriveObjectType[Backend, Reactome](
-      AddFields(
-        Field(
-          "isRoot",
-          BooleanType,
-          description = Some("If the node is root"),
-          resolve = _.value.isRoot
-        )
-      ),
-      ReplaceField(
-        "children",
-        Field(
-          "children",
-          ListType(reactomeImp),
-          Some("Direct child pathway nodes that descend from this pathway"),
-          resolve = r => reactomeFetcher.deferSeqOpt(r.value.children)
-        )
-      ),
-      ReplaceField(
-        "parents",
-        Field(
-          "parents",
-          ListType(reactomeImp),
-          Some("Immediate parent pathway nodes of this pathway"),
-          resolve = r => reactomeFetcher.deferSeqOpt(r.value.parents)
-        )
-      ),
-      ReplaceField(
-        "ancestors",
-        Field(
-          "ancestors",
-          ListType(reactomeImp),
-          Some("All ancestor pathway nodes up to the root of the hierarchy"),
-          resolve = r => reactomeFetcher.deferSeqOpt(r.value.ancestors)
-        )
-      )
-    )
-
   implicit val tissueImp: ObjectType[Backend, Tissue] = deriveObjectType[Backend, Tissue](
     ObjectTypeDescription(
       "Baseline RNA and protein expression data across tissues. This data does not contain raw expression values, instead to shows how targets are selectively expressed across different tissues. This dataset combines expression values from multiple sources including Expression Atlas and Human Protein Atlas."
