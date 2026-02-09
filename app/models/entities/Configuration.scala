@@ -89,6 +89,7 @@ object Configuration {
       literatureIndex: DbTableSettings,
       similarities: DbTableSettings,
       study: DbTableSettings,
+      so: DbTableSettings,
       target: TargetSettings,
       variant: DbTableSettings
   )
