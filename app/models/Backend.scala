@@ -659,9 +659,9 @@ class Backend @Inject() (implicit
   }
 
   def getSoTerms(ids: Seq[String]): Future[IndexedSeq[SequenceOntologyTerm]] = {
-    val targetIndexName = getIndexOrDefault("so", Some("so"))
-
-    esRetriever.getByIds(targetIndexName, ids, fromJsValue[SequenceOntologyTerm])
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.so.name)
+    val query = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
+    dbRetriever.executeQuery[SequenceOntologyTerm, Query](query.query)
   }
 
   def getDrugs(ids: Seq[String]): Future[IndexedSeq[Drug]] = {
