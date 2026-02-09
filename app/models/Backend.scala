@@ -127,25 +127,20 @@ class Backend @Inject() (implicit
       }
   }
 
-  def getDiseaseHPOs(id: String, pagination: Option[Pagination]): Future[Option[DiseaseHPOs]] = {
-
-    val pag = pagination.getOrElse(Pagination.mkDefault)
-
-    val cbIndex = getIndexOrDefault("disease_hpo")
-
-    val kv = Map("disease.keyword" -> id)
-
-    val aggs = Seq(
-      valueCountAgg("rowsCount", "disease.keyword")
+  def getDiseaseHPOs(ids: Seq[String],
+                     pagination: Option[Pagination]
+  ): Future[IndexedSeq[DiseaseHPOs]] = {
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.diseaseHPO.name)
+    val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
+    val diseaseHPOQuery = OneToMany(
+      ids = ids,
+      idField = "disease",
+      arrayField = "phenotypes",
+      tableName = tableName,
+      offset = pag._1,
+      size = pag._2
     )
-
-    esRetriever.getByIndexedQueryMust(cbIndex, kv, pag, fromJsValue[DiseaseHPO], aggs).map {
-      case Results(Seq(), _, _, _) => Some(DiseaseHPOs(0, Seq()))
-      case Results(seq, agg, _, _) =>
-        logger.trace(Json.prettyPrint(agg))
-        val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
-        Some(DiseaseHPOs(rowsCount, seq))
-    }
+    dbRetriever.executeQuery[DiseaseHPOs, Query](diseaseHPOQuery.query)
   }
 
   def getDownloads: Future[Option[String]] = {

@@ -79,6 +79,7 @@ object Configuration {
       colocalisation: DbTableSettings,
       credibleSet: CredibleSetSettings,
       disease: DiseaseSettings,
+      diseaseHPO: DbTableSettings,
       evidence: EvidenceSettings,
       expression: DbTableSettings,
       interaction: DbTableSettings,

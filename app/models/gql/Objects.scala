@@ -557,13 +557,13 @@ object Objects extends Logging {
       ),
       Field(
         "phenotypes",
-        OptionType(diseaseHPOsImp),
+        diseaseHPOsImp,
         description = Some(
           "Human Phenotype Ontology (HPO) annotations linked to this disease as clinical signs or symptoms"
         ),
         arguments = pageArg :: Nil,
         complexity = Some(complexityCalculator(pageArg)),
-        resolve = ctx => ctx.ctx.getDiseaseHPOs(ctx.value.id, ctx.arg(pageArg))
+        resolve = ctx => DiseaseHPOsDeferred(ctx.value.id, ctx.arg(pageArg))
       ),
       Field(
         "evidences",
