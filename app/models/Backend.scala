@@ -641,9 +641,9 @@ class Backend @Inject() (implicit
   }
 
   def getExpressions(ids: Seq[String]): Future[IndexedSeq[Expressions]] = {
-    val targetIndexName = getIndexOrDefault("expression")
-
-    esRetriever.getByIds(targetIndexName, ids, fromJsValue[Expressions])
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.expression.name)
+    val expressionQuery = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
+    dbRetriever.executeQuery[Expressions, Query](expressionQuery.query)
   }
 
   def getReactomeNodes(ids: Seq[String]): Future[IndexedSeq[Reactome]] = {

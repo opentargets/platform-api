@@ -80,6 +80,7 @@ object Configuration {
       credibleSet: CredibleSetSettings,
       disease: DiseaseSettings,
       evidence: EvidenceSettings,
+      expression: DbTableSettings,
       interaction: DbTableSettings,
       intervals: DbTableSettings,
       go: DbTableSettings,
