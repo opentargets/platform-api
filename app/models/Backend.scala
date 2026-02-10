@@ -549,21 +549,17 @@ class Backend @Inject() (implicit
     dbRetriever.executeQuery[HPO, Query](query.query)
   }
 
-  def getMousePhenotypes(ids: Seq[String]): Future[IndexedSeq[MousePhenotype]] = {
-    val indexName = getIndexOrDefault("mouse_phenotypes", Some("mouse_phenotypes"))
-    val queryTerm = Map("targetFromSourceId.keyword" -> ids)
-    logger.debug(s"Querying mouse phenotypes for: $ids")
-
-    // The entry with the highest number of MP is ENSG00000157404 with 1828. Pagination max size is 5000, so we have plenty
-    // of headroom for now.
-    esRetriever
-      .getByIndexedQueryMust(
-        indexName,
-        queryTerm,
-        Pagination(0, Pagination.sizeMax),
-        fromJsValue[MousePhenotype]
-      )
-      .map(_.mappedHits)
+  def getMousePhenotypes(ids: Seq[String]): Future[IndexedSeq[MousePhenotypes]] = {
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.mousePhenotypes.name)
+    val query = OneToMany(
+      ids,
+      "targetFromSourceId",
+      "mouse_phenotypes",
+      tableName,
+      0,
+      Pagination.sizeMax
+    )
+    dbRetriever.executeQuery[MousePhenotypes, Query](query.query)
   }
 
   def getPharmacogenomicsByDrug(id: String): Future[IndexedSeq[Pharmacogenomics]] = {

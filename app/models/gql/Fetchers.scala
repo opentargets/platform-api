@@ -9,6 +9,7 @@ import models.entities.{
   GeneOntologyTerm,
   HPO,
   Indications,
+  MousePhenotypes,
   OtarProjects,
   SequenceOntologyTerm,
   Study,
@@ -62,16 +63,26 @@ object Fetchers extends Logging {
       FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(diseasesFetcherCache),
     fetch = (ctx: Backend, ids: Seq[String]) => ctx.getDiseases(ids)
   )
-  val expressionFetcherCache = FetcherCache.simple
 
+  val expressionFetcherCache = FetcherCache.simple
   implicit val expressionHasId: HasId[Expressions, String] = HasId[Expressions, String](_.id)
   val expressionFetcher: Fetcher[Backend, Expressions, Expressions, String] = Fetcher(
     config =
       FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(expressionFetcherCache),
     fetch = (ctx: Backend, ids: Seq[String]) => ctx.getExpressions(ids)
   )
-  val otarProjectsFetcherCache = FetcherCache.simple
 
+  val mousePhenotypesFetcherCache = FetcherCache.simple
+  implicit val mousePhenotypesHasId: HasId[MousePhenotypes, String] =
+    HasId[MousePhenotypes, String](_.id)
+  val mousePhenotypesFetcher: Fetcher[Backend, MousePhenotypes, MousePhenotypes, String] = Fetcher(
+    config = FetcherConfig
+      .maxBatchSize(entities.Configuration.batchSize)
+      .caching(mousePhenotypesFetcherCache),
+    fetch = (ctx: Backend, ids: Seq[String]) => ctx.getMousePhenotypes(ids)
+  )
+
+  val otarProjectsFetcherCache = FetcherCache.simple
   implicit val otarProjectsHasId: HasId[OtarProjects, String] = HasId[OtarProjects, String](_.efoId)
   val otarProjectsFetcher: Fetcher[Backend, OtarProjects, OtarProjects, String] = Fetcher(
     config = FetcherConfig
@@ -109,6 +120,7 @@ object Fetchers extends Logging {
   )
 
   implicit val indicationHasId: HasId[Indications, String] = HasId[Indications, String](_.id)
+  val indicationFetcherCache = FetcherCache.simple
   val indicationFetcher: Fetcher[Backend, Indications, Indications, String] = Fetcher(
     config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize),
     fetch = (ctx: Backend, ids: Seq[String]) => ctx.getIndications(ids)
@@ -165,9 +177,12 @@ object Fetchers extends Logging {
       targetsFetcherCache,
       drugsFetcherCache,
       diseasesFetcherCache,
+      indicationFetcherCache,
+      mousePhenotypesFetcherCache,
       expressionFetcherCache,
       otarProjectsFetcherCache,
-      soTermsFetcherCache
+      soTermsFetcherCache,
+      targetEssentialityFetcherCache
     )
     fetchers.foreach(_.clear())
   }

@@ -290,10 +290,11 @@ object Objects extends Logging {
         description = Some(
           "Mouse phenotype information linking this human target to observed phenotypes in mouse models. Provides data on phenotypes observed when the target gene is modified in mouse models."
         ),
-        resolve = ctx => {
-          val mp = ctx.ctx.getMousePhenotypes(Seq(ctx.value.id))
-          mp
-        }
+        resolve = r =>
+          DeferredValue(mousePhenotypesFetcher.deferOpt(r.value.id)).map {
+            case Some(phenotypes) => phenotypes.rows
+            case None             => Seq.empty
+          }
       ),
       Field(
         "expressions",

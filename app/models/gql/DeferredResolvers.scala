@@ -238,6 +238,7 @@ object DeferredResolvers extends Logging {
     Fetchers.diseasesFetcher,
     Fetchers.hposFetcher,
     Fetchers.expressionFetcher,
+    Fetchers.mousePhenotypesFetcher,
     Fetchers.otarProjectsFetcher,
     Fetchers.soTermsFetcher,
     Fetchers.indicationFetcher,
