@@ -16,14 +16,14 @@ object ClinicalIndications {
     "",
     fields[Backend, ClinicalIndications](
       Field("count",
-        LongType,
-        description = Some("Total number of indications results matching the query filters"),
-        resolve = _.value.count
+            LongType,
+            description = Some("Total number of indications results matching the query filters"),
+            resolve = _.value.count
       ),
       Field("rows",
-        ListType(clinicalIndicationImp),
-        description = Some("List of colocalisation results between study-loci pairs"),
-        resolve = _.value.rows
+            ListType(clinicalIndicationImp),
+            description = Some("List of colocalisation results between study-loci pairs"),
+            resolve = _.value.rows
       )
     )
   )
