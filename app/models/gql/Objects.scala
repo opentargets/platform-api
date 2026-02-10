@@ -646,10 +646,10 @@ object Objects extends OTLogging {
         resolve = ctx => diseasesFetcher.deferSeq(ctx.value.ancestors)
       ),
       Field(
-        "indications",
+        "drugAndClinicalCandidates",
         clinicalIndicationsImp,
         description = Some(
-          "Clinical indications for this drug as reported by clinical trial records."
+          "Clinical indications for this disease as reported by clinical trial records."
         ),
         arguments = Nil,
         resolve = ctx => ctx.ctx.getClinicalIndicationsByDisease(ctx.value.id)
