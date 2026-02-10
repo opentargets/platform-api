@@ -10,6 +10,7 @@ import models.entities.*
 import models.gql.Arguments.*
 import models.gql.Fetchers.*
 import models.Helpers.ComplexityCalculator.*
+import models.entities.ClinicalIndications.clinicalIndicationsImp
 import play.api.libs.json.*
 import sangria.macros.derive.{DocumentField, *}
 import sangria.schema.*
@@ -18,11 +19,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.*
 import models.entities.CredibleSets.credibleSetsImp
 import models.entities.Study.{LdPopulationStructure, Sample, SumStatQC}
-import models.entities.Violations.{
-  InputParameterCheckError,
-  InvalidArgValueError,
-  invalidArgValueErrorMsg
-}
+import models.entities.Violations.{InputParameterCheckError, InvalidArgValueError, invalidArgValueErrorMsg}
 
 import scala.collection.View.Empty
 import net.logstash.logback.argument.StructuredArguments.keyValue
@@ -645,14 +642,13 @@ object Objects extends OTLogging {
         resolve = ctx => diseasesFetcher.deferSeq(ctx.value.ancestors)
       ),
       Field(
-        "clinIndication", // TODO: update
-        ListType(clinicalIndicationImp),
+        "indications",
+        clinicalIndicationsImp,
         description = Some(
           "Clinical indications for this drug as reported by clinical trial records."
         ),
-        arguments = pageArg :: Nil,
-        complexity = Some(complexityCalculator(pageArg)),
-        resolve = ctx => ctx.ctx.getClinicalIndicationsByDisease(ctx.value.id, ctx.arg(pageArg))
+        arguments = Nil,
+        resolve = ctx => ctx.ctx.getClinicalIndicationsByDisease(ctx.value.id)
       )
     )
   )
@@ -1552,14 +1548,6 @@ object Objects extends OTLogging {
     ),
     AddFields(
       Field(
-        "approvedIndications",
-        OptionType(ListType(StringType)),
-        description = Some("Indications for which there is a phase IV clinical trial"),
-        resolve = r =>
-          DeferredValue(indicationFetcher.deferOpt(r.value.id))
-            .map(_.flatMap(_.approvedIndications))
-      ),
-      Field(
         "drugWarnings",
         ListType(drugWarningsImp),
         description = Some("Warnings present on drug as identified by ChEMBL."),
@@ -1615,15 +1603,6 @@ object Objects extends OTLogging {
         resolve = ctx => ctx.ctx.getMechanismsOfAction(ctx.value.id)
       ),
       Field(
-        "indications",
-        OptionType(indicationsImp),
-        description = Some(
-          "Investigational and approved indications curated from clinical trial records and " +
-            "post-marketing package inserts"
-        ),
-        resolve = ctx => DeferredValue(indicationFetcher.deferOpt(ctx.value.id))
-      ),
-      Field(
         "adverseEvents",
         OptionType(adverseEventsImp),
         description = Some(
@@ -1644,14 +1623,13 @@ object Objects extends OTLogging {
         resolve = ctx => ctx.ctx.getPharmacogenomicsByDrug(ctx.value.id)
       ),
       Field(
-        "clinIndications", // TODO: update
-        ListType(clinicalIndicationImp),
+        "indications",
+        clinicalIndicationsImp,
         description = Some(
           "Clinical indications for this drug as reported by clinical trial records."
         ),
-        arguments = pageArg :: Nil,
-        complexity = Some(complexityCalculator(pageArg)),
-        resolve = ctx => ctx.ctx.getClinicalIndicationsByDrug(ctx.value.id, ctx.arg(pageArg))
+        arguments = Nil,
+        resolve = ctx => ctx.ctx.getClinicalIndicationsByDrug(ctx.value.id)
       )
     )
   )
@@ -1702,6 +1680,12 @@ object Objects extends OTLogging {
       ObjectTypeDescription("Disease-specific database settings configuration"),
       DocumentField("associations", "Database table settings for disease associations")
     )
+  implicit val clinicalIndicationSettingsImp: ObjectType[Backend, ClinicalIndicationSettings] =
+    deriveObjectType[Backend, ClinicalIndicationSettings](
+      ObjectTypeDescription("Clinical indication database settings configuration"),
+      DocumentField("drugTable", "Database table settings for drug indications"),
+      DocumentField("diseaseTable", "Database table settings for disease indications")
+    )
   implicit val harmonicSettingsImp: ObjectType[Backend, HarmonicSettings] =
     deriveObjectType[Backend, HarmonicSettings](
       ObjectTypeDescription("Harmonic mean scoring settings for association calculations"),
@@ -1718,7 +1702,8 @@ object Objects extends OTLogging {
       DocumentField("similarities", "Database table settings for entity similarities"),
       DocumentField("harmonic", "Harmonic mean scoring settings"),
       DocumentField("literature", "Database table settings for literature data"),
-      DocumentField("literatureIndex", "Database table settings for literature index")
+      DocumentField("literatureIndex", "Database table settings for literature index"),
+      DocumentField("clinicalIndication", "Database table settings for clinical indications")
     )
   implicit val evidenceSourceImp: ObjectType[Backend, EvidenceSource] =
     deriveObjectType[Backend, EvidenceSource](

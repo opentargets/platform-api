@@ -106,12 +106,6 @@ object Fetchers extends OTLogging {
     fetch = (ctx: Backend, ids: Seq[String]) => ctx.getDrugs(ids)
   )
 
-  implicit val indicationHasId: HasId[Indications, String] = HasId[Indications, String](_.id)
-  val indicationFetcher: Fetcher[Backend, Indications, Indications, String] = Fetcher(
-    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize),
-    fetch = (ctx: Backend, ids: Seq[String]) => ctx.getIndications(ids)
-  )
-
   implicit val goFetcherId: HasId[GeneOntologyTerm, String] = HasId[GeneOntologyTerm, String](_.id)
   val goFetcherCache = FetcherCache.simple
   val goFetcher: Fetcher[Backend, GeneOntologyTerm, GeneOntologyTerm, String] = Fetcher(
