@@ -19,7 +19,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.*
 import models.entities.CredibleSets.credibleSetsImp
 import models.entities.Study.{LdPopulationStructure, Sample, SumStatQC}
-import models.entities.Violations.{InputParameterCheckError, InvalidArgValueError, invalidArgValueErrorMsg}
+import models.entities.Violations.{
+  InputParameterCheckError,
+  InvalidArgValueError,
+  invalidArgValueErrorMsg
+}
 
 import scala.collection.View.Empty
 import net.logstash.logback.argument.StructuredArguments.keyValue

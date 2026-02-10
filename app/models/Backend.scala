@@ -766,7 +766,8 @@ class Backend @Inject() (implicit
                                      columnName: String
   ): Future[ClinicalIndications] = {
 
-    val clinicalIndicationsQuery = ClinicalIndicationQuery(id, tableName, 0, Pagination.sizeMax, columnName)
+    val clinicalIndicationsQuery =
+      ClinicalIndicationQuery(id, tableName, 0, Pagination.sizeMax, columnName)
 
     dbRetriever
       .executeQuery[ClinicalIndication, Query](clinicalIndicationsQuery.query)
@@ -774,7 +775,7 @@ class Backend @Inject() (implicit
         case Seq() =>
           logger.info(s"no clinical indication found for $id in table $tableName")
           ClinicalIndications(0, IndexedSeq())
-        case cis   =>
+        case cis =>
           logger.info(s"clinical indications found for $id in table $tableName: ${cis.length}")
           ClinicalIndications(cis.length, cis)
       }
