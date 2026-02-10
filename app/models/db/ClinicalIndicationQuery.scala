@@ -19,7 +19,7 @@ case class ClinicalIndicationQuery(id: String,
       ),
       From(column(tableName)),
       PreWhere(
-        Functions.in(literal(id), column(columnName))
+        Functions.in(column(columnName), literal(id))
       ),
       OrderBy(column("id") :: Nil),
       Limit(offset, size),
