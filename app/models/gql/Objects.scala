@@ -1639,7 +1639,38 @@ object Objects extends OTLogging {
   )
 
   implicit val clinicalIndicationImp: ObjectType[Backend, ClinicalIndication] =
-    deriveObjectType[Backend, ClinicalIndication]()
+    deriveObjectType[Backend, ClinicalIndication](
+      ReplaceField(
+        "drugId",
+        Field(
+          "drug",
+          OptionType(drugImp),
+          description = Some(
+            ""
+          ),
+          resolve = ctx => {
+            val id = ctx.value.drugId
+            logger.debug(s"finding drug $id")
+            drugsFetcher.deferOpt(id)
+          }
+        )
+      ),
+      ReplaceField(
+        "diseaseId",
+        Field(
+          "disease",
+          OptionType(diseaseImp),
+          description = Some(""),
+          resolve = ctx =>
+            ctx.value.diseaseId match {
+              case Some(tId) =>
+                logger.debug(s"finding disease $tId")
+                diseasesFetcher.defer(tId)
+              case None => None
+            }
+        )
+      )
+    )
 
   implicit val datasourceSettingsImp: ObjectType[Backend, DatasourceSettings] =
     deriveObjectType[Backend, DatasourceSettings](
