@@ -10,7 +10,10 @@ import models.entities.*
 import models.gql.Arguments.*
 import models.gql.Fetchers.*
 import models.Helpers.ComplexityCalculator.*
-import models.entities.ClinicalIndications.clinicalIndicationsImp
+import models.entities.ClinicalIndications.{
+  clinicalIndicationsFromDiseaseImp,
+  clinicalIndicationsFromDrugImp
+}
 import play.api.libs.json.*
 import sangria.macros.derive.{DocumentField, *}
 import sangria.schema.*
@@ -647,7 +650,7 @@ object Objects extends OTLogging {
       ),
       Field(
         "drugAndClinicalCandidates",
-        clinicalIndicationsImp,
+        clinicalIndicationsFromDiseaseImp,
         description = Some(
           "Clinical indications for this disease as reported by clinical trial records."
         ),
@@ -1628,7 +1631,7 @@ object Objects extends OTLogging {
       ),
       Field(
         "indications",
-        clinicalIndicationsImp,
+        clinicalIndicationsFromDrugImp,
         description = Some(
           "Clinical indications for this drug as reported by clinical trial records."
         ),
@@ -1638,8 +1641,10 @@ object Objects extends OTLogging {
     )
   )
 
-  implicit val clinicalIndicationImp: ObjectType[Backend, ClinicalIndication] =
+  implicit val clinicalIndicationFromDiseaseImp: ObjectType[Backend, ClinicalIndication] =
     deriveObjectType[Backend, ClinicalIndication](
+      ObjectTypeName("ClinicalIndicationFromDisease"),
+      ExcludeFields("diseaseId"),
       ReplaceField(
         "drugId",
         Field(
@@ -1654,7 +1659,13 @@ object Objects extends OTLogging {
             drugsFetcher.deferOpt(id)
           }
         )
-      ),
+      )
+    )
+
+  implicit val clinicalIndicationFromDrugImp: ObjectType[Backend, ClinicalIndication] =
+    deriveObjectType[Backend, ClinicalIndication](
+      ObjectTypeName("ClinicalIndicationFromDrug"),
+      ExcludeFields("drugId"),
       ReplaceField(
         "diseaseId",
         Field(
