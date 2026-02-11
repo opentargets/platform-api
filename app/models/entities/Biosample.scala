@@ -2,6 +2,7 @@ package models.entities
 
 import play.api.Logging
 import play.api.libs.json._
+import slick.jdbc.GetResult
 
 case class Biosample(
     biosampleId: String,
@@ -16,5 +17,7 @@ case class Biosample(
 )
 
 object Biosample extends Logging {
+  implicit val getResultBiosample: GetResult[Biosample] =
+    GetResult(r => Json.parse(r.<<[String]).as[Biosample])
   implicit val biosampleF: OFormat[Biosample] = Json.format[Biosample]
 }

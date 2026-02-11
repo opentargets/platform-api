@@ -182,15 +182,9 @@ class Backend @Inject() (implicit
   }
 
   def getBiosamples(ids: Seq[String]): Future[IndexedSeq[Biosample]] = {
-    val indexName = getIndexOrDefault("biosample", Some("biosample"))
-    esRetriever
-      .getByIndexedTermsMust(
-        indexName,
-        Map("biosampleId.keyword" -> ids),
-        Pagination.mkMax,
-        fromJsValue[Biosample]
-      )
-      .map(_.mappedHits)
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.biosample.name)
+    val query = IdsQuery(ids, "biosampleId", tableName, 0, Pagination.sizeMax)
+    dbRetriever.executeQuery[Biosample, Query](query.query)
   }
 
   def getStudy(ids: Seq[String]): Future[IndexedSeq[Study]] = {
