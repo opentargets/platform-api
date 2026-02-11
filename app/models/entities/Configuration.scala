@@ -55,6 +55,9 @@ object Configuration {
                               variant: DbTableSettings,
                               diseaseAndTarget: DbTableSettings
   )
+
+  case class ProteinCodingCoordinatesSettings(variant: DbTableSettings, target: DbTableSettings)
+
   case class TargetSettings(label: String,
                             name: String,
                             associations: DbTableSettings,
@@ -93,6 +96,7 @@ object Configuration {
       literatureIndex: DbTableSettings,
       mousePhenotypes: DbTableSettings,
       otarProjects: DbTableSettings,
+      proteinCodingCoordinates: ProteinCodingCoordinatesSettings,
       similarities: DbTableSettings,
       study: DbTableSettings,
       so: DbTableSettings,
@@ -183,6 +187,8 @@ object Configuration {
     Json.format[CredibleSetSettings]
   implicit val evidenceSettingsJSONImp: OFormat[EvidenceSettings] =
     Json.format[EvidenceSettings]
+  implicit val proteinCodingCoordinatesSettingsJSONImp: OFormat[ProteinCodingCoordinatesSettings] =
+    Json.format[ProteinCodingCoordinatesSettings]
   implicit val targetSettingsJSONImp: OFormat[TargetSettings] = Json.format[TargetSettings]
   implicit val diseaseSettingsJSONImp: OFormat[DiseaseSettings] = Json.format[DiseaseSettings]
   implicit val clickhouseSettingsJSONImp: OFormat[ClickhouseSettings] =

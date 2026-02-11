@@ -172,31 +172,6 @@ class ElasticRetriever @Inject() (
     getByIndexedQuery(searchRequest, sortByField, buildF)
   }
 
-  /** This fn represents a query where each kv from the map is used in a bool 'must' (AND) with
-    * optional filters that are 'must' (AND).
-    */
-  def getByIndexedTermsMust[A, V](
-      esIndex: String,
-      kv: Map[String, V],
-      pagination: Pagination,
-      buildF: JsValue => Option[A],
-      aggs: Iterable[AbstractAggregation] = Iterable.empty,
-      sortByField: Option[sort.FieldSort] = None,
-      excludedFields: Seq[String] = Seq.empty,
-      filter: Seq[Query] = Seq.empty
-  ): Future[Results[A]] = {
-    // just log and execute the query
-    val indexQuery: IndexQuery[V] = IndexQuery(esIndex = esIndex,
-                                               kv = kv,
-                                               filters = filter,
-                                               pagination = pagination,
-                                               aggs = aggs,
-                                               excludedFields = excludedFields
-    )
-    val searchRequest: SearchRequest = IndexTermsMust(indexQuery)
-    getByIndexedQuery(searchRequest, sortByField, buildF)
-  }
-
   /** This fn represents a query where each kv from the map is used in a bool 'should'. Based on the
     * query asked by `getByIndexedQuery` and aggregation is applied
     */
@@ -268,26 +243,6 @@ class ElasticRetriever @Inject() (
         r.results
 
     }
-
-  /* Provide a specific Bool Query*/
-  def getQ[A](
-      esIndex: String,
-      boolQ: BoolQuery,
-      pagination: Pagination,
-      buildF: JsValue => Option[A],
-      aggs: Iterable[AbstractAggregation] = Iterable.empty,
-      sortByField: Option[sort.FieldSort] = None,
-      excludedFields: Seq[String] = Seq.empty
-  ): Future[Results[A]] = {
-    val indexQuery = IndexBoolQuery(esIndex = esIndex,
-                                    boolQuery = boolQ,
-                                    pagination = pagination,
-                                    aggs = aggs,
-                                    excludedFields = excludedFields
-    )
-    val searchRequest: SearchRequest = BoolQueryBuilder(indexQuery)
-    getByIndexedQuery(searchRequest, sortByField, buildF)
-  }
 
   def getByFreeQuery[A](
       esIndex: String,

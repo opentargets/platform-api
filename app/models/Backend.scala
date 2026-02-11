@@ -586,37 +586,39 @@ class Backend @Inject() (implicit
       .map(_.mappedHits)
   }
 
-  def getProteinCodingCoordinatesByTarget(id: String,
+  def getProteinCodingCoordinatesByTarget(ids: Seq[String],
                                           pagination: Option[Pagination]
-  ): Future[ProteinCodingCoordinates] = {
-    val queryTerm: Map[String, String] = Map("targetId.keyword" -> id)
-    getProteinCodingCoordinates(id, queryTerm, pagination)
+  ): Future[IndexedSeq[ProteinCodingCoordinates]] = {
+    val tableName = getTableWithPrefixOrDefault(
+      defaultOTSettings.clickhouse.proteinCodingCoordinates.target.name
+    )
+    val pag = pagination.getOrElse(Pagination(0, 2)).offsetLimit
+    val query = OneToMany(
+      ids,
+      "targetId",
+      "proteinCodingCoords",
+      tableName,
+      pag._1,
+      pag._2
+    )
+    dbRetriever.executeQuery[ProteinCodingCoordinates, Query](query.query)
   }
-  def getProteinCodingCoordinatesByVariantId(id: String,
-                                             pagination: Option[Pagination]
-  ): Future[ProteinCodingCoordinates] = {
-    val queryTerm: Map[String, String] = Map("variantId.keyword" -> id)
-    getProteinCodingCoordinates(id, queryTerm, pagination)
-  }
-  def getProteinCodingCoordinates(id: String,
-                                  queryTerm: Map[String, String],
-                                  pagination: Option[Pagination]
-  ): Future[ProteinCodingCoordinates] = {
-    val indexName = getIndexOrDefault("proteinCodingCoordinates")
-    val pag = pagination.getOrElse(Pagination(0, 2))
-    logger.debug(s"Querying protein coding coordinates for: $id")
-    val retriever = esRetriever
-      .getByIndexedQueryMust(
-        indexName,
-        queryTerm,
-        pag,
-        fromJsValue[ProteinCodingCoordinate]
-      )
-    retriever.map {
-      case Results(Seq(), _, _, _) => ProteinCodingCoordinates.empty()
-      case Results(coords, _, counts, _) =>
-        ProteinCodingCoordinates(counts, coords)
-    }
+  def getProteinCodingCoordinatesByVariant(ids: Seq[String],
+                                           pagination: Option[Pagination]
+  ): Future[IndexedSeq[ProteinCodingCoordinates]] = {
+    val tableName = getTableWithPrefixOrDefault(
+      defaultOTSettings.clickhouse.proteinCodingCoordinates.variant.name
+    )
+    val pag = pagination.getOrElse(Pagination(0, 2)).offsetLimit
+    val query = OneToMany(
+      ids,
+      "variantId",
+      "proteinCodingCoords",
+      tableName,
+      pag._1,
+      pag._2
+    )
+    dbRetriever.executeQuery[ProteinCodingCoordinates, Query](query.query)
   }
 
   def getOtarProjects(ids: Seq[String]): Future[IndexedSeq[OtarProjects]] = {

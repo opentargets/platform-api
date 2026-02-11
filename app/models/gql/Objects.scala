@@ -413,7 +413,7 @@ object Objects extends Logging {
         ),
         arguments = pageArg :: Nil,
         complexity = Some(complexityCalculator(pageArg)),
-        resolve = ctx => ctx.ctx.getProteinCodingCoordinatesByTarget(ctx.value.id, ctx.arg(pageArg))
+        resolve = ctx => ProteinCodingCoordinatesByTargetDeferred(ctx.value.id, ctx.arg(pageArg))
       )
     )
   )
@@ -1762,6 +1762,9 @@ object Objects extends Logging {
     )
   implicit val evidenceSettingsImp: ObjectType[Backend, EvidenceSettings] =
     deriveObjectType[Backend, EvidenceSettings]()
+  implicit val proteinCodingCoordinatesSettingsImp
+      : ObjectType[Backend, ProteinCodingCoordinatesSettings] =
+    deriveObjectType[Backend, ProteinCodingCoordinatesSettings]()
   implicit val clickhouseSettingsImp: ObjectType[Backend, ClickhouseSettings] =
     deriveObjectType[Backend, ClickhouseSettings]()
   implicit val evidenceSourceImp: ObjectType[Backend, EvidenceSource] =
@@ -2487,8 +2490,8 @@ object Objects extends Logging {
           ),
           arguments = pageArg :: Nil,
           complexity = Some(complexityCalculator(pageArg)),
-          resolve = ctx =>
-            ctx.ctx.getProteinCodingCoordinatesByVariantId(ctx.value.variantId, ctx.arg(pageArg))
+          resolve =
+            ctx => ProteinCodingCoordinatesByVariantDeferred(ctx.value.variantId, ctx.arg(pageArg))
         ),
         Field(
           "intervals",
