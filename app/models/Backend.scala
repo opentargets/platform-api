@@ -28,7 +28,7 @@ import models.entities.Pharmacogenomics.*
 import models.entities.ProteinCodingCoordinates.*
 import models.entities.SearchFacetsResults.*
 import models.entities.Studies.*
-import models.entities.Evidence.*
+import models.entities.Evidences.*
 import models.entities.SequenceOntologyTerm.*
 import models.entities.*
 import models.gql.{StudyTypeEnum, InteractionSourceEnum}

@@ -2,7 +2,6 @@ package models.entities
 
 import play.api.Logging
 import play.api.libs.json._
-import play.api.libs.json.Reads._
 import slick.jdbc.GetResult
 
 case class DiseaseSynonyms(relation: String, terms: Seq[String])

@@ -1,10 +1,7 @@
 package models.entities
 
-import clickhouse.rep.SeqRep._
-import models.entities.Configuration._
-import play.api.libs.json.Json
+import play.api.libs.json.{Json, OFormat}
 import slick.jdbc.GetResult
-import play.api.libs.json.OFormat
 
 case class ResourceScore(name: String, value: Double)
 

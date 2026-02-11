@@ -1,7 +1,7 @@
 package models.entities
 
 import play.api.Logging
-import play.api.libs.json.{OFormat, OWrites, Json}
+import play.api.libs.json.{OFormat, Json}
 import slick.jdbc.GetResult
 
 case class VariantEffect(method: Option[String],

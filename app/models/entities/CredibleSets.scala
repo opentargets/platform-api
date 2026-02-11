@@ -1,12 +1,9 @@
 package models.entities
 
-import models.Backend
-import play.api.libs.json.JsValue
-import sangria.schema.{ObjectType, Field, ListType, LongType, fields}
 import models.gql.TypeWithId
 import models.gql.StudyTypeEnum
 import play.api.Logging
-import play.api.libs.json.*
+import play.api.libs.json._
 import slick.jdbc.GetResult
 
 case class CredibleSets(

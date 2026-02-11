@@ -1,7 +1,6 @@
 package models.entities
 
 import play.api.libs.json._
-import play.api.libs.json.Reads._
 import slick.jdbc.GetResult
 
 case class HPO(

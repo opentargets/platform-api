@@ -1,13 +1,8 @@
 package models.entities
 
-import models.Backend
-import play.api.libs.json.JsValue
-import sangria.schema.{ObjectType, Field, ListType, LongType, fields}
 import play.api.Logging
 import models.gql.StudyTypeEnum
-import play.api.libs.json.*
-import play.api.libs.functional.syntax.toFunctionalBuilderOps
-import play.api.libs.json
+import play.api.libs.json.{Json, OFormat}
 import slick.jdbc.GetResult
 
 case class Studies(

@@ -2,8 +2,6 @@ package models.entities
 
 import play.api.Logging
 import play.api.libs.json._
-import play.api.libs.json.{Reads, JsValue, Json, OFormat, OWrites}
-import play.api.libs.functional.syntax._
 import models.gql.TypeWithId
 import slick.jdbc.GetResult
 

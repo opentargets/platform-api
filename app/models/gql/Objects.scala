@@ -2932,6 +2932,15 @@ object Objects extends Logging {
     )
   )
 
+  implicit val evidencesImp: ObjectType[Backend, Evidences] = deriveObjectType[Backend, Evidences](
+    ObjectTypeDescription(
+      "Target–disease evidence items with total count and pagination cursor"
+    ),
+    DocumentField("count", "Total number of evidence items available for the query"),
+    DocumentField("cursor", "Opaque pagination cursor to request the next page of results"),
+    DocumentField("rows", "List of evidence items supporting the target–disease association")
+  )
+
   implicit val ldSetImp: ObjectType[Backend, LdSet] =
     deriveObjectType[Backend, LdSet](
       ObjectTypeDescription(
