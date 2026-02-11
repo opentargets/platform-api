@@ -76,6 +76,7 @@ object Configuration {
     */
   case class ClickhouseSettings(
       defaultDatabaseName: String,
+      biosample: DbTableSettings,
       colocalisation: DbTableSettings,
       credibleSet: CredibleSetSettings,
       disease: DiseaseSettings,
