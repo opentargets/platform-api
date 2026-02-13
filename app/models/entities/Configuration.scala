@@ -105,6 +105,7 @@ object Configuration {
       literature: DbTableSettings,
       literatureIndex: DbTableSettings,
       clinicalIndication: ClinicalIndicationSettings,
+      clinicalReport: DbTableSettings,
       mechanismOfAction: DbTableSettings,
       mousePhenotypes: DbTableSettings,
       otarProjects: DbTableSettings,

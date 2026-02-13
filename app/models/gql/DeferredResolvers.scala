@@ -299,6 +299,7 @@ object DeferredResolvers extends OTLogging {
     Fetchers.variantFetcher,
     Fetchers.studyFetcher,
     Fetchers.targetEssentialityFetcher,
-    Fetchers.targetPrioritisationFetcher
+    Fetchers.targetPrioritisationFetcher,
+    Fetchers.clinicalReportFetcher
   )
 }
