@@ -86,6 +86,7 @@ object Configuration {
       diseaseHPO: DbTableSettings,
       evidence: EvidenceSettings,
       expression: DbTableSettings,
+      faers: DbTableSettings,
       hpo: DbTableSettings,
       interaction: DbTableSettings,
       intervals: DbTableSettings,

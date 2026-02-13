@@ -17,7 +17,8 @@ case class OneToMany(ids: Seq[String],
                      offset: Int,
                      size: Int,
                      filter: Option[Column] = None,
-                     sortBy: Option[OrderBy] = None
+                     sortBy: Option[OrderBy] = None,
+                     selectAlso: Seq[Column] = Nil
 ) extends Queryable
     with Logging {
 
@@ -47,8 +48,8 @@ case class OneToMany(ids: Seq[String],
           Nil
       ),
       Select(
-        column("count") :: column("rows")
-          :: column(idField).as(Some("id")) :: Nil
+        (column("count") :: column("rows") ::
+          column(idField).as(Some("id")) :: Nil) ++ selectAlso
       ),
       From(column(tableName)),
       Where(
