@@ -204,6 +204,21 @@ object GQLSchema {
           )
           ctx.ctx.getCredibleSets(credSetQueryArgs, ctx.arg(pageArg))
         }
+      ),
+      Field(
+        "clinicalReport",
+        OptionType(clinicalReportImp),
+        description = Some(""),
+        arguments = clinicalReportId :: Nil,
+        resolve = ctx => clinicalReportFetcher.deferOpt(ctx.arg(clinicalReportId))
+      ),
+      Field(
+        "clinicalReports",
+        ListType(clinicalReportImp),
+        description = Some(""),
+        arguments = clinicalReportIds :: Nil,
+        complexity = Some(complexityCalculator(clinicalReportIds)),
+        resolve = ctx => clinicalReportFetcher.deferSeqOpt(ctx.arg(clinicalReportIds))
       )
     )
   )

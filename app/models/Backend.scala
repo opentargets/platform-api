@@ -11,7 +11,15 @@ import esecuele.*
 
 import javax.inject.Inject
 import models.Helpers.*
-import models.db.{ClinicalIndicationQuery, IntervalsQuery, QAOTF, QLITAGG, QW2V, TargetsQuery}
+import models.db.{
+  ClinicalIndicationQuery,
+  ClinicalReportQuery,
+  IntervalsQuery,
+  QAOTF,
+  QLITAGG,
+  QW2V,
+  TargetsQuery
+}
 import models.entities.Publication.*
 import models.entities.Associations.*
 import models.entities.Biosample.*
@@ -761,6 +769,17 @@ class Backend @Inject() (implicit
     logger.info(s"getting clinical indications by the disease $id", keyValue("table", tableName))
     getClinicalIndications(id, tableName, "diseaseId")
 
+  def getClinicalReports(ids: Seq[String]): Future[IndexedSeq[ClinicalReport]] = {
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.clinicalReport.name)
+
+    val clinicalReportQuery = ClinicalReportQuery(ids, tableName, 0, Pagination.sizeMax)
+
+    logger.info(s"getting clinical reports with ids $ids", keyValue("table", tableName))
+
+    dbRetriever
+      .executeQuery[ClinicalReport, Query](clinicalReportQuery.query)
+  }
+
   private def getClinicalIndications(id: String,
                                      tableName: String,
                                      columnName: String
@@ -897,7 +916,7 @@ class Backend @Inject() (implicit
   def getDrugs(ids: Seq[String]): Future[IndexedSeq[Drug]] = {
     val drugIndexName = getIndexOrDefault("drug")
 
-    logger.debug(s"querying drugs", keyValue("drug_ids", ids), keyValue("index", drugIndexName))
+    logger.debug(s"querying drugs with ids: $ids", keyValue("index", drugIndexName))
 
     val queryTerm = Map("id.keyword" -> ids)
     esRetriever
@@ -947,7 +966,7 @@ class Backend @Inject() (implicit
   def getDiseases(ids: Seq[String]): Future[IndexedSeq[Disease]] = {
     val diseaseIndexName = getIndexOrDefault("disease")
 
-    logger.debug(s"querying diseases", keyValue("ids", ids), keyValue("index", diseaseIndexName))
+    logger.debug(s"querying diseases with ids: $ids", keyValue("index", diseaseIndexName))
 
     esRetriever.getByIds(diseaseIndexName, ids, fromJsValue[Disease])
   }

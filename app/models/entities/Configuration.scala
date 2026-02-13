@@ -69,7 +69,8 @@ object Configuration {
       harmonic: HarmonicSettings,
       literature: DbTableSettings,
       literatureIndex: DbTableSettings,
-      clinicalIndication: ClinicalIndicationSettings
+      clinicalIndication: ClinicalIndicationSettings,
+      clinicalReport: DbTableSettings
   )
 
   /** main Open Targets configuration object. It keeps track of meta, elasticsearch and clickhouse
