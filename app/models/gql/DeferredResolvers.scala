@@ -1,5 +1,6 @@
 package models.gql
 import models.entities.{
+  AdverseEvents,
   Colocalisations,
   CredibleSetQueryArgs,
   CredibleSets,
@@ -21,6 +22,7 @@ trait TypeWithId {
 }
 
 enum DeferredType {
+  case AdverseEvents
   case Loci
   case CredibleSets
   case Colocalisations
@@ -44,6 +46,21 @@ abstract class DeferredMultiTerm[+T]() extends Deferred[T] {
   val grouping: Grouping
   def empty(): T
   def resolver(ctx: Backend): (Seq[String], Grouping) => Future[IndexedSeq[T]]
+}
+
+case class AdverseEventsDeferred(chemblId: String, pagination: Option[Pagination])
+    extends DeferredMultiTerm[AdverseEvents] {
+  val id: String = chemblId
+  val options = (pagination)
+  val grouping = Grouping(DeferredType.AdverseEvents, options)
+  def empty(): AdverseEvents = AdverseEvents(0, 0.0, Seq.empty)
+  def resolver(ctx: Backend): (Seq[String], Grouping) => Future[IndexedSeq[AdverseEvents]] = {
+    case (c: Seq[String], grouping: Grouping) =>
+      grouping.options match {
+        case (p) =>
+          ctx.getAdverseEvents(c, p.asInstanceOf[Option[Pagination]])
+      }
+  }
 }
 
 case class ProteinCodingCoordinatesByTargetDeferred(targetId: String,
@@ -244,6 +261,7 @@ class MultiTermResolver extends DeferredResolver[Backend] with OTLogging {
       ec: ExecutionContext
   ): Vector[Future[Any]] = {
     val deferredByType = deferred collect {
+      case adverseEvents: AdverseEventsDeferred            => adverseEvents
       case locus: LocusDeferred                            => locus
       case credSetByStudy: CredibleSetsByStudyDeferred     => credSetByStudy
       case credSetByVariant: CredibleSetsByVariantDeferred => credSetByVariant
@@ -258,6 +276,7 @@ class MultiTermResolver extends DeferredResolver[Backend] with OTLogging {
     }
     val results = groupResults(deferredByType, ctx)
     deferred.map {
+      case adverseEvents: AdverseEventsDeferred        => getResultForId(adverseEvents, results)
       case locus: LocusDeferred                        => getResultForId(locus, results)
       case credSetByStudy: CredibleSetsByStudyDeferred => getResultForId(credSetByStudy, results)
       case credSetByVariant: CredibleSetsByVariantDeferred =>

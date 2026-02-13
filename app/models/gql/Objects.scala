@@ -820,8 +820,7 @@ object Objects extends OTLogging {
       DocumentField("name", "Meddra term on adverse event"),
       DocumentField("meddraCode", "8 digit unique meddra identification number"),
       DocumentField("count", "Number of reports mentioning drug and adverse event"),
-      DocumentField("logLR", "Log-likelihood ratio"),
-      ExcludeFields("criticalValue")
+      DocumentField("logLR", "Log-likelihood ratio")
     )
 
   implicit val adverseEventsImp: ObjectType[Backend, AdverseEvents] =
@@ -1668,13 +1667,13 @@ object Objects extends OTLogging {
       ),
       Field(
         "adverseEvents",
-        OptionType(adverseEventsImp),
+        adverseEventsImp,
         description = Some(
           "Significant adverse events estimated from pharmacovigilance reports deposited in FAERS"
         ),
         arguments = pageArg :: Nil,
         complexity = Some(complexityCalculator(pageArg)),
-        resolve = ctx => ctx.ctx.getAdverseEvents(ctx.value.id, ctx.arg(pageArg))
+        resolve = ctx => AdverseEventsDeferred(ctx.value.id, ctx.arg(pageArg))
       ),
       Field(
         "pharmacogenomics",
