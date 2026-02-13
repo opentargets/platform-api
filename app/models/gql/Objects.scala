@@ -1490,7 +1490,8 @@ object Objects extends OTLogging {
       ObjectTypeDescription("Collection of mechanisms of action for a drug molecule"),
       DocumentField("rows", "List of mechanism of action entries"),
       DocumentField("uniqueActionTypes", "Unique list of action types across all mechanisms"),
-      DocumentField("uniqueTargetTypes", "Unique list of target types across all mechanisms")
+      DocumentField("uniqueTargetTypes", "Unique list of target types across all mechanisms"),
+      ExcludeFields("chemblId")
     )
 
   implicit lazy val drugCrossReferenceImp: ObjectType[Backend, DrugReferences] =
@@ -1637,7 +1638,7 @@ object Objects extends OTLogging {
           "Mechanisms of action to produce intended pharmacological effects. Curated from scientific " +
             "literature and post-marketing package inserts"
         ),
-        resolve = ctx => ctx.ctx.getMechanismsOfAction(ctx.value.id)
+        resolve = r => mechanismsOfActionFetcher.deferOpt(r.value.id)
       ),
       Field(
         "indications",
@@ -1701,12 +1702,13 @@ object Objects extends OTLogging {
         "linkedTargets",
         OptionType(linkedTargetsImp),
         description = Some("List of molecule targets based on molecule mechanism of action"),
-        resolve = ctx => {
-          val moa: Future[MechanismsOfAction] = ctx.ctx.getMechanismsOfAction(ctx.value.id)
-          val targets: Future[Seq[String]] =
-            moa.map(m => m.rows.flatMap(r => r.targets.getOrElse(Seq.empty)))
-          targets.map(t => LinkedIds(t.size, t))
-        }
+        resolve = ctx =>
+          DeferredValue(mechanismsOfActionFetcher.deferOpt(ctx.value.id)).map {
+            case Some(mechanisms) =>
+              val targetIds = mechanisms.rows.flatMap(_.targets.getOrElse(Seq.empty))
+              LinkedIds(targetIds.size, targetIds)
+            case None => LinkedIds(0, Seq.empty)
+          }
       )
     )
   )
