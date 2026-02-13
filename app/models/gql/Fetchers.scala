@@ -2,6 +2,7 @@ package models.gql
 
 import models.entities.{
   Biosample,
+  ClinicalReport,
   CredibleSet,
   Disease,
   Drug,
@@ -186,6 +187,18 @@ object Fetchers extends OTLogging {
     )
   }
 
+  val clinicalReportFetcherCache = FetcherCache.simple
+  val clinicalReportFetcher: Fetcher[Backend, ClinicalReport, ClinicalReport, String] = {
+    implicit val clinicalreportFetcherId: HasId[ClinicalReport, String] =
+      HasId[ClinicalReport, String](js => js.id)
+    Fetcher(
+      config = FetcherConfig
+        .maxBatchSize(entities.Configuration.batchSize)
+        .caching(clinicalReportFetcherCache),
+      fetch = (ctx: Backend, ids: Seq[String]) => ctx.getClinicalReports(ids)
+    )
+  }
+
   val targetPrioritisationFetcherCache = FetcherCache.simple
   implicit val targetPrioritisationHasId: HasId[TargetPrioritisation, String] =
     HasId[TargetPrioritisation, String](_.targetId)
@@ -256,7 +269,8 @@ object Fetchers extends OTLogging {
       pharmacogenomicsByTargetFetcherCache,
       soTermsFetcherCache,
       targetEssentialityFetcherCache,
-      targetPrioritisationFetcherCache
+      targetPrioritisationFetcherCache,
+      clinicalReportFetcherCache
     )
     fetchers.foreach(_.clear())
   }
