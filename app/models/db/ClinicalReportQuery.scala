@@ -1,0 +1,39 @@
+package models.db
+
+import esecuele.Column.{column, literal}
+import esecuele.{
+  Column,
+  Format,
+  From,
+  Functions,
+  Limit,
+  OrderBy,
+  PreWhere,
+  Query,
+  Select,
+  Settings,
+  Where
+}
+import utils.OTLogging
+
+case class ClinicalReportQuery(ids: Seq[String], tableName: String, offset: Int, size: Int)
+    extends Queryable
+    with OTLogging {
+
+  private val conditional = Where(
+    Functions.in(column("id"), Functions.set(ids.map(literal).toSeq))
+  )
+
+  override val query: Query =
+    Query(
+      Select(
+        Column.star :: Nil
+      ),
+      From(column(tableName)),
+      conditional,
+      OrderBy(column("id") :: Nil),
+      Limit(offset, size),
+      Format("JSONEachRow"),
+      Settings(Map("output_format_json_escape_forward_slashes" -> "0"))
+    )
+}

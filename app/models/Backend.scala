@@ -521,6 +521,17 @@ class Backend @Inject() (implicit
     logger.info(s"getting clinical indications by the disease $id", keyValue("table", tableName))
     getClinicalIndications(id, tableName, "diseaseId")
 
+  def getClinicalReports(ids: Seq[String]): Future[IndexedSeq[ClinicalReport]] = {
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.clinicalReport.name)
+
+    val clinicalReportQuery = ClinicalReportQuery(ids, tableName, 0, Pagination.sizeMax)
+
+    logger.info(s"getting clinical reports with ids $ids", keyValue("table", tableName))
+
+    dbRetriever
+      .executeQuery[ClinicalReport, Query](clinicalReportQuery.query)
+  }
+
   private def getClinicalIndications(id: String,
                                      tableName: String,
                                      columnName: String
