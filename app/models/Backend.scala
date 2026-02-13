@@ -13,6 +13,7 @@ import javax.inject.Inject
 import models.Helpers.*
 import models.db.*
 import models.entities.Publication.*
+import models.entities.AdverseEvent.*
 import models.entities.Associations.*
 import models.entities.Biosample.*
 import models.entities.CredibleSets.*
@@ -92,40 +93,23 @@ class Backend @Inject() (implicit
   import com.sksamuel.elastic4s.ElasticDsl._
 
   def getAdverseEvents(
-      id: String,
+      ids: Seq[String],
       pagination: Option[Pagination]
-  ): Future[Option[AdverseEvents]] = {
-
-    val pag = pagination.getOrElse(Pagination.mkDefault)
-
-    val indexName = getIndexOrDefault("faers")
-
-    logger.debug(s"querying adverse events", keyValue("id", id), keyValue("index", indexName))
-
-    val kv = Map("chembl_id.keyword" -> id)
-
-    val aggs = Seq(
-      valueCountAgg("eventCount", "chembl_id.keyword")
+  ): Future[IndexedSeq[AdverseEvents]] = {
+    val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.faers.name)
+    logger.debug(s"querying adverse events", keyValue("ids", ids), keyValue("table", tableName))
+    val query = OneToMany(
+      ids,
+      "chembl_id",
+      "adverse_events",
+      tableName,
+      pag._1,
+      pag._2,
+      selectAlso = Seq(Column("criticalValue"))
     )
-
-    esRetriever
-      .getByIndexedQueryMust(
-        indexName,
-        kv,
-        pag,
-        fromJsValue[AdverseEvent],
-        aggs,
-        ElasticRetriever.sortByDesc("llr")
-      )
-      .map {
-        case Results(Seq(), _, _, _) =>
-          logger.debug(s"no adverse event found", keyValue("chembl_id", kv.toString()))
-          None
-        case Results(seq, agg, _, _) =>
-          logger.trace(Json.prettyPrint(agg))
-          val counts = (agg \ "eventCount" \ "value").as[Long]
-          Some(AdverseEvents(counts, seq.head.criticalValue, seq))
-      }
+    dbRetriever
+      .executeQuery[AdverseEvents, Query](query.query)
   }
 
   def getDiseaseHPOs(ids: Seq[String],
