@@ -24,6 +24,7 @@ import models.entities.Drug.*
 import models.entities.Interactions.*
 import models.entities.Intervals.*
 import models.entities.Loci.*
+import models.entities.MechanismsOfAction.*
 import models.entities.MousePhenotypes.*
 import models.entities.Pharmacogenomics.*
 import models.entities.SearchFacetsResults.*
@@ -718,19 +719,14 @@ class Backend @Inject() (implicit
       .map(_.mappedHits)
   }
 
-  def getMechanismsOfAction(id: String): Future[MechanismsOfAction] = {
-
-    val index = getIndexOrDefault("drugMoA")
-    logger.debug(s"querying mechanisms of action", keyValue("id", id), keyValue("index", index))
-    val queryTerms = Map("chemblIds.keyword" -> id)
-    val mechanismsOfActionRaw: Future[Results[MechanismOfActionRaw]] =
-      esRetriever.getByIndexedQueryShould(
-        index,
-        queryTerms,
-        Pagination.mkDefault,
-        fromJsValue[MechanismOfActionRaw]
-      )
-    mechanismsOfActionRaw.map(i => Drug.mechanismOfActionRaw2MechanismOfAction(i.mappedHits))
+  def getMechanismsOfAction(ids: Seq[String]): Future[IndexedSeq[MechanismsOfAction]] = {
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.mechanismOfAction.name)
+    logger.debug(s"querying mechanisms of action",
+                 keyValue("ids", ids),
+                 keyValue("table", tableName)
+    )
+    val query = IdsQuery(ids, "chemblId", tableName, 0, Pagination.sizeMax)
+    dbRetriever.executeQuery[MechanismsOfAction, Query](query.query)
   }
 
   def getIndications(ids: Seq[String]): Future[IndexedSeq[Indications]] = {

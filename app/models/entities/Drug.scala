@@ -19,17 +19,7 @@ case class DrugWarning(
     efoIdForWarningClass: Option[String]
 )
 
-case class Reference(ids: Option[Seq[String]], source: String, urls: Option[Seq[String]])
-
 case class IndicationReference(ids: Option[Seq[String]], source: String)
-
-case class MechanismOfActionRow(
-    mechanismOfAction: String,
-    actionType: Option[String],
-    targetName: Option[String],
-    targets: Option[Seq[String]],
-    references: Option[Seq[Reference]]
-)
 
 case class IndicationRow(
     maxPhaseForIndication: Double,
@@ -44,22 +34,6 @@ case class Indications(
     indications: Seq[IndicationRow],
     indicationCount: Long,
     approvedIndications: Option[Seq[String]]
-)
-
-case class MechanismsOfAction(
-    rows: Seq[MechanismOfActionRow],
-    uniqueActionTypes: Seq[String],
-    uniqueTargetTypes: Seq[String]
-)
-
-case class MechanismOfActionRaw(
-    chemblIds: Seq[String],
-    targets: Option[Seq[String]],
-    mechanismOfAction: String,
-    actionType: Option[String],
-    targetType: Option[String],
-    targetName: Option[String],
-    references: Option[Seq[Reference]]
 )
 
 case class DrugReferences(source: String, ids: Seq[String])
@@ -85,7 +59,6 @@ case class Drug(
 
 object Drug {
   implicit val linkedIdsImpW: OFormat[LinkedIds] = Json.format[models.entities.LinkedIds]
-  //  implicit val drugWarningRefenceImpW = Json.format[models.entities.DrugWarningReference]
   implicit val drugWarningsReferenceImpR: Reads[models.entities.DrugWarningReference] = (
     (JsPath \ "ref_id").read[String] and
       (JsPath \ "ref_type").read[String] and
@@ -107,37 +80,12 @@ object Drug {
       (JsPath \ "efo_id").readNullable[String] and
       (JsPath \ "efo_id_for_warning_class").readNullable[String]
   )(DrugWarning.apply)
-  implicit val referenceImpW: OFormat[Reference] = Json.format[models.entities.Reference]
-  implicit val mechanismOfActionRowImpW: OFormat[MechanismOfActionRow] =
-    Json.format[models.entities.MechanismOfActionRow]
-  implicit val mechanismOfActionImpW: OFormat[MechanismsOfAction] =
-    Json.format[models.entities.MechanismsOfAction]
   implicit val indicationReferenceImpW: OFormat[IndicationReference] =
     Json.format[models.entities.IndicationReference]
   implicit val indicationRowImpW: OFormat[IndicationRow] =
     Json.format[models.entities.IndicationRow]
   implicit val indicationsImpW: OFormat[Indications] = Json.format[models.entities.Indications]
-  implicit val mechanismOfActionRaw: OFormat[MechanismOfActionRaw] =
-    Json.format[models.entities.MechanismOfActionRaw]
-
-  def mechanismOfActionRaw2MechanismOfAction(raw: Seq[MechanismOfActionRaw]): MechanismsOfAction = {
-    val rows =
-      raw.map(r =>
-        MechanismOfActionRow(
-          r.mechanismOfAction,
-          r.actionType,
-          r.targetName,
-          r.targets,
-          r.references
-        )
-      )
-    val utt = raw.flatMap(_.targetType).distinct
-    val uat = raw.flatMap(_.actionType).distinct
-    MechanismsOfAction(rows, uat, utt)
-  }
-
   implicit val DrugXRefImpW: OFormat[DrugReferences] = Json.format[DrugReferences]
-
   implicit val drugImplicitR: Reads[Drug] = Json.reads[Drug]
   implicit val drugImplicitW: OWrites[Drug] = Json.writes[Drug]
 }
