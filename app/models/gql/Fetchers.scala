@@ -9,6 +9,7 @@ import models.entities.{
   GeneOntologyTerm,
   HPO,
   Indications,
+  MechanismsOfAction,
   MousePhenotypes,
   OtarProjects,
   SequenceOntologyTerm,
@@ -72,6 +73,17 @@ object Fetchers extends OTLogging {
       FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(expressionFetcherCache),
     fetch = (ctx: Backend, ids: Seq[String]) => ctx.getExpressions(ids)
   )
+
+  val mechanismsOfActionFetcherCache = FetcherCache.simple
+  implicit val mechanismsOfActionHasId: HasId[MechanismsOfAction, String] =
+    HasId[MechanismsOfAction, String](_.chemblId)
+  val mechanismsOfActionFetcher: Fetcher[Backend, MechanismsOfAction, MechanismsOfAction, String] =
+    Fetcher(
+      config = FetcherConfig
+        .maxBatchSize(entities.Configuration.batchSize)
+        .caching(mechanismsOfActionFetcherCache),
+      fetch = (ctx: Backend, ids: Seq[String]) => ctx.getMechanismsOfAction(ids)
+    )
 
   val mousePhenotypesFetcherCache = FetcherCache.simple
   implicit val mousePhenotypesHasId: HasId[MousePhenotypes, String] =
@@ -179,6 +191,7 @@ object Fetchers extends OTLogging {
       drugsFetcherCache,
       diseasesFetcherCache,
       indicationFetcherCache,
+      mechanismsOfActionFetcherCache,
       mousePhenotypesFetcherCache,
       expressionFetcherCache,
       otarProjectsFetcherCache,
