@@ -1715,6 +1715,21 @@ object Objects extends OTLogging {
             drugsFetcher.deferOpt(id)
           }
         )
+      ),
+      ReplaceField(
+        "clinicalReportIds",
+        Field(
+          "clinicalReports",
+          ListType(clinicalReportImp),
+          description = Some(
+            ""
+          ),
+          resolve = ctx => {
+            val ids = ctx.value.clinicalReportIds
+            logger.debug(s"finding clinical reports for ids ${ids.mkString(",")}")
+            clinicalReportFetcher.deferSeq(ids)
+          }
+        )
       )
     )
 
@@ -1735,6 +1750,21 @@ object Objects extends OTLogging {
                 diseasesFetcher.defer(tId)
               case None => None
             }
+        )
+      ),
+      ReplaceField(
+        "clinicalReportIds",
+        Field(
+          "clinicalReports",
+          ListType(clinicalReportImp),
+          description = Some(
+            ""
+          ),
+          resolve = ctx => {
+            val ids = ctx.value.clinicalReportIds
+            logger.debug(s"finding clinical reports for ids ${ids.mkString(",")}")
+            clinicalReportFetcher.deferSeq(ids)
+          }
         )
       )
     )
