@@ -67,11 +67,6 @@ object Objects extends OTLogging {
     )
   )
 
-  // Define a case class to represent each item in the array
-  case class KeyValue(key: String, value: BigDecimal)
-
-  implicit val KeyValueFormat: OFormat[KeyValue] = Json.format[KeyValue]
-
   implicit val geneEssentialityScreenImp: ObjectType[Backend, GeneEssentialityScreen] =
     deriveObjectType[Backend, GeneEssentialityScreen](
       ObjectTypeDescription(
@@ -107,31 +102,23 @@ object Objects extends OTLogging {
       DocumentField("tissueName", "Name of the tissue from where the cells were sampled for assay")
     )
 
-  val KeyValueObjectType: ObjectType[Unit, KeyValue] = ObjectType(
-    "KeyValue",
-    "A key-value pair",
-    fields[Unit, KeyValue](
-      Field("key", StringType, description = Some("Key or attribute name"), resolve = _.value.key),
-      Field("value",
-            StringType,
-            description = Some("String representation of the value"),
-            resolve = _.value.value.toString()
-      )
+  implicit val targetPrioritisationImp: ObjectType[Backend, TargetPrioritisation] =
+    deriveObjectType[Backend, TargetPrioritisation](
+      ObjectTypeDescription(
+        "Target-specific properties used to prioritise targets for further investigation. Prioritisation factors cover several areas around clinical precedence, tractability, do-ability, and safety of the target. Values range from -1 (unfavourable/deprioritised) to 1 (favourable/prioritised)."
+      ),
+      DocumentField("items", "List of key-value pairs representing prioritisation factors"),
+      ExcludeFields("targetId")
     )
-  )
 
-  // Define the ObjectType for the array
-  val KeyValueArrayObjectType: ObjectType[Unit, JsArray] = ObjectType(
-    "KeyValueArray",
-    "An array of key-value pairs",
-    fields[Unit, JsArray](
-      Field("items",
-            ListType(KeyValueObjectType),
-            description = Some("List of key-value entries"),
-            resolve = _.value.as[List[KeyValue]]
-      )
+  implicit val KeyValueImp: ObjectType[Backend, KeyValuePair] =
+    deriveObjectType[Backend, KeyValuePair](
+      ObjectTypeDescription(
+        "A key-value pair"
+      ),
+      DocumentField("key", "Key or attribute name"),
+      DocumentField("value", "String representation of the value")
     )
-  )
 
   implicit lazy val targetImp: ObjectType[Backend, Target] = deriveObjectType(
     ObjectTypeDescription(
@@ -368,12 +355,12 @@ object Objects extends OTLogging {
       ),
       Field(
         "prioritisation",
-        OptionType(KeyValueArrayObjectType),
+        OptionType(targetPrioritisationImp),
         description = Some(
           "Target-specific properties used to prioritise targets for further investigation. Prioritisation factors cover several areas around clinical precedence, tractability, do-ability, and safety of the target. Values range from -1 (unfavourable/deprioritised) to 1 (favourable/prioritised)."
         ),
         arguments = Nil,
-        resolve = ctx => ctx.ctx.getTargetsPrioritisationJs(ctx.value.id)
+        resolve = r => targetPrioritisationFetcher.deferOpt(r.value.id)
       ),
       Field(
         "isEssential",

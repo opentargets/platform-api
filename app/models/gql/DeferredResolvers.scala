@@ -314,6 +314,7 @@ object DeferredResolvers extends OTLogging {
     Fetchers.goFetcher,
     Fetchers.variantFetcher,
     Fetchers.studyFetcher,
-    Fetchers.targetEssentialityFetcher
+    Fetchers.targetEssentialityFetcher,
+    Fetchers.targetPrioritisationFetcher
   )
 }
