@@ -4,8 +4,6 @@ import play.api.libs.json.{Json, OFormat}
 import slick.jdbc.GetResult
 import utils.OTLogging
 
-case class ClinRepDiseaseListItem(diseaseFromSource: String, diseaseId: String)
-
 case class ClinRepDrugListItem(drugFromSource: String, drugId: String)
 
 case class ClinicalReport(
@@ -23,12 +21,12 @@ case class ClinicalReport(
     trialWhyStopped: Option[String],
     trialPrimaryPurpose: Option[String],
     trialPhase: Option[String],
-    diseases: Seq[ClinRepDiseaseListItem],
+    diseases: Seq[ClinicalDiseaseListItem],
     drugs: Seq[ClinRepDrugListItem],
     hasExpertReview: Boolean,
     countries: Seq[String],
     year: Option[Int],
-    sideEffects: Seq[ClinRepDiseaseListItem],
+    sideEffects: Seq[ClinicalDiseaseListItem],
     trialOfficialTitle: Option[String],
     url: Option[String]
 )
@@ -37,8 +35,8 @@ object ClinicalReport extends OTLogging {
   implicit val getClinicalReportFromDB: GetResult[ClinicalReport] =
     GetResult(r => Json.parse(r.<<[String]).as[ClinicalReport])
 
-  implicit val diseaseListItemF: OFormat[ClinRepDiseaseListItem] =
-    Json.format[ClinRepDiseaseListItem]
+  implicit val diseaseListItemF: OFormat[ClinicalDiseaseListItem] =
+    Json.format[ClinicalDiseaseListItem]
 
   implicit val drugListItemF: OFormat[ClinRepDrugListItem] = Json.format[ClinRepDrugListItem]
 

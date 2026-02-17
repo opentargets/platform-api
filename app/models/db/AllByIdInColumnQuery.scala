@@ -4,11 +4,11 @@ import esecuele.Column.{column, literal}
 import esecuele.{Column, Format, From, Functions, Limit, OrderBy, PreWhere, Query, Select, Settings}
 import utils.OTLogging
 
-case class ClinicalIndicationQuery(id: String,
-                                   tableName: String,
-                                   offset: Int,
-                                   size: Int,
-                                   columnName: String
+case class AllByIdInColumnQuery(id: String,
+                                tableName: String,
+                                offset: Int,
+                                size: Int,
+                                columnName: String
 ) extends Queryable
     with OTLogging {
 
