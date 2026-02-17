@@ -81,6 +81,8 @@ object Configuration {
 
   case class ClinicalIndicationSettings(drugTable: DbTableSettings, diseaseTable: DbTableSettings)
 
+  case class ClinicalTargetSettings(drugTable: DbTableSettings, targetTable: DbTableSettings)
+
   /** ClickHouse settings stores the configuration for the entities it handles. Target Disease and
     * Harmonic settings used to compute associations on the fly and LUTs for interaction expansions
     */
@@ -105,6 +107,7 @@ object Configuration {
       literature: DbTableSettings,
       clinicalIndication: ClinicalIndicationSettings,
       clinicalReport: DbTableSettings,
+      clinicalTarget: DbTableSettings,
       mechanismOfAction: DbTableSettings,
       mousePhenotypes: DbTableSettings,
       otarProjects: DbTableSettings,
@@ -208,6 +211,8 @@ object Configuration {
   implicit val diseaseSettingsJSONImp: OFormat[DiseaseSettings] = Json.format[DiseaseSettings]
   implicit val clinicalIndicationSettingsJSONImp: OFormat[ClinicalIndicationSettings] =
     Json.format[ClinicalIndicationSettings]
+  implicit val clinicalTargetSettingsJSONImp: OFormat[ClinicalTargetSettings] =
+    Json.format[ClinicalTargetSettings]
   implicit val clickhouseSettingsJSONImp: OFormat[ClickhouseSettings] =
     Json.format[ClickhouseSettings]
 

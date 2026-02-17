@@ -10,8 +10,9 @@ import models.entities.ClinicalIndications.{
   clinicalIndicationsFromDiseaseImp,
   clinicalIndicationsFromDrugImp
 }
+import models.entities.ClinicalTargets.clinicalTargetsImp
 import play.api.libs.json.*
-import sangria.macros.derive.{DocumentField, *}
+import sangria.macros.derive.*
 import sangria.schema.*
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -425,6 +426,13 @@ object Objects extends OTLogging {
         arguments = pageArg :: Nil,
         complexity = Some(complexityCalculator(pageArg)),
         resolve = ctx => ProteinCodingCoordinatesByTargetDeferred(ctx.value.id, ctx.arg(pageArg))
+      ),
+      Field(
+        "drugAndClinicalCandidates",
+        clinicalTargetsImp,
+        description = Some(""),
+        arguments = Nil,
+        resolve = ctx => ctx.ctx.getClinicalTargetsByTarget(ctx.value.id)
       )
     )
   )
@@ -1659,8 +1667,8 @@ object Objects extends OTLogging {
     )
   )
 
-  implicit val clinRepDiseaseListItemImp: ObjectType[Backend, ClinRepDiseaseListItem] =
-    deriveObjectType[Backend, ClinRepDiseaseListItem](
+  implicit val clinRepDiseaseListItemImp: ObjectType[Backend, ClinicalDiseaseListItem] =
+    deriveObjectType[Backend, ClinicalDiseaseListItem](
       ReplaceField(
         "diseaseId",
         Field(
@@ -1769,6 +1777,42 @@ object Objects extends OTLogging {
       )
     )
 
+  implicit val clinicalTargetImp: ObjectType[Backend, ClinicalTarget] =
+    deriveObjectType[Backend, ClinicalTarget](
+      ObjectTypeName("ClinicalTargetFromTarget"),
+      ExcludeFields("targetId"),
+      ReplaceField(
+        "drugId",
+        Field(
+          "drug",
+          OptionType(drugImp),
+          description = Some(
+            ""
+          ),
+          resolve = ctx => {
+            val id = ctx.value.drugId
+            logger.debug(s"finding drug $id")
+            drugsFetcher.deferOpt(id)
+          }
+        )
+      ),
+      ReplaceField(
+        "clinicalReportIds",
+        Field(
+          "clinicalReports",
+          ListType(clinicalReportImp),
+          description = Some(
+            ""
+          ),
+          resolve = ctx => {
+            val ids = ctx.value.clinicalReportIds
+            logger.debug(s"finding clinical reports for ids ${ids.mkString(",")}")
+            clinicalReportFetcher.deferSeq(ids)
+          }
+        )
+      )
+    )
+
   implicit val datasourceSettingsImp: ObjectType[Backend, DatasourceSettings] =
     deriveObjectType[Backend, DatasourceSettings](
       ObjectTypeDescription(
@@ -1822,6 +1866,12 @@ object Objects extends OTLogging {
       ObjectTypeDescription("Clinical indication database settings configuration"),
       DocumentField("drugTable", "Database table settings for drug indications"),
       DocumentField("diseaseTable", "Database table settings for disease indications")
+    )
+  implicit val clinicalTargetSettingsImp: ObjectType[Backend, ClinicalTargetSettings] =
+    deriveObjectType[Backend, ClinicalTargetSettings](
+      ObjectTypeDescription("Clinical indication database settings configuration"),
+      DocumentField("drugTable", "Database table settings for drug indications"),
+      DocumentField("targetTable", "Database table settings for disease indications")
     )
   implicit val harmonicSettingsImp: ObjectType[Backend, HarmonicSettings] =
     deriveObjectType[Backend, HarmonicSettings](
