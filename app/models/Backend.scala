@@ -686,13 +686,10 @@ class Backend @Inject() (implicit
   }
 
   def getIndications(ids: Seq[String]): Future[IndexedSeq[Indications]] = {
-    val index = getIndexOrDefault("drugIndications")
-    logger.debug(s"querying indications", keyValue("ids", ids), keyValue("index", index))
-    val queryTerm = Map("id.keyword" -> ids)
-
-    esRetriever
-      .getByIndexedQueryShould(index, queryTerm, Pagination.mkDefault, fromJsValue[Indications])
-      .map(_.mappedHits)
+    val table = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.indication.name)
+    logger.debug(s"querying indications", keyValue("ids", ids), keyValue("table", table))
+    val query = IdsQuery(ids, "id", table, 0, Pagination.sizeMax)
+    dbRetriever.executeQuery[Indications, Query](query.query)
   }
 
   def getDrugWarnings(id: String): Future[IndexedSeq[DrugWarning]] = {

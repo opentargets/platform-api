@@ -19,22 +19,7 @@ case class DrugWarning(
     efoIdForWarningClass: Option[String]
 )
 
-case class IndicationReference(ids: Option[Seq[String]], source: String)
-
-case class IndicationRow(
-    maxPhaseForIndication: Double,
-    disease: String,
-    references: Option[Seq[IndicationReference]]
-)
-
 case class LinkedIds(count: Int, rows: Seq[String])
-
-case class Indications(
-    id: String,
-    indications: Seq[IndicationRow],
-    indicationCount: Long,
-    approvedIndications: Option[Seq[String]]
-)
 
 case class DrugReferences(source: String, ids: Seq[String])
 
@@ -80,11 +65,6 @@ object Drug {
       (JsPath \ "efo_id").readNullable[String] and
       (JsPath \ "efo_id_for_warning_class").readNullable[String]
   )(DrugWarning.apply)
-  implicit val indicationReferenceImpW: OFormat[IndicationReference] =
-    Json.format[models.entities.IndicationReference]
-  implicit val indicationRowImpW: OFormat[IndicationRow] =
-    Json.format[models.entities.IndicationRow]
-  implicit val indicationsImpW: OFormat[Indications] = Json.format[models.entities.Indications]
   implicit val DrugXRefImpW: OFormat[DrugReferences] = Json.format[DrugReferences]
   implicit val drugImplicitR: Reads[Drug] = Json.reads[Drug]
   implicit val drugImplicitW: OWrites[Drug] = Json.writes[Drug]

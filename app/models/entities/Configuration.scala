@@ -89,6 +89,7 @@ object Configuration {
       expression: DbTableSettings,
       faers: DbTableSettings,
       hpo: DbTableSettings,
+      indication: DbTableSettings,
       interaction: DbTableSettings,
       intervals: DbTableSettings,
       go: DbTableSettings,
