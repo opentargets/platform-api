@@ -61,7 +61,8 @@ object Configuration {
   case class TargetSettings(label: String,
                             name: String,
                             associations: DbTableSettings,
-                            essentiality: DbTableSettings
+                            essentiality: DbTableSettings,
+                            prioritisation: DbTableSettings
   )
 
   case class DiseaseSettings(label: String, name: String, associations: DbTableSettings)

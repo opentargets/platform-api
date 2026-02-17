@@ -16,6 +16,7 @@ import models.entities.{
   Study,
   Target,
   TargetEssentiality,
+  TargetPrioritisation,
   VariantIndex
 }
 import models.{Backend, entities}
@@ -178,6 +179,18 @@ object Fetchers extends OTLogging {
     )
   }
 
+  val targetPrioritisationFetcherCache = FetcherCache.simple
+  implicit val targetPrioritisationHasId: HasId[TargetPrioritisation, String] =
+    HasId[TargetPrioritisation, String](_.targetId)
+  val targetPrioritisationFetcher
+      : Fetcher[Backend, TargetPrioritisation, TargetPrioritisation, String] =
+    Fetcher(
+      config = FetcherConfig
+        .maxBatchSize(entities.Configuration.batchSize)
+        .caching(targetPrioritisationFetcherCache),
+      fetch = (ctx: Backend, ids: Seq[String]) => ctx.getTargetPrioritisation(ids)
+    )
+
   def resetCache(): Unit = {
     logger.info("clearing all GraphQL caches")
     val fetchers: List[SimpleFetcherCache] = List(
@@ -196,7 +209,8 @@ object Fetchers extends OTLogging {
       expressionFetcherCache,
       otarProjectsFetcherCache,
       soTermsFetcherCache,
-      targetEssentialityFetcherCache
+      targetEssentialityFetcherCache,
+      targetPrioritisationFetcherCache
     )
     fetchers.foreach(_.clear())
   }

@@ -404,60 +404,16 @@ class Backend @Inject() (implicit
     dbRetriever.executeQuery[TargetEssentiality, Query](query.query)
   }
 
-  def getTargetsPrioritisation(id: String): Future[IndexedSeq[JsValue]] = {
-    val targetsPrioritisationIndexName = getIndexOrDefault("target_prioritisation")
-
-    logger.debug(s"querying credible sets",
-                 keyValue("id", id),
-                 keyValue("index", targetsPrioritisationIndexName)
+  def getTargetPrioritisation(ids: Seq[String]): Future[IndexedSeq[TargetPrioritisation]] = {
+    val tableName = getTableWithPrefixOrDefault(
+      defaultOTSettings.clickhouse.target.prioritisation.name
     )
-
-    esRetriever.getByIds(targetsPrioritisationIndexName, Seq(id), fromJsValue[JsValue])
-  }
-
-  def getKeyValuePairsStructure(prioritisation: JsValue) = // Convert to a JsObject
-    {
-      val myObj: JsObject = prioritisation.as[JsObject]
-
-      // Remove the targetId property
-      val updatedObj: JsObject = myObj - "targetId"
-
-      // transform the object in a key value pair array
-      val properties = (updatedObj.keys).toSeq
-      val keyValuePairs = properties.map { propName =>
-        val value = (updatedObj \ propName).get
-        Json.obj("key" -> propName, "value" -> value)
-      }
-      keyValuePairs
-    }
-
-  def getTargetsPrioritisationJs(id: String): Future[JsArray] = {
-    val result = getTargetsPrioritisation(id)
-    val essentialityData = getTargetEssentiality(Seq(id))
-    val prioritisationFt = result.map { prioritisationList =>
-      val prioritisation = prioritisationList.head
-
-      val arrStructure = getKeyValuePairsStructure(prioritisation)
-
-      val arrStructureWithEssential: Future[Seq[JsObject]] = essentialityData map { case ess =>
-        val emptyValue = Json.obj("key" -> "geneEssentiality", "value" -> "")
-        if (!ess.isEmpty) {
-          val isEssentialOpt = ess.head.geneEssentiality.head.isEssential
-          val isEssentialObj = isEssentialOpt match {
-            case Some(isEssential) =>
-              val essValue = if (isEssential) -1 else 0
-              Json.obj("key" -> "geneEssentiality", "value" -> essValue)
-            case None => emptyValue
-          }
-          arrStructure ++ Seq(isEssentialObj)
-        } else {
-          arrStructure
-        }
-      }
-
-      arrStructureWithEssential.map(JsArray(_))
-    }
-    prioritisationFt.flatMap(identity)
+    logger.debug(s"querying targets prioritisation",
+                 keyValue("ids", ids),
+                 keyValue("table", tableName)
+    )
+    val query = IdsQuery(ids, "targetId", tableName, 0, Pagination.sizeMax)
+    dbRetriever.executeQuery[TargetPrioritisation, Query](query.query)
   }
 
   def getKnownDrugs(
