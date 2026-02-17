@@ -509,6 +509,24 @@ class Backend @Inject() (implicit
     dbRetriever.executeQuery[MousePhenotypes, Query](query.query)
   }
 
+  def getClinicalTargetsByTarget(id: String): Future[ClinicalTargets] =
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.clinicalTarget.name)
+
+    val clinicalTargetQuery = AllByIdInColumnQuery(id, tableName, 0, Pagination.sizeMax, "targetId")
+
+    logger.info(s"getting clinical target with id $id", keyValue("table", tableName))
+
+    dbRetriever
+      .executeQuery[ClinicalTarget, Query](clinicalTargetQuery.query)
+      .map {
+        case Seq() =>
+          logger.info(s"no clinical target found for $id", keyValue("table", tableName))
+          ClinicalTargets(0, IndexedSeq())
+        case ct =>
+          logger.info(s"clinical target found for $id ${ct.length}", keyValue("table", tableName))
+          ClinicalTargets(ct.length, ct)
+      }
+
   def getClinicalIndicationsByDrug(id: String): Future[ClinicalIndications] =
     val tableName = getTableWithPrefixOrDefault(
       defaultOTSettings.clickhouse.clinicalIndication.drugTable.name
@@ -542,7 +560,7 @@ class Backend @Inject() (implicit
   ): Future[ClinicalIndications] = {
 
     val clinicalIndicationsQuery =
-      ClinicalIndicationQuery(id, tableName, 0, Pagination.sizeMax, columnName)
+      AllByIdInColumnQuery(id, tableName, 0, Pagination.sizeMax, columnName)
 
     dbRetriever
       .executeQuery[ClinicalIndication, Query](clinicalIndicationsQuery.query)
