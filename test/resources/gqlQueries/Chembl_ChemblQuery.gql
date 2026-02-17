@@ -4,7 +4,7 @@ query ChemblQuery($ensemblId: String!, $efoId: String!, $size: Int!, $cursor: St
     chembl: evidences(
       ensemblIds: [$ensemblId]
       enableIndirect: true
-      datasourceIds: ["chembl"]
+      datasourceIds: ["clinical_precedence"]
       size: $size
       cursor: $cursor
     ) {
@@ -36,16 +36,11 @@ query ChemblQuery($ensemblId: String!, $efoId: String!, $size: Int!, $cursor: St
         variantEffect
         directionOnTrait
         targetFromSourceId
-        clinicalPhase
-        clinicalStatus
+        clinicalStage
+        clinicalReportId
         studyStartDate
-        studyStopReason
-        studyStopReasonCategories
-        cohortPhenotypes
-        urls {
-          niceName
-          url
-        }
+        trialWhyStopped
+        trialStopReasonCategories
       }
     }
   }

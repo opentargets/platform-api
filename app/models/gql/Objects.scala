@@ -2724,10 +2724,10 @@ object Objects extends OTLogging {
     DocumentField("biologicalModelAllelicComposition", "Allelic composition of the model organism"),
     DocumentField("confidence", "Confidence qualifier on the reported evidence"),
     DocumentField(
-      "clinicalPhase",
-      "Phase of the clinical trial. [Values: -1: `Unknown`, 0: `Phase 0`, 0.5: `Phase I (Early)`, 1: `Phase I`, 2: `Phase II`, 3: `Phase III`, 4: `Phase IV`]"
+      "clinicalStage",
+      "Clinical stage of the drug-disease pair"
     ),
-    DocumentField("clinicalStatus", "Current stage of a clinical study"),
+    DocumentField("clinicalReportId", "Identifier of the clinical report"),
     DocumentField("clinicalSignificances", "Standard terms to define clinical significance"),
     DocumentField("resourceScore",
                   "Score provided by datasource indicating strength of target-disease association"
@@ -2767,9 +2767,9 @@ object Objects extends OTLogging {
     DocumentField("betaConfidenceIntervalLower", "Lower value of the confidence interval"),
     DocumentField("betaConfidenceIntervalUpper", "Upper value of the confidence interval"),
     DocumentField("studyStartDate", "Start date of study in a YYYY-MM-DD format"),
-    DocumentField("studyStopReason", "Reason why a study has been stopped"),
-    DocumentField("studyStopReasonCategories",
-                  "Predicted reason(s) why the study has been stopped based on studyStopReason"
+    DocumentField("trialWhyStopped", "Reason why the trial was stopped, as reported"),
+    DocumentField("trialStopReasonCategories",
+                  "Categorised reason(s) why the trial was stopped"
     ),
     DocumentField("cellLineBackground", "Background of the derived cell lines"),
     DocumentField("contrast", "Experiment contrast"),
