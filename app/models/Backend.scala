@@ -566,34 +566,44 @@ class Backend @Inject() (implicit
     dbRetriever.executeQuery[MousePhenotypes, Query](query.query)
   }
 
-  def getPharmacogenomicsByDrug(id: String): Future[IndexedSeq[Pharmacogenomics]] = {
-    val queryTerm: Map[String, String] = Map("drugs.drugId.keyword" -> id)
-    getPharmacogenomics(id, queryTerm)
+  def getPharmacogenomicsByDrug(ids: Seq[String]): Future[IndexedSeq[PharmacogenomicsByDrug]] = {
+    val tableName = getTableWithPrefixOrDefault(
+      defaultOTSettings.clickhouse.pharmacogenomics.drug.name
+    )
+    logger.info(s"querying pharmacogenomics by drug",
+                keyValue("ids", ids),
+                keyValue("table", tableName)
+    )
+    val query = IdsQuery(ids, "drugId", tableName, 0, Pagination.sizeMax)
+    dbRetriever.executeQuery[PharmacogenomicsByDrug, Query](query.query)
   }
 
-  def getPharmacogenomicsByTarget(id: String): Future[IndexedSeq[Pharmacogenomics]] = {
-    val queryTerm: Map[String, String] = Map("targetFromSourceId.keyword" -> id)
-    getPharmacogenomics(id, queryTerm)
+  def getPharmacogenomicsByTarget(
+      ids: Seq[String]
+  ): Future[IndexedSeq[PharmacogenomicsByTarget]] = {
+    val tableName = getTableWithPrefixOrDefault(
+      defaultOTSettings.clickhouse.pharmacogenomics.target.name
+    )
+    logger.debug(s"querying pharmacogenomics by target",
+                 keyValue("ids", ids),
+                 keyValue("table", tableName)
+    )
+    val query = IdsQuery(ids, "targetFromSourceId", tableName, 0, Pagination.sizeMax)
+    dbRetriever.executeQuery[PharmacogenomicsByTarget, Query](query.query)
   }
 
-  def getPharmacogenomicsByVariant(id: String): Future[IndexedSeq[Pharmacogenomics]] = {
-    val queryTerm: Map[String, String] = Map("variantId.keyword" -> id)
-    getPharmacogenomics(id, queryTerm)
-  }
-
-  def getPharmacogenomics(id: String,
-                          queryTerm: Map[String, String]
-  ): Future[IndexedSeq[Pharmacogenomics]] = {
-    val indexName = getIndexOrDefault("pharmacogenomics", Some("pharmacogenomics"))
-    logger.debug(s"querying pharmacogenomics", keyValue("id", id), keyValue("index", indexName))
-    esRetriever
-      .getByIndexedQueryMust(
-        indexName,
-        queryTerm,
-        Pagination(0, Pagination.sizeMax),
-        fromJsValue[Pharmacogenomics]
-      )
-      .map(_.mappedHits)
+  def getPharmacogenomicsByVariant(
+      ids: Seq[String]
+  ): Future[IndexedSeq[PharmacogenomicsByVariant]] = {
+    val tableName = getTableWithPrefixOrDefault(
+      defaultOTSettings.clickhouse.pharmacogenomics.variant.name
+    )
+    logger.debug(s"querying pharmacogenomics by variant",
+                 keyValue("ids", ids),
+                 keyValue("table", tableName)
+    )
+    val query = IdsQuery(ids, "variantId", tableName, 0, Pagination.sizeMax)
+    dbRetriever.executeQuery[PharmacogenomicsByVariant, Query](query.query)
   }
 
   def getProteinCodingCoordinatesByTarget(ids: Seq[String],
