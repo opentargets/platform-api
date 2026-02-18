@@ -9,8 +9,7 @@ case class ClinicalIndication(
     drugId: Option[String],
     diseaseId: Option[String],
     maxClinicalStage: String,
-    clinicalReportIds: Seq[String],
-    hasExpertReview: Boolean
+    clinicalReportIds: Seq[String]
 )
 
 object ClinicalIndication extends OTLogging {
