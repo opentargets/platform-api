@@ -12,6 +12,9 @@ import models.entities.{
   MechanismsOfAction,
   MousePhenotypes,
   OtarProjects,
+  PharmacogenomicsByDrug,
+  PharmacogenomicsByTarget,
+  PharmacogenomicsByVariant,
   SequenceOntologyTerm,
   Study,
   Target,
@@ -191,6 +194,42 @@ object Fetchers extends OTLogging {
       fetch = (ctx: Backend, ids: Seq[String]) => ctx.getTargetPrioritisation(ids)
     )
 
+  val pharmacogenomicsByDrugFetcherCache = FetcherCache.simple
+  implicit val pharmacogenomicsByDrugHasId: HasId[PharmacogenomicsByDrug, String] =
+    HasId[PharmacogenomicsByDrug, String](js => js.drugId)
+  val pharmacogenomicsByDrugFetcher
+      : Fetcher[Backend, PharmacogenomicsByDrug, PharmacogenomicsByDrug, String] =
+    Fetcher(
+      config = FetcherConfig
+        .maxBatchSize(entities.Configuration.batchSize)
+        .caching(pharmacogenomicsByDrugFetcherCache),
+      fetch = (ctx: Backend, ids: Seq[String]) => ctx.getPharmacogenomicsByDrug(ids)
+    )
+
+  val pharmacogenomicsByVariantFetcherCache = FetcherCache.simple
+  implicit val pharmacogenomicsByVariantHasId: HasId[PharmacogenomicsByVariant, String] =
+    HasId[PharmacogenomicsByVariant, String](js => js.variantId)
+  val pharmacogenomicsByVariantFetcher
+      : Fetcher[Backend, PharmacogenomicsByVariant, PharmacogenomicsByVariant, String] =
+    Fetcher(
+      config = FetcherConfig
+        .maxBatchSize(entities.Configuration.batchSize)
+        .caching(pharmacogenomicsByVariantFetcherCache),
+      fetch = (ctx: Backend, ids: Seq[String]) => ctx.getPharmacogenomicsByVariant(ids)
+    )
+
+  val pharmacogenomicsByTargetFetcherCache = FetcherCache.simple
+  implicit val pharmacogenomicsByTargetHasId: HasId[PharmacogenomicsByTarget, String] =
+    HasId[PharmacogenomicsByTarget, String](js => js.targetFromSourceId)
+  val pharmacogenomicsByTargetFetcher
+      : Fetcher[Backend, PharmacogenomicsByTarget, PharmacogenomicsByTarget, String] =
+    Fetcher(
+      config = FetcherConfig
+        .maxBatchSize(entities.Configuration.batchSize)
+        .caching(pharmacogenomicsByTargetFetcherCache),
+      fetch = (ctx: Backend, ids: Seq[String]) => ctx.getPharmacogenomicsByTarget(ids)
+    )
+
   def resetCache(): Unit = {
     logger.info("clearing all GraphQL caches")
     val fetchers: List[SimpleFetcherCache] = List(
@@ -208,6 +247,9 @@ object Fetchers extends OTLogging {
       mousePhenotypesFetcherCache,
       expressionFetcherCache,
       otarProjectsFetcherCache,
+      pharmacogenomicsByDrugFetcherCache,
+      pharmacogenomicsByVariantFetcherCache,
+      pharmacogenomicsByTargetFetcherCache,
       soTermsFetcherCache,
       targetEssentialityFetcherCache,
       targetPrioritisationFetcherCache

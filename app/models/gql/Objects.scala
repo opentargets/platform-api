@@ -390,9 +390,11 @@ object Objects extends OTLogging {
         description = Some(
           "Pharmacogenomics data linking genetic variants affecting this target to drug responses. Data is integrated from sources including ClinPGx and describes how genetic variants influence individual drug responses when targeting this gene product."
         ),
-        arguments = pageArg :: Nil,
-        complexity = Some(complexityCalculator(pageArg)),
-        resolve = ctx => ctx.ctx.getPharmacogenomicsByTarget(ctx.value.id)
+        resolve = ctx =>
+          DeferredValue(pharmacogenomicsByTargetFetcher.deferOpt(ctx.value.id)).map {
+            case Some(pgByTarget) => pgByTarget.pharmacogenomics
+            case None             => Seq.empty
+          }
       ),
       Field(
         "proteinCodingCoordinates",
@@ -1350,6 +1352,12 @@ object Objects extends OTLogging {
         )
       )
     )
+  implicit lazy val pharmacogenomicsByDrugImp: ObjectType[Backend, PharmacogenomicsByDrug] =
+    deriveObjectType[Backend, PharmacogenomicsByDrug]()
+  implicit lazy val pharmacogenomicsByVariantImp: ObjectType[Backend, PharmacogenomicsByVariant] =
+    deriveObjectType[Backend, PharmacogenomicsByVariant]()
+  implicit lazy val pharmacogenomicsByTargetImp: ObjectType[Backend, PharmacogenomicsByTarget] =
+    deriveObjectType[Backend, PharmacogenomicsByTarget]()
 
   implicit lazy val indicationReferenceImp: ObjectType[Backend, IndicationReference] =
     deriveObjectType[Backend, IndicationReference](
@@ -1669,9 +1677,11 @@ object Objects extends OTLogging {
         description = Some(
           "Pharmacogenomics data linking genetic variants to responses to this drug. Data is integrated from sources including ClinPGx and describes how genetic variants influence individual responses to this drug."
         ),
-        arguments = pageArg :: Nil,
-        complexity = Some(complexityCalculator(pageArg)),
-        resolve = ctx => ctx.ctx.getPharmacogenomicsByDrug(ctx.value.id)
+        resolve = ctx =>
+          DeferredValue(pharmacogenomicsByDrugFetcher.deferOpt(ctx.value.id)).map {
+            case Some(pgByDrug) => pgByDrug.pharmacogenomics
+            case None           => Seq.empty
+          }
       )
     ),
     ReplaceField(
@@ -1731,6 +1741,8 @@ object Objects extends OTLogging {
       DocumentField("label", "Human-readable label for the database table"),
       DocumentField("name", "Name identifier for the database table")
     )
+  implicit val pharmacogenomicsSettingsImp: ObjectType[Backend, PharmacogenomicsSettings] =
+    deriveObjectType[Backend, PharmacogenomicsSettings]()
   implicit val targetSettingsImp: ObjectType[Backend, TargetSettings] =
     deriveObjectType[Backend, TargetSettings](
       ObjectTypeDescription("Target-specific database settings configuration"),
@@ -2453,9 +2465,11 @@ object Objects extends OTLogging {
           description = Some(
             "Pharmacogenomics data linking this genetic variant to drug responses. Data is integrated from sources including ClinPGx and describes how genetic variants influence individual drug responses."
           ),
-          arguments = pageArg :: Nil,
-          complexity = Some(complexityCalculator(pageArg)),
-          resolve = ctx => ctx.ctx.getPharmacogenomicsByVariant(ctx.value.variantId)
+          resolve = ctx =>
+            DeferredValue(pharmacogenomicsByVariantFetcher.deferOpt(ctx.value.variantId)).map {
+              case Some(pgByVariant) => pgByVariant.pharmacogenomics
+              case None              => Seq.empty
+            }
         ),
         Field(
           "evidences",
