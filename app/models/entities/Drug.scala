@@ -4,21 +4,6 @@ import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json._
 import slick.jdbc.GetResult
 
-case class IndicationReference(ids: Option[Seq[String]], source: String)
-
-case class IndicationRow(
-    maxPhaseForIndication: Double,
-    disease: String,
-    references: Option[Seq[IndicationReference]]
-)
-
-case class Indications(
-    id: String,
-    indications: Seq[IndicationRow],
-    indicationCount: Long,
-    approvedIndications: Option[Seq[String]]
-)
-
 case class DrugReferences(source: String, ids: Seq[String])
 
 case class Drug(
@@ -39,11 +24,6 @@ case class Drug(
 
 object Drug {
   implicit val getResult: GetResult[Drug] = GetResult(r => Json.parse(r.<<[String]).as[Drug])
-  implicit val indicationReferenceImpW: OFormat[IndicationReference] =
-    Json.format[models.entities.IndicationReference]
-  implicit val indicationRowImpW: OFormat[IndicationRow] =
-    Json.format[models.entities.IndicationRow]
-  implicit val indicationsImpW: OFormat[Indications] = Json.format[models.entities.Indications]
   implicit val DrugXRefImpW: OFormat[DrugReferences] = Json.format[DrugReferences]
   implicit val drugImplicitR: Reads[Drug] = Json.reads[Drug]
   implicit val drugImplicitW: OWrites[Drug] = Json.writes[Drug]

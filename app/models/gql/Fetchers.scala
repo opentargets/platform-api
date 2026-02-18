@@ -10,7 +10,6 @@ import models.entities.{
   Expressions,
   GeneOntologyTerm,
   HPO,
-  Indications,
   MechanismsOfAction,
   MousePhenotypes,
   OtarProjects,
