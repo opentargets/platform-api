@@ -9,7 +9,6 @@ import models.entities.{
   Expressions,
   GeneOntologyTerm,
   HPO,
-  Indications,
   OtarProjects,
   Reactome,
   SequenceOntologyTerm,
