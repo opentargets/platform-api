@@ -21,27 +21,12 @@ case class DrugWarning(
 
 case class Reference(ids: Option[Seq[String]], source: String, urls: Option[Seq[String]])
 
-case class IndicationReference(ids: Option[Seq[String]], source: String)
-
 case class MechanismOfActionRow(
     mechanismOfAction: String,
     actionType: Option[String],
     targetName: Option[String],
     targets: Option[Seq[String]],
     references: Option[Seq[Reference]]
-)
-
-case class IndicationRow(
-    maxPhaseForIndication: Double,
-    disease: String,
-    references: Option[Seq[IndicationReference]]
-)
-
-case class Indications(
-    id: String,
-    indications: Seq[IndicationRow],
-    indicationCount: Long,
-    approvedIndications: Option[Seq[String]]
 )
 
 case class MechanismsOfAction(
@@ -106,11 +91,6 @@ object Drug {
     Json.format[models.entities.MechanismOfActionRow]
   implicit val mechanismOfActionImpW: OFormat[MechanismsOfAction] =
     Json.format[models.entities.MechanismsOfAction]
-  implicit val indicationReferenceImpW: OFormat[IndicationReference] =
-    Json.format[models.entities.IndicationReference]
-  implicit val indicationRowImpW: OFormat[IndicationRow] =
-    Json.format[models.entities.IndicationRow]
-  implicit val indicationsImpW: OFormat[Indications] = Json.format[models.entities.Indications]
   implicit val mechanismOfActionRaw: OFormat[MechanismOfActionRaw] =
     Json.format[models.entities.MechanismOfActionRaw]
 

@@ -1352,13 +1352,6 @@ object Objects extends OTLogging {
       )
     )
 
-  implicit lazy val indicationReferenceImp: ObjectType[Backend, IndicationReference] =
-    deriveObjectType[Backend, IndicationReference](
-      ObjectTypeDescription("Reference information for drug indications"),
-      DocumentField("ids", "List of reference identifiers (e.g., PubMed IDs)"),
-      DocumentField("source", "Source of the reference")
-    )
-
   implicit lazy val mechanismOfActionRowImp: ObjectType[Backend, MechanismOfActionRow] =
     deriveObjectType[Backend, MechanismOfActionRow](
       ObjectTypeDescription("Mechanism of action information for a drug"),
@@ -1380,38 +1373,6 @@ object Objects extends OTLogging {
           resolve = r => targetsFetcher.deferSeqOpt(r.value.targets.getOrElse(Seq.empty))
         )
       )
-    )
-
-  implicit lazy val indicationRowImp: ObjectType[Backend, IndicationRow] =
-    deriveObjectType[Backend, IndicationRow](
-      ObjectTypeDescription(
-        "Indication information linking a drug or clinical candidate molecule to a disease"
-      ),
-      DocumentField(
-        "maxPhaseForIndication",
-        "Maximum clinical trial phase for this drug-disease indication. [Values: -1: `Unknown`, 0: `Phase 0`, 0.5: `Phase I (Early)`, 1: `Phase I`, 2: `Phase II`, 3: `Phase III`, 4: `Phase IV`]"
-      ),
-      DocumentField("references", "Reference information supporting the indication"),
-      ReplaceField(
-        "disease",
-        Field(
-          "disease",
-          diseaseImp,
-          description = Some("Potential indication disease entity"),
-          resolve = r => diseasesFetcher.defer(r.value.disease)
-        )
-      )
-    )
-
-  implicit lazy val indicationsImp: ObjectType[Backend, Indications] =
-    deriveObjectType[Backend, Indications](
-      ObjectTypeDescription("Collection of indications for a drug or clinical candidate molecule"),
-      ExcludeFields("id"),
-      RenameField("indications", "rows"),
-      RenameField("indicationCount", "count"),
-      DocumentField("indications", "List of potential indication entries"),
-      DocumentField("indicationCount", "Total number of potential indications"),
-      DocumentField("approvedIndications", "List of approved indication identifiers")
     )
 
   implicit lazy val resourceScoreImp: ObjectType[Backend, ResourceScore] =
