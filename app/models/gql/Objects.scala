@@ -2729,9 +2729,7 @@ object Objects extends OTLogging {
     DocumentField("betaConfidenceIntervalUpper", "Upper value of the confidence interval"),
     DocumentField("studyStartDate", "Start date of study in a YYYY-MM-DD format"),
     DocumentField("trialWhyStopped", "Reason why the trial was stopped, as reported"),
-    DocumentField("trialStopReasonCategories",
-                  "Categorised reason(s) why the trial was stopped"
-    ),
+    DocumentField("trialStopReasonCategories", "Categorised reason(s) why the trial was stopped"),
     DocumentField("cellLineBackground", "Background of the derived cell lines"),
     DocumentField("contrast", "Experiment contrast"),
     DocumentField("crisprScreenLibrary",
