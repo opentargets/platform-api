@@ -89,6 +89,7 @@ object Configuration {
       credibleSet: CredibleSetSettings,
       disease: DiseaseSettings,
       diseaseHPO: DbTableSettings,
+      drug: DbTableSettings,
       drugWarnings: DbTableSettings,
       evidence: EvidenceSettings,
       expression: DbTableSettings,
