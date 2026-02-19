@@ -35,18 +35,7 @@ case class IndexQuery[V](
     excludedFields: Seq[String] = Seq.empty
 )
 
-case class IndexBoolQuery(
-    esIndex: String,
-    boolQuery: BoolQuery,
-    pagination: Pagination,
-    aggs: Iterable[AbstractAggregation] = Iterable.empty,
-    excludedFields: Seq[String] = Seq.empty
-)
-
 trait ElasticRetrieverQueryBuilders extends OTLogging with QueryApi {
-
-  def IndexQueryMust[V](indexQuery: IndexQuery[V]): SearchRequest =
-    getByIndexQueryBuilder(indexQuery, must)
 
   def IndexQueryShould[V](
       indexQuery: IndexQuery[V]
@@ -98,20 +87,5 @@ trait ElasticRetrieverQueryBuilders extends OTLogging with QueryApi {
       .aggs(indexQuery.aggs)
       .trackTotalHits(true)
       .sourceExclude(indexQuery.excludedFields)
-  }
-
-  def BoolQueryBuilder(
-      indexQuery: IndexBoolQuery
-  ): SearchRequest = {
-    val limitClause = indexQuery.pagination.toES
-    val searchRequest: SearchRequest = search(indexQuery.esIndex)
-      .bool(indexQuery.boolQuery)
-      .start(limitClause._1)
-      .limit(limitClause._2)
-      .aggs(indexQuery.aggs)
-      .trackTotalHits(true)
-      .sourceExclude(indexQuery.excludedFields)
-
-    searchRequest
   }
 }
