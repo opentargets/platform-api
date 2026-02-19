@@ -5,6 +5,7 @@ import models.entities.{
   CredibleSet,
   Disease,
   Drug,
+  DrugWarnings,
   Expressions,
   GeneOntologyTerm,
   HPO,
@@ -136,6 +137,16 @@ object Fetchers extends OTLogging {
     fetch = (ctx: Backend, ids: Seq[String]) => ctx.getDrugs(ids)
   )
 
+  val drugWarningsFetcherCache = FetcherCache.simple
+  implicit val drugWarningsHasId: HasId[DrugWarnings, String] =
+    HasId[DrugWarnings, String](_.chemblId)
+  val drugWarningsFetcher: Fetcher[Backend, DrugWarnings, DrugWarnings, String] = Fetcher(
+    config = FetcherConfig
+      .maxBatchSize(entities.Configuration.batchSize)
+      .caching(drugWarningsFetcherCache),
+    fetch = (ctx: Backend, ids: Seq[String]) => ctx.getDrugWarnings(ids)
+  )
+
   implicit val indicationHasId: HasId[Indications, String] = HasId[Indications, String](_.id)
   val indicationFetcherCache = FetcherCache.simple
   val indicationFetcher: Fetcher[Backend, Indications, Indications, String] = Fetcher(
@@ -241,6 +252,7 @@ object Fetchers extends OTLogging {
       variantFetcherCache,
       targetsFetcherCache,
       drugsFetcherCache,
+      drugWarningsFetcherCache,
       diseasesFetcherCache,
       indicationFetcherCache,
       mechanismsOfActionFetcherCache,

@@ -1584,7 +1584,11 @@ object Objects extends OTLogging {
         "drugWarnings",
         ListType(drugWarningsImp),
         description = Some("Warnings present on drug as identified by ChEMBL."),
-        resolve = c => c.ctx.getDrugWarnings(c.value.id)
+        resolve = r =>
+          DeferredValue(drugWarningsFetcher.deferOpt(r.value.id)).map {
+            case Some(warnings) => warnings.drugWarnings
+            case None           => Seq.empty
+          }
       ),
       Field(
         "similarEntities",

@@ -21,6 +21,7 @@ import models.entities.Colocalisations.*
 import models.entities.Configuration.*
 import models.entities.DiseaseHPOs.*
 import models.entities.Drug.*
+import models.entities.DrugWarning.*
 import models.entities.Interactions.*
 import models.entities.Intervals.*
 import models.entities.Loci.*
@@ -162,9 +163,7 @@ class Backend @Inject() (implicit
       pag._1,
       pag._2
     )
-    val results = dbRetriever
-      .executeQuery[L2GPredictions, Query](l2gQuery.query)
-    results
+    dbRetriever.executeQuery[L2GPredictions, Query](l2gQuery.query)
   }
 
   def getVariants(ids: Seq[String]): Future[IndexedSeq[VariantIndex]] = {
@@ -189,9 +188,7 @@ class Backend @Inject() (implicit
     logger.debug(s"querying studies by id", keyValue("ids", ids), keyValue("table", tableName))
 
     val studiesQuery = IdsQuery(ids, "studyId", tableName, 0, Pagination.sizeMax)
-    val results = dbRetriever
-      .executeQuery[Study, Query](studiesQuery.query)
-    results
+    dbRetriever.executeQuery[Study, Query](studiesQuery.query)
   }
 
   def getStudies(queryArgs: StudyQueryArgs, pagination: Option[Pagination]): Future[Studies] = {
@@ -237,10 +234,7 @@ class Backend @Inject() (implicit
       page._1,
       page._2
     )
-    val results =
-      dbRetriever
-        .executeQuery[Colocalisations, Query](colocQuery.query)
-    results
+    dbRetriever.executeQuery[Colocalisations, Query](colocQuery.query)
   }
 
   def getLocus(studyLocusIds: Seq[String],
@@ -263,9 +257,7 @@ class Backend @Inject() (implicit
       page._1,
       page._2
     )
-    val results = dbRetriever
-      .executeQuery[Loci, Query](locusQuery.query)
-    results
+    dbRetriever.executeQuery[Loci, Query](locusQuery.query)
   }
 
   def getCredibleSet(ids: Seq[String]): Future[IndexedSeq[CredibleSet]] = {
@@ -274,9 +266,7 @@ class Backend @Inject() (implicit
     logger.debug(s"querying credible sets", keyValue("ids", ids), keyValue("table", tableName))
 
     val credsetQuery = IdsQuery(ids, "studyLocusId", tableName, 0, Pagination.sizeMax)
-    val results = dbRetriever
-      .executeQuery[CredibleSet, Query](credsetQuery.query)
-    results
+    dbRetriever.executeQuery[CredibleSet, Query](credsetQuery.query)
   }
 
   def getCredibleSets(
@@ -649,7 +639,6 @@ class Backend @Inject() (implicit
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.otarProjects.name)
     val query = IdsQuery(ids, "efo_id", tableName, 0, Pagination.sizeMax)
     logger.debug(s"querying otar projects", keyValue("ids", ids), keyValue("table", tableName))
-
     dbRetriever.executeQuery[OtarProjects, Query](query.query)
   }
 
@@ -705,37 +694,18 @@ class Backend @Inject() (implicit
       .map(_.mappedHits)
   }
 
-  def getDrugWarnings(id: String): Future[IndexedSeq[DrugWarning]] = {
-    val indexName = getIndexOrDefault("drugWarnings")
-    logger.debug(s"querying drug warnings", keyValue("id", id), keyValue("index", indexName))
-    val queryTerm = Map("chemblIds.keyword" -> id)
-    esRetriever
-      .getByIndexedQueryShould(indexName, queryTerm, Pagination.mkDefault, fromJsValue[DrugWarning])
-      .map { results =>
-        /*
-      Group references by warning type and toxicity class to replicate ChEMBL web interface.
-      This work around relates to ticket opentargets/platform#1506
-         */
-        val drugWarnings =
-          results.mappedHits.foldLeft(Map.empty[(Option[Long]), DrugWarning]) { (dwMap, dw) =>
-            if (dwMap.contains((dw.id))) {
-              val old = dwMap((dw.id))
-              val newDW =
-                old.copy(references = Some((old.references ++ dw.references).flatten.toSeq))
-              dwMap.updated((dw.id), newDW)
-            } else dwMap + ((dw.id) -> dw)
-          }
-        drugWarnings.values.toIndexedSeq
-      }
+  def getDrugWarnings(ids: Seq[String]): Future[IndexedSeq[DrugWarnings]] = {
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.drugWarnings.name)
+    logger.debug(s"querying drug warnings", keyValue("ids", ids), keyValue("table", tableName))
+    val query = IdsQuery(ids, "chemblId", tableName, 0, Pagination.sizeMax)
+    dbRetriever.executeQuery[DrugWarnings, Query](query.query)
   }
 
   def getDiseases(ids: Seq[String]): Future[IndexedSeq[Disease]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.disease.name)
     logger.debug(s"querying diseases", keyValue("ids", ids), keyValue("table", tableName))
     val diseaseQuery = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
-    val results = dbRetriever
-      .executeQuery[Disease, Query](diseaseQuery.query)
-    results
+    dbRetriever.executeQuery[Disease, Query](diseaseQuery.query)
   }
 
   def getInteractions(ids: Seq[String],
@@ -753,17 +723,13 @@ class Backend @Inject() (implicit
       pag._1,
       pag._2
     )
-    val results = dbRetriever
-      .executeQuery[Interactions, Query](interactionsQuery.query)
-    results
+    dbRetriever.executeQuery[Interactions, Query](interactionsQuery.query)
   }
 
   def getInteractionSources: Future[Seq[InteractionResources]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.interaction.name)
     val interactionSourcesQuery = InteractionSourcesQuery(tableName)
-    val results = dbRetriever
-      .executeQuery[InteractionResources, Query](interactionSourcesQuery.query)
-    results
+    dbRetriever.executeQuery[InteractionResources, Query](interactionSourcesQuery.query)
   }
 
   def getIntervals(chromosome: String,
