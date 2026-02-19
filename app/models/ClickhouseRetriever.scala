@@ -73,7 +73,7 @@ class ClickhouseRetriever(config: OTSettings)(implicit
       case Failure(ex) =>
         val qStr = qq.statements.mkString("\n")
         logger.error(s"executeQuery an exception was thrown ${ex.getMessage} with Query $qStr")
-        Vector.empty
+        Vector.empty //TODO: maybe we should return the error instead of an empty vector, to inform the user
     }
   }
 }
