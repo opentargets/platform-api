@@ -2,6 +2,7 @@ package models.entities
 
 import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json._
+import slick.jdbc.GetResult
 
 case class IndicationReference(ids: Option[Seq[String]], source: String)
 
@@ -42,6 +43,7 @@ case class Drug(
 )
 
 object Drug {
+  implicit val getResult: GetResult[Drug] = GetResult(r => Json.parse(r.<<[String]).as[Drug])
   implicit val linkedIdsImpW: OFormat[LinkedIds] = Json.format[models.entities.LinkedIds]
   implicit val indicationReferenceImpW: OFormat[IndicationReference] =
     Json.format[models.entities.IndicationReference]

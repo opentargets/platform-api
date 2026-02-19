@@ -664,14 +664,10 @@ class Backend @Inject() (implicit
   }
 
   def getDrugs(ids: Seq[String]): Future[IndexedSeq[Drug]] = {
-    val drugIndexName = getIndexOrDefault("drug")
-
-    logger.debug(s"querying drugs", keyValue("drug_ids", ids), keyValue("index", drugIndexName))
-
-    val queryTerm = Map("id.keyword" -> ids)
-    esRetriever
-      .getByIndexedQueryShould(drugIndexName, queryTerm, Pagination(0, ids.size), fromJsValue[Drug])
-      .map(_.mappedHits)
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.drug.name)
+    logger.debug(s"querying drugs", keyValue("ids", ids), keyValue("table", tableName))
+    val query = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
+    dbRetriever.executeQuery[Drug, Query](query.query)
   }
 
   def getMechanismsOfAction(ids: Seq[String]): Future[IndexedSeq[MechanismsOfAction]] = {
