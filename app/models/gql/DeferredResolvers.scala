@@ -303,6 +303,7 @@ object DeferredResolvers extends OTLogging {
     Fetchers.credibleSetFetcher,
     Fetchers.targetsFetcher,
     Fetchers.drugsFetcher,
+    Fetchers.drugWarningsFetcher,
     Fetchers.diseasesFetcher,
     Fetchers.hposFetcher,
     Fetchers.expressionFetcher,
