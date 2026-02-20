@@ -203,15 +203,7 @@ query test {
     synonyms
     tradeNames
     drugType
-    maximumClinicalTrialPhase
-    hasBeenWithdrawn
-    withdrawnNotice {
-      classes
-      countries
-      reasons
-      year
-    }
-    internalCompound
+    maximumClinicalStage
     mechanismsOfAction {
       uniqueActionTypes
       uniqueTargetTypes
@@ -228,7 +220,6 @@ query test {
         }
       }
     }
-    blackBoxWarning
     indications {
       count
       rows {
