@@ -71,8 +71,7 @@ query SearchPageQuery(
           description
           name
           drugType
-          maximumClinicalTrialPhase
-          hasBeenWithdrawn
+          maximumClinicalStage
           indications {
             rows {
               disease {

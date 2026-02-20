@@ -2,9 +2,6 @@ query drugApprovalWithdrawnWarningData {
   drug(chemblId: "CHEMBL118") {
     name
     id
-    isApproved
-    hasBeenWithdrawn
-    blackBoxWarning
     drugWarnings {
       warningType
       description
