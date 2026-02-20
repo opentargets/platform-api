@@ -1492,14 +1492,9 @@ object Objects extends OTLogging {
       "Classification of the molecule's therapeutic category or chemical class (e.g. Antibody)"
     ),
     DocumentField(
-      "maximumClinicalTrialPhase",
-      "Highest clinical trial phase reached by the drug or clinical candidate molecule. [Values: -1: `Unknown`, 0: `Phase 0`, 0.5: `Phase I (Early)`, 1: `Phase I`, 2: `Phase II`, 3: `Phase III`, 4: `Phase IV`]"
+      "maximumClinicalStage",
+      "Highest clinical stage reached by the drug or clinical candidate molecule"
     ),
-    DocumentField("isApproved",
-                  "Flag indicating whether the drug has received regulatory approval"
-    ),
-    DocumentField("hasBeenWithdrawn", "Flag indicating whether the drug was removed from market"),
-    DocumentField("blackBoxWarning", "Flag indicating whether the drug has safety warnings"),
     DocumentField("crossReferences",
                   "Cross-reference information for this molecule from external databases"
     ),

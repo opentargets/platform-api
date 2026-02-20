@@ -54,12 +54,9 @@ case class Drug(
     tradeNames: Seq[String],
     childChemblIds: Option[Seq[String]], // Gone?
     drugType: String,
-    isApproved: Option[Boolean],
     crossReferences: Option[Seq[DrugReferences]],
     parentId: Option[String],
-    maximumClinicalTrialPhase: Option[Double],
-    hasBeenWithdrawn: Boolean,
-    blackBoxWarning: Boolean,
+    maximumClinicalStage: String,
     description: Option[String]
 )
 
