@@ -16,7 +16,5 @@ query DrugWarningsQuery($chemblId: String!) {
         url
       }
     }
-    hasBeenWithdrawn
-    blackBoxWarning
   }
 }

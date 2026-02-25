@@ -2,13 +2,13 @@ package models.gql
 
 import models.entities.{
   Biosample,
+  ClinicalReport,
   CredibleSet,
   Disease,
   Drug,
   Expressions,
   GeneOntologyTerm,
   HPO,
-  Indications,
   OtarProjects,
   Reactome,
   SequenceOntologyTerm,
@@ -42,9 +42,10 @@ object Fetchers extends OTLogging {
       FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(targetsFetcherCache),
     fetch = (ctx: Backend, ids: Seq[String]) => ctx.getTargets(ids)
   )
-  val diseasesFetcherCache = FetcherCache.simple
 
   // disease
+  val diseasesFetcherCache = FetcherCache.simple
+
   implicit val diseaseHasId: HasId[Disease, String] = HasId[Disease, String](_.id)
   val diseasesFetcher: Fetcher[Backend, Disease, Disease, String] = Fetcher(
     config =
@@ -106,12 +107,6 @@ object Fetchers extends OTLogging {
     fetch = (ctx: Backend, ids: Seq[String]) => ctx.getDrugs(ids)
   )
 
-  implicit val indicationHasId: HasId[Indications, String] = HasId[Indications, String](_.id)
-  val indicationFetcher: Fetcher[Backend, Indications, Indications, String] = Fetcher(
-    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize),
-    fetch = (ctx: Backend, ids: Seq[String]) => ctx.getIndications(ids)
-  )
-
   implicit val goFetcherId: HasId[GeneOntologyTerm, String] = HasId[GeneOntologyTerm, String](_.id)
   val goFetcherCache = FetcherCache.simple
   val goFetcher: Fetcher[Backend, GeneOntologyTerm, GeneOntologyTerm, String] = Fetcher(
@@ -151,6 +146,18 @@ object Fetchers extends OTLogging {
     )
   }
 
+  val clinicalReportFetcherCache = FetcherCache.simple
+  val clinicalReportFetcher: Fetcher[Backend, ClinicalReport, ClinicalReport, String] = {
+    implicit val clinicalreportFetcherId: HasId[ClinicalReport, String] =
+      HasId[ClinicalReport, String](js => js.id)
+    Fetcher(
+      config = FetcherConfig
+        .maxBatchSize(entities.Configuration.batchSize)
+        .caching(clinicalReportFetcherCache),
+      fetch = (ctx: Backend, ids: Seq[String]) => ctx.getClinicalReports(ids)
+    )
+  }
+
   def resetCache(): Unit = {
     logger.info("clearing all GraphQL caches")
     val fetchers: List[SimpleFetcherCache] = List(
@@ -166,7 +173,8 @@ object Fetchers extends OTLogging {
       reactomeFetcherCache,
       expressionFetcherCache,
       otarProjectsFetcherCache,
-      soTermsFetcherCache
+      soTermsFetcherCache,
+      clinicalReportFetcherCache
     )
     fetchers.foreach(_.clear())
   }

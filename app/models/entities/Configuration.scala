@@ -55,6 +55,10 @@ object Configuration {
 
   case class HarmonicSettings(pExponent: Int, datasources: Seq[DatasourceSettings])
 
+  case class ClinicalIndicationSettings(drugTable: DbTableSettings, diseaseTable: DbTableSettings)
+
+  case class ClinicalTargetSettings(drugTable: DbTableSettings, targetTable: DbTableSettings)
+
   /** ClickHouse settings stores the configuration for the entities it handles. Target Disease and
     * Harmonic settings used to compute associations on the fly and LUTs for interaction expansions
     */
@@ -66,7 +70,10 @@ object Configuration {
       similarities: DbTableSettings,
       harmonic: HarmonicSettings,
       literature: DbTableSettings,
-      literatureIndex: DbTableSettings
+      literatureIndex: DbTableSettings,
+      clinicalIndication: ClinicalIndicationSettings,
+      clinicalReport: DbTableSettings,
+      clinicalTarget: DbTableSettings
   )
 
   /** main Open Targets configuration object. It keeps track of meta, elasticsearch and clickhouse
@@ -150,6 +157,10 @@ object Configuration {
   implicit val harmonicSettingsJSONImp: OFormat[HarmonicSettings] = Json.format[HarmonicSettings]
   implicit val targetSettingsJSONImp: OFormat[TargetSettings] = Json.format[TargetSettings]
   implicit val diseaseSettingsJSONImp: OFormat[DiseaseSettings] = Json.format[DiseaseSettings]
+  implicit val clinicalIndicationSettingsJSONImp: OFormat[ClinicalIndicationSettings] =
+    Json.format[ClinicalIndicationSettings]
+  implicit val clinicalTargetSettingsJSONImp: OFormat[ClinicalTargetSettings] =
+    Json.format[ClinicalTargetSettings]
   implicit val clickhouseSettingsJSONImp: OFormat[ClickhouseSettings] =
     Json.format[ClickhouseSettings]
 
