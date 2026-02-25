@@ -8,7 +8,7 @@ import models.entities.Publications.publicationsImp
 import models.entities.Colocalisations.*
 import models.entities.*
 import models.gql.Arguments.*
-import models.gql.Fetchers.*
+import models.gql.Fetchers.{diseasesFetcher, *}
 import models.Helpers.ComplexityCalculator.*
 import models.entities.ClinicalIndications.{
   clinicalIndicationsFromDiseaseImp,
@@ -1614,9 +1614,13 @@ object Objects extends OTLogging {
           OptionType(diseaseImp),
           description = Some(""),
           resolve = ctx =>
-            val tId = ctx.value.diseaseId
+            val tId: String = ctx.value.diseaseId
             logger.debug(s"finding disease $tId")
-            diseasesFetcher.defer(tId)
+
+            tId match {
+              case "" => None
+              case _  => diseasesFetcher.deferOpt(tId)
+            }
         )
       )
     )
@@ -1634,7 +1638,11 @@ object Objects extends OTLogging {
           resolve = ctx => {
             val id = ctx.value.drugId
             logger.debug(s"finding drug $id")
-            drugsFetcher.deferOpt(id)
+
+            id match {
+              case "" => None
+              case _  => drugsFetcher.deferOpt(id)
+            }
           }
         )
       )
@@ -1656,9 +1664,13 @@ object Objects extends OTLogging {
             ""
           ),
           resolve = ctx => {
-            val id = ctx.value.drugId
+            val id: Option[String] = ctx.value.drugId
             logger.debug(s"finding drug $id")
-            drugsFetcher.deferOpt(id)
+
+            id match {
+              case None      => None
+              case Some(dId) => drugsFetcher.deferOpt(dId)
+            }
           }
         )
       ),
@@ -1728,9 +1740,13 @@ object Objects extends OTLogging {
             ""
           ),
           resolve = ctx => {
-            val id = ctx.value.drugId
+            val id: Option[String] = ctx.value.drugId
             logger.debug(s"finding drug $id")
-            drugsFetcher.deferOpt(id)
+
+            id match {
+              case None      => None
+              case Some(dId) => drugsFetcher.deferOpt(dId)
+            }
           }
         )
       ),
