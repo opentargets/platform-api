@@ -1,6 +1,6 @@
 package models.entities
 
-import play.api.libs.json.{Json, OFormat}
+import play.api.libs.json.{JsString, JsValue, Json, OFormat, Writes}
 import slick.jdbc.GetResult
 import utils.OTLogging
 
@@ -35,12 +35,28 @@ case class ClinicalReport(
 
 object ClinicalReport extends OTLogging {
   implicit val getClinicalReportFromDB: GetResult[ClinicalReport] =
-    GetResult(r => Json.parse(r.<<[String]).as[ClinicalReport])
+    GetResult { r =>
+      val raw = r.<<[String]
+      val escaped = raw
+        .replaceAll("""\\([*^<>&\[\]_~])""", "$1")
+        .replace("\\", "\\\\")
+        .replace("\n", "\\n")
+        .replaceAll("""\\(nrt)""", "\\\\$1")
+      val json = Json.parse(escaped)
+      json.as[ClinicalReport]
+    }
+
+  implicit val diseaseListItemW: Writes[ClinicalDiseaseListItem] =
+    Json.writes[ClinicalDiseaseListItem]
 
   implicit val diseaseListItemF: OFormat[ClinicalDiseaseListItem] =
     Json.format[ClinicalDiseaseListItem]
 
+  implicit val drugListItemW: Writes[ClinRepDrugListItem] = Json.writes[ClinRepDrugListItem]
+
   implicit val drugListItemF: OFormat[ClinRepDrugListItem] = Json.format[ClinRepDrugListItem]
+
+  implicit val clinicalReportW: Writes[ClinicalReport] = Json.writes[ClinicalReport]
 
   implicit val clinicalReportF: OFormat[ClinicalReport] = Json.format[ClinicalReport]
 }

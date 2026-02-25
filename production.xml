@@ -32,13 +32,13 @@
     <logger name="controllers" level="INFO"/>
 
     <!-- Off these ones as they are annoying, and anyway we manage configuration ourselves -->
-    <logger name="com.avaje.ebean.config.PropertyMapLoader" level="OFF"/>
-    <logger name="com.avaje.ebeaninternal.server.core.XmlConfigLoader" level="OFF"/>
-    <logger name="com.avaje.ebeaninternal.server.lib.BackgroundThread" level="OFF"/>
-    <logger name="com.gargoylesoftware.htmlunit.javascript" level="OFF"/>
-    <logger name="ru.yandex.clickhouse.ClickHouseDriver" level="OFF"/>
-    <logger name="com.zaxxer.hikari.pool.HikariPool" level="OFF"/>
-    <logger name="com.sksamuel.elastic4s.http.ResponseHandler" level="OFF"/>
+    <logger name="com.avaje.ebean.config.PropertyMapLoader" level="ERROR"/>
+    <logger name="com.avaje.ebeaninternal.server.core.XmlConfigLoader" level="ERROR"/>
+    <logger name="com.avaje.ebeaninternal.server.lib.BackgroundThread" level="ERROR"/>
+    <logger name="com.gargoylesoftware.htmlunit.javascript" level="ERROR"/>
+    <logger name="ru.yandex.clickhouse.ClickHouseDriver" level="ERROR"/>
+    <logger name="com.zaxxer.hikari.pool.HikariPool" level="ERROR"/>
+    <logger name="com.sksamuel.elastic4s.http.ResponseHandler" level="ERROR"/>
     <logger name="akka" level="ERROR"/>
 
     <root level="INFO">
