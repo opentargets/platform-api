@@ -2,7 +2,7 @@ package models.db
 import esecuele.Column.column
 import esecuele.Column.literal
 import esecuele._
-import play.api.Logging
+import utils.OTLogging
 import models.gql.{StudyTypeEnum, InteractionSourceEnum}
 
 enum sortDirection:
@@ -20,7 +20,7 @@ case class OneToMany(ids: Seq[String],
                      sortBy: Option[OrderBy] = None,
                      selectAlso: Seq[Column] = Nil
 ) extends Queryable
-    with Logging {
+    with OTLogging {
 
   private val filteredArray: Column = filter match {
     case Some(f) => f

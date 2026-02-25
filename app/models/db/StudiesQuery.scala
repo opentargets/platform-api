@@ -3,7 +3,7 @@ package models.db
 import esecuele.Column.column
 import esecuele.Column.literal
 import esecuele._
-import play.api.Logging
+import utils.OTLogging
 import models.entities.StudyQueryArgs
 
 case class StudiesQuery(queryArgs: StudyQueryArgs,
@@ -12,7 +12,7 @@ case class StudiesQuery(queryArgs: StudyQueryArgs,
                         offset: Int,
                         size: Int
 ) extends Queryable
-    with Logging {
+    with OTLogging {
 
   private val studyIdColumns: Column = if (queryArgs.enableIndirect) {
     Functions.arrayUnion(Seq(column("studyIds"), column("indirectStudyIds")))

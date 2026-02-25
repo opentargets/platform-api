@@ -3,7 +3,7 @@ package models.db
 import esecuele.Column.column
 import esecuele.Column.literal
 import esecuele._
-import play.api.Logging
+import utils.OTLogging
 
 case class EvidenceQuery(evidenceTable: String, subQuery: Query, offset: Int, limit: Int)
     extends Queryable {
@@ -23,7 +23,7 @@ case class EvidenceQuery(evidenceTable: String, subQuery: Query, offset: Int, li
   )
 }
 
-object EvidenceQuery extends Logging {
+object EvidenceQuery extends OTLogging {
   private def datasourceFilter(datasourceIds: Option[Seq[String]]) = datasourceIds match {
     case Some(dsIds) =>
       Column.inSet(

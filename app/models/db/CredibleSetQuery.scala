@@ -3,7 +3,7 @@ package models.db
 import esecuele.Column.column
 import esecuele.Column.literal
 import esecuele._
-import play.api.Logging
+import utils.OTLogging
 import models.entities.StudyQueryArgs
 import models.gql.StudyTypeEnum
 import models.entities.CredibleSetQueryArgs
@@ -14,7 +14,7 @@ case class CredibleSetByStudyQuery(studyIds: Seq[String],
                                    offset: Int,
                                    size: Int
 ) extends Queryable
-    with Logging {
+    with OTLogging {
 
   def studyLocusIdsByStudyIdSubquery(studyIds: Seq[String]): Query =
     Query(
@@ -71,7 +71,7 @@ case class CredibleSetByVariantQuery(variantIds: Seq[String],
                                      offset: Int,
                                      size: Int
 ) extends Queryable
-    with Logging {
+    with OTLogging {
 
   def whereVariantIds(variantIds: Seq[String]) = Functions.in(
     column("variantId"),
@@ -144,7 +144,7 @@ case class CredibleSetQuery(
     offset: Int,
     size: Int
 ) extends Queryable
-    with Logging {
+    with OTLogging {
 
   def studyLocusIdsByRegionsSubquery(regions: Seq[String]): Query =
     Query(
