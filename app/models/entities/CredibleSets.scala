@@ -2,7 +2,7 @@ package models.entities
 
 import models.gql.TypeWithId
 import models.gql.StudyTypeEnum
-import play.api.Logging
+import utils.OTLogging
 import play.api.libs.json._
 import slick.jdbc.GetResult
 
@@ -56,7 +56,7 @@ case class CredibleSetQueryArgs(
     regions: Seq[String] = Seq.empty
 )
 
-object CredibleSets extends Logging {
+object CredibleSets extends OTLogging {
   def empty: CredibleSets = CredibleSets(0, IndexedSeq.empty)
   implicit val getResultCredibleSet: GetResult[CredibleSet] =
     GetResult(r => Json.parse(r.<<[String]).as[CredibleSet])

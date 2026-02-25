@@ -2,7 +2,7 @@ package models.db
 import esecuele.Column.column
 import esecuele.Column.literal
 import esecuele._
-import play.api.Logging
+import utils.OTLogging
 
 /** Query to get rows by a list of unique IDs (one to one mapping)
   *
@@ -19,7 +19,7 @@ import play.api.Logging
   */
 case class IdsQuery(ids: Seq[String], idField: String, tableName: String, offset: Int, size: Int)
     extends Queryable
-    with Logging {
+    with OTLogging {
 
   private val conditional = Where(
     Functions.in(column(idField), Functions.set(ids.map(literal).toSeq))

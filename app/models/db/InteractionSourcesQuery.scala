@@ -3,14 +3,14 @@ package models.db
 import esecuele.Column.column
 import esecuele.Column.literal
 import esecuele._
-import play.api.Logging
+import utils.OTLogging
 import play.libs.F
 import models.gql.InteractionSourceEnum
 
 case class InteractionSourcesQuery(
     tableName: String
 ) extends Queryable
-    with Logging {
+    with OTLogging {
 
   override val query: Query =
     Query(

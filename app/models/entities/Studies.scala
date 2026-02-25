@@ -1,6 +1,6 @@
 package models.entities
 
-import play.api.Logging
+import utils.OTLogging
 import models.gql.StudyTypeEnum
 import play.api.libs.json.{Json, OFormat}
 import slick.jdbc.GetResult
@@ -53,7 +53,7 @@ case class Study(
     metaTotal: Int = 0
 )
 
-object Studies extends Logging {
+object Studies extends OTLogging {
   import sangria.macros.derive._
   def empty: Studies = Studies(0, IndexedSeq.empty)
 

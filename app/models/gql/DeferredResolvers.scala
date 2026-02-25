@@ -55,11 +55,8 @@ case class AdverseEventsDeferred(chemblId: String, pagination: Option[Pagination
   val grouping = Grouping(DeferredType.AdverseEvents, options)
   def empty(): AdverseEvents = AdverseEvents(0, 0.0, Seq.empty)
   def resolver(ctx: Backend): (Seq[String], Grouping) => Future[IndexedSeq[AdverseEvents]] = {
-    case (c: Seq[String], grouping: Grouping) =>
-      grouping.options match {
-        case (p) =>
-          ctx.getAdverseEvents(c, p.asInstanceOf[Option[Pagination]])
-      }
+    case (i: Seq[String], g: Grouping) =>
+      ctx.getAdverseEvents(i, g.options.asInstanceOf[Option[Pagination]])
   }
 }
 
@@ -74,11 +71,11 @@ case class ProteinCodingCoordinatesByTargetDeferred(targetId: String,
   def resolver(
       ctx: Backend
   ): (Seq[String], Grouping) => Future[IndexedSeq[ProteinCodingCoordinates]] = {
-    case (t: Seq[String], grouping: Grouping) =>
-      grouping.options match {
-        case (p) =>
-          ctx.getProteinCodingCoordinatesByTarget(t, p.asInstanceOf[Option[Pagination]])
-      }
+    case (t: Seq[String], g: Grouping) =>
+      ctx.getProteinCodingCoordinatesByTarget(
+        t,
+        g.options.asInstanceOf[Option[Pagination]]
+      )
   }
 }
 
@@ -93,11 +90,11 @@ case class ProteinCodingCoordinatesByVariantDeferred(variantId: String,
   def resolver(
       ctx: Backend
   ): (Seq[String], Grouping) => Future[IndexedSeq[ProteinCodingCoordinates]] = {
-    case (v: Seq[String], grouping: Grouping) =>
-      grouping.options match {
-        case (p) =>
-          ctx.getProteinCodingCoordinatesByVariant(v, p.asInstanceOf[Option[Pagination]])
-      }
+    case (v: Seq[String], g: Grouping) =>
+      ctx.getProteinCodingCoordinatesByVariant(
+        v,
+        g.options.asInstanceOf[Option[Pagination]]
+      )
   }
 }
 
@@ -109,11 +106,8 @@ case class DiseaseHPOsDeferred(diseaseId: String, pagination: Option[Pagination]
 
   def empty(): DiseaseHPOs = DiseaseHPOs.empty
   def resolver(ctx: Backend): (Seq[String], Grouping) => Future[IndexedSeq[DiseaseHPOs]] = {
-    case (d: Seq[String], grouping: Grouping) =>
-      grouping.options match {
-        case (p) =>
-          ctx.getDiseaseHPOs(d, p.asInstanceOf[Option[Pagination]])
-      }
+    case (d: Seq[String], g: Grouping) =>
+      ctx.getDiseaseHPOs(d, g.options.asInstanceOf[Option[Pagination]])
   }
 }
 
@@ -127,15 +121,13 @@ case class InteractionsDeferred(targetId: String,
   val grouping = Grouping(DeferredType.Loci, options)
   def empty(): Interactions = Interactions.empty
   def resolver(ctx: Backend): (Seq[String], Grouping) => Future[IndexedSeq[Interactions]] = {
-    case (s: Seq[String], grouping: Grouping) =>
-      grouping.options match {
-        case (st, db, p) =>
-          ctx.getInteractions(s,
-                              st.asInstanceOf[Option[Double]],
-                              db.asInstanceOf[Option[InteractionSourceEnum.Value]],
-                              p.asInstanceOf[Option[Pagination]]
-          )
-      }
+    case (s: Seq[String], g: Grouping) =>
+      ctx.getInteractions(
+        s,
+        g.options.productElement(0).asInstanceOf[Option[Double]],
+        g.options.productElement(1).asInstanceOf[Option[InteractionSourceEnum.Value]],
+        g.options.productElement(2).asInstanceOf[Option[Pagination]]
+      )
   }
 }
 
@@ -148,11 +140,11 @@ case class LocusDeferred(studyLocusId: String,
   val grouping = Grouping(DeferredType.Loci, options)
   def empty(): Loci = Loci.empty()
   def resolver(ctx: Backend): (Seq[String], Grouping) => Future[IndexedSeq[Loci]] = {
-    case (s: Seq[String], grouping: Grouping) =>
-      grouping.options match {
-        case (v, p) =>
-          ctx.getLocus(s, v.asInstanceOf[Option[Seq[String]]], p.asInstanceOf[Option[Pagination]])
-      }
+    case (s: Seq[String], g: Grouping) =>
+      ctx.getLocus(s,
+                   g.options.productElement(0).asInstanceOf[Option[Seq[String]]],
+                   g.options.productElement(1).asInstanceOf[Option[Pagination]]
+      )
   }
 }
 
@@ -164,11 +156,8 @@ case class CredibleSetsByStudyDeferred(studyId: String, pagination: Option[Pagin
 
   def empty(): CredibleSets = CredibleSets.empty
   def resolver(ctx: Backend): (Seq[String], Grouping) => Future[IndexedSeq[CredibleSets]] = {
-    case (s: Seq[String], grouping: Grouping) =>
-      grouping.options match {
-        case (p) =>
-          ctx.getCredibleSetsByStudy(s, p.asInstanceOf[Option[Pagination]])
-      }
+    case (s: Seq[String], g: Grouping) =>
+      ctx.getCredibleSetsByStudy(s, g.options.asInstanceOf[Option[Pagination]])
   }
 }
 
@@ -182,14 +171,12 @@ case class CredibleSetsByVariantDeferred(variantId: String,
 
   def empty(): CredibleSets = CredibleSets.empty
   def resolver(ctx: Backend): (Seq[String], Grouping) => Future[IndexedSeq[CredibleSets]] = {
-    case (v: Seq[String], grouping: Grouping) =>
-      grouping.options match {
-        case (s, p) =>
-          ctx.getCredibleSetsByVariant(v,
-                                       s.asInstanceOf[Option[Seq[StudyTypeEnum.Value]]],
-                                       p.asInstanceOf[Option[Pagination]]
-          )
-      }
+    case (v: Seq[String], g: Grouping) =>
+      ctx.getCredibleSetsByVariant(
+        v,
+        g.options.productElement(0).asInstanceOf[Option[Seq[StudyTypeEnum.Value]]],
+        g.options.productElement(1).asInstanceOf[Option[Pagination]]
+      )
   }
 }
 
@@ -202,14 +189,11 @@ case class ColocalisationsDeferred(studyLocusId: String,
   val grouping = Grouping(DeferredType.Colocalisations, options)
   def empty(): Colocalisations = Colocalisations.empty
   def resolver(ctx: Backend): (Seq[String], Grouping) => Future[IndexedSeq[Colocalisations]] = {
-    case (s: Seq[String], grouping: Grouping) =>
-      grouping.options match {
-        case (st, p) =>
-          ctx.getColocalisations(s,
-                                 st.asInstanceOf[Seq[StudyTypeEnum.Value]],
-                                 p.asInstanceOf[Option[Pagination]]
-          )
-      }
+    case (s: Seq[String], g: Grouping) =>
+      ctx.getColocalisations(s,
+                             g.options.productElement(0).asInstanceOf[Seq[StudyTypeEnum.Value]],
+                             g.options.productElement(1).asInstanceOf[Option[Pagination]]
+      )
   }
 }
 
@@ -220,11 +204,8 @@ case class L2GPredictionsDeferred(studyLocusId: String, pagination: Option[Pagin
   val grouping = Grouping(DeferredType.L2GPredictions, options)
   def empty(): L2GPredictions = L2GPredictions.empty
   def resolver(ctx: Backend): (Seq[String], Grouping) => Future[IndexedSeq[L2GPredictions]] = {
-    case (s: Seq[String], grouping: Grouping) =>
-      grouping.options match {
-        case (p) =>
-          ctx.getL2GPredictions(s, p.asInstanceOf[Option[Pagination]])
-      }
+    case (s: Seq[String], g: Grouping) =>
+      ctx.getL2GPredictions(s, g.options.asInstanceOf[Option[Pagination]])
   }
 }
 
