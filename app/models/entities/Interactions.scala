@@ -60,18 +60,10 @@ object Interactions extends OTLogging {
     GetResult(r => Json.parse(r.<<[String]).as[InteractionResources])
   implicit val interactionEvidencePDMF: OFormat[InteractionEvidencePDM] =
     Json.format[InteractionEvidencePDM]
-
-  implicit val interactionSpeciesW: OWrites[InteractionSpecies] = Json.writes[InteractionSpecies]
-  implicit val interactionSpeciesR: Reads[InteractionSpecies] =
-    ((__ \ "mnemonic").read[String] and
-      (__ \ "scientific_name").readNullable[String] and
-      (__ \ "taxon_id").readNullable[Long])(InteractionSpecies.apply)
-
+  implicit val interactionSpeciesF: OFormat[InteractionSpecies] = Json.format[InteractionSpecies]
   implicit val interactionResourcesF: OFormat[InteractionResources] =
     Json.format[InteractionResources]
-
   implicit val interactionEvidenceF: OFormat[InteractionEvidence] = Json.format[InteractionEvidence]
-
   implicit val interactionF: OFormat[Interaction] = Json.format[Interaction]
   implicit val interactionsF: OFormat[Interactions] = Json.format[Interactions]
 }

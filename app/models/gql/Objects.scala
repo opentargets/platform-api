@@ -906,8 +906,7 @@ object Objects extends OTLogging {
   implicit val hallmarksAttributeImp: ObjectType[Backend, HallmarkAttribute] =
     deriveObjectType[Backend, HallmarkAttribute](
       ObjectTypeDescription("Attributes of the hallmark annotation"),
-      RenameField("attribute_name", "name"),
-      DocumentField("attribute_name", "Name of the hallmark attribute"),
+      DocumentField("name", "Name of the hallmark attribute"),
       DocumentField("description", "Description of the hallmark attribute"),
       DocumentField(
         "pmid",
