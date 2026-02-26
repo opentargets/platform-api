@@ -1,0 +1,14 @@
+query TargetTranscriptsQuery($ensgId: String!) {
+  target(ensemblId: $ensgId) {
+    transcripts {
+      transcriptId
+      biotype
+      isEnsemblCanonical
+      uniprotId
+      isUniprotReviewed
+      translationId
+      alphafoldId
+      uniprotIsoformId
+    }
+  }
+}

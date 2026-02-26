@@ -124,6 +124,17 @@ case class Constraint(
 
 case class ReactomePathway(pathway: String, pathwayId: String, topLevelTerm: String)
 
+case class Transcript(
+    transcriptId: String,
+    biotype: String,
+    isEnsemblCanonical: Boolean,
+    uniprotId: Option[String],
+    isUniprotReviewed: Option[Boolean],
+    translationId: Option[String],
+    alphafoldId: Option[String],
+    uniprotIsoformId: Option[String]
+)
+
 case class Target(
     id: String,
     alternativeGenes: Seq[String] = Seq.empty,
@@ -152,7 +163,8 @@ case class Target(
     targetClass: Seq[TargetClass] = Seq.empty,
     tep: Option[Tep],
     tractability: Seq[Tractability] = Seq.empty,
-    transcriptIds: Seq[String] = Seq.empty
+    transcriptIds: Seq[String] = Seq.empty,
+    transcripts: Seq[Transcript] = Seq.empty
 )
 
 object Target extends OTLogging {
@@ -202,6 +214,7 @@ object Target extends OTLogging {
   implicit val hallmarkAttributeImpF: OFormat[HallmarkAttribute] =
     Json.format[models.entities.HallmarkAttribute]
   implicit val hallmarksImpF: OFormat[Hallmarks] = Json.format[models.entities.Hallmarks]
+  implicit val transcriptImpF: OFormat[Transcript] = Json.format[models.entities.Transcript]
   implicit val targetImpF: OFormat[Target] =
     Json.format[Target]
 }

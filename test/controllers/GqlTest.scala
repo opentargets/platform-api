@@ -555,6 +555,9 @@ class GqlTest
     "return valid response for subcellular location fragment" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(TargetFragment("SubcellularLocation_SubcellularLocationFragment"))
     }
+    "return valid response for target transcripts query" taggedAs IntegrationTestTag in {
+      testQueryAgainstGqlEndpoint(Target("TargetPage_Transcripts"))(ensgTransform)
+    }
     "return a valid response for genetic contraint query" taggedAs IntegrationTestTag in {
       testQueryAgainstGqlEndpoint(Target("GeneticConstraint_GeneticConstraint"))(ensgTransform)
     }
