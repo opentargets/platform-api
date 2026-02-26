@@ -22,8 +22,8 @@ import models.entities.Configuration.*
 import models.entities.DiseaseHPOs.*
 import models.entities.Drug.*
 import models.entities.DrugWarning.*
+import models.entities.EnhancerToGenes.*
 import models.entities.Interactions.*
-import models.entities.Intervals.*
 import models.entities.Loci.*
 import models.entities.MechanismsOfAction.*
 import models.entities.MousePhenotypes.*
@@ -728,14 +728,14 @@ class Backend @Inject() (implicit
     dbRetriever.executeQuery[InteractionResources, Query](interactionSourcesQuery.query)
   }
 
-  def getIntervals(chromosome: String,
-                   start: Int,
-                   end: Int,
-                   pagination: Option[Pagination]
-  ): Future[Intervals] = {
-    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.intervals.name)
+  def getEnhancerToGenes(chromosome: String,
+                         start: Int,
+                         end: Int,
+                         pagination: Option[Pagination]
+  ): Future[EnhancerToGenes] = {
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.enhancerToGene.name)
     val page = pagination.getOrElse(Pagination.mkDefault).offsetLimit
-    val intervalsQuery = IntervalsQuery(
+    val e2gQuery = EnhancerToGeneQuery(
       chromosome,
       start,
       end,
@@ -745,12 +745,12 @@ class Backend @Inject() (implicit
     )
     val results =
       dbRetriever
-        .executeQuery[Interval, Query](intervalsQuery.query)
-        .map { intervals =>
-          if (intervals.length) > 0 then {
-            Intervals(intervals.head.meta_total, intervals)
+        .executeQuery[EnhancerToGene, Query](e2gQuery.query)
+        .map { e2g =>
+          if (e2g.length > 0) then {
+            EnhancerToGenes(e2g.head.meta_total, e2g)
           } else {
-            Intervals.empty
+            EnhancerToGenes.empty
           }
         }
     results

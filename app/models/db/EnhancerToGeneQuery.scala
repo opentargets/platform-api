@@ -5,12 +5,12 @@ import esecuele.Column.literal
 import esecuele.*
 import utils.OTLogging
 
-case class IntervalsQuery(chromosome: String,
-                          start: Int,
-                          end: Int,
-                          tableName: String,
-                          offset: Int,
-                          size: Int
+case class EnhancerToGeneQuery(chromosome: String,
+                               start: Int,
+                               end: Int,
+                               tableName: String,
+                               offset: Int,
+                               size: Int
 ) extends Queryable
     with OTLogging {
 
