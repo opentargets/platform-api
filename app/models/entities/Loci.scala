@@ -1,6 +1,5 @@
 package models.entities
 
-import play.api.Logging
 import play.api.libs.json._
 import models.gql.TypeWithId
 import slick.jdbc.GetResult
@@ -25,8 +24,6 @@ case class Loci(
 ) extends TypeWithId
 
 object Loci extends OTLogging {
-  import sangria.macros.derive._
-
   def empty(): Loci = Loci(0, None, "")
   implicit val getResultLoci: GetResult[Loci] =
     GetResult(r => Json.parse(r.<<[String]).as[Loci])
