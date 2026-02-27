@@ -2,7 +2,6 @@ package models.gql
 import models.entities.{
   AdverseEvents,
   Colocalisations,
-  CredibleSetQueryArgs,
   CredibleSets,
   L2GPredictions,
   Loci,

@@ -1,6 +1,5 @@
 package models.entities
 
-import models.Backend
 import play.api.libs.json._
 import slick.jdbc.GetResult
 
