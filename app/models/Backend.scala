@@ -1008,17 +1008,14 @@ class Backend @Inject() (implicit
     val litQuery =
       LiteratureQuery(ids, table, filterStartDate, filterEndDate, pag.offset, pag.size)
     dbRetriever.executeQuery[Publications, Query](litQuery.query).map { v =>
-      if (v.isEmpty) {
-        Publications.empty()
+      val pubs = v.head
+      val nCursor = if (pubs.filteredCount < pag.size) {
+        None
       } else {
-        val nCursor = if (v.size < pag.size) {
-          None
-        } else {
-          val npag = pag.next
-          Helpers.Cursor.from(Some(Json.toJson(npag)))
-        }
-        v.head
+        val npag = pag.next
+        Helpers.Cursor.from(Some(Json.toJson(npag)))
       }
+      pubs.copy(cursor = nCursor)
     }
   }
 
