@@ -1,6 +1,5 @@
 package models.entities
 
-import play.api.Logging
 import play.api.libs.json._
 import slick.jdbc.GetResult
 import models.gql.TypeWithId

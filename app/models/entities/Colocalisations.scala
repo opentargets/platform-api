@@ -1,6 +1,5 @@
 package models.entities
 
-import models.Backend
 import models.gql.TypeWithId
 import slick.jdbc.GetResult
 import play.api.libs.json.{Json, OFormat}

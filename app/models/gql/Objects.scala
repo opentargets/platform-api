@@ -2,25 +2,17 @@ package models.gql
 
 import models.*
 import models.entities.Configuration.*
-import models.entities.Evidences.*
-import models.entities.Publications.publicationsImp
 import models.entities.*
 import models.gql.Arguments.*
 import models.gql.Fetchers.*
 import models.Helpers.ComplexityCalculator.*
-import play.api.libs.json.*
 import sangria.macros.derive.{DocumentField, *}
 import sangria.schema.*
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.*
-import models.entities.Violations.{
-  InputParameterCheckError,
-  InvalidArgValueError,
-  invalidArgValueErrorMsg
-}
+import models.entities.Violations.{InputParameterCheckError, InvalidArgValueError}
 
-import scala.collection.View.Empty
 import net.logstash.logback.argument.StructuredArguments.keyValue
 import utils.OTLogging
 
@@ -111,6 +103,29 @@ object Objects extends OTLogging {
       ExcludeFields("targetId")
     )
 
+  implicit val publicationImp: ObjectType[Backend, Publication] =
+    deriveObjectType[Backend, Publication](
+      ObjectTypeDescription("Referenced publication information"),
+      DocumentField("pmid", "PubMed identifier [bioregistry:pubmed]"),
+      DocumentField("pmcid", "PubMed Central identifier (if available) [bioregistry:pmc]"),
+      DocumentField("date", "Publication date"),
+      RenameField("date", "publicationDate"),
+      ExcludeFields("year", "month")
+    )
+  implicit val publicationsImp: ObjectType[Backend, Publications] =
+    deriveObjectType[Backend, Publications](
+      ObjectTypeDescription(
+        "List of referenced publications with total counts, earliest year and pagination cursor"
+      ),
+      DocumentField("count", "Total number of publications matching the query"),
+      DocumentField("filteredCount", "Number of publications after applying filters"),
+      DocumentField("earliestPubYear", "Earliest publication year"),
+      DocumentField(
+        "cursor",
+        "Opaque pagination cursor to request the next page of results"
+      ),
+      DocumentField("rows", "List of publications")
+    )
   implicit val KeyValueImp: ObjectType[Backend, KeyValuePair] =
     deriveObjectType[Backend, KeyValuePair](
       ObjectTypeDescription(
@@ -3099,7 +3114,6 @@ object Objects extends OTLogging {
           description = Some("Locus information for all variants in the credible set"),
           complexity = Some(complexityCalculator(pageArg)),
           resolve = js => {
-            import scala.concurrent.ExecutionContext.Implicits.global
             val id = js.value.studyLocusId
             LocusDeferred(id, js.arg(variantIds), js.arg(pageArg))
           }

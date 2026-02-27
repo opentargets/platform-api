@@ -3,9 +3,7 @@ package models
 import clickhouse.ClickHouseProfile
 import esecuele.Column.*
 import esecuele.{Query as Q, *}
-import models.db.QAOTF
-import models.entities.Associations.*
-import models.entities.Configuration.{DatasourceSettings, OTSettings}
+import models.entities.Configuration.OTSettings
 import models.entities.*
 import net.logstash.logback.argument.StructuredArguments.keyValue
 import services.ApplicationStart

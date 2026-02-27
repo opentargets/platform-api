@@ -1,6 +1,5 @@
 package models.entities
 
-import models.Backend
 import play.api.libs.json.*
 import play.api.libs.functional.syntax.*
 import models.gql.TypeWithId

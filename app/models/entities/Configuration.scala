@@ -101,7 +101,6 @@ object Configuration {
       harmonic: HarmonicSettings,
       l2gPredictions: DbTableSettings,
       literature: DbTableSettings,
-      literatureIndex: DbTableSettings,
       mechanismOfAction: DbTableSettings,
       mousePhenotypes: DbTableSettings,
       otarProjects: DbTableSettings,
