@@ -1,16 +1,16 @@
 package models.db
 
-import esecuele.Column.column
-import esecuele.Column.literal
-import esecuele._
+import esecuele.Column.{column, literal}
+import esecuele.Functions as F
+import esecuele.{Column, Query, *}
 import utils.OTLogging
 
 case class LiteratureQuery(ids: Set[String],
                            tableName: String,
                            filterStartDate: Option[(Int, Int)],
                            filterEndDate: Option[(Int, Int)],
-                           size: Int,
-                           offset: Int
+                           offset: Int,
+                           size: Int
 ) extends Queryable
     with OTLogging {
   val year: Column = column("year")
@@ -21,69 +21,69 @@ case class LiteratureQuery(ids: Set[String],
   val date: Column = column("date")
   val relevance: Column = column("relevance")
 
-// WITH
-//     (
-//         SELECT min(year)
-//         FROM platform2512.literature_index
-//         WHERE keywordId = 'ENSG00000171862'
-//     ) AS minYear,
-//     (
-//         SELECT count(pmid)
-//         FROM platform2512.literature_index
-//         WHERE keywordId = 'ENSG00000171862'
-//     ) AS total,
-//     (
-//         SELECT count(pmid)
-//         FROM platform2512.literature_index
-//         WHERE (keywordId = 'ENSG00000171862') AND (year <= 2000)
-//     ) AS filteredCount
-// SELECT
-//     total,
-//     minYear,
-//     filteredCount,
-//     arraySlice(reverse(arraySort(p -> (p.relevance, p.date), groupArray(CAST((pmid, pmcid, date, year, month, relevance), 'Tuple(pmid String, pmcid Nullable(String), date Date, year UInt16, month UInt8, relevance Float64)')))), 1, 20) AS rows
-// FROM platform2512.literature_index
-// WHERE (keywordId = 'ENSG00000171862') AND (year <= 2000)
+  private val yearMonth: Column = F.plus(F.multiply(year, literal(100)), month)
+  private val dateStartFilter =
+    filterStartDate match
+      case Some(value) =>
+        Some(
+          F.greaterOrEquals(
+            yearMonth,
+            literal((value._1 * 100) + value._2)
+          )
+        )
+      case _ => None
+
+  private val dateEndFilter =
+    filterEndDate match
+      case Some(value) =>
+        Some(
+          F.lessOrEquals(
+            yearMonth,
+            literal((value._1 * 100) + value._2)
+          )
+        )
+      case _ => None
 
   private val withSection = With(
     Seq(
       Query(
-        Select(Functions.min(year) :: Nil),
+        Select(F.min(year) :: Nil),
         From(column(tableName)),
-        Where(Functions.in(keywordId, Functions.set(ids.map(literal).toSeq)))
-      ).toColumn(Some("minYear")),
+        Where(F.in(keywordId, F.set(ids.map(literal).toSeq)))
+      ).toColumn(None).as(Some("ly")),
       Query(
-        Select(Functions.count(pmid) :: Nil),
+        Select(F.count(pmid) :: Nil),
         From(column(tableName)),
-        Where(Functions.in(keywordId, Functions.set(ids.map(literal).toSeq)))
-      ).toColumn(Some("total")),
+        Where(F.in(keywordId, F.set(ids.map(literal).toSeq)))
+      ).toColumn(None).as(Some("c")),
       Query(
-        Select(Functions.count(pmid) :: Nil),
+        Select(F.count(pmid) :: Nil),
         From(column(tableName)),
         Where(
-          Functions.and(
-            Functions.in(keywordId, Functions.set(ids.map(literal).toSeq)),
-            filterEndDate
-              .map(end => Functions.lessOrEquals(year, literal(end)))
-              .getOrElse(literal(true))
+          F.and(
+            F.in(keywordId, F.set(ids.map(literal).toSeq)),
+            F.and(
+              dateStartFilter.getOrElse(literal(true)),
+              dateEndFilter.getOrElse(literal(true))
+            )
           )
         )
-      ).toColumn(Some("filteredCount"))
+      ).toColumn(None).as(Some("fc"))
     )
   )
 
   private val select = Select(
     Seq(
-      column("total"),
-      column("minYear"),
-      column("filteredCount"),
+      F.cast(column("c"), "UInt32").as(Some("count")),
+      F.cast(column("ly"), "UInt32").as(Some("earliestPubYear")),
+      F.cast(column("fc"), "UInt32").as(Some("filteredCount")),
       Functions
         .arraySlice(
-          Functions.arrayReverseSort(
+          F.arrayReverseSort(
             lambda = Some("p -> (p.relevance, p.date)"),
-            col = Functions.groupArray(
-              Functions.cast(
-                Functions.tuple(pmid :: pmcid :: date :: year :: month :: relevance :: Nil),
+            col = F.groupArray(
+              F.cast(
+                F.tuple(pmid :: pmcid :: date :: year :: month :: relevance :: Nil),
                 "Tuple(pmid String, pmcid Nullable(String), date Date, year UInt16, month UInt8, relevance Float64)"
               )
             )
@@ -96,12 +96,12 @@ case class LiteratureQuery(ids: Set[String],
   )
   private val from = From(column(tableName))
   private val where = Where(
-    Functions.and(
-      Functions.in(keywordId, Functions.set(ids.map(literal).toSeq)),
-      filterEndDate.map(end => Functions.lessOrEquals(year, literal(end))).getOrElse(literal(true)),
-      filterStartDate
-        .map(start => Functions.greaterOrEquals(year, literal(start)))
-        .getOrElse(literal(true))
+    F.and(
+      F.in(keywordId, F.set(ids.map(literal).toSeq)),
+      F.and(
+        dateStartFilter.getOrElse(literal(true)),
+        dateEndFilter.getOrElse(literal(true))
+      )
     )
   )
   override val query: Query =
@@ -109,7 +109,8 @@ case class LiteratureQuery(ids: Set[String],
       withSection,
       select,
       from,
-      where
+      where,
+      Format("JSONEachRow")
     )
 
 }

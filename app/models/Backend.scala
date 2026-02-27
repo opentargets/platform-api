@@ -977,18 +977,12 @@ class Backend @Inject() (implicit
     }
   }
 
-  def getLiteratureOcurrences(ids: Set[String], cursor: Option[String]): Future[Publications] = {
-    import Pagination._
-
-    getLiterature(ids, Option.empty, Option.empty, Option.empty, Option.empty, cursor)
-  }
-
-  def getLit(ids: Set[String],
-             startYear: Option[Int],
-             startMonth: Option[Int],
-             endYear: Option[Int],
-             endMonth: Option[Int],
-             cursor: Option[String]
+  def getLiteratureOcurrences(ids: Set[String],
+                              startYear: Option[Int],
+                              startMonth: Option[Int],
+                              endYear: Option[Int],
+                              endMonth: Option[Int],
+                              cursor: Option[String]
   ): Future[Publications] = {
     val table = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.literatureIndex.name)
     val pag = Helpers.Cursor
@@ -1026,100 +1020,6 @@ class Backend @Inject() (implicit
         v.head
       }
     }
-  }
-
-  def getLiteratureOcurrences(ids: Set[String],
-                              startYear: Option[Int],
-                              startMonth: Option[Int],
-                              endYear: Option[Int],
-                              endMonth: Option[Int],
-                              cursor: Option[String]
-  ): Future[Publications] = {
-    import Pagination._
-
-    getLiterature(ids, startYear, startMonth, endYear, endMonth, cursor)
-  }
-
-  private def getLiterature(ids: Set[String],
-                            startYear: Option[Int],
-                            startMonth: Option[Int],
-                            endYear: Option[Int],
-                            endMonth: Option[Int],
-                            cursor: Option[String]
-  ): Future[Publications] = {
-    val table = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.literature.name)
-    val indexTable = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.literatureIndex.name)
-    logger.debug(s"querying literature ocurrences", keyValue("table", table), keyValue("ids", ids))
-
-    val pag = Helpers.Cursor.to(cursor).flatMap(_.asOpt[Pagination]).getOrElse(Pagination.mkDefault)
-
-    val filterStartDate = (startYear, startMonth) match {
-      case (Some(strYear), Some(strMonth)) =>
-        Some(strYear, strMonth)
-      case (Some(strYear), None) => Some(strYear, 1)
-      case (None, Some(strMonth)) =>
-        throw InputParameterCheckError(Vector(DateFilterError("startYear", "startMonth")))
-      case _ => Option.empty
-    }
-
-    val filterEndDate = (endYear, endMonth) match {
-      case (Some(ndYear), Some(ndMonth)) =>
-        Some(ndYear, ndMonth)
-      case (Some(ndYear), None) => Some(ndYear, 12)
-      case (None, Some(ndMonth)) =>
-        throw InputParameterCheckError(Vector(DateFilterError("startYear", "startMonth")))
-      case _ => Option.empty
-    }
-
-    val simQ = QLITAGG(table, indexTable, ids, pag.size, pag.offset, filterStartDate, filterEndDate)
-
-    def runQuery(year: Int, total: Long) =
-      dbRetriever.executeQuery[Publication, Query](simQ.query).map { v =>
-        val pubs = v
-          .map(pub => Json.toJson(pub))
-        val nCursor = if (v.size < pag.size) {
-          None
-        } else {
-          val npag = pag.next
-          Helpers.Cursor.from(Some(Json.toJson(npag)))
-        }
-
-        val result = dbRetriever.executeQuery[Int, Query](simQ.filteredTotalQ).map { v2 =>
-          Publications(total, year, nCursor, pubs, v2.head)
-        }
-
-        result.await
-      }
-
-    dbRetriever.executeQuery[Long, Query](simQ.total).flatMap {
-      case Vector(total) if total > 0 =>
-        logger.debug(s"total number of publication occurrences $total")
-        dbRetriever.executeQuery[Int, Query](simQ.minDate).flatMap {
-          case Vector(year) =>
-            runQuery(year, total)
-          case _ =>
-            logger.warn(s"cannot find the earliest year for the publications")
-            runQuery(1900, total)
-        }
-
-      case _ =>
-        logger.warn(s"there is no publications with this set of ids", keyValue("ids", ids))
-        Future.successful(Publications.empty())
-    }
-  }
-
-  def filterLiteratureByDate(pub: Publication, dateAndComparator: (Int, Int, Int, Int)): Boolean = {
-    // if no year is sent no filter is applied
-
-    def compareDates(pubDate: LocalDate, reqStartDate: LocalDate, reqEndDate: LocalDate): Boolean =
-      pubDate.compareTo(reqStartDate) >= 0 && pubDate.compareTo(reqEndDate) <= 0
-
-    val pubDate = LocalDate.of(pub.year, pub.month, 1)
-    val reqStartDate = LocalDate.of(dateAndComparator._1, dateAndComparator._2, 1)
-    val reqEndDate = LocalDate.of(dateAndComparator._3, dateAndComparator._4, 1)
-
-    compareDates(pubDate, reqStartDate, reqEndDate)
-
   }
 
   /** @param index
