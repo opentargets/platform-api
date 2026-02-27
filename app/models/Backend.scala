@@ -983,6 +983,51 @@ class Backend @Inject() (implicit
     getLiterature(ids, Option.empty, Option.empty, Option.empty, Option.empty, cursor)
   }
 
+  def getLit(ids: Set[String],
+             startYear: Option[Int],
+             startMonth: Option[Int],
+             endYear: Option[Int],
+             endMonth: Option[Int],
+             cursor: Option[String]
+  ): Future[Publications] = {
+    val table = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.literatureIndex.name)
+    val pag = Helpers.Cursor
+      .to(cursor)
+      .flatMap(_.asOpt[Pagination])
+      .getOrElse(Pagination.mkDefault)
+    val filterStartDate = (startYear, startMonth) match {
+      case (Some(strYear), Some(strMonth)) =>
+        Some(strYear, strMonth)
+      case (Some(strYear), None) => Some(strYear, 1)
+      case (None, Some(strMonth)) =>
+        throw InputParameterCheckError(Vector(DateFilterError("startYear", "startMonth")))
+      case _ => Option.empty
+    }
+    val filterEndDate = (endYear, endMonth) match {
+      case (Some(ndYear), Some(ndMonth)) =>
+        Some(ndYear, ndMonth)
+      case (Some(ndYear), None) => Some(ndYear, 12)
+      case (None, Some(ndMonth)) =>
+        throw InputParameterCheckError(Vector(DateFilterError("startYear", "startMonth")))
+      case _ => Option.empty
+    }
+    val litQuery =
+      LiteratureQuery(ids, table, filterStartDate, filterEndDate, pag.offset, pag.size)
+    dbRetriever.executeQuery[Publications, Query](litQuery.query).map { v =>
+      if (v.isEmpty) {
+        Publications.empty()
+      } else {
+        val nCursor = if (v.size < pag.size) {
+          None
+        } else {
+          val npag = pag.next
+          Helpers.Cursor.from(Some(Json.toJson(npag)))
+        }
+        v.head
+      }
+    }
+  }
+
   def getLiteratureOcurrences(ids: Set[String],
                               startYear: Option[Int],
                               startMonth: Option[Int],

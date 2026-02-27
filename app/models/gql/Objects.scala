@@ -230,7 +230,7 @@ object Objects extends OTLogging {
           val filterEndMonth = c.arg(endMonth)
           val cur = c.arg(cursor)
 
-          c.ctx.getLiteratureOcurrences(
+          c.ctx.getLit(
             ids.toSet,
             filterStartYear,
             filterStartMonth,

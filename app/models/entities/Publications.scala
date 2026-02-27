@@ -3,6 +3,7 @@ package models.entities
 import models.Backend
 import models.entities.Publication._
 import play.api.libs.json.JsValue
+import play.api.libs.json.{Json, OFormat}
 import sangria.schema.{
   Field,
   IntType,
@@ -13,6 +14,7 @@ import sangria.schema.{
   StringType,
   fields
 }
+import slick.jdbc.GetResult
 
 case class Publications(count: Long,
                         lowYear: Int,
@@ -22,9 +24,11 @@ case class Publications(count: Long,
 )
 
 object Publications {
+  implicit val getPublicationsFromDB: GetResult[Publications] =
+    GetResult(r => Json.parse(r.<<[String]).as[Publications])
   def empty(withTotal: Long = 0, withLowYear: Int = 0): Publications =
     Publications(withTotal, withLowYear, None, IndexedSeq.empty)
-
+  implicit val publicationsImpF: OFormat[Publications] = Json.format[Publications]
   val publicationsImp: ObjectType[Backend, Publications] = ObjectType(
     "Publications",
     "List of referenced publications with total counts, earliest year and pagination cursor",
