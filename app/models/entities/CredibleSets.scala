@@ -5,6 +5,7 @@ import models.gql.StudyTypeEnum
 import utils.OTLogging
 import play.api.libs.json._
 import slick.jdbc.GetResult
+import utils.db.DbJsonParser.fromPositionedResult
 
 case class CredibleSets(
     count: Long,
@@ -59,7 +60,7 @@ case class CredibleSetQueryArgs(
 object CredibleSets extends OTLogging {
   def empty: CredibleSets = CredibleSets(0, IndexedSeq.empty)
   implicit val getResultCredibleSet: GetResult[CredibleSet] =
-    GetResult(r => Json.parse(r.<<[String]).as[CredibleSet])
+    GetResult(fromPositionedResult[CredibleSet])
   implicit val ldSetF: OFormat[LdSet] = Json.format[LdSet]
 
   implicit val credibleSetF: OFormat[CredibleSet] = Json.format[CredibleSet]

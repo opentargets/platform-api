@@ -4,6 +4,7 @@ import utils.OTLogging
 import models.gql.StudyTypeEnum
 import play.api.libs.json.{Json, OFormat}
 import slick.jdbc.GetResult
+import utils.db.DbJsonParser.fromPositionedResult
 
 case class Studies(
     count: Long,
@@ -58,7 +59,7 @@ object Studies extends OTLogging {
   def empty: Studies = Studies(0, IndexedSeq.empty)
 
   implicit val studiesFromDB: GetResult[Study] =
-    GetResult(r => Json.parse(r.<<[String]).as[Study])
+    GetResult(fromPositionedResult[Study])
 
   implicit val sampleF: OFormat[Sample] = Json.format[Sample]
   implicit val ldPopulationStructureF: OFormat[LdPopulationStructure] =

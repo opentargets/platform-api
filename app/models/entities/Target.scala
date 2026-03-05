@@ -6,6 +6,7 @@ import play.api.libs.json.*
 import clickhouse.rep.SeqRep.*
 import slick.jdbc.GetResult
 import utils.OTLogging
+import utils.db.DbJsonParser.fromPositionedResult
 
 case class CanonicalTranscript(
     id: String,
@@ -171,7 +172,7 @@ case class Target(
 object Target extends OTLogging {
 
   implicit val getTargetFromDB: GetResult[Target] =
-    GetResult(r => Json.parse(r.<<[String]).as[Target])
+    GetResult(fromPositionedResult[Target])
 
   implicit val tepImpW: OWrites[Tep] = Json.writes[Tep]
   implicit val tepImpR: Reads[Tep] =
