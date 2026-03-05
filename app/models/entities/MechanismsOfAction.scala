@@ -3,6 +3,7 @@ package models.entities
 import play.api.libs.json._
 import slick.jdbc.GetResult
 import utils.OTLogging
+import utils.db.DbJsonParser.fromPositionedResult
 
 case class Reference(ids: Option[Seq[String]], source: String, urls: Option[Seq[String]])
 
@@ -23,7 +24,7 @@ case class MechanismOfActionRow(
 
 object MechanismsOfAction extends OTLogging {
   implicit val getFromDB: GetResult[MechanismsOfAction] =
-    GetResult(r => Json.parse(r.<<[String]).as[MechanismsOfAction])
+    GetResult(fromPositionedResult[MechanismsOfAction])
   implicit val referenceF: OFormat[Reference] = Json.format[Reference]
   implicit val mechanismOfActionRowF: OFormat[MechanismOfActionRow] =
     Json.format[MechanismOfActionRow]

@@ -5,6 +5,8 @@ import play.api.libs.json._
 import models.gql.TypeWithId
 import slick.jdbc.GetResult
 import utils.OTLogging
+import utils.db.DbJsonParser.fromPositionedResult
+
 case class Locus(
     variantId: String,
     posteriorProbability: Double,
@@ -29,7 +31,7 @@ object Loci extends OTLogging {
 
   def empty(): Loci = Loci(0, None, "")
   implicit val getResultLoci: GetResult[Loci] =
-    GetResult(r => Json.parse(r.<<[String]).as[Loci])
+    GetResult(fromPositionedResult[Loci])
   implicit val locusF: OFormat[Locus] = Json.format[Locus]
   implicit val lociF: OFormat[Loci] = Json.format[Loci]
 }
