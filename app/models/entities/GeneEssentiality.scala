@@ -3,6 +3,7 @@ package models.entities
 import play.api.libs.json.{Json, OFormat}
 import slick.jdbc.GetResult
 import utils.OTLogging
+import utils.db.DbJsonParser.fromPositionedResult
 
 case class GeneEssentialityScreen(cellLineName: Option[String],
                                   depmapId: Option[String],
@@ -26,7 +27,7 @@ case class TargetEssentiality(id: String, geneEssentiality: Seq[GeneEssentiality
 
 object TargetEssentiality extends OTLogging {
   implicit val getTargetEssentialityResult: GetResult[TargetEssentiality] =
-    GetResult(r => Json.parse(r.<<[String]).as[TargetEssentiality])
+    GetResult(fromPositionedResult[TargetEssentiality])
   implicit val targetEssentialityImp: OFormat[TargetEssentiality] = Json.format[TargetEssentiality]
   implicit val geneEssentialityImp: OFormat[GeneEssentiality] = Json.format[GeneEssentiality]
   implicit val depMapEssentialityImp: OFormat[DepMapEssentiality] = Json.format[DepMapEssentiality]

@@ -3,6 +3,7 @@ package models.entities
 import play.api.libs.json.{Json, OFormat}
 import slick.jdbc.GetResult
 import utils.OTLogging
+import utils.db.DbJsonParser.fromPositionedResult
 
 case class ClinicalIndication(
     id: String,
@@ -15,7 +16,7 @@ case class ClinicalIndication(
 object ClinicalIndication extends OTLogging {
 
   implicit val getClinicalIndicationsFromDB: GetResult[ClinicalIndication] =
-    GetResult(r => Json.parse(r.<<[String]).as[ClinicalIndication])
+    GetResult(fromPositionedResult[ClinicalIndication])
 
   implicit val clinicalIndicationsF: OFormat[ClinicalIndication] = Json.format[ClinicalIndication]
 }

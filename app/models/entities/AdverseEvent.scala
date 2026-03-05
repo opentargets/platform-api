@@ -3,6 +3,7 @@ package models.entities
 import play.api.libs.json._
 import slick.jdbc.GetResult
 import models.gql.TypeWithId
+import utils.db.DbJsonParser.fromPositionedResult
 
 case class AdverseEvent(
     name: String,
@@ -19,7 +20,7 @@ case class AdverseEvents(count: Long,
 
 object AdverseEvent {
   implicit val getRowFromDB: GetResult[AdverseEvents] =
-    GetResult(r => Json.parse(r.<<[String]).as[AdverseEvents])
+    GetResult(fromPositionedResult[AdverseEvents])
   implicit val adverseEventF: OFormat[AdverseEvent] = Json.format[AdverseEvent]
   implicit val adverseEventsF: OFormat[AdverseEvents] = Json.format[AdverseEvents]
 }

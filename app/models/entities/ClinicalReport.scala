@@ -3,6 +3,7 @@ package models.entities
 import play.api.libs.json.{JsString, JsValue, Json, OFormat, Writes}
 import slick.jdbc.GetResult
 import utils.OTLogging
+import utils.db.DbJsonParser.fromPositionedResult
 
 case class ClinRepDrugListItem(drugFromSource: String, drugId: String)
 
@@ -36,16 +37,7 @@ case class ClinicalReport(
 
 object ClinicalReport extends OTLogging {
   implicit val getClinicalReportFromDB: GetResult[ClinicalReport] =
-    GetResult { r =>
-      val raw = r.<<[String]
-      val escaped = raw
-        .replaceAll("""\\([*^<>&\[\]_~])""", "$1")
-        .replace("\\", "\\\\")
-        .replace("\n", "\\n")
-        .replaceAll("""\\(nrt)""", "\\\\$1")
-      val json = Json.parse(escaped)
-      json.as[ClinicalReport]
-    }
+    GetResult(fromPositionedResult[ClinicalReport])
 
   implicit val diseaseListItemW: Writes[ClinicalDiseaseListItem] =
     Json.writes[ClinicalDiseaseListItem]
