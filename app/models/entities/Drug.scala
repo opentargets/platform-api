@@ -3,6 +3,7 @@ package models.entities
 import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json._
 import slick.jdbc.GetResult
+import utils.db.DbJsonParser.fromPositionedResult
 
 case class DrugReferences(source: String, ids: Seq[String])
 
@@ -20,7 +21,7 @@ case class Drug(
 )
 
 object Drug {
-  implicit val getResult: GetResult[Drug] = GetResult(r => Json.parse(r.<<[String]).as[Drug])
+  implicit val getResult: GetResult[Drug] = GetResult(fromPositionedResult[Drug])
   implicit val DrugXRefImpW: OFormat[DrugReferences] = Json.format[DrugReferences]
   implicit val drugImplicitR: Reads[Drug] = Json.reads[Drug]
   implicit val drugImplicitW: OWrites[Drug] = Json.writes[Drug]

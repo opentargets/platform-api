@@ -3,6 +3,7 @@ package models.entities
 import play.api.libs.json._
 import models.gql.TypeWithId
 import slick.jdbc.GetResult
+import utils.db.DbJsonParser.fromPositionedResult
 
 case class DiseaseHPOEvidences(
     aspect: Option[String],
@@ -27,7 +28,7 @@ case class DiseaseHPOs(count: Long, rows: IndexedSeq[DiseaseHPO], id: String = "
 
 object DiseaseHPOs {
   implicit val diseaseHPOsImpGetResult: GetResult[DiseaseHPOs] =
-    GetResult(r => Json.parse(r.<<[String]).as[DiseaseHPOs])
+    GetResult(fromPositionedResult[DiseaseHPOs])
   def empty: DiseaseHPOs = DiseaseHPOs(0, IndexedSeq.empty)
   implicit val diseaseHPOsImpF: OFormat[DiseaseHPOs] = Json.format[models.entities.DiseaseHPOs]
   implicit val diseaseHPOImpF: OFormat[DiseaseHPO] = Json.format[models.entities.DiseaseHPO]

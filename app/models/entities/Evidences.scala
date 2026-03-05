@@ -2,6 +2,7 @@ package models.entities
 
 import play.api.libs.json._
 import slick.jdbc.GetResult
+import utils.db.DbJsonParser.fromPositionedResult
 
 case class NameAndDescription(name: String, description: String)
 
@@ -160,7 +161,7 @@ case class Evidences(count: Int, cursor: Option[String], rows: IndexedSeq[Eviden
 object Evidences {
   def empty(withTotal: Int = 0): Evidences = Evidences(withTotal, None, IndexedSeq.empty)
   implicit val getEvidenceFromDB: GetResult[Evidence] =
-    GetResult(r => Json.parse(r.<<[String]).as[Evidence])
+    GetResult(fromPositionedResult[Evidence])
 
   implicit val nameAndDescriptionJsonFormatImp: OFormat[NameAndDescription] =
     Json.format[NameAndDescription]

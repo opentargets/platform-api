@@ -2,6 +2,7 @@ package models.entities
 
 import play.api.libs.json.{Json, OFormat}
 import slick.jdbc.GetResult
+import utils.db.DbJsonParser.fromPositionedResult
 
 /** @param id
   *   of gene ontology, eg: GO:0005515
@@ -12,7 +13,7 @@ case class GeneOntologyTerm(id: String, name: String)
 
 object GeneOntologyTerm {
   implicit val getGoTermResult: GetResult[GeneOntologyTerm] =
-    GetResult(r => Json.parse(r.<<[String]).as[GeneOntologyTerm])
+    GetResult(fromPositionedResult[GeneOntologyTerm])
   implicit val geneOntologyF: OFormat[GeneOntologyTerm] = Json.format[GeneOntologyTerm]
 
 }

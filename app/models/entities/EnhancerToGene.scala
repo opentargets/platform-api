@@ -2,6 +2,7 @@ package models.entities
 
 import play.api.libs.json.{Json, OFormat}
 import slick.jdbc.GetResult
+import utils.db.DbJsonParser.fromPositionedResult
 
 case class ResourceScore(name: String, value: Double)
 
@@ -32,7 +33,7 @@ case class EnhancerToGenes(
 object EnhancerToGenes {
   val empty: EnhancerToGenes = EnhancerToGenes(0, Vector.empty)
   implicit val getEnhancerToGeneRowFromDB: GetResult[EnhancerToGene] =
-    GetResult(r => Json.parse(r.<<[String]).as[EnhancerToGene])
+    GetResult(fromPositionedResult[EnhancerToGene])
   implicit val EnhancerToGeneImp: OFormat[EnhancerToGene] = Json.format[EnhancerToGene]
   implicit val ResourceScoreTypeImp: OFormat[ResourceScore] = Json.format[ResourceScore]
 }
