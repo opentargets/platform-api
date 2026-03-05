@@ -4,6 +4,7 @@ import play.api.Logging
 import play.api.libs.json.{OFormat, Json}
 import slick.jdbc.GetResult
 import utils.OTLogging
+import utils.db.DbJsonParser.fromPositionedResult
 
 case class VariantEffect(method: Option[String],
                          assessment: Option[String],
@@ -51,7 +52,7 @@ case class VariantIndex(variantId: String,
 
 object VariantIndex extends OTLogging {
   implicit val getTargetFromDB: GetResult[VariantIndex] =
-    GetResult(r => Json.parse(r.<<[String]).as[VariantIndex])
+    GetResult(fromPositionedResult[VariantIndex])
   implicit val variantEffectF: OFormat[VariantEffect] = Json.format[VariantEffect]
   implicit val transcriptConsequenceF: OFormat[TranscriptConsequence] =
     Json.format[TranscriptConsequence]

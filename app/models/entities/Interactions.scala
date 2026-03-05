@@ -6,6 +6,7 @@ import play.api.libs.functional.syntax.*
 import models.gql.TypeWithId
 import slick.jdbc.GetResult
 import utils.OTLogging
+import utils.db.DbJsonParser.fromPositionedResult
 
 case class Interactions(count: Long, rows: IndexedSeq[Interaction], id: String = "")
     extends TypeWithId
@@ -55,9 +56,9 @@ case class Interaction(
 object Interactions extends OTLogging {
   val empty: Interactions = Interactions(0L, IndexedSeq.empty)
   implicit val getInteractionsFromDB: GetResult[Interactions] =
-    GetResult(r => Json.parse(r.<<[String]).as[Interactions])
+    GetResult(fromPositionedResult[Interactions])
   implicit val getInteractionResourcesFromDB: GetResult[InteractionResources] =
-    GetResult(r => Json.parse(r.<<[String]).as[InteractionResources])
+    GetResult(fromPositionedResult[InteractionResources])
   implicit val interactionEvidencePDMF: OFormat[InteractionEvidencePDM] =
     Json.format[InteractionEvidencePDM]
   implicit val interactionSpeciesF: OFormat[InteractionSpecies] = Json.format[InteractionSpecies]

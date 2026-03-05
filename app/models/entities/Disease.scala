@@ -1,8 +1,9 @@
 package models.entities
 
 import utils.OTLogging
-import play.api.libs.json._
+import play.api.libs.json.*
 import slick.jdbc.GetResult
+import utils.db.DbJsonParser.fromPositionedResult
 
 case class DiseaseSynonyms(relation: String, terms: Seq[String])
 
@@ -25,7 +26,7 @@ case class Disease(
 
 object Disease extends OTLogging {
   implicit val getDiseaseFromDB: GetResult[Disease] =
-    GetResult(r => Json.parse(r.<<[String]).as[Disease])
+    GetResult(fromPositionedResult[Disease])
   implicit val DiseaseSynonymsImpF: OFormat[DiseaseSynonyms] =
     Json.format[models.entities.DiseaseSynonyms]
   implicit val diseaseImpF: OFormat[Disease] = Json.format[Disease]

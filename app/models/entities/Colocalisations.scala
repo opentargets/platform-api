@@ -4,6 +4,7 @@ import models.Backend
 import models.gql.TypeWithId
 import slick.jdbc.GetResult
 import play.api.libs.json.{Json, OFormat}
+import utils.db.DbJsonParser.fromPositionedResult
 
 case class Colocalisation(
     studyLocusId: String,
@@ -25,7 +26,7 @@ case class Colocalisations(
 
 object Colocalisations {
   implicit val getRowFromDB: GetResult[Colocalisations] =
-    GetResult(r => Json.parse(r.<<[String]).as[Colocalisations])
+    GetResult(fromPositionedResult[Colocalisations])
 
   implicit val colocalisationsF: OFormat[Colocalisations] = Json.format[Colocalisations]
   implicit val colocalisationF: OFormat[Colocalisation] = Json.format[Colocalisation]

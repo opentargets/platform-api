@@ -4,6 +4,7 @@ import utils.OTLogging
 import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json._
 import slick.jdbc.GetResult
+import utils.db.DbJsonParser.fromPositionedResult
 
 case class DrugWarningReference(id: String, source: String, url: String)
 
@@ -28,7 +29,7 @@ case class DrugWarnings(
 
 object DrugWarning extends OTLogging {
   implicit val getDrugWarningsFromDB: GetResult[DrugWarnings] =
-    GetResult(r => Json.parse(r.<<[String]).as[DrugWarnings])
+    GetResult(fromPositionedResult[DrugWarnings])
   implicit val drugWarningsImpF: OFormat[DrugWarnings] = Json.format[models.entities.DrugWarnings]
   implicit val drugWarningsReferenceImpF: OFormat[models.entities.DrugWarningReference] =
     Json.format[models.entities.DrugWarningReference]

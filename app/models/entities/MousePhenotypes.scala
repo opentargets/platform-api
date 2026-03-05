@@ -5,6 +5,7 @@ import play.api.libs.json._
 import slick.jdbc.GetResult
 import models.gql.TypeWithId
 import utils.OTLogging
+import utils.db.DbJsonParser.fromPositionedResult
 
 case class BiologicalModels(
     allelicComposition: String,
@@ -37,7 +38,7 @@ case class MousePhenotypes(
 
 object MousePhenotypes extends OTLogging {
   implicit val getFromDB: GetResult[MousePhenotypes] =
-    GetResult(r => Json.parse(r.<<[String]).as[MousePhenotypes])
+    GetResult(fromPositionedResult[MousePhenotypes])
   implicit val biologicalModelsF: OFormat[BiologicalModels] = Json.format[BiologicalModels]
   implicit val modelPhenotypeClassesF: OFormat[ModelPhenotypeClasses] =
     Json.format[ModelPhenotypeClasses]

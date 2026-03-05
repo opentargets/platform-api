@@ -3,6 +3,7 @@ package models.entities
 import play.api.libs.json.*
 import utils.OTLogging
 import slick.jdbc.GetResult
+import utils.db.DbJsonParser.fromPositionedResult
 
 case class DrugWithIdentifiers(
     drugId: Option[String],
@@ -50,11 +51,11 @@ case class PharmacogenomicsByTarget(targetFromSourceId: String,
 
 object Pharmacogenomics extends OTLogging {
   implicit val getPharmacogenomicsByDrugResult: GetResult[PharmacogenomicsByDrug] =
-    GetResult(r => Json.parse(r.<<[String]).as[PharmacogenomicsByDrug])
+    GetResult(fromPositionedResult[PharmacogenomicsByDrug])
   implicit val getPharmacogenomicsByVariantResult: GetResult[PharmacogenomicsByVariant] =
-    GetResult(r => Json.parse(r.<<[String]).as[PharmacogenomicsByVariant])
+    GetResult(fromPositionedResult[PharmacogenomicsByVariant])
   implicit val getPharmacogenomicsByTargetResult: GetResult[PharmacogenomicsByTarget] =
-    GetResult(r => Json.parse(r.<<[String]).as[PharmacogenomicsByTarget])
+    GetResult(fromPositionedResult[PharmacogenomicsByTarget])
   implicit val drugF: OFormat[DrugWithIdentifiers] = Json.format[DrugWithIdentifiers]
   implicit val variantAnnotation: OFormat[VariantAnnotation] = Json.format[VariantAnnotation]
   implicit val pharmacogenomicsF: OFormat[Pharmacogenomics] = Json.format[Pharmacogenomics]
