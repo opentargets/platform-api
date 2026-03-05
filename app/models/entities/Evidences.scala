@@ -149,6 +149,9 @@ case class Evidence(
     primaryProjectHit: Option[Boolean],
     primaryProjectId: Option[String],
     assays: Option[Seq[Assays]],
+    qualityControls: Seq[String],
+    publicationDate: Option[String],
+    evidenceDate: Option[String],
     metaTotal: Int = 0
 )
 

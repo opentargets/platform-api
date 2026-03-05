@@ -21,6 +21,7 @@ case class ChemicalProbe(
     id: String,
     control: Option[String],
     drugId: Option[String],
+    drugFromSourceId: Option[String],
     mechanismOfAction: Option[Seq[String]],
     isHighQuality: Boolean,
     origin: Option[Seq[String]],
