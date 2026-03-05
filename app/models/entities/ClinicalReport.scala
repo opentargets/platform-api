@@ -23,6 +23,7 @@ case class ClinicalReport(
     trialPrimaryPurpose: Option[String],
     trialPhase: Option[String],
     trialStopReasonCategories: Seq[String],
+    qualityControls: Seq[String],
     diseases: Seq[ClinicalDiseaseListItem],
     drugs: Seq[ClinRepDrugListItem],
     hasExpertReview: Boolean,
