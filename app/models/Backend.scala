@@ -935,7 +935,7 @@ class Backend @Inject() (implicit
     } else Set.empty[String]
 
     val columnFilters = if (includeMeasurements == false) {
-      Seq(("is_measurement", false))
+      Seq(("isMeasurement", false))
     } else {
       Seq.empty
     }
