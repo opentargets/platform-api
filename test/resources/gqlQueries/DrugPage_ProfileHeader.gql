@@ -10,10 +10,7 @@ fragment DrugProfileHeaderFragment on Drug {
     id
     name
   }
-  isApproved
-  hasBeenWithdrawn
-  blackBoxWarning
-  maximumClinicalTrialPhase
+  maximumClinicalStage
   tradeNames
   yearOfFirstApproval
 }

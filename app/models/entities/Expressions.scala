@@ -6,6 +6,7 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json.JsonConfiguration.Aux
 import play.api.libs.json.JsonNaming.SnakeCase
 import slick.jdbc.GetResult
+import utils.db.DbJsonParser.fromPositionedResult
 
 case class Tissue(id: String, label: String, anatomicalSystems: Seq[String], organs: Seq[String])
 
@@ -21,7 +22,7 @@ case class Expressions(id: String, rows: Seq[Expression])
 
 object Expressions {
   implicit val getExpressionsResult: GetResult[Expressions] =
-    GetResult(r => Json.parse(r.<<[String]).as[Expressions])
+    GetResult(fromPositionedResult[Expressions])
   implicit val tissueW: OWrites[Tissue] = Json.writes[Tissue]
   implicit val rnaExpressionW: OWrites[RNAExpression] = Json.writes[RNAExpression]
   implicit val cellTypeW: OWrites[CellType] = Json.writes[CellType]

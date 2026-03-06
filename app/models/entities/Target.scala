@@ -6,6 +6,7 @@ import play.api.libs.json.*
 import clickhouse.rep.SeqRep.*
 import slick.jdbc.GetResult
 import utils.OTLogging
+import utils.db.DbJsonParser.fromPositionedResult
 
 case class CanonicalTranscript(
     id: String,
@@ -21,6 +22,7 @@ case class ChemicalProbe(
     id: String,
     control: Option[String],
     drugId: Option[String],
+    drugFromSourceId: Option[String],
     mechanismOfAction: Option[Seq[String]],
     isHighQuality: Boolean,
     origin: Option[Seq[String]],
@@ -127,7 +129,7 @@ case class ReactomePathway(pathway: String, pathwayId: String, topLevelTerm: Str
 case class Transcript(
     transcriptId: String,
     biotype: String,
-    isEnsemblCanonical: Boolean,
+    isEnsemblCanonical: Option[Boolean],
     uniprotId: Option[String],
     isUniprotReviewed: Option[Boolean],
     translationId: Option[String],
@@ -170,7 +172,7 @@ case class Target(
 object Target extends OTLogging {
 
   implicit val getTargetFromDB: GetResult[Target] =
-    GetResult(r => Json.parse(r.<<[String]).as[Target])
+    GetResult(fromPositionedResult[Target])
 
   implicit val tepImpW: OWrites[Tep] = Json.writes[Tep]
   implicit val tepImpR: Reads[Tep] =

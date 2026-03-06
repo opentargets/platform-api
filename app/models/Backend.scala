@@ -402,53 +402,6 @@ class Backend @Inject() (implicit
     dbRetriever.executeQuery[TargetPrioritisation, Query](query.query)
   }
 
-  def getKnownDrugs(
-      queryString: String,
-      kv: Map[String, String],
-      sizeLimit: Option[Int],
-      cursor: Option[String]
-  ): Future[Option[KnownDrugs]] = {
-
-    val pag = Pagination(0, sizeLimit.getOrElse(Pagination.sizeDefault))
-    val sortByField = sort.FieldSort(field = "phase").desc()
-    val cbIndex = getIndexOrDefault("known_drugs")
-
-    val mappedValues =
-      Seq(keyValue("index", cbIndex)) ++ kv.map(pair => keyValue(pair._1, pair._2)).toSeq
-
-    logger.debug(s"querying known drugs", mappedValues*)
-
-    val aggs = Seq(
-      cardinalityAgg("uniqueTargets", "targetId.raw"),
-      cardinalityAgg("uniqueDiseases", "diseaseId.raw"),
-      cardinalityAgg("uniqueDrugs", "drugId.raw"),
-      valueCountAgg("rowsCount", "drugId.raw")
-    )
-
-    esRetriever
-      .getByFreeQuery(
-        cbIndex,
-        queryString,
-        kv,
-        pag,
-        fromJsValue[KnownDrug],
-        aggs,
-        Some(sortByField),
-        Seq("ancestors", "descendants"),
-        cursor
-      )
-      .map {
-        case (Seq(), _, _) => Some(KnownDrugs(0, 0, 0, 0, cursor, Seq()))
-        case (seq, agg, nextCursor) =>
-          logger.trace(Json.prettyPrint(agg))
-          val drugs = (agg \ "uniqueDrugs" \ "value").as[Long]
-          val diseases = (agg \ "uniqueDiseases" \ "value").as[Long]
-          val targets = (agg \ "uniqueTargets" \ "value").as[Long]
-          val rowsCount = (agg \ "rowsCount" \ "value").as[Long]
-          Some(KnownDrugs(drugs, diseases, targets, rowsCount, nextCursor, seq))
-      }
-  }
-
   def getEvidencesByVariantId(
       datasourceIds: Option[Seq[String]],
       variantId: String,
@@ -550,6 +503,71 @@ class Backend @Inject() (implicit
       Pagination.sizeMax
     )
     dbRetriever.executeQuery[MousePhenotypes, Query](query.query)
+  }
+
+  def getClinicalTargetsByTarget(id: String): Future[ClinicalTargets] =
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.clinicalTarget.name)
+
+    val clinicalTargetQuery = AllByIdInColumnQuery(id, tableName, 0, Pagination.sizeMax, "targetId")
+
+    logger.info(s"getting clinical target with id $id", keyValue("table", tableName))
+
+    dbRetriever
+      .executeQuery[ClinicalTarget, Query](clinicalTargetQuery.query)
+      .map {
+        case Seq() =>
+          logger.info(s"no clinical target found for $id", keyValue("table", tableName))
+          ClinicalTargets(0, IndexedSeq())
+        case ct =>
+          logger.info(s"clinical target found for $id ${ct.length}", keyValue("table", tableName))
+          ClinicalTargets(ct.length, ct)
+      }
+
+  def getClinicalIndicationsByDrug(id: String): Future[ClinicalIndications] =
+    val tableName = getTableWithPrefixOrDefault(
+      defaultOTSettings.clickhouse.clinicalIndication.drugTable.name
+    )
+
+    logger.info(s"getting clinical indications by the drug $id", keyValue("table", tableName))
+    getClinicalIndications(id, tableName, "drugId")
+
+  def getClinicalIndicationsByDisease(id: String): Future[ClinicalIndications] =
+    val tableName = getTableWithPrefixOrDefault(
+      defaultOTSettings.clickhouse.clinicalIndication.diseaseTable.name
+    )
+
+    logger.info(s"getting clinical indications by the disease $id", keyValue("table", tableName))
+    getClinicalIndications(id, tableName, "diseaseId")
+
+  def getClinicalReports(ids: Seq[String]): Future[IndexedSeq[ClinicalReport]] = {
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.clinicalReport.name)
+
+    val clinicalReportQuery = ClinicalReportQuery(ids, tableName, 0, Pagination.sizeMax)
+
+    logger.info(s"getting clinical reports with ids $ids", keyValue("table", tableName))
+
+    dbRetriever
+      .executeQuery[ClinicalReport, Query](clinicalReportQuery.query)
+  }
+
+  private def getClinicalIndications(id: String,
+                                     tableName: String,
+                                     columnName: String
+  ): Future[ClinicalIndications] = {
+
+    val clinicalIndicationsQuery =
+      AllByIdInColumnQuery(id, tableName, 0, Pagination.sizeMax, columnName)
+
+    dbRetriever
+      .executeQuery[ClinicalIndication, Query](clinicalIndicationsQuery.query)
+      .map {
+        case Seq() =>
+          logger.info(s"no clinical indication found for $id in table $tableName")
+          ClinicalIndications(0, IndexedSeq())
+        case cis =>
+          logger.info(s"clinical indications found for $id in table $tableName: ${cis.length}")
+          ClinicalIndications(cis.length, cis)
+      }
   }
 
   def getPharmacogenomicsByDrug(ids: Seq[String]): Future[IndexedSeq[PharmacogenomicsByDrug]] = {
@@ -674,16 +692,6 @@ class Backend @Inject() (implicit
     )
     val query = IdsQuery(ids, "chemblId", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[MechanismsOfAction, Query](query.query)
-  }
-
-  def getIndications(ids: Seq[String]): Future[IndexedSeq[Indications]] = {
-    val index = getIndexOrDefault("drugIndications")
-    logger.debug(s"querying indications", keyValue("ids", ids), keyValue("index", index))
-    val queryTerm = Map("id.keyword" -> ids)
-
-    esRetriever
-      .getByIndexedQueryShould(index, queryTerm, Pagination.mkDefault, fromJsValue[Indications])
-      .map(_.mappedHits)
   }
 
   def getDrugWarnings(ids: Seq[String]): Future[IndexedSeq[DrugWarnings]] = {
@@ -927,7 +935,7 @@ class Backend @Inject() (implicit
     } else Set.empty[String]
 
     val columnFilters = if (includeMeasurements == false) {
-      Seq(("is_measurement", false))
+      Seq(("isMeasurement", false))
     } else {
       Seq.empty
     }

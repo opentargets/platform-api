@@ -294,11 +294,11 @@ object DeferredResolvers extends OTLogging {
     Fetchers.pharmacogenomicsByVariantFetcher,
     Fetchers.pharmacogenomicsByTargetFetcher,
     Fetchers.soTermsFetcher,
-    Fetchers.indicationFetcher,
     Fetchers.goFetcher,
     Fetchers.variantFetcher,
     Fetchers.studyFetcher,
     Fetchers.targetEssentialityFetcher,
-    Fetchers.targetPrioritisationFetcher
+    Fetchers.targetPrioritisationFetcher,
+    Fetchers.clinicalReportFetcher
   )
 }
