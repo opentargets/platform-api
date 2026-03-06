@@ -129,7 +129,7 @@ case class ReactomePathway(pathway: String, pathwayId: String, topLevelTerm: Str
 case class Transcript(
     transcriptId: String,
     biotype: String,
-    isEnsemblCanonical: Boolean,
+    isEnsemblCanonical: Option[Boolean],
     uniprotId: Option[String],
     isUniprotReviewed: Option[Boolean],
     translationId: Option[String],
