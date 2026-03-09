@@ -1,5 +1,6 @@
 package models.gql
 
+import com.sun.org.apache.xml.internal.dtm.ref.ExpandedNameTable
 import models.*
 import models.entities.Configuration.*
 import models.entities.*
@@ -18,7 +19,6 @@ import sangria.schema.*
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.*
 import models.entities.Violations.{InputParameterCheckError, InvalidArgValueError}
-
 import net.logstash.logback.argument.StructuredArguments.keyValue
 import utils.OTLogging
 
@@ -1627,14 +1627,60 @@ object Objects extends OTLogging {
     )
   )
 
-  implicit val clinRepDiseaseListItemImp: ObjectType[Backend, ClinicalDiseaseListItem] =
+  val clinTargetDiseaseListItemImp: ObjectType[Backend, ClinicalDiseaseListItem] =
     deriveObjectType[Backend, ClinicalDiseaseListItem](
+      DocumentField("diseaseFromSource", "Disease labels from source. Can be null if phase I."),
       ReplaceField(
         "diseaseId",
         Field(
           "disease",
           OptionType(diseaseImp),
-          description = Some(""),
+          description = Some("Assigned disease after mapping."),
+          resolve = ctx =>
+            val tId: Option[String] = ctx.value.diseaseId
+            logger.debug(s"finding disease $tId")
+
+            tId match {
+              case None     => None
+              case Some("") => None
+              case Some(id) => diseasesFetcher.deferOpt(id)
+            }
+        )
+      )
+    )
+
+  val clinRepDiseaseListItemImp: ObjectType[Backend, ClinicalDiseaseListItem] =
+    deriveObjectType[Backend, ClinicalDiseaseListItem](
+      DocumentField("diseaseFromSource", "Disease label in the report"),
+      ReplaceField(
+        "diseaseId",
+        Field(
+          "disease",
+          OptionType(diseaseImp),
+          description = Some("Disease in the report"),
+          resolve = ctx =>
+            val tId: Option[String] = ctx.value.diseaseId
+            logger.debug(s"finding disease $tId")
+
+            tId match {
+              case None     => None
+              case Some("") => None
+              case Some(id) => diseasesFetcher.deferOpt(id)
+            }
+        )
+      )
+    )
+
+  val clinRepSideEffectListItemImp: ObjectType[Backend, ClinicalDiseaseListItem] =
+    deriveObjectType[Backend, ClinicalDiseaseListItem](
+      ObjectTypeDescription("Side effects associated with the clinical report."),
+      DocumentField("diseaseFromSource", "Disease label in the reported side effect"),
+      ReplaceField(
+        "diseaseId",
+        Field(
+          "disease",
+          OptionType(diseaseImp),
+          description = Some("Disease for the reported side effect"),
           resolve = ctx =>
             val tId: Option[String] = ctx.value.diseaseId
             logger.debug(s"finding disease $tId")
@@ -1650,13 +1696,14 @@ object Objects extends OTLogging {
 
   implicit val clinRepDrugListItemImp: ObjectType[Backend, ClinRepDrugListItem] =
     deriveObjectType[Backend, ClinRepDrugListItem](
+      DocumentField("drugFromSource", "Drug label in the report"),
       ReplaceField(
         "drugId",
         Field(
           "drug",
           OptionType(drugImp),
           description = Some(
-            ""
+            "Drug in the report"
           ),
           resolve = ctx => {
             val dId = ctx.value.drugId
@@ -1673,12 +1720,81 @@ object Objects extends OTLogging {
     )
 
   implicit val clinicalReportImp: ObjectType[Backend, ClinicalReport] =
-    deriveObjectType[Backend, ClinicalReport]()
+    deriveObjectType[Backend, ClinicalReport](
+      DocumentField("id", "Report ID"),
+      DocumentField("source", "Source of the clinical report (e.g., AACT)"),
+      DocumentField("phaseFromSource", "Clinical phase reported at source"),
+      DocumentField(
+        "type",
+        "Type of clinical report. List of possible values: CURATED_RESOURCE, DRUG_LABEL, CLINICAL_TRIAL and REGULATORY_AGENCY."
+      ),
+      DocumentField("trialDescription",
+                    "Description of the trial associated with the clinical report"
+      ),
+      DocumentField(
+        "trialNumberOfArms",
+        "Number of arms in the trial associated with the clinical report"
+      ),
+      DocumentField("trialStartDate",
+                    "Start date of the trial associated with the clinical report"
+      ),
+      DocumentField(
+        "trialLiterature",
+        "List of PMIDs linked to the trial associated with the clinical report"
+      ),
+      DocumentField(
+        "trialOverallStatus",
+        "Overall status of the trial associated with the clinical report"
+      ),
+      DocumentField(
+        "trialWhyStopped",
+        "Free-text reason for early stoppage of the trial associated with the clinical report"
+      ),
+      DocumentField("trialStopReasonCategories", "Assigned categories based on trialWhyStopped"),
+      DocumentField(
+        "trialPrimaryPurpose",
+        "Purpose for the intervention of the clinical trial associated with the clinical report"
+      ),
+      DocumentField("hasExpertReview",
+                    "Whether the clinical report has been reviewed by an expert or not"
+      ),
+      DocumentField(
+        "countries",
+        "List of countries where the clinical report was conducted/reported"
+      ),
+      DocumentField("year", "The year to which the clinical report refers."),
+      DocumentField("qualityControls", "Flags related to report concerns"),
+      DocumentField("drugs", "List of drugs mentioned in the report"),
+      ReplaceField(
+        "diseases",
+        Field(
+          "diseases",
+          ListType(clinRepDiseaseListItemImp),
+          description = Some(
+            "Diseases associated with the clinical report."
+          ),
+          resolve = ctx => ctx.value.diseases
+        )
+      ),
+      ReplaceField(
+        "sideEffects",
+        Field(
+          "sideEffects",
+          ListType(clinRepSideEffectListItemImp),
+          description = Some(
+            "Side effects associated with the clinical report."
+          ),
+          resolve = ctx => ctx.value.sideEffects
+        )
+      )
+    )
 
   implicit val clinicalIndicationFromDiseaseImp: ObjectType[Backend, ClinicalIndication] =
     deriveObjectType[Backend, ClinicalIndication](
       ObjectTypeName("ClinicalIndicationFromDisease"),
       ExcludeFields("diseaseId"),
+      DocumentField("id", "Hash of drugId, diseaseId."),
+      DocumentField("maxClinicalStage", "Maximum Clinical Development Status for the association."),
       ReplaceField(
         "drugId",
         Field(
@@ -1719,6 +1835,8 @@ object Objects extends OTLogging {
     deriveObjectType[Backend, ClinicalIndication](
       ObjectTypeName("ClinicalIndicationFromDrug"),
       ExcludeFields("drugId"),
+      DocumentField("id", "Hash of drugId, diseaseId."),
+      DocumentField("maxClinicalStage", "Maximum Clinical Development Status for the association."),
       ReplaceField(
         "diseaseId",
         Field(
@@ -1755,13 +1873,18 @@ object Objects extends OTLogging {
     deriveObjectType[Backend, ClinicalTarget](
       ObjectTypeName("ClinicalTargetFromTarget"),
       ExcludeFields("targetId"),
+      DocumentField("id", "Hash between drugId and targetId."),
+      DocumentField(
+        "clinicalReportIds",
+        "Report IDs related with the drug in question and sorted by clinical status."
+      ),
       ReplaceField(
         "drugId",
         Field(
           "drug",
           OptionType(drugImp),
           description = Some(
-            ""
+            "Drug or clinical candidate entity"
           ),
           resolve = ctx => {
             val id: Option[String] = ctx.value.drugId
@@ -1780,13 +1903,24 @@ object Objects extends OTLogging {
           "clinicalReports",
           ListType(clinicalReportImp),
           description = Some(
-            ""
+            "Reports related with the drug in question and sorted by clinical status."
           ),
           resolve = ctx => {
             val ids = ctx.value.clinicalReportIds
             logger.debug(s"finding clinical reports for ids ${ids.mkString(",")}")
             clinicalReportFetcher.deferSeqOpt(ids)
           }
+        )
+      ),
+      ReplaceField(
+        "diseases",
+        Field(
+          "diseases",
+          ListType(clinRepDiseaseListItemImp),
+          description = Some(
+            "Diseases associated with the clinical reports linked to the drug in question."
+          ),
+          resolve = ctx => ctx.value.diseases
         )
       )
     )
