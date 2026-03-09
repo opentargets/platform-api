@@ -1,5 +1,6 @@
 package models.gql
 
+import com.sun.org.apache.xml.internal.dtm.ref.ExpandedNameTable
 import models.*
 import models.entities.Configuration.*
 import models.entities.*
@@ -18,7 +19,6 @@ import sangria.schema.*
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.*
 import models.entities.Violations.{InputParameterCheckError, InvalidArgValueError}
-
 import net.logstash.logback.argument.StructuredArguments.keyValue
 import utils.OTLogging
 
@@ -1667,12 +1667,53 @@ object Objects extends OTLogging {
     )
 
   implicit val clinicalReportImp: ObjectType[Backend, ClinicalReport] =
-    deriveObjectType[Backend, ClinicalReport]()
+    deriveObjectType[Backend, ClinicalReport](
+      DocumentField("id", "Report ID"),
+      DocumentField("source", "Source of the clinical report (e.g., AACT )"),
+      DocumentField("phaseFromSource", "Clinical phase reported at source"),
+      DocumentField("type", "Type of clinical report (e.g., CURATED_RESOURCE)"),
+      DocumentField("trialDescription",
+                    "Trial metadata: description of the trial associated with the clinical report"
+      ),
+      DocumentField(
+        "trialNumberOfArms",
+        "Trial metadata: number of arms in the trial associated with the clinical report"
+      ),
+      DocumentField("trialStartDate",
+                    "Trial metadata: start date of the trial associated with the clinical report"
+      ),
+      DocumentField(
+        "trialLiterature",
+        "Trial metadata: list of PMIDs linked to the trial associated with the clinical report"
+      ),
+      DocumentField(
+        "trialOverallStatus",
+        "Trial metadata: overall status of the trial associated with the clinical report"
+      ),
+      DocumentField("trialWhyStopped", "Trial metadata: reason if stopped early"),
+      DocumentField("trialStopReasonCategories",
+                    "Trial metadata: Assigned categories for reason to stop"
+      ),
+      DocumentField("trialPrimaryPurpose", "Trial metadata: Purpose for the intervention"),
+      DocumentField("hasExpertReview",
+                    "Whether the clinical report has been reviewed by an expert or not"
+      ),
+      DocumentField(
+        "countries",
+        "List of countries where the trial associated with the clinical report was conducted"
+      ),
+      DocumentField("year",
+                    "The year of the report(denotes different things based on report nature)"
+      ),
+      DocumentField("qualityControls", "Flags related to report concerns")
+    )
 
   implicit val clinicalIndicationFromDiseaseImp: ObjectType[Backend, ClinicalIndication] =
     deriveObjectType[Backend, ClinicalIndication](
       ObjectTypeName("ClinicalIndicationFromDisease"),
       ExcludeFields("diseaseId"),
+      DocumentField("id", "Hash of drugName, diseaseName."),
+      DocumentField("maxClinicalStage", "Maximum Clinical Development Status for the association."),
       ReplaceField(
         "drugId",
         Field(
@@ -1713,6 +1754,8 @@ object Objects extends OTLogging {
     deriveObjectType[Backend, ClinicalIndication](
       ObjectTypeName("ClinicalIndicationFromDrug"),
       ExcludeFields("drugId"),
+      DocumentField("id", "Hash of drugName, diseaseName."),
+      DocumentField("maxClinicalStage", "Maximum Clinical Development Status for the association."),
       ReplaceField(
         "diseaseId",
         Field(
@@ -1749,6 +1792,11 @@ object Objects extends OTLogging {
     deriveObjectType[Backend, ClinicalTarget](
       ObjectTypeName("ClinicalTargetFromTarget"),
       ExcludeFields("targetId"),
+      DocumentField("id", "Hash between drugId and targetId."),
+      DocumentField(
+        "clinicalReportIds",
+        "Report IDs related with the drug in question (regardless of mapping). Sorted by clinical status."
+      ),
       ReplaceField(
         "drugId",
         Field(
@@ -1774,7 +1822,7 @@ object Objects extends OTLogging {
           "clinicalReports",
           ListType(clinicalReportImp),
           description = Some(
-            ""
+            "Reports related with the drug in question (regardless of mapping). Sorted by clinical status"
           ),
           resolve = ctx => {
             val ids = ctx.value.clinicalReportIds
