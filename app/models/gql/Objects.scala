@@ -1744,11 +1744,9 @@ object Objects extends OTLogging {
       ),
       DocumentField(
         "countries",
-        "List of countries where the trial associated with the clinical report was conducted"
+        "List of countries where the clinical report was conducted/reported"
       ),
-      DocumentField("year",
-                    "The year of the report(denotes different things based on report nature)"
-      ),
+      DocumentField("year", "The year to which the clinical report refers."),
       DocumentField("qualityControls", "Flags related to report concerns"),
       DocumentField("drugs", "List of drugs mentioned in the report"),
       ReplaceField(
@@ -1779,7 +1777,7 @@ object Objects extends OTLogging {
     deriveObjectType[Backend, ClinicalIndication](
       ObjectTypeName("ClinicalIndicationFromDisease"),
       ExcludeFields("diseaseId"),
-      DocumentField("id", "Hash of drugName, diseaseName."),
+      DocumentField("id", "Hash of drugId, diseaseId."),
       DocumentField("maxClinicalStage", "Maximum Clinical Development Status for the association."),
       ReplaceField(
         "drugId",
@@ -1821,7 +1819,7 @@ object Objects extends OTLogging {
     deriveObjectType[Backend, ClinicalIndication](
       ObjectTypeName("ClinicalIndicationFromDrug"),
       ExcludeFields("drugId"),
-      DocumentField("id", "Hash of drugName, diseaseName."),
+      DocumentField("id", "Hash of drugId, diseaseId."),
       DocumentField("maxClinicalStage", "Maximum Clinical Development Status for the association."),
       ReplaceField(
         "diseaseId",
@@ -1862,7 +1860,7 @@ object Objects extends OTLogging {
       DocumentField("id", "Hash between drugId and targetId."),
       DocumentField(
         "clinicalReportIds",
-        "Report IDs related with the drug in question (regardless of mapping). Sorted by clinical status."
+        "Report IDs related with the drug in question and sorted by clinical status."
       ),
       ReplaceField(
         "drugId",
@@ -1889,7 +1887,7 @@ object Objects extends OTLogging {
           "clinicalReports",
           ListType(clinicalReportImp),
           description = Some(
-            "Reports related with the drug in question (regardless of mapping). Sorted by clinical status"
+            "Reports related with the drug in question and sorted by clinical status."
           ),
           resolve = ctx => {
             val ids = ctx.value.clinicalReportIds
