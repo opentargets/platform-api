@@ -1623,14 +1623,57 @@ object Objects extends OTLogging {
     )
   )
 
-  implicit val clinRepDiseaseListItemImp: ObjectType[Backend, ClinicalDiseaseListItem] =
+  val clinTargetDiseaseListItemImp: ObjectType[Backend, ClinicalDiseaseListItem] =
     deriveObjectType[Backend, ClinicalDiseaseListItem](
+      DocumentField("diseaseFromSource", "Disease labels from source. Can be null if phase I."),
       ReplaceField(
         "diseaseId",
         Field(
           "disease",
           OptionType(diseaseImp),
-          description = Some(""),
+          description = Some("Assigned disease after mapping."),
+          resolve = ctx =>
+            val tId: String = ctx.value.diseaseId
+            logger.debug(s"finding disease $tId")
+
+            tId match {
+              case "" => None
+              case _  => diseasesFetcher.deferOpt(tId)
+            }
+        )
+      )
+    )
+
+  val clinRepDiseaseListItemImp: ObjectType[Backend, ClinicalDiseaseListItem] =
+    deriveObjectType[Backend, ClinicalDiseaseListItem](
+      DocumentField("diseaseFromSource", "Disease label in the report"),
+      ReplaceField(
+        "diseaseId",
+        Field(
+          "disease",
+          OptionType(diseaseImp),
+          description = Some("Disease in the report"),
+          resolve = ctx =>
+            val tId: String = ctx.value.diseaseId
+            logger.debug(s"finding disease $tId")
+
+            tId match {
+              case "" => None
+              case _  => diseasesFetcher.deferOpt(tId)
+            }
+        )
+      )
+    )
+
+  val clinRepSideEffectListItemImp: ObjectType[Backend, ClinicalDiseaseListItem] =
+    deriveObjectType[Backend, ClinicalDiseaseListItem](
+      DocumentField("diseaseFromSource", "Disease label in the reported side effect"),
+      ReplaceField(
+        "diseaseId",
+        Field(
+          "disease",
+          OptionType(diseaseImp),
+          description = Some("Disease for the reported side effect"),
           resolve = ctx =>
             val tId: String = ctx.value.diseaseId
             logger.debug(s"finding disease $tId")
@@ -1645,13 +1688,14 @@ object Objects extends OTLogging {
 
   implicit val clinRepDrugListItemImp: ObjectType[Backend, ClinRepDrugListItem] =
     deriveObjectType[Backend, ClinRepDrugListItem](
+      DocumentField("drugFromSource", "Drug label in the report"),
       ReplaceField(
         "drugId",
         Field(
           "drug",
           OptionType(drugImp),
           description = Some(
-            ""
+            "Drug in the report"
           ),
           resolve = ctx => {
             val id = ctx.value.drugId
@@ -1705,7 +1749,30 @@ object Objects extends OTLogging {
       DocumentField("year",
                     "The year of the report(denotes different things based on report nature)"
       ),
-      DocumentField("qualityControls", "Flags related to report concerns")
+      DocumentField("qualityControls", "Flags related to report concerns"),
+      DocumentField("drugs", "List of drugs mentioned in the report"),
+      ReplaceField(
+        "diseases",
+        Field(
+          "diseases",
+          ListType(clinRepDiseaseListItemImp),
+          description = Some(
+            "Diseases associated with the clinical report. These can be diseases mentioned in the report or assigned diseases after mapping and curation."
+          ),
+          resolve = ctx => ctx.value.diseases
+        )
+      ),
+      ReplaceField(
+        "sideEffects",
+        Field(
+          "sideEffects",
+          ListType(clinRepSideEffectListItemImp),
+          description = Some(
+            "Side effects associated with the clinical report. These can be side effects mentioned in the report or assigned diseases after mapping and curation."
+          ),
+          resolve = ctx => ctx.value.sideEffects
+        )
+      )
     )
 
   implicit val clinicalIndicationFromDiseaseImp: ObjectType[Backend, ClinicalIndication] =
@@ -1803,7 +1870,7 @@ object Objects extends OTLogging {
           "drug",
           OptionType(drugImp),
           description = Some(
-            ""
+            "Drug or clinical candidate entity"
           ),
           resolve = ctx => {
             val id: Option[String] = ctx.value.drugId
@@ -1829,6 +1896,17 @@ object Objects extends OTLogging {
             logger.debug(s"finding clinical reports for ids ${ids.mkString(",")}")
             clinicalReportFetcher.deferSeqOpt(ids)
           }
+        )
+      ),
+      ReplaceField(
+        "diseases",
+        Field(
+          "diseases",
+          ListType(clinRepDiseaseListItemImp),
+          description = Some(
+            "Diseases associated with the clinical reports linked to the drug in question. These can be diseases mentioned in the reports or assigned diseases after mapping and curation."
+          ),
+          resolve = ctx => ctx.value.diseases
         )
       )
     )
