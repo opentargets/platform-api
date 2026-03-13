@@ -8,7 +8,7 @@ import models.gql.{StudyTypeEnum, InteractionSourceEnum}
 enum sortDirection:
   case ASC, DESC
 
-case class OrderBy(field: String, direction: sortDirection)
+case class OrderBy(lambda: String, direction: sortDirection)
 
 case class OneToMany(ids: Seq[String],
                      idField: String,
@@ -31,7 +31,7 @@ case class OneToMany(ids: Seq[String],
     case Some(order) =>
       order.direction match {
         case sortDirection.ASC  => Functions.arraySort(filteredArray)
-        case sortDirection.DESC => Functions.reverse(Functions.arraySort(filteredArray))
+        case sortDirection.DESC => Functions.arrayReverseSort(Some(order.lambda), filteredArray)
       }
     case None =>
       filteredArray
@@ -127,7 +127,7 @@ object OneToMany {
       offset,
       size,
       filter,
-      sortBy = Some(OrderBy("i.scoring", sortDirection.DESC))
+      sortBy = Some(OrderBy("i -> i.scoring", sortDirection.DESC))
     )
 
   def l2gQuery(studyLocusIds: Seq[String], tableName: String, offset: Int, size: Int): OneToMany =

@@ -34,13 +34,6 @@ query test {
         }
       }
     }
-    knownDrugs {
-      rows {
-        drugType
-        targetId
-        diseaseId
-      }
-    }
   }
   search(queryString: "erectile") {
     total
@@ -168,12 +161,6 @@ query test {
         topCategory
       }
     }
-    knownDrugs {
-      uniqueDrugs
-      uniqueDiseases
-      uniqueTargets
-      count
-    }
     cancerBiomarkers {
       uniqueDrugs
       uniqueDiseases
@@ -205,16 +192,6 @@ query test {
       name
       disease
     }
-    knownDrugs {
-      uniqueDrugs
-      uniqueDiseases
-      uniqueTargets
-      count
-      rows {
-        drugType
-        targetId
-      }
-    }
     relatedDiseases {
       maxCountAOrB
       count
@@ -225,17 +202,8 @@ query test {
     name
     synonyms
     tradeNames
-    yearOfFirstApproval
     drugType
-    maximumClinicalTrialPhase
-    hasBeenWithdrawn
-    withdrawnNotice {
-      classes
-      countries
-      reasons
-      year
-    }
-    internalCompound
+    maximumClinicalStage
     mechanismsOfAction {
       uniqueActionTypes
       uniqueTargetTypes
@@ -252,7 +220,6 @@ query test {
         }
       }
     }
-    blackBoxWarning
     indications {
       count
       rows {
@@ -277,40 +244,5 @@ query test {
         criticalValue
       }
     }
-    knownDrugs {
-      uniqueDrugs
-      uniqueDiseases
-      uniqueTargets
-      count
-      rows {
-        drugType
-        targetId
-        diseaseId
-        phase
-        mechanismOfAction
-        status
-        activity
-        targetClass
-        ctIds
-      }
-    }
   }
-    knwonDrugs: target(ensemblId: "ENSG00000105650") {
-      approvedSymbol
-      knownDrugs(sortField:"label", sortOrder:Asc) {
-        count
-        rows {
-          drugType
-          targetId
-          diseaseId
-          approvedSymbol
-          label
-          prefName
-          mechanismOfAction
-          drug {
-            synonyms
-          }
-        }
-      }
-    }
 }

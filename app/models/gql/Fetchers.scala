@@ -2,6 +2,7 @@ package models.gql
 
 import models.entities.{
   Biosample,
+  ClinicalReport,
   CredibleSet,
   Disease,
   Drug,
@@ -9,7 +10,6 @@ import models.entities.{
   Expressions,
   GeneOntologyTerm,
   HPO,
-  Indications,
   MechanismsOfAction,
   MousePhenotypes,
   OtarProjects,
@@ -147,13 +147,6 @@ object Fetchers extends OTLogging {
     fetch = (ctx: Backend, ids: Seq[String]) => ctx.getDrugWarnings(ids)
   )
 
-  implicit val indicationHasId: HasId[Indications, String] = HasId[Indications, String](_.id)
-  val indicationFetcherCache = FetcherCache.simple
-  val indicationFetcher: Fetcher[Backend, Indications, Indications, String] = Fetcher(
-    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize),
-    fetch = (ctx: Backend, ids: Seq[String]) => ctx.getIndications(ids)
-  )
-
   implicit val goFetcherId: HasId[GeneOntologyTerm, String] = HasId[GeneOntologyTerm, String](_.id)
   val goFetcherCache = FetcherCache.simple
   val goFetcher: Fetcher[Backend, GeneOntologyTerm, GeneOntologyTerm, String] = Fetcher(
@@ -190,6 +183,18 @@ object Fetchers extends OTLogging {
       config =
         FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(studyFetcherCache),
       fetch = (ctx: Backend, ids: Seq[String]) => ctx.getStudy(ids)
+    )
+  }
+
+  val clinicalReportFetcherCache = FetcherCache.simple
+  val clinicalReportFetcher: Fetcher[Backend, ClinicalReport, ClinicalReport, String] = {
+    implicit val clinicalreportFetcherId: HasId[ClinicalReport, String] =
+      HasId[ClinicalReport, String](js => js.id)
+    Fetcher(
+      config = FetcherConfig
+        .maxBatchSize(entities.Configuration.batchSize)
+        .caching(clinicalReportFetcherCache),
+      fetch = (ctx: Backend, ids: Seq[String]) => ctx.getClinicalReports(ids)
     )
   }
 
@@ -254,7 +259,6 @@ object Fetchers extends OTLogging {
       drugsFetcherCache,
       drugWarningsFetcherCache,
       diseasesFetcherCache,
-      indicationFetcherCache,
       mechanismsOfActionFetcherCache,
       mousePhenotypesFetcherCache,
       expressionFetcherCache,
@@ -264,7 +268,8 @@ object Fetchers extends OTLogging {
       pharmacogenomicsByTargetFetcherCache,
       soTermsFetcherCache,
       targetEssentialityFetcherCache,
-      targetPrioritisationFetcherCache
+      targetPrioritisationFetcherCache,
+      clinicalReportFetcherCache
     )
     fetchers.foreach(_.clear())
   }

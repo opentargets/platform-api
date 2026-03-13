@@ -4,6 +4,7 @@ import play.api.libs.json._
 import slick.jdbc.GetResult
 import models.gql.TypeWithId
 import utils.OTLogging
+import utils.db.DbJsonParser.fromPositionedResult
 
 case class ProteinCodingCoordinate(
     targetId: String,
@@ -45,5 +46,5 @@ object ProteinCodingCoordinates extends OTLogging {
   implicit val proteinCodingCoordinatesF: OFormat[ProteinCodingCoordinates] =
     Json.format[ProteinCodingCoordinates]
   implicit val getFromDB: GetResult[ProteinCodingCoordinates] =
-    GetResult(r => Json.parse(r.<<[String]).as[ProteinCodingCoordinates])
+    GetResult(fromPositionedResult[ProteinCodingCoordinates])
 }

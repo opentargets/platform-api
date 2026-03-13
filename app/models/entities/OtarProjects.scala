@@ -5,6 +5,7 @@ import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
 import play.api.libs.json.JsonNaming.SnakeCase
 import slick.jdbc.GetResult
+import utils.db.DbJsonParser.fromPositionedResult
 
 case class OtarProject(otarCode: String,
                        status: Option[String],
@@ -17,7 +18,7 @@ case class OtarProjects(efoId: String, rows: Seq[OtarProject])
 
 object OtarProjects {
   implicit val getOtarProjectsResult: GetResult[OtarProjects] =
-    GetResult(r => Json.parse(r.<<[String]).as[OtarProjects])
+    GetResult(fromPositionedResult[OtarProjects])
   implicit val config: JsonConfiguration.Aux[Json.MacroOptions] = JsonConfiguration(SnakeCase)
   implicit val otarProjectImpW: OWrites[OtarProject] = Json.writes[OtarProject]
 

@@ -2,6 +2,7 @@ package models.entities
 
 import play.api.libs.json._
 import slick.jdbc.GetResult
+import utils.db.DbJsonParser.fromPositionedResult
 
 case class NameAndDescription(name: String, description: String)
 
@@ -77,7 +78,8 @@ case class Evidence(
     log2FoldChangePercentileRank: Option[Long],
     biologicalModelAllelicComposition: Option[String],
     confidence: Option[String],
-    clinicalPhase: Option[Double],
+    clinicalStage: Option[String],
+    clinicalReportId: Option[String],
     resourceScore: Option[Double],
     variantFunctionalConsequenceId: Option[String],
     variantFunctionalConsequenceFromQtlId: Option[String],
@@ -91,7 +93,6 @@ case class Evidence(
     datasourceId: String,
     datatypeId: String,
     oddsRatioConfidenceIntervalUpper: Option[Double],
-    clinicalStatus: Option[String],
     log2FoldChangeValue: Option[Double],
     oddsRatio: Option[Double],
     cohortDescription: Option[String],
@@ -115,8 +116,8 @@ case class Evidence(
     betaConfidenceIntervalLower: Option[Double],
     betaConfidenceIntervalUpper: Option[Double],
     studyStartDate: Option[String],
-    studyStopReason: Option[String],
-    studyStopReasonCategories: Option[Seq[String]],
+    trialWhyStopped: Option[String],
+    trialStopReasonCategories: Option[Seq[String]],
     targetFromSource: Option[String],
     cellLineBackground: Option[String],
     contrast: Option[String],
@@ -149,6 +150,9 @@ case class Evidence(
     primaryProjectHit: Option[Boolean],
     primaryProjectId: Option[String],
     assays: Option[Seq[Assays]],
+    qualityControls: Seq[String],
+    publicationDate: Option[String],
+    evidenceDate: Option[String],
     metaTotal: Int = 0
 )
 
@@ -157,7 +161,7 @@ case class Evidences(count: Int, cursor: Option[String], rows: IndexedSeq[Eviden
 object Evidences {
   def empty(withTotal: Int = 0): Evidences = Evidences(withTotal, None, IndexedSeq.empty)
   implicit val getEvidenceFromDB: GetResult[Evidence] =
-    GetResult(r => Json.parse(r.<<[String]).as[Evidence])
+    GetResult(fromPositionedResult[Evidence])
 
   implicit val nameAndDescriptionJsonFormatImp: OFormat[NameAndDescription] =
     Json.format[NameAndDescription]
