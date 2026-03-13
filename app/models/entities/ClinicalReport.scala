@@ -5,7 +5,7 @@ import slick.jdbc.GetResult
 import utils.OTLogging
 import utils.db.DbJsonParser.fromPositionedResult
 
-case class ClinRepDrugListItem(drugFromSource: String, drugId: String)
+case class ClinRepDrugListItem(drugFromSource: Option[String], drugId: Option[String])
 
 case class ClinicalReport(
     id: String,

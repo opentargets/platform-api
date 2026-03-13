@@ -1632,12 +1632,13 @@ object Objects extends OTLogging {
           OptionType(diseaseImp),
           description = Some(""),
           resolve = ctx =>
-            val tId: String = ctx.value.diseaseId
+            val tId: Option[String] = ctx.value.diseaseId
             logger.debug(s"finding disease $tId")
 
             tId match {
-              case "" => None
-              case _  => diseasesFetcher.deferOpt(tId)
+              case None     => None
+              case Some("") => None
+              case Some(id) => diseasesFetcher.deferOpt(id)
             }
         )
       )
@@ -1654,12 +1655,13 @@ object Objects extends OTLogging {
             ""
           ),
           resolve = ctx => {
-            val id = ctx.value.drugId
-            logger.debug(s"finding drug $id")
+            val dId = ctx.value.drugId
+            logger.debug(s"finding drug $dId")
 
-            id match {
-              case "" => None
-              case _  => drugsFetcher.deferOpt(id)
+            dId match {
+              case None     => None
+              case Some("") => None
+              case Some(id) => drugsFetcher.deferOpt(id)
             }
           }
         )

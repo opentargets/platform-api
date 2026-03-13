@@ -1,3 +1,3 @@
 package models.entities
 
-case class ClinicalDiseaseListItem(diseaseFromSource: String, diseaseId: String)
+case class ClinicalDiseaseListItem(diseaseFromSource: Option[String], diseaseId: Option[String])
