@@ -6,10 +6,10 @@ import utils.db.DbJsonParser.fromPositionedResult
 
 /** @param id
   *   of gene ontology, eg: GO:0005515
-  * @param name
+  * @param label
   *   of gene ontology id, eg: protein binding
   */
-case class GeneOntologyTerm(id: String, name: String)
+case class GeneOntologyTerm(id: String, label: String)
 
 object GeneOntologyTerm {
   implicit val getGoTermResult: GetResult[GeneOntologyTerm] =
