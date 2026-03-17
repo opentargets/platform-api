@@ -1921,7 +1921,7 @@ object Objects extends OTLogging {
     deriveObjectType[Backend, GeneOntologyTerm](
       ObjectTypeDescription("Gene ontology (GO) term [bioregistry:go]"),
       DocumentField("id", "Gene ontology term identifier [bioregistry:go]"),
-      DocumentField("name", "Gene ontology term name")
+      DocumentField("label", "Gene ontology term label")
     )
 
   lazy val mUnionType: UnionType[Backend] =
