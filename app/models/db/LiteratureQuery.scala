@@ -13,7 +13,8 @@ case class LiteratureQuery(ids: Set[String],
                            size: Int
 ) extends Queryable
     with OTLogging {
-  val year: Column = column("year")
+  val year: Column =
+    F.ifThenElse(F.equals(column("year"), literal(0)), literal(1970), column("year"))
   val month: Column = column("month")
   val keywordId: Column = column("keywordId")
   val pmid: Column = column("pmid")
@@ -104,6 +105,7 @@ case class LiteratureQuery(ids: Set[String],
       )
     )
   )
+
   override val query: Query =
     Query(
       withSection,
