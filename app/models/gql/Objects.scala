@@ -1719,6 +1719,29 @@ object Objects extends OTLogging {
       )
     )
 
+  implicit val ClinicalReportEnumType: EnumType[ClinicalReportType] = EnumType(
+    "ClinicalReportType",
+    Some(""),
+    List(
+      EnumValue("CURATED_RESOURCE",
+                value = ClinicalReportType.CURATED_RESOURCE,
+                description = Some("Clinical report curated from a scientific resource.")
+      ),
+      EnumValue("DRUG_LABEL",
+                value = ClinicalReportType.DRUG_LABEL,
+                description = Some("Clinical report extracted from drug labels.")
+      ),
+      EnumValue("CLINICAL_TRIAL",
+                value = ClinicalReportType.CLINICAL_TRIAL,
+                description = Some("Clinical report derived from clinical trial records.")
+      ),
+      EnumValue("REGULATORY_AGENCY",
+                value = ClinicalReportType.REGULATORY_AGENCY,
+                description = Some("Clinical report issued by regulatory agencies.")
+      )
+    )
+  )
+
   implicit val clinicalReportImp: ObjectType[Backend, ClinicalReport] =
     deriveObjectType[Backend, ClinicalReport](
       DocumentField("id", "Report ID"),
