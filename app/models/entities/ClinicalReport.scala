@@ -1,9 +1,13 @@
 package models.entities
 
-import play.api.libs.json.{JsString, JsValue, Json, OFormat, Writes}
+import play.api.libs.json.{JsError, JsString, JsSuccess, JsValue, Json, OFormat, Reads, Writes}
 import slick.jdbc.GetResult
 import utils.OTLogging
 import utils.db.DbJsonParser.fromPositionedResult
+
+enum ClinicalReportType {
+  case CURATED_RESOURCE, DRUG_LABEL, CLINICAL_TRIAL, REGULATORY_AGENCY
+}
 
 case class ClinRepDrugListItem(drugFromSource: Option[String], drugId: Option[String])
 
@@ -12,7 +16,7 @@ case class ClinicalReport(
     source: String,
     clinicalStage: String,
     phaseFromSource: Option[String],
-    `type`: Option[String],
+    `type`: Option[ClinicalReportType],
     title: Option[String],
     trialStudyType: Option[String],
     trialDescription: Option[String],
@@ -45,11 +49,19 @@ object ClinicalReport extends OTLogging {
   implicit val diseaseListItemF: OFormat[ClinicalDiseaseListItem] =
     Json.format[ClinicalDiseaseListItem]
 
-  implicit val drugListItemW: Writes[ClinRepDrugListItem] = Json.writes[ClinRepDrugListItem]
-
   implicit val drugListItemF: OFormat[ClinRepDrugListItem] = Json.format[ClinRepDrugListItem]
 
-  implicit val clinicalReportW: Writes[ClinicalReport] = Json.writes[ClinicalReport]
+  implicit val clinicalReportTypeWrites: Writes[ClinicalReportType] =
+    Writes(t => JsString(t.toString))
+
+  implicit val clinicalReportTypeReads: Reads[ClinicalReportType] = Reads {
+    case JsString(s) =>
+      ClinicalReportType.values.find(_.toString == s) match {
+        case Some(v) => JsSuccess(v)
+        case None    => JsError(s"Invalid ClinicalReportType: $s")
+      }
+    case _ => JsError("ClinicalReportType must be a string")
+  }
 
   implicit val clinicalReportF: OFormat[ClinicalReport] = Json.format[ClinicalReport]
 }
