@@ -11,7 +11,8 @@ object DbJsonParser {
       .replaceAll("""\\([*^<>&\[\]_~])""", "$1")
       .replace("\\", "\\\\")
       .replace("\n", "\\n")
-      .replaceAll("""\\(nrt)""", "\\\\$1")
+      .replace("\r", "\\r")
+      .replace("\t", "\\t")
     val json = Json.parse(escaped)
     json.as[T]
 
