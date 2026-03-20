@@ -1745,7 +1745,15 @@ object Objects extends OTLogging {
   implicit val clinicalReportImp: ObjectType[Backend, ClinicalReport] =
     deriveObjectType[Backend, ClinicalReport](
       DocumentField("id", "Report ID"),
+      DocumentField("title", "Title of the clinical report"),
+      DocumentField("trialOfficialTitle", "Official title of the clinical trial as registered"),
+      DocumentField("trialPhase", "Phase of the clinical trial"),
       DocumentField("source", "Source of the clinical report (e.g., AACT)"),
+      DocumentField("clinicalStage", "Harmonised clinical stage"),
+      DocumentField("url", "URL linking to the source record"),
+      DocumentField("trialStudyType",
+                    "Type of clinical study (e.g. Interventional, Observational)"
+      ),
       DocumentField("phaseFromSource", "Clinical phase reported at source"),
       DocumentField(
         "type",
@@ -2986,6 +2994,9 @@ object Objects extends OTLogging {
     DocumentField("assessments", "Assessments"),
     DocumentField("primaryProjectHit", "Primary Project Hit"),
     DocumentField("primaryProjectId", "Primary Project Id"),
+    DocumentField("qualityControls", "Evidence quality flags"),
+    DocumentField("publicationDate", "Publication date of the literature reference"),
+    DocumentField("evidenceDate", "Earliest data for the evidence"),
     ReplaceField(
       "targetId",
       Field(
