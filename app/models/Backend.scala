@@ -24,13 +24,14 @@ import models.entities.Interactions.*
 import models.entities.Loci.*
 import models.entities.MechanismsOfAction.*
 import models.entities.MousePhenotypes.*
+import models.entities.AssociationTimeSeriesResults.*
 import models.entities.Pharmacogenomics.*
 import models.entities.SearchFacetsResults.*
 import models.entities.Studies.*
 import models.entities.Evidences.*
 import models.entities.SequenceOntologyTerm.*
 import models.entities.*
-import models.gql.{Fetchers, StudyTypeEnum, InteractionSourceEnum}
+import models.gql.{Fetchers, AggregationTypeEnum, StudyTypeEnum, InteractionSourceEnum}
 import models.entities.Violations.{DateFilterError, InputParameterCheckError}
 import org.apache.http.impl.nio.reactor.IOReactorConfig
 import play.api.cache.AsyncCacheApi
@@ -744,6 +745,37 @@ class Backend @Inject() (implicit
     dbRetriever.executeQuery[MechanismsOfAction, Query](query.query)
   }
 
+  def getAssociationTimeSeries(diseaseId: String,
+                               targetId: String,
+                               isDirect: Boolean,
+                               aggregationTypes: Option[Seq[AggregationTypeEnum.Value]],
+                               startYear: Option[Int],
+                               endYear: Option[Int],
+                               pagination: Option[Pagination]
+  ): Future[AssociationTimeSeriesResults] = {
+    val tableName = getTableWithPrefixOrDefault(
+      defaultOTSettings.clickhouse.associationTimeSeries.name
+    )
+    val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
+    val query = AssociationTimeSeriesQuery(diseaseId,
+                                           targetId,
+                                           isDirect,
+                                           tableName,
+                                           pag._1,
+                                           pag._2,
+                                           aggregationTypes,
+                                           startYear,
+                                           endYear
+    )
+    dbRetriever.executeQuery[AssociationTimeSeries, Query](query.query).map { timeSeriesSeq =>
+      if (timeSeriesSeq.isEmpty) {
+        AssociationTimeSeriesResults(0, timeSeriesSeq)
+      } else {
+        AssociationTimeSeriesResults(timeSeriesSeq.head.meta_total, timeSeriesSeq)
+      }
+    }
+  }
+
   def getDrugWarnings(ids: Seq[String]): Future[IndexedSeq[DrugWarnings]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.drugWarnings.name)
     val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
@@ -871,6 +903,7 @@ class Backend @Inject() (implicit
       tableName: String,
       datasources: Option[Seq[DatasourceSettings]],
       fixedEntityId: String,
+      indirect: Boolean,
       indirectIds: Set[String],
       bIds: Set[String],
       columnFilters: Seq[(String, Any)],
@@ -900,6 +933,7 @@ class Backend @Inject() (implicit
       weights,
       _,
       dontPropagate,
+      indirect,
       page.offset,
       page.size
     )
@@ -950,6 +984,7 @@ class Backend @Inject() (implicit
       getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.disease.associations.name),
       datasources,
       disease.id,
+      indirect,
       indirectIDs,
       targetIds,
       Seq.empty,
@@ -996,6 +1031,7 @@ class Backend @Inject() (implicit
       getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.target.associations.name),
       datasources,
       target.id,
+      indirect,
       indirectIDs,
       diseaseIds,
       columnFilters,

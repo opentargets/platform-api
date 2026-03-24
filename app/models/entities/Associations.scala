@@ -17,8 +17,7 @@ case class Association(
     score: Double,
     datatypeScores: Vector[ScoredComponent],
     datasourceScores: Vector[ScoredComponent],
-    noveltyDirect: Option[Double] = None,
-    noveltyIndirect: Option[Double] = None
+    novelty: Option[Double] = None
 )
 
 case class Associations(
@@ -38,8 +37,7 @@ object Associations {
       val score: Double = r.<<
       val tuples1: String = r.<<
       val tuples2: String = r.<<
-      val noveltyDirect: Option[Double] = r.<<
-      val noveltyIndirect: Option[Double] = r.<<
+      val novelty: Option[Double] = r.<<
 
       Association(
         id,
@@ -62,8 +60,7 @@ object Associations {
             ScoredComponent(left, right)
           }
         ).rep,
-        noveltyDirect,
-        noveltyIndirect
+        novelty
       )
     }
 

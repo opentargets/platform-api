@@ -47,6 +47,7 @@ case class QAOTF(
     datasourceWeights: Seq[(String, Double)],
     mustIncludeDatasources: Set[String],
     nonPropagatedDatasources: Set[String],
+    indirect: Boolean,
     offset: Int,
     size: Int
 ) extends Queryable
@@ -61,8 +62,7 @@ case class QAOTF(
   val T: Column = column(tableName)
   val RowID: Column = column("rowId")
   val RowScore: Column = column("rowScore")
-  val NoveltyDirect: Column = column("noveltyDirect")
-  val NoveltyIndirect: Column = column("noveltyIndirect")
+  val Novelty: Column = if indirect then column("noveltyIndirect") else column("noveltyDirect")
   val maxHS: Column = literal(Harmonic.maxValue(100000, pExponentDefault, 1.0))
     .as(Some("max_hs_score"))
 
@@ -152,8 +152,9 @@ case class QAOTF(
       .as(Some("weightPair"))
     val DSFieldWC = F.tupleElement(WC.name, literal(1)).as(Some("datasourceId"))
     val WFieldWC = F.toNullable(F.tupleElement(WC.name, literal(2))).as(Some("weight"))
-    val NoveltyDirectAny: Column = F.any(NoveltyDirect).as(Some("noveltyDirectAny"))
-    val NoveltyIndirectAny: Column = F.any(NoveltyIndirect).as(Some("noveltyIndirectAny"))
+    // novelty where A is is the AId, cannot use any, it must be the novelty where A is AId.
+    val NoveltyWhereA: Column =
+      F.anyIf(Novelty, F.equals(A, literal(AId))).as(Some("noveltyWhereA"))
 
     // transform weights vector into a table to extract each value of each tuple
     val q = Q(
@@ -163,7 +164,7 @@ case class QAOTF(
     )
     val withDT = With(DSScore :: DTAny :: DSW :: Nil)
     val selectDSScores = Select(
-      B :: DSW.name :: DTAny.name :: DS :: DSScore.name :: NoveltyDirectAny :: NoveltyIndirectAny :: Nil
+      B :: DSW.name :: DTAny.name :: DS :: DSScore.name :: NoveltyWhereA :: Nil
     )
     val fromT = From(T, Some("l"))
     val joinWeights =
@@ -242,8 +243,8 @@ case class QAOTF(
       F.arrayMap("x -> (x.3, x.1)", collectedDScored.name).as(Some("score_datasources"))
     val scoreDTs = F.arrayMap("x -> (x.4, x.1)", collectedDScored.name).as(Some("score_dt"))
     val uniqDTs = F.groupUniqArray(DT).as(Some("datatypes_v"))
-    val NoveltyDirectAny: Column = F.any(NoveltyDirect).as(Some("noveltyDirectAny"))
-    val NoveltyIndirectAny: Column = F.any(NoveltyIndirect).as(Some("noveltyIndirectAny"))
+    val NoveltyWhereA: Column =
+      F.anyIf(Novelty, F.equals(A, literal(AId))).as(Some("noveltyWhereA"))
 
     val mappedDTs = F
       .arrayMap(
@@ -258,8 +259,7 @@ case class QAOTF(
         mappedDTs.name
       )
       .as(Some("score_datatypes"))
-    val noveltyDirectScore: Column = F.any(NoveltyDirectAny).as(Some("noveltyDirect"))
-    val noveltyIndirectScore: Column = F.any(NoveltyIndirectAny).as(Some("noveltyIndirect"))
+    val noveltyScore: Column = F.any(NoveltyWhereA).as(Some("novelty"))
 
     val orderColumn = orderScoreBy.getOrElse((scoreOverall.name.rep, "desc"))
     val jointColumns = F.concat(scoredDTs.name, scoreDSs.name)
@@ -291,12 +291,13 @@ case class QAOTF(
         mappedDTs,
         scoredDTs,
         scoreOverall,
+        noveltyScore,
         jointColumns,
         orderByC
       )
     )
     val selectScores = Select(
-      B :: scoreOverall.name :: scoredDTs.name :: scoreDSs.name :: noveltyDirectScore :: noveltyIndirectScore :: Nil
+      B :: scoreOverall.name :: scoredDTs.name :: scoreDSs.name :: noveltyScore.name :: Nil
     ) // :: scoreDTs.name :: collectedDScored :: Nil)
     val fromAgg = From(queryGroupByDS.toColumn(None))
     val groupByB = GroupBy(B :: Nil)
@@ -305,6 +306,11 @@ case class QAOTF(
         OrderBy(
           (if (order == "desc") scoreOverall.name.desc
            else scoreOverall.name.asc) :: Nil
+        )
+      case ("novelty", order) =>
+        OrderBy(
+          (if (order == "desc") noveltyScore.name.desc
+           else noveltyScore.name.asc) :: Nil
         )
       case (_, order) =>
         OrderBy(

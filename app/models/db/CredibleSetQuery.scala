@@ -4,7 +4,6 @@ import esecuele.Column.column
 import esecuele.Column.literal
 import esecuele._
 import utils.OTLogging
-import models.entities.StudyQueryArgs
 import models.gql.StudyTypeEnum
 import models.entities.CredibleSetQueryArgs
 
