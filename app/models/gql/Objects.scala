@@ -11,7 +11,6 @@ import models.entities.ClinicalIndications.{
   clinicalIndicationsFromDrugImp
 }
 import models.entities.ClinicalTargets.clinicalTargetsImp
-import play.api.libs.json.*
 import sangria.macros.derive.*
 import sangria.schema.*
 

@@ -1,6 +1,6 @@
 package utils.db
 
-import play.api.libs.json.{Json, OFormat, Reads}
+import play.api.libs.json.{Json, Reads}
 import slick.jdbc.{GetResult, PositionedResult}
 
 object DbJsonParser {

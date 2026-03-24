@@ -1,7 +1,6 @@
 package models.entities
 
 import play.api.libs.json.*
-import play.api.libs.functional.syntax.*
 import models.gql.TypeWithId
 import slick.jdbc.GetResult
 import utils.OTLogging
