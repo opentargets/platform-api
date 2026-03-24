@@ -4,8 +4,6 @@ import clickhouse.ClickHouseProfile
 import net.logstash.logback.argument.StructuredArguments.keyValue
 import com.sksamuel.elastic4s.*
 import com.sksamuel.elastic4s.http.JavaClient
-import com.sksamuel.elastic4s.requests.searches.*
-import com.sksamuel.elastic4s.requests.searches.aggs.*
 import esecuele.*
 
 import javax.inject.Inject

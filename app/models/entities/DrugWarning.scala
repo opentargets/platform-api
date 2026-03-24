@@ -1,7 +1,6 @@
 package models.entities
 
 import utils.OTLogging
-import play.api.libs.functional.syntax.toFunctionalBuilderOps
 import play.api.libs.json._
 import slick.jdbc.GetResult
 import utils.db.DbJsonParser.fromPositionedResult

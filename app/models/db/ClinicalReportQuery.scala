@@ -1,19 +1,7 @@
 package models.db
 
 import esecuele.Column.{column, literal}
-import esecuele.{
-  Column,
-  Format,
-  From,
-  Functions,
-  Limit,
-  OrderBy,
-  PreWhere,
-  Query,
-  Select,
-  Settings,
-  Where
-}
+import esecuele.{Column, Format, From, Functions, Limit, OrderBy, Query, Select, Settings, Where}
 import utils.OTLogging
 
 case class ClinicalReportQuery(ids: Seq[String], tableName: String, offset: Int, size: Int)
