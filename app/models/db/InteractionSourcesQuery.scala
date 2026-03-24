@@ -1,10 +1,8 @@
 package models.db
 
 import esecuele.Column.column
-import esecuele.Column.literal
 import esecuele._
 import utils.OTLogging
-import play.libs.F
 import models.gql.InteractionSourceEnum
 
 case class InteractionSourcesQuery(

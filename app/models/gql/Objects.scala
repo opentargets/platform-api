@@ -443,6 +443,21 @@ object Objects extends OTLogging {
         description = Some(""),
         arguments = Nil,
         resolve = ctx => ctx.ctx.getClinicalTargetsByTarget(ctx.value.id)
+      ),
+      Field(
+        "associationTimeSeries",
+        associationTimeSeriesResultsImp,
+        description = Some("Association time series"),
+        arguments = efoId :: isDirect :: aggregationTypes :: startYear :: endYear :: pageArg :: Nil,
+        resolve = ctx =>
+          ctx.ctx.getAssociationTimeSeries(ctx.arg(efoId),
+                                           ctx.value.id,
+                                           ctx.arg(isDirect),
+                                           ctx.arg(aggregationTypes),
+                                           ctx.arg(startYear),
+                                           ctx.arg(endYear),
+                                           ctx.arg(pageArg)
+          )
       )
     )
   )
@@ -683,6 +698,22 @@ object Objects extends OTLogging {
         ),
         arguments = Nil,
         resolve = ctx => ctx.ctx.getClinicalIndicationsByDisease(ctx.value.id)
+      ),
+      Field(
+        "associationTimeSeries",
+        associationTimeSeriesResultsImp,
+        description = Some("Association time series"),
+        arguments =
+          ensemblId :: isDirect :: aggregationTypes :: startYear :: endYear :: pageArg :: Nil,
+        resolve = ctx =>
+          ctx.ctx.getAssociationTimeSeries(ctx.value.id,
+                                           ctx.arg(ensemblId),
+                                           ctx.arg(isDirect),
+                                           ctx.arg(aggregationTypes),
+                                           ctx.arg(startYear),
+                                           ctx.arg(endYear),
+                                           ctx.arg(pageArg)
+          )
       )
     )
   )
@@ -725,12 +756,8 @@ object Objects extends OTLogging {
         "Association scores computed for every datasource (e.g., IMPC, ChEMBL, Gene2Phenotype)"
       ),
       DocumentField(
-        "noveltyDirect",
-        "A measure of how novel the target–disease association is, calculated based on the accumulation of direct evidence over time"
-      ),
-      DocumentField(
-        "noveltyIndirect",
-        "A measure of how novel the target–disease association is, calculated based on the accumulation of indirect evidence over time"
+        "novelty",
+        "A measure of how novel the target–disease association is, calculated based on the accumulation of evidence over time"
       ),
       ReplaceField(
         "id",
@@ -759,12 +786,8 @@ object Objects extends OTLogging {
         "Association scores computed for every datasource (e.g., IMPC, ChEMBL, Gene2Phenotype)"
       ),
       DocumentField(
-        "noveltyDirect",
+        "novelty",
         "A measure of how novel the target–disease association is, calculated based on the accumulation of direct evidence over time"
-      ),
-      DocumentField(
-        "noveltyIndirect",
-        "A measure of how novel the target–disease association is, calculated based on the accumulation of indirect evidence over time"
       ),
       ReplaceField(
         "id",
@@ -787,6 +810,70 @@ object Objects extends OTLogging {
         "rows",
         "List of credible set entries with their associated statistics and fine-mapping information"
       )
+    )
+  implicit val associationTimeSeriesResultsImp: ObjectType[Backend, AssociationTimeSeriesResults] =
+    deriveObjectType[Backend, AssociationTimeSeriesResults](
+      ObjectTypeDescription(
+        "Association time series results for a target-disease association. Provides a temporal view of the association, including the number of studies and variants over time."
+      ),
+      DocumentField(
+        "count",
+        "Total number of association time series results matching the query filters"
+      ),
+      DocumentField(
+        "rows",
+        "List of assocition time series entries"
+      )
+    )
+
+  implicit val associationTimeSeriesImp: ObjectType[Backend, AssociationTimeSeries] =
+    deriveObjectType[Backend, AssociationTimeSeries](
+      ObjectTypeDescription(
+        "Association time series entry for a target-disease association."
+      ),
+      DocumentField("diseaseId", "EFO ID of the disease"),
+      DocumentField(
+        "targetId",
+        "Ensembl ID of the target gene"
+      ),
+      DocumentField(
+        "aggregationType",
+        "Type of aggregation used for novelty calculation"
+      ),
+      DocumentField(
+        "aggregationValue",
+        "Value used for novelty aggregation"
+      ),
+      DocumentField(
+        "year",
+        "Year of the evidence item used for novelty calculation"
+      ),
+      DocumentField(
+        "associationScore",
+        "Association score between the target and disease"
+      ),
+      DocumentField(
+        "novelty",
+        "Novelty score indicating how novel the target-disease association is."
+      ),
+      DocumentField(
+        "yearlyEvidenceCount",
+        "Yearly count of evidence items"
+      ),
+      DocumentField(
+        "isDirect",
+        "Flag indicating whether the novelty calculation is based on direct evidence only or includes indirect evidence"
+      ),
+      ReplaceField(
+        "aggregationType",
+        Field(
+          "aggregationType",
+          AggregationType,
+          Some("Aggregation type used to group the data"),
+          resolve = _.value.aggregationType
+        )
+      ),
+      ExcludeFields("meta_total")
     )
 
   implicit val tissueImp: ObjectType[Backend, Tissue] = deriveObjectType[Backend, Tissue](
