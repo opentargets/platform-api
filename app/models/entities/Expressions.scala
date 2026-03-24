@@ -3,8 +3,6 @@ package models.entities
 import play.api.libs.json._
 import play.api.libs.json.Reads._
 import play.api.libs.functional.syntax._
-import play.api.libs.json.JsonConfiguration.Aux
-import play.api.libs.json.JsonNaming.SnakeCase
 import slick.jdbc.GetResult
 import utils.db.DbJsonParser.fromPositionedResult
 

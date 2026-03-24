@@ -55,7 +55,6 @@ case class Study(
 )
 
 object Studies extends OTLogging {
-  import sangria.macros.derive._
   def empty: Studies = Studies(0, IndexedSeq.empty)
 
   implicit val studiesFromDB: GetResult[Study] =
