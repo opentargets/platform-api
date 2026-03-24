@@ -111,6 +111,7 @@ object Configuration {
       clinicalTarget: DbTableSettings,
       mechanismOfAction: DbTableSettings,
       mousePhenotypes: DbTableSettings,
+      novelty: DbTableSettings,
       otarProjects: DbTableSettings,
       pharmacogenomics: PharmacogenomicsSettings,
       proteinCodingCoordinates: ProteinCodingCoordinatesSettings,
