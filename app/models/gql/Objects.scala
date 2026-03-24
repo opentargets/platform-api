@@ -11,7 +11,6 @@ import models.entities.ClinicalIndications.{
   clinicalIndicationsFromDrugImp
 }
 import models.entities.ClinicalTargets.clinicalTargetsImp
-import play.api.libs.json.*
 import sangria.macros.derive.*
 import sangria.schema.*
 
@@ -444,6 +443,14 @@ object Objects extends OTLogging {
         description = Some(""),
         arguments = Nil,
         resolve = ctx => ctx.ctx.getClinicalTargetsByTarget(ctx.value.id)
+      ),
+      Field(
+        "novelty",
+        noveltyResultsImp,
+        description = Some("Novelty"),
+        arguments = diseaseId :: isDirect :: pageArg :: Nil,
+        resolve = ctx =>
+          ctx.ctx.getNovelty(ctx.arg(diseaseId), ctx.value.id, ctx.arg(isDirect), ctx.arg(pageArg))
       )
     )
   )
@@ -684,6 +691,14 @@ object Objects extends OTLogging {
         ),
         arguments = Nil,
         resolve = ctx => ctx.ctx.getClinicalIndicationsByDisease(ctx.value.id)
+      ),
+      Field(
+        "novelty",
+        noveltyResultsImp,
+        description = Some("Novelty"),
+        arguments = targetId :: isDirect :: pageArg :: Nil,
+        resolve = ctx =>
+          ctx.ctx.getNovelty(ctx.value.id, ctx.arg(targetId), ctx.arg(isDirect), ctx.arg(pageArg))
       )
     )
   )
@@ -789,6 +804,60 @@ object Objects extends OTLogging {
         "List of credible set entries with their associated statistics and fine-mapping information"
       )
     )
+  implicit val noveltyResultsImp: ObjectType[Backend, NoveltyResults] =
+    deriveObjectType[Backend, NoveltyResults](
+      ObjectTypeDescription(
+        "Novelty of the association between a target and a disease. Calculated based on the accumulation of evidence over time, providing insights into how novel or well-established a target-disease association is."
+      ),
+      DocumentField(
+        "count",
+        "Total number of novelty results matching the query filters"
+      ),
+      DocumentField(
+        "rows",
+        "List of novelty entries with their associated novelty scores and temporal information"
+      )
+    )
+
+  implicit val noveltyImp: ObjectType[Backend, Novelty] = deriveObjectType[Backend, Novelty](
+    ObjectTypeDescription(
+      "Novelty of the association between a target and a disease. Calculated based on the accumulation of evidence over time, providing insights into how novel or well-established a target-disease association is."
+    ),
+    DocumentField("diseaseId", "EFO ID of the disease"),
+    DocumentField(
+      "targetId",
+      "Ensembl ID of the target gene"
+    ),
+    DocumentField(
+      "aggregationType",
+      "Type of aggregation used for novelty calculation"
+    ),
+    DocumentField(
+      "aggregationValue",
+      "Value used for novelty aggregation"
+    ),
+    DocumentField(
+      "year",
+      "Year of the evidence item used for novelty calculation"
+    ),
+    DocumentField(
+      "associationScore",
+      "Association score between the target and disease"
+    ),
+    DocumentField(
+      "novelty",
+      "Novelty score indicating how novel the target-disease association is."
+    ),
+    DocumentField(
+      "yearlyEvidenceCount",
+      "Yearly count of evidence items"
+    ),
+    DocumentField(
+      "isDirect",
+      "Flag indicating whether the novelty calculation is based on direct evidence only or includes indirect evidence"
+    ),
+    ExcludeFields("meta_total")
+  )
 
   implicit val tissueImp: ObjectType[Backend, Tissue] = deriveObjectType[Backend, Tissue](
     ObjectTypeDescription(

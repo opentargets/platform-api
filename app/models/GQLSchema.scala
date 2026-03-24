@@ -5,7 +5,6 @@ import entities.*
 import sangria.execution.deferred.*
 import gql.validators.QueryTermsValidator.*
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import models.gql.Objects.*
 import models.gql.Arguments.*
 import models.gql.Fetchers.*

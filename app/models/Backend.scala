@@ -4,8 +4,6 @@ import clickhouse.ClickHouseProfile
 import net.logstash.logback.argument.StructuredArguments.keyValue
 import com.sksamuel.elastic4s.*
 import com.sksamuel.elastic4s.http.JavaClient
-import com.sksamuel.elastic4s.requests.searches.*
-import com.sksamuel.elastic4s.requests.searches.aggs.*
 import esecuele.*
 
 import javax.inject.Inject
@@ -26,6 +24,7 @@ import models.entities.Interactions.*
 import models.entities.Loci.*
 import models.entities.MechanismsOfAction.*
 import models.entities.MousePhenotypes.*
+import models.entities.NoveltyResults.*
 import models.entities.Pharmacogenomics.*
 import models.entities.SearchFacetsResults.*
 import models.entities.Studies.*
@@ -724,6 +723,29 @@ class Backend @Inject() (implicit
     )
     val query = IdsQuery(ids, "chemblId", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[MechanismsOfAction, Query](query.query)
+  }
+
+  def getNovelty(diseaseId: String,
+                 targetId: String,
+                 isDirect: Boolean,
+                 pagination: Option[Pagination]
+  ): Future[NoveltyResults] = {
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.novelty.name)
+    val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
+    logger.debug(s"querying novelty",
+                 keyValue("diseaseId", diseaseId),
+                 keyValue("targetId", targetId),
+                 keyValue("isDirect", isDirect),
+                 keyValue("table", tableName)
+    )
+    val query = NoveltyQuery(diseaseId, targetId, isDirect, tableName, pag._1, pag._2)
+    dbRetriever.executeQuery[Novelty, Query](query.query).map { noveltySeq =>
+      if (noveltySeq.isEmpty) {
+        NoveltyResults(0, noveltySeq)
+      } else {
+        NoveltyResults(noveltySeq.head.meta_total, noveltySeq)
+      }
+    }
   }
 
   def getDrugWarnings(ids: Seq[String]): Future[IndexedSeq[DrugWarnings]] = {
