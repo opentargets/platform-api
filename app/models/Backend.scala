@@ -94,7 +94,9 @@ class Backend @Inject() (implicit
   ): Future[IndexedSeq[AdverseEvents]] = {
     val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.faers.name)
-    logger.debug(s"querying adverse events", keyValue("ids", ids), keyValue("table", tableName))
+    logger.debug(s"querying adverse events for the ids ${ids.mkString(",")}",
+                 keyValue("table", tableName)
+    )
     val query = OneToMany(
       ids,
       "chembl_id",
@@ -112,7 +114,9 @@ class Backend @Inject() (implicit
                      pagination: Option[Pagination]
   ): Future[IndexedSeq[DiseaseHPOs]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.diseaseHPO.name)
-    logger.debug(s"querying disease hpos", keyValue("id", ids), keyValue("table", tableName))
+    logger.debug(s"querying disease hpos for the ids ${ids.mkString(",")}",
+                 keyValue("table", tableName)
+    )
     val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
     val diseaseHPOQuery = OneToMany(
       ids = ids,
@@ -138,7 +142,9 @@ class Backend @Inject() (implicit
 
   def getGoTerms(ids: Seq[String]): Future[IndexedSeq[GeneOntologyTerm]] = {
     val targetIndexName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.go.name)
-    logger.debug(s"querying go terms", keyValue("ids", ids), keyValue("table", targetIndexName))
+    logger.debug(s"querying go terms for the ids ${ids.mkString(",")}",
+                 keyValue("table", targetIndexName)
+    )
     val query = IdsQuery(ids, "id", targetIndexName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[GeneOntologyTerm, Query](query.query)
   }
@@ -148,7 +154,9 @@ class Backend @Inject() (implicit
   ): Future[IndexedSeq[L2GPredictions]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.l2gPredictions.name)
 
-    logger.debug(s"querying l2g predictions", keyValue("ids", ids), keyValue("table", tableName))
+    logger.debug(s"querying l2g predictions for the ids ${ids.mkString(",")}",
+                 keyValue("table", tableName)
+    )
 
     val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
     val l2gQuery = OneToMany.l2gQuery(
@@ -163,7 +171,9 @@ class Backend @Inject() (implicit
   def getVariants(ids: Seq[String]): Future[IndexedSeq[VariantIndex]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.variant.name)
 
-    logger.debug(s"querying variants", keyValue("ids", ids), keyValue("table", tableName))
+    logger.debug(s"querying variants for the ids ${ids.mkString(",")}",
+                 keyValue("table", tableName)
+    )
 
     val variantsQuery = IdsQuery(ids, "variantId", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[VariantIndex, Query](variantsQuery.query)
@@ -171,7 +181,9 @@ class Backend @Inject() (implicit
 
   def getBiosamples(ids: Seq[String]): Future[IndexedSeq[Biosample]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.biosample.name)
-    logger.debug(s"querying biosamples", keyValue("ids", ids), keyValue("table", tableName))
+    logger.debug(s"querying biosamples for the ids ${ids.mkString(",")}",
+                 keyValue("table", tableName)
+    )
     val query = IdsQuery(ids, "biosampleId", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[Biosample, Query](query.query)
   }
@@ -179,7 +191,7 @@ class Backend @Inject() (implicit
   def getStudy(ids: Seq[String]): Future[IndexedSeq[Study]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.study.name)
 
-    logger.debug(s"querying studies by id", keyValue("ids", ids), keyValue("table", tableName))
+    logger.debug(s"querying studies for the ids ${ids.mkString(",")}", keyValue("table", tableName))
 
     val studiesQuery = IdsQuery(ids, "studyId", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[Study, Query](studiesQuery.query)
@@ -187,10 +199,9 @@ class Backend @Inject() (implicit
 
   def getStudies(queryArgs: StudyQueryArgs, pagination: Option[Pagination]): Future[Studies] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.study.name)
-    logger.debug(s"querying studies by disease",
-                 keyValue("id", queryArgs.id),
-                 keyValue("diseases", queryArgs.diseaseIds),
-                 keyValue("table", tableName)
+    logger.debug(
+      s"querying studies by disease. Study id: ${queryArgs.id}, disease ids: ${queryArgs.diseaseIds}",
+      keyValue("table", tableName)
     )
     val diseaseTableName =
       getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.disease.name)
@@ -214,10 +225,9 @@ class Backend @Inject() (implicit
   ): Future[IndexedSeq[Colocalisations]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.colocalisation.name)
 
-    logger.debug(s"querying colocalisations",
-                 keyValue("study_locus_ids", studyLocusIds),
-                 keyValue("studyType", studyTypes),
-                 keyValue("table", tableName)
+    logger.debug(
+      s"querying colocalisations for the study locus ids $studyLocusIds and study types ${studyTypes.mkString(",")}",
+      keyValue("table", tableName)
     )
 
     val page = pagination.getOrElse(Pagination.mkDefault).offsetLimit
@@ -237,10 +247,9 @@ class Backend @Inject() (implicit
   ): Future[IndexedSeq[Loci]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.credibleSet.locus.name)
 
-    logger.debug(s"querying locus",
-                 keyValue("ids", studyLocusIds),
-                 keyValue("variant_ids", variantIds),
-                 keyValue("table", tableName)
+    logger.debug(
+      s"querying locus for the study locus ids $studyLocusIds and variant ids ${variantIds.getOrElse(Seq.empty).mkString(",")}",
+      keyValue("table", tableName)
     )
 
     val page = pagination.getOrElse(Pagination.mkDefault).offsetLimit
@@ -257,7 +266,9 @@ class Backend @Inject() (implicit
   def getCredibleSet(ids: Seq[String]): Future[IndexedSeq[CredibleSet]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.credibleSet.name)
 
-    logger.debug(s"querying credible sets", keyValue("ids", ids), keyValue("table", tableName))
+    logger.debug(s"querying credible sets for the ids ${ids.mkString(",")}",
+                 keyValue("table", tableName)
+    )
 
     val credsetQuery = IdsQuery(ids, "studyLocusId", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[CredibleSet, Query](credsetQuery.query)
@@ -270,11 +281,7 @@ class Backend @Inject() (implicit
     val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.credibleSet.name)
     logger.debug(
-      s"querying credible sets",
-      keyValue("studyLocusId", queryArgs.ids),
-      keyValue("studyId", queryArgs.studyIds),
-      keyValue("studyType", queryArgs.studyTypes),
-      keyValue("region", queryArgs.regions),
+      s"querying credible sets with filters - study locus ids: ${queryArgs.ids.mkString(",")}, study ids: ${queryArgs.studyIds.mkString(",")}, study types: ${queryArgs.studyTypes.mkString(",")}, regions: ${queryArgs.regions.mkString(",")}",
       keyValue("table", tableName)
     )
     val studyTableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.study.name)
@@ -310,8 +317,7 @@ class Backend @Inject() (implicit
   ): Future[IndexedSeq[CredibleSets]] = {
     val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.credibleSet.name)
-    logger.debug(s"querying credible sets by study ids",
-                 keyValue("ids", studyIds),
+    logger.debug(s"querying credible sets by study ids ${studyIds.mkString(",")}",
                  keyValue("table", tableName)
     )
     val studyTableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.study.name)
@@ -344,10 +350,9 @@ class Backend @Inject() (implicit
   ): Future[IndexedSeq[CredibleSets]] = {
     val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.credibleSet.name)
-    logger.debug(s"querying credible sets by variant ids",
-                 keyValue("ids", variantIds),
-                 keyValue("study_types", studyTypes),
-                 keyValue("table", tableName)
+    logger.debug(
+      s"querying credible sets by variant ids ${variantIds.mkString(",")} and study types ${studyTypes.getOrElse(Seq.empty).mkString(",")}",
+      keyValue("table", tableName)
     )
     val variantTableName = getTableWithPrefixOrDefault(
       defaultOTSettings.clickhouse.credibleSet.variant.name
@@ -380,8 +385,7 @@ class Backend @Inject() (implicit
     val targetIndexName = getTableWithPrefixOrDefault(
       defaultOTSettings.clickhouse.target.essentiality.name
     )
-    logger.debug(s"querying target essentiality",
-                 keyValue("ids", ids),
+    logger.debug(s"querying target essentiality for the ids ${ids.mkString(",")}",
                  keyValue("table", targetIndexName)
     )
     val query = IdsQuery(ids, "id", targetIndexName, 0, Pagination.sizeMax)
@@ -392,8 +396,7 @@ class Backend @Inject() (implicit
     val tableName = getTableWithPrefixOrDefault(
       defaultOTSettings.clickhouse.target.prioritisation.name
     )
-    logger.debug(s"querying targets prioritisation",
-                 keyValue("ids", ids),
+    logger.debug(s"querying targets prioritisation for the ids ${ids.mkString(",")}",
                  keyValue("table", tableName)
     )
     val query = IdsQuery(ids, "targetId", tableName, 0, Pagination.sizeMax)
@@ -484,14 +487,16 @@ class Backend @Inject() (implicit
 
   def getHPOs(ids: Seq[String]): Future[IndexedSeq[HPO]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.hpo.name)
-    logger.debug(s"querying hpos", keyValue("ids", ids), keyValue("table", tableName))
+    logger.debug(s"querying hpos for the ids ${ids.mkString(",")}", keyValue("table", tableName))
     val query = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[HPO, Query](query.query)
   }
 
   def getMousePhenotypes(ids: Seq[String]): Future[IndexedSeq[MousePhenotypes]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.mousePhenotypes.name)
-    logger.debug(s"querying mouse phenotypes", keyValue("ids", ids), keyValue("table", tableName))
+    logger.debug(s"querying mouse phenotypes for the ids ${ids.mkString(",")}",
+                 keyValue("table", tableName)
+    )
     val query = OneToMany(
       ids,
       "targetFromSourceId",
@@ -542,7 +547,9 @@ class Backend @Inject() (implicit
 
     val clinicalReportQuery = ClinicalReportQuery(ids, tableName, 0, Pagination.sizeMax)
 
-    logger.info(s"getting clinical reports with ids $ids", keyValue("table", tableName))
+    logger.info(s"getting clinical reports with ids ${ids.mkString(",")}",
+                keyValue("table", tableName)
+    )
 
     dbRetriever
       .executeQuery[ClinicalReport, Query](clinicalReportQuery.query)
@@ -572,8 +579,7 @@ class Backend @Inject() (implicit
     val tableName = getTableWithPrefixOrDefault(
       defaultOTSettings.clickhouse.pharmacogenomics.drug.name
     )
-    logger.info(s"querying pharmacogenomics by drug",
-                keyValue("ids", ids),
+    logger.info(s"querying pharmacogenomics by drug for the ids ${ids.mkString(",")}",
                 keyValue("table", tableName)
     )
     val query = IdsQuery(ids, "drugId", tableName, 0, Pagination.sizeMax)
@@ -586,8 +592,7 @@ class Backend @Inject() (implicit
     val tableName = getTableWithPrefixOrDefault(
       defaultOTSettings.clickhouse.pharmacogenomics.target.name
     )
-    logger.debug(s"querying pharmacogenomics by target",
-                 keyValue("ids", ids),
+    logger.debug(s"querying pharmacogenomics by target for the ids ${ids.mkString(",")}",
                  keyValue("table", tableName)
     )
     val query = IdsQuery(ids, "targetFromSourceId", tableName, 0, Pagination.sizeMax)
@@ -600,8 +605,7 @@ class Backend @Inject() (implicit
     val tableName = getTableWithPrefixOrDefault(
       defaultOTSettings.clickhouse.pharmacogenomics.variant.name
     )
-    logger.debug(s"querying pharmacogenomics by variant",
-                 keyValue("ids", ids),
+    logger.debug(s"querying pharmacogenomics by variant for the ids ${ids.mkString(",")}",
                  keyValue("table", tableName)
     )
     val query = IdsQuery(ids, "variantId", tableName, 0, Pagination.sizeMax)
@@ -631,8 +635,7 @@ class Backend @Inject() (implicit
     val tableName = getTableWithPrefixOrDefault(
       defaultOTSettings.clickhouse.proteinCodingCoordinates.variant.name
     )
-    logger.debug(s"querying protein coding coordinates",
-                 keyValue("ids", ids),
+    logger.debug(s"querying protein coding coordinates for the ids ${ids.mkString(",")}",
                  keyValue("table", tableName)
     )
     val pag = pagination.getOrElse(Pagination(0, 2)).offsetLimit
@@ -650,13 +653,17 @@ class Backend @Inject() (implicit
   def getOtarProjects(ids: Seq[String]): Future[IndexedSeq[OtarProjects]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.otarProjects.name)
     val query = IdsQuery(ids, "efo_id", tableName, 0, Pagination.sizeMax)
-    logger.debug(s"querying otar projects", keyValue("ids", ids), keyValue("table", tableName))
+    logger.debug(s"querying otar projects for the ids ${ids.mkString(",")}",
+                 keyValue("table", tableName)
+    )
     dbRetriever.executeQuery[OtarProjects, Query](query.query)
   }
 
   def getExpressions(ids: Seq[String]): Future[IndexedSeq[Expressions]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.expression.name)
-    logger.debug(s"querying expressions", keyValue("ids", ids), keyValue("table", tableName))
+    logger.debug(s"querying expressions for the ids ${ids.mkString(",")}",
+                 keyValue("table", tableName)
+    )
     val expressionQuery = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[Expressions, Query](expressionQuery.query)
   }
@@ -664,28 +671,29 @@ class Backend @Inject() (implicit
   def getTargets(ids: Seq[String]): Future[IndexedSeq[Target]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.target.name)
     val targetsQuery = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
-    logger.debug(s"querying targets", keyValue("ids", ids), keyValue("table", tableName))
+    logger.debug(s"querying targets for the ids ${ids.mkString(",")}", keyValue("table", tableName))
     dbRetriever.executeQuery[Target, Query](targetsQuery.query)
   }
 
   def getSoTerms(ids: Seq[String]): Future[IndexedSeq[SequenceOntologyTerm]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.so.name)
-    logger.debug(s"querying so terms", keyValue("ids", ids), keyValue("table", tableName))
+    logger.debug(s"querying so terms for the ids ${ids.mkString(",")}",
+                 keyValue("table", tableName)
+    )
     val query = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[SequenceOntologyTerm, Query](query.query)
   }
 
   def getDrugs(ids: Seq[String]): Future[IndexedSeq[Drug]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.drug.name)
-    logger.debug(s"querying drugs", keyValue("ids", ids), keyValue("table", tableName))
+    logger.debug(s"querying drugs for the ids ${ids.mkString(",")}", keyValue("table", tableName))
     val query = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[Drug, Query](query.query)
   }
 
   def getMechanismsOfAction(ids: Seq[String]): Future[IndexedSeq[MechanismsOfAction]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.mechanismOfAction.name)
-    logger.debug(s"querying mechanisms of action",
-                 keyValue("ids", ids),
+    logger.debug(s"querying mechanisms of action for the ids ${ids.mkString(",")}",
                  keyValue("table", tableName)
     )
     val query = IdsQuery(ids, "chemblId", tableName, 0, Pagination.sizeMax)
@@ -694,14 +702,18 @@ class Backend @Inject() (implicit
 
   def getDrugWarnings(ids: Seq[String]): Future[IndexedSeq[DrugWarnings]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.drugWarnings.name)
-    logger.debug(s"querying drug warnings", keyValue("ids", ids), keyValue("table", tableName))
+    logger.debug(s"querying drug warnings for the ids ${ids.mkString(",")}",
+                 keyValue("table", tableName)
+    )
     val query = IdsQuery(ids, "chemblId", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[DrugWarnings, Query](query.query)
   }
 
   def getDiseases(ids: Seq[String]): Future[IndexedSeq[Disease]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.disease.name)
-    logger.debug(s"querying diseases", keyValue("ids", ids), keyValue("table", tableName))
+    logger.debug(s"querying diseases for the ids ${ids.mkString(",")}",
+                 keyValue("table", tableName)
+    )
     val diseaseQuery = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[Disease, Query](diseaseQuery.query)
   }
@@ -830,9 +842,9 @@ class Backend @Inject() (implicit
     val mustIncludeDatasources = dss.withFilter(_.required).map(_.id).toSet
     val dontPropagate = dss.withFilter(!_.propagate).map(_.id).toSet
 
-    logger.debug(s"querying credible sets",
-                 keyValue("id", fixedEntityId),
-                 keyValue("table", tableName)
+    logger.debug(
+      s"querying credible sets for the id ${fixedEntityId} with indirect ids ${indirectIds.mkString(",")} and bIds ${bIds.mkString(",")}",
+      keyValue("table", tableName)
     )
 
     val aotfQ = QAOTF(
@@ -886,9 +898,9 @@ class Backend @Inject() (implicit
       orderBy: Option[(String, String)],
       pagination: Option[Pagination]
   ): Future[Associations] = {
-    logger.debug(s"querying associations with fixed disease",
-                 keyValue("disease_id", disease.name),
-                 keyValue("indirect", indirect)
+    logger.debug(
+      s"querying associations with fixed disease for the disease ${disease.name} with id ${disease.id}",
+      keyValue("indirect", indirect)
     )
     val indirectIDs = if (indirect) disease.descendants.toSet + disease.id else Set.empty[String]
     val targetIds = applyFacetFiltersToBIDs("facet_search_target", targetSet, facetFilters)
@@ -916,9 +928,8 @@ class Backend @Inject() (implicit
       orderBy: Option[(String, String)],
       pagination: Option[Pagination]
   ): Future[Associations] = {
-    logger.debug(s"querying associations with fixed target",
-                 keyValue("target_id", target.approvedSymbol),
-                 keyValue("indirect", indirect)
+    logger.debug(
+      s"querying associations with fixed target for the target ${target.approvedSymbol} with id ${target.id} using indirect ${indirect}"
     )
     val indirectIDs = if (indirect) {
       val interactions =
@@ -960,10 +971,9 @@ class Backend @Inject() (implicit
       size: Int
   ): Future[Vector[Similarity]] = {
     val table = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.similarities.name)
-    logger.debug(s"querying similarities",
-                 keyValue("table", table),
-                 keyValue("label", label),
-                 keyValue("labels", labels)
+    logger.debug(
+      s"querying similarities for the label ${label} labels ${labels} with categories ${categories.mkString(",")} and threshold ${threshold}",
+      keyValue("labels", labels)
     )
 
     val jointLabels = labels + label

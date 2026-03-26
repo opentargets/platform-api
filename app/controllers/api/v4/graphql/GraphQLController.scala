@@ -63,20 +63,20 @@ class GraphQLController @Inject() (implicit
     // Validate origin to check if request comes from webapp
     val isOT = origin != domain && domain.contains(origin)
 
+    val ip = request.connection.remoteAddressString
+
     operation match {
       case None =>
-        logger.info(s"request received",
+        logger.info(s"request received from ip $ip with no operation name",
                     keyValue("request.method", request.method),
-                    keyValue("request.ip", request.connection.remoteAddressString),
                     keyValue("isOT", isOT)
         )
       case Some(op) =>
         if (op != "IntrospectionQuery")
           logger.info(
-            s"request received",
+            s"request received from ip $ip",
             keyValue("operation", op),
             keyValue("request.method", request.method),
-            keyValue("request.ip", request.connection.remoteAddressString),
             keyValue("isOT", isOT)
           )
     }
