@@ -732,12 +732,7 @@ class Backend @Inject() (implicit
   ): Future[NoveltyResults] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.novelty.name)
     val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
-    logger.debug(s"querying novelty",
-                 keyValue("diseaseId", diseaseId),
-                 keyValue("targetId", targetId),
-                 keyValue("isDirect", isDirect),
-                 keyValue("table", tableName)
-    )
+    logger.debug(s"querying novelty", keyValue("table", tableName))
     val query = NoveltyQuery(diseaseId, targetId, isDirect, tableName, pag._1, pag._2)
     dbRetriever.executeQuery[Novelty, Query](query.query).map { noveltySeq =>
       if (noveltySeq.isEmpty) {
