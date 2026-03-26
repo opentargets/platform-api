@@ -448,9 +448,9 @@ object Objects extends OTLogging {
         "novelty",
         noveltyResultsImp,
         description = Some("Novelty"),
-        arguments = diseaseId :: isDirect :: pageArg :: Nil,
+        arguments = efoId :: isDirect :: pageArg :: Nil,
         resolve = ctx =>
-          ctx.ctx.getNovelty(ctx.arg(diseaseId), ctx.value.id, ctx.arg(isDirect), ctx.arg(pageArg))
+          ctx.ctx.getNovelty(ctx.arg(efoId), ctx.value.id, ctx.arg(isDirect), ctx.arg(pageArg))
       )
     )
   )
@@ -696,9 +696,9 @@ object Objects extends OTLogging {
         "novelty",
         noveltyResultsImp,
         description = Some("Novelty"),
-        arguments = targetId :: isDirect :: pageArg :: Nil,
+        arguments = ensemblId :: isDirect :: pageArg :: Nil,
         resolve = ctx =>
-          ctx.ctx.getNovelty(ctx.value.id, ctx.arg(targetId), ctx.arg(isDirect), ctx.arg(pageArg))
+          ctx.ctx.getNovelty(ctx.value.id, ctx.arg(ensemblId), ctx.arg(isDirect), ctx.arg(pageArg))
       )
     )
   )
