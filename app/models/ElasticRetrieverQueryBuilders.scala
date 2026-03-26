@@ -79,7 +79,7 @@ trait ElasticRetrieverQueryBuilders extends OTLogging with QueryApi {
       }))
     }
     val boolQuery: BoolQuery = must(query).filter(indexQuery.filters)
-    logger.debug(s"Query: $boolQuery")
+    logger.debug(s"Running getByIndexTermsBuilder query: $boolQuery")
     search(indexQuery.esIndex)
       .bool(boolQuery)
       .start(limitClause._1)

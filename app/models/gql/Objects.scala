@@ -892,8 +892,8 @@ object Objects extends OTLogging {
             DeferredValue(goFetcher.deferOpt(r.value.id)).map {
               case Some(value) => value
               case None =>
-                logger.warn(s"go was not found in go index using default go name",
-                            keyValue("id", r.value.id)
+                logger.warn(
+                  s"go was not found in go index using default go name for the id ${r.value.id}"
                 )
                 GeneOntologyTerm(r.value.id, "Name unknown in Open Targets")
             }
@@ -1332,7 +1332,7 @@ object Objects extends OTLogging {
           resolve = r => {
             val soId = (r.value.variantFunctionalConsequenceId)
               .map(id => id.replace("_", ":"))
-            logger.debug(s"finding variant functional consequence", keyValue("id", soId))
+            logger.debug(s"finding variant functional consequence for the id $soId")
             soTermsFetcher.deferOpt(soId)
           }
         ),
@@ -2365,7 +2365,9 @@ object Objects extends OTLogging {
             r.value.variantFunctionalConsequenceIds match {
               case Some(ids) =>
                 val soIds = ids.map(_.replace("_", ":"))
-                logger.debug(s"finding variant functional consequences", keyValue("ids", soIds))
+                logger.debug(
+                  s"finding variant functional consequences for ids ${soIds.mkString(",")}"
+                )
                 soTermsFetcher.deferSeqOpt(soIds)
               case None => Future.successful(Seq.empty)
             }
@@ -2509,7 +2511,9 @@ object Objects extends OTLogging {
             r.value.variantFunctionalConsequenceIds match {
               case Some(ids) =>
                 val soIds = ids.map(_.replace("_", ":"))
-                logger.debug(s"finding variant functional consequences", keyValue("id", soIds))
+                logger.debug(
+                  s"finding variant functional consequences for ids ${soIds.mkString(",")}"
+                )
                 soTermsFetcher.deferSeqOpt(soIds)
               case None => Future.successful(Seq.empty)
             }
@@ -2569,7 +2573,7 @@ object Objects extends OTLogging {
           description = Some("The other credible set (study-locus) in the colocalisation pair"),
           resolve = r =>
             val studyLocusId = r.value.otherStudyLocusId
-            logger.debug(s"finding colocalisation credible set", keyValue("id", studyLocusId))
+            logger.debug(s"finding colocalisation credible set for the id $studyLocusId")
             credibleSetFetcher.deferOpt(studyLocusId)
         )
       )
@@ -2618,7 +2622,7 @@ object Objects extends OTLogging {
           resolve = r =>
             val soId = (r.value.mostSevereConsequenceId)
               .replace("_", ":")
-            logger.debug(s"finding variant functional consequence", keyValue("id", soId))
+            logger.debug(s"finding variant functional consequence for id ${soId}")
             soTermsFetcher.deferOpt(soId)
         )
       ),
@@ -3040,7 +3044,7 @@ object Objects extends OTLogging {
           Some("Variant supporting the relationship between the target and the disease"),
         resolve = evidence => {
           val id = evidence.value.variantId
-          logger.debug(s"finding variant", keyValue("id", id))
+          logger.debug(s"finding variant for id $id")
           variantFetcher.deferOpt(id)
         }
       )
@@ -3055,7 +3059,7 @@ object Objects extends OTLogging {
         ),
         resolve = evidence => {
           val id = evidence.value.drugId
-          logger.debug(s"finding drug", keyValue("id", id))
+          logger.debug(s"finding drug for the id $id")
           drugsFetcher.deferOpt(id)
         }
       )
@@ -3068,7 +3072,7 @@ object Objects extends OTLogging {
         description = Some("Observed patterns of drug response"),
         resolve = evidence => {
           val id = evidence.value.drugResponse
-          logger.debug(s"finding drug", keyValue("id", id))
+          logger.debug(s"finding drug for the id $id")
           diseasesFetcher.deferOpt(id)
         }
       )
@@ -3083,7 +3087,7 @@ object Objects extends OTLogging {
         resolve = evidence => {
           val soId = evidence.value.variantFunctionalConsequenceId
             .map(id => id.replace("_", ":"))
-          logger.debug(s"finding variant functional consequence", keyValue("id", soId))
+          logger.debug(s"finding variant functional consequence for the id $soId")
           soTermsFetcher.deferOpt(soId)
         }
       )
@@ -3159,7 +3163,7 @@ object Objects extends OTLogging {
         description = Some("Variant in the credible set"),
         resolve = r => {
           val variantId = r.value.variantId
-          logger.debug(s"finding variant index", keyValue("id", variantId))
+          logger.debug(s"finding variant index for the id $variantId")
           variantFetcher.deferOpt(variantId)
         }
       )
@@ -3237,7 +3241,7 @@ object Objects extends OTLogging {
           description = Some("The lead variant for the credible set, by posterior probability."),
           resolve = js => {
             val id = js.value.variantId
-            logger.debug(s"finding variant", keyValue("id", id))
+            logger.debug(s"finding variant for the id $id")
             variantFetcher.deferOpt(id)
           }
         )
@@ -3297,7 +3301,7 @@ object Objects extends OTLogging {
           description = Some("GWAS or molQTL study in which the credible set was identified"),
           resolve = js => {
             val studyId = js.value.studyId
-            logger.debug(s"finding gwas study", keyValue("id", studyId))
+            logger.debug(s"finding gwas study for the id $studyId")
             studyFetcher.deferOpt(studyId)
           }
         )
@@ -3406,7 +3410,7 @@ object Objects extends OTLogging {
         Some("In molQTL studies, the gene under study for changes in expression, abundance, etc."),
         resolve = js => {
           val geneId = js.value.geneId
-          logger.debug(s"finding target", keyValue("id", geneId))
+          logger.debug(s"finding target for id $geneId")
           targetsFetcher.deferOpt(geneId)
         }
       )
@@ -3431,7 +3435,7 @@ object Objects extends OTLogging {
         Some("Phenotypic trait ids that map to the analysed trait reported by study"),
         resolve = js => {
           val ids = js.value.diseaseIds.getOrElse(Seq.empty)
-          logger.debug(s"finding diseases", keyValue("ids", ids))
+          logger.debug(s"finding diseases for the ids ${ids.mkString(",")}")
           diseasesFetcher.deferSeqOpt(ids)
         }
       )
@@ -3445,7 +3449,7 @@ object Objects extends OTLogging {
         resolve = js => {
           val ids = js.value.backgroundTraitFromSourceMappedIds
             .getOrElse(Seq.empty)
-          logger.debug(s"finding diseases", keyValue("ids", ids))
+          logger.debug(s"finding diseases for the ids ${ids.mkString(",")}")
           diseasesFetcher.deferSeqOpt(ids)
         }
       )
