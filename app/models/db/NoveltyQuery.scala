@@ -36,7 +36,7 @@ case class NoveltyQuery(diseaseId: String,
       ),
       From(column(tableName)),
       positionalQuery,
-      OrderBy(column("novelty").desc :: Nil),
+      OrderBy(column("year").asc :: Nil),
       Limit(offset, size),
       Format("JSONEachRow")
     )
