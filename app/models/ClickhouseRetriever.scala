@@ -44,8 +44,7 @@ class ClickhouseRetriever(config: OTSettings)(implicit
     val l = Limit(0, 100000)
     val q = Q(s, f, g, l)
 
-    logger.debug(s"getUniqList get distinct with query ${q.toString}",
-                 keyValue("column", of),
+    logger.debug(s"getUniqList get distinct with query ${q.toString} for column ${of}",
                  keyValue("table", from)
     )
     val qq = q.as[A]
