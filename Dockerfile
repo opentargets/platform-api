@@ -1,35 +1,44 @@
-FROM eclipse-temurin:21.0.4_7-jdk-alpine
+# ------------------------------------------------------------------------ BUILD
+FROM eclipse-temurin:21.0.4_7-jdk-jammy AS builder
+
+WORKDIR /build
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends unzip && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY target/universal/ot-platform-api-latest.zip .
+
+RUN unzip ot-platform-api-latest.zip && \
+    chmod +x ot-platform-api-latest/bin/ot-platform-api
+
+# ---------------------------------------------------------------------- RUNTIME
+FROM eclipse-temurin:21.0.4_7-jre-jammy
 
 ARG USER_ID=10001
 ARG GROUP_ID=10001
-ARG USER_NAME=nginxuser
 
-RUN addgroup -g ${GROUP_ID} -S otapigroup && \
-    adduser -u ${USER_ID} -D -S -G otapigroup ${USER_NAME}
-
-RUN mkdir -p /srv/app
-
-RUN apk add --no-cache bash alpine-sdk
-
-COPY target/universal/ot-platform-api-latest.zip /srv/app/ot-platform-api-latest.zip
-COPY production.xml /srv/app/production.xml
-
-RUN chown -R ${USER_NAME}:otapigroup /srv/app
-
-USER ${USER_NAME}
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends curl && \
+    rm -rf /var/lib/apt/lists/* && \
+    groupadd -g ${GROUP_ID} otapi && \
+    useradd -u ${USER_ID} -g otapi -r -s /sbin/nologin otapi
 
 WORKDIR /srv/app
 
-RUN unzip ot-platform-api-latest.zip
+COPY --from=builder --chown=otapi:otapi /build/ot-platform-api-latest ./ot-platform-api-latest
+COPY --chown=otapi:otapi production.xml .
 
-RUN chmod +x ot-platform-api-latest/bin/ot-platform-api
+USER otapi
 
-ENTRYPOINT ["bash", "-c", "ot-platform-api-latest/bin/ot-platform-api \
-    ${JAVA_OPTS} \
-    -J-server \
-    -Dlogger.file=/srv/app/production.xml \
-    -Dlogback.debug=true \
-    -Dcom.sun.management.jmxremote \
-    -Dcom.sun.management.jmxremote.port=31238 \
-    -Dcom.sun.management.jmxremote.ssl=false \
-    -Dcom.sun.management.jmxremote.authenticate=false"]
+EXPOSE 8080
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=3 \
+    CMD curl -sf http://localhost:8080/health || exit 1
+
+ENTRYPOINT ["ot-platform-api-latest/bin/ot-platform-api"]
+
+CMD [ \
+    "-J-server", \
+    "-Dlogger.file=/srv/app/production.xml" \
+]
