@@ -24,7 +24,7 @@ object Helpers extends OTLogging {
               .map(_.asOpt[JsValue])
               .fold(
                 ex => {
-                  logger.error(s"bae64 encoded  ${ex.toString}")
+                  logger.error(s"bae64 encoded  ${ex.toString}", ex)
                   None
                 },
                 identity

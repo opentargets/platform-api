@@ -513,16 +513,16 @@ class Backend @Inject() (implicit
 
     val clinicalTargetQuery = AllByIdInColumnQuery(id, tableName, 0, Pagination.sizeMax, "targetId")
 
-    logger.info(s"getting clinical target with id $id", keyValue("table", tableName))
+    logger.debug(s"getting clinical target with id $id", keyValue("table", tableName))
 
     dbRetriever
       .executeQuery[ClinicalTarget, Query](clinicalTargetQuery.query)
       .map {
         case Seq() =>
-          logger.info(s"no clinical target found for $id", keyValue("table", tableName))
+          logger.warn(s"no clinical target found for $id", keyValue("table", tableName))
           ClinicalTargets(0, IndexedSeq())
         case ct =>
-          logger.info(s"clinical target found for $id ${ct.length}", keyValue("table", tableName))
+          logger.debug(s"clinical target found for $id ${ct.length}", keyValue("table", tableName))
           ClinicalTargets(ct.length, ct)
       }
 
@@ -531,7 +531,7 @@ class Backend @Inject() (implicit
       defaultOTSettings.clickhouse.clinicalIndication.drugTable.name
     )
 
-    logger.info(s"getting clinical indications by the drug $id", keyValue("table", tableName))
+    logger.debug(s"getting clinical indications by the drug $id", keyValue("table", tableName))
     getClinicalIndications(id, tableName, "drugId")
 
   def getClinicalIndicationsByDisease(id: String): Future[ClinicalIndications] =
@@ -539,7 +539,7 @@ class Backend @Inject() (implicit
       defaultOTSettings.clickhouse.clinicalIndication.diseaseTable.name
     )
 
-    logger.info(s"getting clinical indications by the disease $id", keyValue("table", tableName))
+    logger.debug(s"getting clinical indications by the disease $id", keyValue("table", tableName))
     getClinicalIndications(id, tableName, "diseaseId")
 
   def getClinicalReports(ids: Seq[String]): Future[IndexedSeq[ClinicalReport]] = {
@@ -547,8 +547,8 @@ class Backend @Inject() (implicit
 
     val clinicalReportQuery = ClinicalReportQuery(ids, tableName, 0, Pagination.sizeMax)
 
-    logger.info(s"getting clinical reports with ids ${ids.mkString(",")}",
-                keyValue("table", tableName)
+    logger.debug(s"getting clinical reports with ids ${ids.mkString(",")}",
+                 keyValue("table", tableName)
     )
 
     dbRetriever
@@ -567,10 +567,10 @@ class Backend @Inject() (implicit
       .executeQuery[ClinicalIndication, Query](clinicalIndicationsQuery.query)
       .map {
         case Seq() =>
-          logger.info(s"no clinical indication found for $id in table $tableName")
+          logger.warn(s"no clinical indication found for $id in table $tableName")
           ClinicalIndications(0, IndexedSeq())
         case cis =>
-          logger.info(s"clinical indications found for $id in table $tableName: ${cis.length}")
+          logger.debug(s"clinical indications found for $id in table $tableName: ${cis.length}")
           ClinicalIndications(cis.length, cis)
       }
   }
@@ -579,8 +579,8 @@ class Backend @Inject() (implicit
     val tableName = getTableWithPrefixOrDefault(
       defaultOTSettings.clickhouse.pharmacogenomics.drug.name
     )
-    logger.info(s"querying pharmacogenomics by drug for the ids ${ids.mkString(",")}",
-                keyValue("table", tableName)
+    logger.debug(s"querying pharmacogenomics by drug for the ids ${ids.mkString(",")}",
+                 keyValue("table", tableName)
     )
     val query = IdsQuery(ids, "drugId", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[PharmacogenomicsByDrug, Query](query.query)

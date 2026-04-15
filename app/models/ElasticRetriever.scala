@@ -116,7 +116,7 @@ class ElasticRetriever @Inject() (
             .map(_.asOpt[JsArray])
             .fold(
               ex => {
-                logger.error(s"base64 encoded ${ex.toString}")
+                logger.error(s"base64 encoded ${ex.toString}", ex)
                 None
               },
               identity
@@ -155,7 +155,8 @@ class ElasticRetriever @Inject() (
     err.error.rootCause.foreach { rc =>
       logger.error(
         s"elasticsearch error type=${rc.`type`} reason=${rc.reason} " +
-          s"index=${rc.index} causedBy=${rc.causedBy} query=${client.show(q)}"
+          s"index=${rc.index} causedBy=${rc.causedBy} query=${client.show(q)}",
+        err
       )
     }
     throw new Exception(err.error.reason)
@@ -209,7 +210,7 @@ class ElasticRetriever @Inject() (
         case None    => searchRequest
       }
 
-      logger.info(s"Elasticsearch query: ${client.show(sortedSearchRequest)}")
+      logger.info(s"opensearch query: ${client.show(sortedSearchRequest)}")
       sortedSearchRequest
     }
 
@@ -281,7 +282,7 @@ class ElasticRetriever @Inject() (
           case None => q
         }
 
-        logger.debug(s"Elasticsearch query to execute: ${client.show(qq)}")
+        logger.debug(s"opensearch query to execute: ${client.show(qq)}")
         qq
       }
 
@@ -335,7 +336,7 @@ class ElasticRetriever @Inject() (
         } limit (Configuration.batchSize) trackTotalHits (true) sourceExclude (excludedFields)
 
         val elems: Future[Response[SearchResponse]] = client.execute {
-          logger.debug(s"Elasticsearch query to execute: ${client.show(q)}")
+          logger.debug(s"opensearch query to execute: ${client.show(q)}")
           q
         }
 
