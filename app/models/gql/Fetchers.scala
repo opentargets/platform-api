@@ -247,7 +247,7 @@ object Fetchers extends OTLogging {
     )
 
   def resetCache(): Unit = {
-    logger.info("clearing all GraphQL caches")
+    logger.info("clearing all graphql caches")
     val fetchers: List[SimpleFetcherCache] = List(
       biosamplesFetcherCache,
       credibleSetFetcherCache,

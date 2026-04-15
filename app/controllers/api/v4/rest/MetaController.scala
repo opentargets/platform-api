@@ -60,10 +60,10 @@ class MetaController @Inject() (implicit
       .map(Ok(_))
       .recover {
         case error: QueryAnalysisError =>
-          logger.error("QueryAnalysisError: " + error.getMessage())
+          logger.error(s"query analysis error: ${error.getMessage()}", error)
           BadRequest(error.resolveError)
         case error: ErrorWithResolver =>
-          logger.error("ErrorWithResolver: " + error.getMessage())
+          logger.error(s"ErrorWithResolver: ${error.getMessage()}", error)
           InternalServerError(error.resolveError)
       }
   }
