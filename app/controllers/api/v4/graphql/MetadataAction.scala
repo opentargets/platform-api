@@ -62,7 +62,7 @@ class MetadataAction @Inject() (parser: BodyParsers.Default)(implicit
   val operationFilters: Map[String, Int] = metadataLoggingConfig.ignoredQueries.map(_ -> 1).toMap
 
   override def invokeBlock[A](request: Request[A], block: (Request[A]) => Future[Result]) = {
-    logger.trace("Invoking metadata action to generate query time and argument log data.")
+    logger.debug("invoking metadata action")
 
     val startTime = System.currentTimeMillis()
     val result: Future[Result] = block(request)
@@ -95,8 +95,6 @@ class MetadataAction @Inject() (parser: BodyParsers.Default)(implicit
               dataVersion,
               trimmedQuery
             )
-
-            logger.info(meta.toString) // TODO: review logger
 
             response
           }

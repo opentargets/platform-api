@@ -54,7 +54,7 @@ class ClickhouseRetriever(config: OTSettings)(implicit
     db.run(qq.asTry).map {
       case Success(v) => v
       case Failure(ex) =>
-        logger.error(s"getUniqList an exception was thrown ${ex.getMessage}")
+        logger.error(s"getUniqList an exception was thrown ${ex.getMessage}", ex)
         Vector.empty
     }
   }
@@ -69,7 +69,7 @@ class ClickhouseRetriever(config: OTSettings)(implicit
       case Success(v) => v
       case Failure(ex) =>
         lazy val qStr = qq.statements.mkString("\n")
-        logger.error(s"executeQuery an exception was thrown ${ex.getMessage} with Query $qStr")
+        logger.error(s"executeQuery an exception was thrown ${ex.getMessage} with Query $qStr", ex)
         Vector.empty // TODO: maybe we should return the error instead of an empty vector, to inform the user
     }
   }

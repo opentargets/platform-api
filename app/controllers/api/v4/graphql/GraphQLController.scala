@@ -61,9 +61,12 @@ class GraphQLController @Inject() (implicit
     val origin = request.headers.get("Origin").getOrElse("unknown").split("://").last
     val domain = request.domain
     // Validate origin to check if request comes from webapp
-    val isOT = origin != domain && domain.contains(origin)
+    val isOT = request.headers.get("X-Correlation-Id").isDefined
 
-    val ip = request.connection.remoteAddressString
+    val ip = request.headers.get("X-Forwarded-For") match {
+      case Some(xff) => xff.split(",").head.trim
+      case None      => request.connection.remoteAddressString
+    }
 
     operation match {
       case None =>
@@ -88,11 +91,11 @@ class GraphQLController @Inject() (implicit
     *   HTTP request.
     */
   private def addRequestIdToLoggingContext(request: Request[Any]): Unit =
-    val headerReqId = request.headers.get("request-id")
-    val requestId = headerReqId match
+    val requestId = request.headers.get("X-Correlation-Id") match
       case Some(id) => id
       case None     => UUID.randomUUID().toString
-    MDC.put("request.id", requestId)
+
+    MDC.put("correlation.id", requestId)
 
   // request.connection.remoteAddress.getHostAddress
   def gql(query: String, variables: Option[String], operation: Option[String]): Action[AnyContent] =
@@ -158,8 +161,8 @@ class GraphQLController @Inject() (implicit
       val cacheResult: Future[Result] = fromCache.flatMap {
         case Some(result) => Future.successful(result)
         case None =>
-          logger.debug(s"cache miss: ${gqlQuery.variables}",
-                       keyValue("operation", gqlQuery.operation)
+          logger.info(s"cache miss: ${gqlQuery.variables}",
+                      keyValue("operation", gqlQuery.operation)
           )
           appStart.CacheMissedCounter.labelValues(gqlQuery.operation.getOrElse("")).inc()
           val queryResult = executeQuery(gqlQuery)
@@ -179,7 +182,7 @@ class GraphQLController @Inject() (implicit
                     cache.set(gqlQuery.toString, s, non200CacheDuration)
                   } else {
                     logger.info(
-                      s"Caching 200 response: ${gqlQuery.query.filter(_ >= ' ')}",
+                      s"caching 200 response: ${gqlQuery.query.filter(_ >= ' ')}",
                       keyValue("operation", gqlQuery.operation)
                     )
                     cache.set(gqlQuery.toString, s)
@@ -188,7 +191,9 @@ class GraphQLController @Inject() (implicit
                       .inc()
                   }
                 case Failure(exception) =>
-                  logger.error(exception.getMessage) // TODO: log stacktrace
+                  logger.error(s"un caught exception running the query: ${exception.getMessage}",
+                               exception
+                  )
               }
             }
           }
@@ -244,12 +249,12 @@ class GraphQLController @Inject() (implicit
             case error: QueryAnalysisError =>
               val graphQLError: GraphQLError =
                 getErrorObject(gqlQuery, queryComplexity, error.getMessage())
-              logger.error(graphQLError.toString) // TODO: log stacktrace
+              logger.error(s"query analysis error ${graphQLError.toString}", error)
               BadRequest(error.resolveError)
             case error: ErrorWithResolver =>
               val graphQLError: GraphQLError =
                 getErrorObject(gqlQuery, queryComplexity, error.getMessage())
-              logger.error(graphQLError.toString) // TODO: log stacktrace
+              logger.error(s"error with resolver ${graphQLError.toString}", error)
               InternalServerError(error.resolveError)
           }
 
