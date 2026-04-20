@@ -219,7 +219,11 @@ object Configuration {
   implicit val clickhouseSettingsJSONImp: OFormat[ClickhouseSettings] =
     Json.format[ClickhouseSettings]
 
-  implicit val cacheSettingsJSONImp: OFormat[CacheSettings] = Json.format[CacheSettings]
+  implicit val cacheSettingsJSONImp: Reads[CacheSettings] =
+    (__ \ "fetcherMaxMb")
+      .read[String]
+      .map(s => CacheSettings(s.toLong))
+      .orElse((__ \ "fetcherMaxMb").read[Long].map(CacheSettings.apply))
 
   implicit val otSettingsJSONImp: Reads[OTSettings] = ((__ \ "meta").read[Meta] and
     (__ \ "elasticsearch").read[ElasticsearchSettings] and
