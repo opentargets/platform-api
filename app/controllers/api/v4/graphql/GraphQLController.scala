@@ -30,7 +30,6 @@ import scala.util.{Failure, Success}
 import org.slf4j.MDC
 import net.logstash.logback.argument.StructuredArguments.*
 import utils.OTLogging
-
 import java.util.UUID
 
 case class GqlQuery(query: String, variables: JsObject, operation: Option[String])

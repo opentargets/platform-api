@@ -123,13 +123,16 @@ object Configuration {
   /** main Open Targets configuration object. It keeps track of meta, elasticsearch and clickhouse
     * configuration.
     */
+  case class CacheSettings(fetcherMaxMb: Long)
+
   case class OTSettings(
       meta: Meta,
       elasticsearch: ElasticsearchSettings,
       clickhouse: ClickhouseSettings,
       ignoreCache: Boolean,
       qValidationLimitNTerms: Int,
-      logging: Logging
+      logging: Logging,
+      cache: CacheSettings
   )
 
   implicit val loggingJsonImp: OFormat[Logging] = Json.format[Logging]
@@ -216,25 +219,30 @@ object Configuration {
   implicit val clickhouseSettingsJSONImp: OFormat[ClickhouseSettings] =
     Json.format[ClickhouseSettings]
 
+  implicit val cacheSettingsJSONImp: OFormat[CacheSettings] = Json.format[CacheSettings]
+
   implicit val otSettingsJSONImp: Reads[OTSettings] = ((__ \ "meta").read[Meta] and
     (__ \ "elasticsearch").read[ElasticsearchSettings] and
     (__ \ "clickhouse").read[ClickhouseSettings] and
     (__ \ "ignoreCache").read[String] and
     (__ \ "qValidationLimitNTerms").read[String] and
-    (__ \ "logging").read[Logging])(
+    (__ \ "logging").read[Logging] and
+    (__ \ "cache").read[CacheSettings])(
     (meta,
      elasticsearchSettings,
      clickhouseSettings,
      ignoreCache,
      qValidationLimitNTerms,
-     logging
+     logging,
+     cache
     ) =>
       OTSettings.apply(meta,
                        elasticsearchSettings,
                        clickhouseSettings,
                        ignoreCache.toBooleanOption.getOrElse(false),
                        qValidationLimitNTerms.toInt,
-                       logging
+                       logging,
+                       cache
       )
   )
 }
