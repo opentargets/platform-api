@@ -37,7 +37,7 @@ object Fetchers extends OTLogging {
   def configure(settings: CacheSettings): Unit =
     maxBytes = settings.fetcherMaxMb * 1024 * 1024
 
-  lazy val fetcherCache: LruFetcherCache = LruFetcherCache(maxBytes)
+  lazy val fetcherCache: SizedCache = SizedCache(maxBytes)
 
   implicit val soTermHasId: HasId[SequenceOntologyTerm, String] =
     HasId[SequenceOntologyTerm, String](_.id)

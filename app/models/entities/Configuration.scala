@@ -123,7 +123,7 @@ object Configuration {
   /** main Open Targets configuration object. It keeps track of meta, elasticsearch and clickhouse
     * configuration.
     */
-  case class CacheSettings(fetcherMaxMb: Long)
+  case class CacheSettings(fetcherMaxMb: Long, queryMaxMb: Long)
 
   case class OTSettings(
       meta: Meta,
@@ -219,11 +219,11 @@ object Configuration {
   implicit val clickhouseSettingsJSONImp: OFormat[ClickhouseSettings] =
     Json.format[ClickhouseSettings]
 
+  private def longField(field: String): Reads[Long] =
+    (__ \ field).read[String].map(_.toLong).orElse((__ \ field).read[Long])
+
   implicit val cacheSettingsJSONImp: Reads[CacheSettings] =
-    (__ \ "fetcherMaxMb")
-      .read[String]
-      .map(s => CacheSettings(s.toLong))
-      .orElse((__ \ "fetcherMaxMb").read[Long].map(CacheSettings.apply))
+    (longField("fetcherMaxMb") and longField("queryMaxMb"))(CacheSettings.apply)
 
   implicit val otSettingsJSONImp: Reads[OTSettings] = ((__ \ "meta").read[Meta] and
     (__ \ "elasticsearch").read[ElasticsearchSettings] and
