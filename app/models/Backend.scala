@@ -42,6 +42,10 @@ import slick.basic.DatabaseConfig
 import scala.concurrent.*
 import services.ApplicationStart
 import utils.MetadataUtils.getIndexWithPrefixOrDefault
+import utils.logging.LogUtils.*
+
+import net.logstash.logback.marker.LogstashMarker
+import net.logstash.logback.marker.Markers.*
 
 class Backend @Inject() (implicit
     ec: ExecutionContext,
@@ -51,6 +55,11 @@ class Backend @Inject() (implicit
     env: Environment,
     cache: AsyncCacheApi
 ) extends Logging {
+
+  implicit var markerContext: MarkerContext = MarkerContext.NoMarker
+
+  def setMarkerContext(newMarkerContext: MarkerContext): Unit =
+    markerContext = newMarkerContext
 
   implicit val defaultOTSettings: OTSettings = loadConfigurationObject[OTSettings]("ot", config)
   implicit val defaultESSettings: ElasticsearchSettings = defaultOTSettings.elasticsearch
@@ -85,8 +94,6 @@ class Backend @Inject() (implicit
   // we must import the dsl
 
   import com.sksamuel.elastic4s.ElasticDsl._
-  import net.logstash.logback.marker.LogstashMarker
-  import net.logstash.logback.marker.Markers.append as logstashAppend
 
   def getAdverseEvents(
       ids: Seq[String],
@@ -94,9 +101,10 @@ class Backend @Inject() (implicit
   ): Future[IndexedSeq[AdverseEvents]] = {
     val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.faers.name)
-    val tableMarker: LogstashMarker = logstashAppend("table", tableName)
 
-    logger.debug(s"querying adverse events for the ids ${ids.mkString(",")}")(MarkerContext(tableMarker))
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
+
+    logger.debug(s"querying adverse events for the ids ${ids.mkString(",")}")(localMarkerContext)
     val query = OneToMany(
       ids,
       "chembl_id",
@@ -114,8 +122,8 @@ class Backend @Inject() (implicit
                      pagination: Option[Pagination]
   ): Future[IndexedSeq[DiseaseHPOs]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.diseaseHPO.name)
-    val tableMarker: LogstashMarker = logstashAppend("table", tableName)
-    logger.debug(s"querying disease hpos for the ids ${ids.mkString(",")}")(tableMarker)
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
+    logger.debug(s"querying disease hpos for the ids ${ids.mkString(",")}")(localMarkerContext)
     val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
     val diseaseHPOQuery = OneToMany(
       ids = ids,
@@ -130,8 +138,8 @@ class Backend @Inject() (implicit
 
   def getDownloads: Future[Option[String]] = {
     val indexName = getIndexOrDefault("downloads")
-    val indexMarker: LogstashMarker = logstashAppend("index", indexName)
-    logger.debug(s"querying downloads")(MarkerContext(indexMarker))
+    val localMarkerContext = markerContext.fromExistingContext(append("index", indexName))
+    logger.debug(s"querying downloads")(localMarkerContext)
     // We assume that the index has a single document, "croissant", with the downloads information
     esRetriever.getByIds(indexName, Seq("croissant"), fromJsValue[JsValue]).map {
       case IndexedSeq(downloads) =>
@@ -142,9 +150,8 @@ class Backend @Inject() (implicit
 
   def getGoTerms(ids: Seq[String]): Future[IndexedSeq[GeneOntologyTerm]] = {
     val targetIndexName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.go.name)
-    val tableMarker: LogstashMarker = logstashAppend("table", targetIndexName)
-    logger.debug(s"querying go terms for the ids ${ids.mkString(",")}"
-    )(MarkerContext(tableMarker))
+    val localMarkerContext = markerContext.fromExistingContext(append("table", targetIndexName))
+    logger.debug(s"querying go terms for the ids ${ids.mkString(",")}")(localMarkerContext)
     val query = IdsQuery(ids, "id", targetIndexName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[GeneOntologyTerm, Query](query.query)
   }
@@ -154,9 +161,8 @@ class Backend @Inject() (implicit
   ): Future[IndexedSeq[L2GPredictions]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.l2gPredictions.name)
 
-    val tableMarker: LogstashMarker = logstashAppend("table", tableName)
-    logger.debug(s"querying l2g predictions for the ids ${ids.mkString(",")}",
-    )(MarkerContext(tableMarker))
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
+    logger.debug(s"querying l2g predictions for the ids ${ids.mkString(",")}")(localMarkerContext)
 
     val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
     val l2gQuery = OneToMany.l2gQuery(
@@ -171,9 +177,8 @@ class Backend @Inject() (implicit
   def getVariants(ids: Seq[String]): Future[IndexedSeq[VariantIndex]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.variant.name)
 
-    val tableMarker: LogstashMarker = logstashAppend("table", tableName)
-    logger.debug(s"querying variants for the ids ${ids.mkString(",")}",
-    )(MarkerContext(tableMarker))
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
+    logger.debug(s"querying variants for the ids ${ids.mkString(",")}")(localMarkerContext)
 
     val variantsQuery = IdsQuery(ids, "variantId", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[VariantIndex, Query](variantsQuery.query)
@@ -181,9 +186,8 @@ class Backend @Inject() (implicit
 
   def getBiosamples(ids: Seq[String]): Future[IndexedSeq[Biosample]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.biosample.name)
-    val tableMarker: LogstashMarker = logstashAppend("table", tableName)
-    logger.debug(s"querying biosamples for the ids ${ids.mkString(",")}"
-    )(MarkerContext(tableMarker))
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
+    logger.debug(s"querying biosamples for the ids ${ids.mkString(",")}")(localMarkerContext)
     val query = IdsQuery(ids, "biosampleId", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[Biosample, Query](query.query)
   }
@@ -191,8 +195,8 @@ class Backend @Inject() (implicit
   def getStudy(ids: Seq[String]): Future[IndexedSeq[Study]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.study.name)
 
-    val tableMarker: LogstashMarker = logstashAppend("table", tableName)
-    logger.debug(s"querying studies for the ids ${ids.mkString(",")}")(MarkerContext(tableMarker))
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
+    logger.debug(s"querying studies for the ids ${ids.mkString(",")}")(localMarkerContext)
 
     val studiesQuery = IdsQuery(ids, "studyId", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[Study, Query](studiesQuery.query)
@@ -201,10 +205,10 @@ class Backend @Inject() (implicit
   def getStudies(queryArgs: StudyQueryArgs, pagination: Option[Pagination]): Future[Studies] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.study.name)
 
-    val tableMarker: LogstashMarker = logstashAppend("table", tableName)
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
     logger.debug(
       s"querying studies by disease. Study id: ${queryArgs.id}, disease ids: ${queryArgs.diseaseIds}"
-    )(MarkerContext(tableMarker))
+    )(localMarkerContext)
     val diseaseTableName =
       getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.disease.name)
     val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
@@ -227,10 +231,10 @@ class Backend @Inject() (implicit
   ): Future[IndexedSeq[Colocalisations]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.colocalisation.name)
 
-    val tableMarker: LogstashMarker = logstashAppend("table", tableName)
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
     logger.debug(
       s"querying colocalisations for the study locus ids $studyLocusIds and study types ${studyTypes.mkString(",")}"
-    )(MarkerContext(tableMarker))
+    )(localMarkerContext)
 
     val page = pagination.getOrElse(Pagination.mkDefault).offsetLimit
     val colocQuery = OneToMany.colocQuery(
@@ -249,10 +253,10 @@ class Backend @Inject() (implicit
   ): Future[IndexedSeq[Loci]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.credibleSet.locus.name)
 
-    val tableMarker: LogstashMarker = logstashAppend("table", tableName)
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
     logger.debug(
       s"querying locus for the study locus ids $studyLocusIds and variant ids ${variantIds.getOrElse(Seq.empty).mkString(",")}"
-    )(MarkerContext(tableMarker))
+    )(localMarkerContext)
 
     val page = pagination.getOrElse(Pagination.mkDefault).offsetLimit
     val locusQuery = OneToMany.locusQuery(
@@ -268,8 +272,8 @@ class Backend @Inject() (implicit
   def getCredibleSet(ids: Seq[String]): Future[IndexedSeq[CredibleSet]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.credibleSet.name)
 
-    logger.debug(s"querying credible sets for the ids ${ids.mkString(",")}"
-    )(MarkerContext(logstashAppend("table", tableName)))
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
+    logger.debug(s"querying credible sets for the ids ${ids.mkString(",")}")(localMarkerContext)
 
     val credsetQuery = IdsQuery(ids, "studyLocusId", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[CredibleSet, Query](credsetQuery.query)
@@ -281,9 +285,10 @@ class Backend @Inject() (implicit
   ): Future[CredibleSets] = {
     val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.credibleSet.name)
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
     logger.debug(
       s"querying credible sets with filters - study locus ids: ${queryArgs.ids.mkString(",")}, study ids: ${queryArgs.studyIds.mkString(",")}, study types: ${queryArgs.studyTypes.mkString(",")}, regions: ${queryArgs.regions.mkString(",")}"
-    )(MarkerContext(logstashAppend("table", tableName)))
+    )(localMarkerContext)
     val studyTableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.study.name)
     val variantTableName = getTableWithPrefixOrDefault(
       defaultOTSettings.clickhouse.credibleSet.variant.name
@@ -317,8 +322,9 @@ class Backend @Inject() (implicit
   ): Future[IndexedSeq[CredibleSets]] = {
     val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.credibleSet.name)
-    logger.debug(s"querying credible sets by study ids ${studyIds.mkString(",")}"
-    )(MarkerContext(logstashAppend("table", tableName)))
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
+    logger
+      .debug(s"querying credible sets by study ids ${studyIds.mkString(",")}")(localMarkerContext)
     val studyTableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.study.name)
     val credsetQuery = CredibleSetByStudyQuery(
       studyIds,
@@ -349,9 +355,10 @@ class Backend @Inject() (implicit
   ): Future[IndexedSeq[CredibleSets]] = {
     val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.credibleSet.name)
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
     logger.debug(
       s"querying credible sets by variant ids ${variantIds.mkString(",")} and study types ${studyTypes.getOrElse(Seq.empty).mkString(",")}"
-    )(MarkerContext(logstashAppend("table", tableName)))
+    )(localMarkerContext)
     val variantTableName = getTableWithPrefixOrDefault(
       defaultOTSettings.clickhouse.credibleSet.variant.name
     )
@@ -380,13 +387,14 @@ class Backend @Inject() (implicit
   }
 
   def getTargetEssentiality(ids: Seq[String]): Future[IndexedSeq[TargetEssentiality]] = {
-    val targetTableName = getTableWithPrefixOrDefault(
+    val tableName = getTableWithPrefixOrDefault(
       defaultOTSettings.clickhouse.target.essentiality.name
     )
 
-    logger.debug(s"querying target essentiality for the ids ${ids.mkString(",")}"
-    )(MarkerContext(logstashAppend("table", targetTableName)))
-    val query = IdsQuery(ids, "id", targetTableName, 0, Pagination.sizeMax)
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
+    logger
+      .debug(s"querying target essentiality for the ids ${ids.mkString(",")}")(localMarkerContext)
+    val query = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[TargetEssentiality, Query](query.query)
   }
 
@@ -394,8 +402,10 @@ class Backend @Inject() (implicit
     val tableName = getTableWithPrefixOrDefault(
       defaultOTSettings.clickhouse.target.prioritisation.name
     )
-    logger.debug(s"querying targets prioritisation for the ids ${ids.mkString(",")}"
-    )(MarkerContext(logstashAppend("table", tableName)))
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
+    logger.debug(s"querying targets prioritisation for the ids ${ids.mkString(",")}")(
+      localMarkerContext
+    )
     val query = IdsQuery(ids, "targetId", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[TargetPrioritisation, Query](query.query)
   }
@@ -484,15 +494,16 @@ class Backend @Inject() (implicit
 
   def getHPOs(ids: Seq[String]): Future[IndexedSeq[HPO]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.hpo.name)
-    logger.debug(s"querying hpos for the ids ${ids.mkString(",")}")(MarkerContext(logstashAppend("table", tableName)))
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
+    logger.debug(s"querying hpos for the ids ${ids.mkString(",")}")(localMarkerContext)
     val query = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[HPO, Query](query.query)
   }
 
   def getMousePhenotypes(ids: Seq[String]): Future[IndexedSeq[MousePhenotypes]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.mousePhenotypes.name)
-    logger.debug(s"querying mouse phenotypes for the ids ${ids.mkString(",")}"
-    )(MarkerContext(logstashAppend("table", tableName)))
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
+    logger.debug(s"querying mouse phenotypes for the ids ${ids.mkString(",")}")(localMarkerContext)
     val query = OneToMany(
       ids,
       "targetFromSourceId",
@@ -504,21 +515,22 @@ class Backend @Inject() (implicit
     dbRetriever.executeQuery[MousePhenotypes, Query](query.query)
   }
 
-  def getClinicalTargetsByTarget(id: String)(using markerContext: MarkerContext): Future[ClinicalTargets] =
+  def getClinicalTargetsByTarget(id: String): Future[ClinicalTargets] =
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.clinicalTarget.name)
 
     val clinicalTargetQuery = AllByIdInColumnQuery(id, tableName, 0, Pagination.sizeMax, "targetId")
 
-    logger.debug(s"getting clinical target with id $id")(MarkerContext(logstashAppend("table", tableName)))
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
+    logger.debug(s"getting clinical target with id $id")(localMarkerContext)
 
     dbRetriever
       .executeQuery[ClinicalTarget, Query](clinicalTargetQuery.query)
       .map {
         case Seq() =>
-          logger.warn(s"no clinical target found for $id")
+          logger.warn(s"no clinical target found for $id")(localMarkerContext)
           ClinicalTargets(0, IndexedSeq())
         case ct =>
-          logger.debug(s"clinical target found for $id ${ct.length}")(MarkerContext(logstashAppend("table", tableName)))
+          logger.debug(s"clinical target found for $id ${ct.length}")(localMarkerContext)
           ClinicalTargets(ct.length, ct)
       }
 
@@ -527,7 +539,8 @@ class Backend @Inject() (implicit
       defaultOTSettings.clickhouse.clinicalIndication.drugTable.name
     )
 
-    logger.debug(s"getting clinical indications by the drug $id")(MarkerContext(logstashAppend("table", tableName)))
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
+    logger.debug(s"getting clinical indications by the drug $id")(localMarkerContext)
     getClinicalIndications(id, tableName, "drugId")
 
   def getClinicalIndicationsByDisease(id: String): Future[ClinicalIndications] =
@@ -543,8 +556,8 @@ class Backend @Inject() (implicit
 
     val clinicalReportQuery = ClinicalReportQuery(ids, tableName, 0, Pagination.sizeMax)
 
-    logger.debug(s"getting clinical reports with ids ${ids.mkString(",")}"
-    )(MarkerContext(logstashAppend("table", tableName)))
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
+    logger.debug(s"getting clinical reports with ids ${ids.mkString(",")}")(localMarkerContext)
 
     dbRetriever
       .executeQuery[ClinicalReport, Query](clinicalReportQuery.query)
@@ -574,8 +587,10 @@ class Backend @Inject() (implicit
     val tableName = getTableWithPrefixOrDefault(
       defaultOTSettings.clickhouse.pharmacogenomics.drug.name
     )
-    logger.debug(s"querying pharmacogenomics by drug for the ids ${ids.mkString(",")}"
-    )(MarkerContext(logstashAppend("tableName", tableName)))
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
+    logger.debug(s"querying pharmacogenomics by drug for the ids ${ids.mkString(",")}")(
+      localMarkerContext
+    )
     val query = IdsQuery(ids, "drugId", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[PharmacogenomicsByDrug, Query](query.query)
   }
@@ -586,8 +601,10 @@ class Backend @Inject() (implicit
     val tableName = getTableWithPrefixOrDefault(
       defaultOTSettings.clickhouse.pharmacogenomics.target.name
     )
-    logger.debug(s"querying pharmacogenomics by target for the ids ${ids.mkString(",")}"
-    )(MarkerContext(logstashAppend("tableName", tableName)))
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
+    logger.debug(s"querying pharmacogenomics by target for the ids ${ids.mkString(",")}")(
+      localMarkerContext
+    )
     val query = IdsQuery(ids, "targetFromSourceId", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[PharmacogenomicsByTarget, Query](query.query)
   }
@@ -598,8 +615,10 @@ class Backend @Inject() (implicit
     val tableName = getTableWithPrefixOrDefault(
       defaultOTSettings.clickhouse.pharmacogenomics.variant.name
     )
-    logger.debug(s"querying pharmacogenomics by variant for the ids ${ids.mkString(",")}"
-    )(MarkerContext(logstashAppend("tableName", tableName)))
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
+    logger.debug(s"querying pharmacogenomics by variant for the ids ${ids.mkString(",")}")(
+      localMarkerContext
+    )
     val query = IdsQuery(ids, "variantId", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[PharmacogenomicsByVariant, Query](query.query)
   }
@@ -627,8 +646,10 @@ class Backend @Inject() (implicit
     val tableName = getTableWithPrefixOrDefault(
       defaultOTSettings.clickhouse.proteinCodingCoordinates.variant.name
     )
-    logger.debug(s"querying protein coding coordinates for the ids ${ids.mkString(",")}"
-    )(MarkerContext(logstashAppend("tableName", tableName)))
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
+    logger.debug(s"querying protein coding coordinates for the ids ${ids.mkString(",")}")(
+      localMarkerContext
+    )
     val pag = pagination.getOrElse(Pagination(0, 2)).offsetLimit
     val query = OneToMany(
       ids,
@@ -644,15 +665,15 @@ class Backend @Inject() (implicit
   def getOtarProjects(ids: Seq[String]): Future[IndexedSeq[OtarProjects]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.otarProjects.name)
     val query = IdsQuery(ids, "efo_id", tableName, 0, Pagination.sizeMax)
-    logger.debug(s"querying otar projects for the ids ${ids.mkString(",")}"
-    )(MarkerContext(logstashAppend("tableName", tableName)))
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
+    logger.debug(s"querying otar projects for the ids ${ids.mkString(",")}")(localMarkerContext)
     dbRetriever.executeQuery[OtarProjects, Query](query.query)
   }
 
   def getExpressions(ids: Seq[String]): Future[IndexedSeq[Expressions]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.expression.name)
-    logger.debug(s"querying expressions for the ids ${ids.mkString(",")}"
-    )(MarkerContext(logstashAppend("tableName", tableName)))
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
+    logger.debug(s"querying expressions for the ids ${ids.mkString(",")}")(localMarkerContext)
     val expressionQuery = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[Expressions, Query](expressionQuery.query)
   }
@@ -660,45 +681,48 @@ class Backend @Inject() (implicit
   def getTargets(ids: Seq[String]): Future[IndexedSeq[Target]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.target.name)
     val targetsQuery = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
-    logger.debug(s"querying targets for the ids ${ids.mkString(",")}")(MarkerContext(logstashAppend("tableName", tableName)))
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
+    logger.debug(s"querying targets for the ids ${ids.mkString(",")}")(localMarkerContext)
     dbRetriever.executeQuery[Target, Query](targetsQuery.query)
   }
 
   def getSoTerms(ids: Seq[String]): Future[IndexedSeq[SequenceOntologyTerm]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.so.name)
-    logger.debug(s"querying so terms for the ids ${ids.mkString(",")}"
-    )(MarkerContext(logstashAppend("tableName", tableName)))
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
+    logger.debug(s"querying so terms for the ids ${ids.mkString(",")}")(localMarkerContext)
     val query = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[SequenceOntologyTerm, Query](query.query)
   }
 
   def getDrugs(ids: Seq[String]): Future[IndexedSeq[Drug]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.drug.name)
-    logger.debug(s"querying drugs for the ids ${ids.mkString(",")}")(MarkerContext(logstashAppend("tableName", tableName)))
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
+    logger.debug(s"querying drugs for the ids ${ids.mkString(",")}")(localMarkerContext)
     val query = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[Drug, Query](query.query)
   }
 
   def getMechanismsOfAction(ids: Seq[String]): Future[IndexedSeq[MechanismsOfAction]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.mechanismOfAction.name)
-    logger.debug(s"querying mechanisms of action for the ids ${ids.mkString(",")}"
-    )(MarkerContext(logstashAppend("tableName", tableName)))
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
+    logger
+      .debug(s"querying mechanisms of action for the ids ${ids.mkString(",")}")(localMarkerContext)
     val query = IdsQuery(ids, "chemblId", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[MechanismsOfAction, Query](query.query)
   }
 
   def getDrugWarnings(ids: Seq[String]): Future[IndexedSeq[DrugWarnings]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.drugWarnings.name)
-    logger.debug(s"querying drug warnings for the ids ${ids.mkString(",")}"
-    )(MarkerContext(logstashAppend("tableName", tableName)))
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
+    logger.debug(s"querying drug warnings for the ids ${ids.mkString(",")}")(localMarkerContext)
     val query = IdsQuery(ids, "chemblId", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[DrugWarnings, Query](query.query)
   }
 
   def getDiseases(ids: Seq[String]): Future[IndexedSeq[Disease]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.disease.name)
-    logger.debug(s"querying diseases for the ids ${ids.mkString(",")}"
-    )(MarkerContext(logstashAppend("tableName", tableName)))
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
+    logger.debug(s"querying diseases for the ids ${ids.mkString(",")}")(localMarkerContext)
     val diseaseQuery = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[Disease, Query](diseaseQuery.query)
   }
@@ -827,9 +851,10 @@ class Backend @Inject() (implicit
     val mustIncludeDatasources = dss.withFilter(_.required).map(_.id).toSet
     val dontPropagate = dss.withFilter(!_.propagate).map(_.id).toSet
 
+    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
     logger.debug(
       s"querying credible sets for the id ${fixedEntityId} with indirect ids ${indirectIds.mkString(",")} and bIds ${bIds.mkString(",")}"
-    )(MarkerContext(logstashAppend("tableName", tableName)))
+    )(localMarkerContext)
 
     val aotfQ = QAOTF(
       tableName,
@@ -882,9 +907,10 @@ class Backend @Inject() (implicit
       orderBy: Option[(String, String)],
       pagination: Option[Pagination]
   ): Future[Associations] = {
+    val localMarkerContext = markerContext.fromExistingContext(append("indirect", indirect))
     logger.debug(
       s"querying associations with fixed disease for the disease ${disease.name} with id ${disease.id}"
-    )(MarkerContext(logstashAppend("indirect", indirect)))
+    )(localMarkerContext)
     val indirectIDs = if (indirect) disease.descendants.toSet + disease.id else Set.empty[String]
     val targetIds = applyFacetFiltersToBIDs("facet_search_target", targetSet, facetFilters)
     getAssociationsEntityFixed(
@@ -954,9 +980,10 @@ class Backend @Inject() (implicit
       size: Int
   ): Future[Vector[Similarity]] = {
     val table = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.similarities.name)
+    val localMarkerContext = markerContext.fromExistingContext(append("table", table))
     logger.debug(
       s"querying similarities for the label ${label} labels ${labels} with categories ${categories.mkString(",")} and threshold ${threshold}"
-    )(MarkerContext(logstashAppend("labels", labels)))
+    )(localMarkerContext)
 
     val jointLabels = labels + label
     val simQ = QW2V(table, categories, jointLabels, threshold, size)
