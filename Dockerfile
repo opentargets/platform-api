@@ -1,5 +1,5 @@
 # ------------------------------------------------------------------------ BUILD
-FROM eclipse-temurin:21.0.4_7-jdk-jammy AS builder
+FROM eclipse-temurin:21.0.10_7-jdk-noble AS builder
 
 WORKDIR /build
 
@@ -13,7 +13,7 @@ RUN unzip ot-platform-api-latest.zip && \
     chmod +x ot-platform-api-latest/bin/ot-platform-api
 
 # ---------------------------------------------------------------------- RUNTIME
-FROM eclipse-temurin:21.0.4_7-jre-jammy
+FROM eclipse-temurin:21.0.10_7-jre-noble
 
 ARG USER_ID=10001
 ARG GROUP_ID=10001
