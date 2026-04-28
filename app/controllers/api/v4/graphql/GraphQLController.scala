@@ -72,7 +72,9 @@ class GraphQLController @Inject() (implicit
 
     import utils.logging.LogUtils.*
     val newMarkers = markerContext.fromExistingContext(
-      append("request.method", request.method).and(append("isOT", isOT))
+      append("request.method", request.method).and(
+        append("isOT", isOT).and(append("client_ip", ip))
+      )
     )
 
     operation match {
