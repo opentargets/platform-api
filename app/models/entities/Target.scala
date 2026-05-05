@@ -166,10 +166,21 @@ case class Target(
     transcripts: Seq[Transcript] = Seq.empty
 )
 
+case class Targets(
+    count: Long,
+    rows: Option[Seq[Target]]
+)
+
+object Targets {
+  val empty: Targets = Targets(0, None)
+}
+
 object Target extends OTLogging {
 
   implicit val getTargetFromDB: GetResult[Target] =
     GetResult(fromPositionedResult[Target])
+  implicit val getTargetsFromDB: GetResult[Targets] =
+    GetResult(fromPositionedResult[Targets])
 
   implicit val strandWrites: Writes[Strand] = Writes(s => JsString(s.value))
   implicit val strandReads: Reads[Strand] = Reads {
@@ -212,4 +223,5 @@ object Target extends OTLogging {
   implicit val transcriptImpF: OFormat[Transcript] = Json.format[models.entities.Transcript]
   implicit val targetImpF: OFormat[Target] =
     Json.format[Target]
+  implicit val targetsF: OFormat[Targets] = Json.format[Targets]
 }
