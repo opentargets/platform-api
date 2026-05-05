@@ -28,10 +28,11 @@ import models.entities.AssociationTimeSeriesResults.*
 import models.entities.Pharmacogenomics.*
 import models.entities.SearchFacetsResults.*
 import models.entities.Studies.*
+import models.entities.Target.*
 import models.entities.Evidences.*
 import models.entities.SequenceOntologyTerm.*
 import models.entities.*
-import models.gql.{Fetchers, AggregationTypeEnum, StudyTypeEnum, InteractionSourceEnum}
+import models.gql.{Fetchers, AggregationTypeEnum, StudyTypeEnum, InteractionSourceEnum, ChromosomeEnum}
 import models.entities.Violations.{DateFilterError, InputParameterCheckError}
 import org.apache.http.impl.nio.reactor.IOReactorConfig
 import play.api.cache.AsyncCacheApi
@@ -176,6 +177,12 @@ class Backend @Inject() (implicit
     )
     dbRetriever.executeQuery[L2GPredictions, Query](l2gQuery.query)
   }
+
+  def getRegion(chromosome: ChromosomeEnum.Value,
+                positionStart: Int,
+                positionEnd: Int
+  ): Future[Region] =
+    Future.successful(Region(chromosome, positionStart, positionEnd))
 
   def getVariants(ids: Seq[String]): Future[IndexedSeq[VariantIndex]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.variant.name)
@@ -710,6 +717,34 @@ class Backend @Inject() (implicit
     val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
     logger.debug(s"querying targets for the ids ${ids.mkString(",")}")(localMarkerContext)
     dbRetriever.executeQuery[Target, Query](targetsQuery.query)
+  }
+
+  def getTargetsByRegion(chromosome: ChromosomeEnum.Value,
+                         start: Int,
+                         end: Int,
+                         pagination: Option[Pagination]
+  ): Future[Targets] = {
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.region.target.name)
+    val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
+    val targetsQuery =
+      RegionQuery(
+        chromosome.toString,
+        start,
+        end,
+        "target",
+        tableName,
+        pag._1,
+        pag._2,
+        Some(models.db.OrderBy("target -> target.genomicLocation.start", sortDirection.ASC))
+      )
+    logger.debug(s"querying targets by region",
+                 keyValue("chromosome", chromosome),
+                 keyValue("start", start),
+                 keyValue("end", end),
+                 keyValue("table", tableName)
+    )
+    val results = dbRetriever.executeQuery[Targets, Query](targetsQuery.query)
+    results.map(_.headOption.getOrElse(Targets.empty))
   }
 
   def getSoTerms(ids: Seq[String]): Future[IndexedSeq[SequenceOntologyTerm]] = {
