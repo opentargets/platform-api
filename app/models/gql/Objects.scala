@@ -2026,6 +2026,8 @@ object Objects extends OTLogging {
   implicit val proteinCodingCoordinatesSettingsImp
       : ObjectType[Backend, ProteinCodingCoordinatesSettings] =
     deriveObjectType[Backend, ProteinCodingCoordinatesSettings]()
+  implicit val regionSettingsImp: ObjectType[Backend, RegionSettings] =
+    deriveObjectType[Backend, RegionSettings]()
   implicit val clickhouseSettingsImp: ObjectType[Backend, ClickhouseSettings] =
     deriveObjectType[Backend, ClickhouseSettings]()
   implicit val evidenceSourceImp: ObjectType[Backend, EvidenceSource] =
@@ -2238,6 +2240,36 @@ object Objects extends OTLogging {
           resolve = _.value.mappings
         )
       )
+    )
+
+  implicit val regionImp: ObjectType[Backend, Region] =
+    deriveObjectType[Backend, Region](
+      ObjectTypeDescription("Region with chromosome, start, and end positions"),
+      DocumentField("chromosome", "Chromosome"),
+      DocumentField("start", "Start position"),
+      DocumentField("end", "End position"),
+      AddFields(
+        Field(
+          "targets",
+          targetsImp,
+          description = Some("Targets overlapping this region"),
+          arguments = pageArg :: Nil,
+          complexity = Some(complexityCalculator(pageArg)),
+          resolve = ctx =>
+            ctx.ctx.getTargetsByRegion(ctx.value.chromosome,
+                                       ctx.value.start,
+                                       ctx.value.end,
+                                       ctx.args.arg(pageArg)
+            )
+        )
+      )
+    )
+
+  implicit val targetsImp: ObjectType[Backend, Targets] =
+    deriveObjectType[Backend, Targets](
+      ObjectTypeDescription("Targets overlapping this region"),
+      DocumentField("count", "Count of hits"),
+      DocumentField("rows", "List of targets")
     )
 
   implicit val searchFacetsCategoryImp: ObjectType[Backend, SearchFacetsCategory] =

@@ -25,6 +25,15 @@ object InteractionSourceEnum extends Enumeration {
   implicit val interactionSourceF: Format[InteractionSource] = Json.formatEnum(this)
 }
 
+object ChromosomeEnum extends Enumeration {
+
+  type Chromosome = Value
+  val chr1, chr2, chr3, chr4, chr5, chr6, chr7, chr8, chr9, chr10, chr11, chr12, chr13, chr14,
+      chr15, chr16, chr17, chr18, chr19, chr20, chr21, chr22, X, Y = Value
+
+  implicit val chromosomeF: Format[Chromosome] = Json.formatEnum(this)
+}
+
 object Arguments {
   import sangria.macros.derive._
   implicit val StudyType: EnumType[StudyTypeEnum.Value] =
@@ -53,6 +62,34 @@ object Arguments {
       DocumentValue("reactome", "Reactome pathway database"),
       DocumentValue("signor", "SIGNOR, the SIGnaling Network Open Resource database"),
       DocumentValue("string", "STRING, protein-protein interactions database")
+    )
+  implicit val Chromosome: EnumType[ChromosomeEnum.Value] =
+    deriveEnumType[ChromosomeEnum.Value](
+      EnumTypeDescription("Chromosome"),
+      DocumentValue("chr1", "Chromosome 1"),
+      DocumentValue("chr2", "Chromosome 2"),
+      DocumentValue("chr3", "Chromosome 3"),
+      DocumentValue("chr4", "Chromosome 4"),
+      DocumentValue("chr5", "Chromosome 5"),
+      DocumentValue("chr6", "Chromosome 6"),
+      DocumentValue("chr7", "Chromosome 7"),
+      DocumentValue("chr8", "Chromosome 8"),
+      DocumentValue("chr9", "Chromosome 9"),
+      DocumentValue("chr10", "Chromosome 10"),
+      DocumentValue("chr11", "Chromosome 11"),
+      DocumentValue("chr12", "Chromosome 12"),
+      DocumentValue("chr13", "Chromosome 13"),
+      DocumentValue("chr14", "Chromosome 14"),
+      DocumentValue("chr15", "Chromosome 15"),
+      DocumentValue("chr16", "Chromosome 16"),
+      DocumentValue("chr17", "Chromosome 17"),
+      DocumentValue("chr18", "Chromosome 18"),
+      DocumentValue("chr19", "Chromosome 19"),
+      DocumentValue("chr20", "Chromosome 20"),
+      DocumentValue("chr21", "Chromosome 21"),
+      DocumentValue("chr22", "Chromosome 22"),
+      DocumentValue("X", "Chromosome X"),
+      DocumentValue("Y", "Chromosome Y")
     )
   val paginationGQLImp: InputObjectType[Pagination] = deriveInputObjectType[Pagination](
     InputObjectTypeDescription(
@@ -170,6 +207,12 @@ object Arguments {
              OptionInputType(ListInputType(StringType)),
              description = "List of genomic regions (e.g., 1:100000-200000)"
     )
+  val chromosome: Argument[ChromosomeEnum.Value] =
+    Argument("chromosome", Chromosome, description = "Chromosome")
+  val positionStart: Argument[Int] =
+    Argument("positionStart", IntType, description = "Position start")
+  val positionEnd: Argument[Int] =
+    Argument("positionEnd", IntType, description = "Position end")
   val studyLocusId: Argument[String] =
     Argument("studyLocusId", StringType, description = "Study-locus ID")
   val studyLocusIds: Argument[Option[Seq[String]]] =

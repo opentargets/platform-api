@@ -63,7 +63,8 @@ object Functions {
 
   def flatten(col: Column): Column = f("flatten", col)
 
-  def arraySort(col: Column): Column = f("arraySort", col)
+  def arraySort(lambda: String, col: Column): Column =
+    f("arraySort", Column(lambda), col)
 
   def reverse(col: Column): Column = f("reverse", col)
 

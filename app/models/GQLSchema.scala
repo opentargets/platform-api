@@ -80,6 +80,14 @@ object GQLSchema {
         resolve = ctx => drugsFetcher.deferSeqOpt(ctx.arg(chemblIds))
       ),
       Field(
+        "region",
+        regionImp,
+        description = Some(""),
+        arguments = chromosome :: positionStart :: positionEnd :: Nil,
+        resolve = ctx =>
+          ctx.ctx.getRegion(ctx.arg(chromosome), ctx.arg(positionStart), ctx.arg(positionEnd))
+      ),
+      Field(
         "search",
         searchResultsGQLImp,
         description = Some(

@@ -62,6 +62,8 @@ object Configuration {
   )
   case class ProteinCodingCoordinatesSettings(variant: DbTableSettings, target: DbTableSettings)
 
+  case class RegionSettings(target: DbTableSettings)
+
   case class TargetSettings(label: String,
                             name: String,
                             associations: DbTableSettings,
@@ -113,6 +115,7 @@ object Configuration {
       otarProjects: DbTableSettings,
       pharmacogenomics: PharmacogenomicsSettings,
       proteinCodingCoordinates: ProteinCodingCoordinatesSettings,
+      region: RegionSettings,
       similarities: DbTableSettings,
       study: DbTableSettings,
       so: DbTableSettings,
@@ -207,6 +210,8 @@ object Configuration {
     Json.format[PharmacogenomicsSettings]
   implicit val proteinCodingCoordinatesSettingsJSONImp: OFormat[ProteinCodingCoordinatesSettings] =
     Json.format[ProteinCodingCoordinatesSettings]
+  implicit val regionSettingsJSONImp: OFormat[RegionSettings] =
+    Json.format[RegionSettings]
   implicit val targetSettingsJSONImp: OFormat[TargetSettings] = Json.format[TargetSettings]
   implicit val diseaseSettingsJSONImp: OFormat[DiseaseSettings] = Json.format[DiseaseSettings]
   implicit val clinicalIndicationSettingsJSONImp: OFormat[ClinicalIndicationSettings] =

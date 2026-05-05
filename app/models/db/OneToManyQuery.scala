@@ -30,7 +30,7 @@ case class OneToMany(ids: Seq[String],
   private val filteredAndSortedArray: Column = sortBy match {
     case Some(order) =>
       order.direction match {
-        case sortDirection.ASC  => Functions.arraySort(filteredArray)
+        case sortDirection.ASC  => Functions.arraySort(order.lambda, filteredArray)
         case sortDirection.DESC => Functions.arrayReverseSort(Some(order.lambda), filteredArray)
       }
     case None =>
