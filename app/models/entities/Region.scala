@@ -1,7 +1,7 @@
 package models.entities
 
 import utils.OTLogging
-import play.api.libs.json.{Json, OFormat}
+import play.api.libs.json.*
 import models.gql.ChromosomeEnum
 
 case class Region(
@@ -11,5 +11,6 @@ case class Region(
 )
 
 object Region extends OTLogging {
-  implicit val regionF: OFormat[Region] = Json.format[Region]
+  val rangeMax = 5000000
+  implicit val regionW: OFormat[Region] = Json.format[Region]
 }
