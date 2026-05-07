@@ -42,6 +42,12 @@ object Violations {
   case class PaginationIndexError(currentIndex: Int)
       extends BaseViolation(paginationIndexErrorMsg format (currentIndex))
 
+  val regionRangeErrorMsg: String =
+    "Region range exceeds maximum of %d"
+
+  case class RegionRangeError(currentRange: Int, rangeMax: Int = Region.rangeMax)
+      extends BaseViolation(regionRangeErrorMsg format (rangeMax))
+
   case class InputParameterCheckError(violations: Vector[Violation])
       extends Exception(
         s"Error during input parameter check. " +

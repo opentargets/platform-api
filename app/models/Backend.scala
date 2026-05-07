@@ -33,7 +33,7 @@ import models.entities.Evidences.*
 import models.entities.SequenceOntologyTerm.*
 import models.entities.*
 import models.gql.{StudyTypeEnum, InteractionSourceEnum, ChromosomeEnum}
-import models.entities.Violations.{DateFilterError, InputParameterCheckError}
+import models.entities.Violations.{DateFilterError, InputParameterCheckError, RegionRangeError}
 
 import org.apache.http.impl.nio.reactor.IOReactorConfig
 import play.api.cache.AsyncCacheApi
@@ -167,7 +167,11 @@ class Backend @Inject() (implicit
                 positionStart: Int,
                 positionEnd: Int
   ): Future[Region] =
-    Future.successful(Region(chromosome, positionStart, positionEnd))
+    (positionStart, positionEnd) match {
+      case (s, e) if e - s > Region.rangeMax =>
+        throw InputParameterCheckError(Vector(RegionRangeError(e - s, Region.rangeMax)))
+      case _ => Future.successful(Region(chromosome, positionStart, positionEnd))
+    }
 
   def getVariants(ids: Seq[String]): Future[IndexedSeq[VariantIndex]] = {
     val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.variant.name)

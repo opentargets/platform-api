@@ -29,7 +29,7 @@ object ChromosomeEnum extends Enumeration {
 
   type Chromosome = Value
   val chr1, chr2, chr3, chr4, chr5, chr6, chr7, chr8, chr9, chr10, chr11, chr12, chr13, chr14,
-      chr15, chr16, chr17, chr18, chr19, chr20, chr21, chr22, X, Y = Value
+      chr15, chr16, chr17, chr18, chr19, chr20, chr21, chr22, chrX, chrY = Value
 
   implicit val chromosomeF: Format[Chromosome] = Json.formatEnum(this)
 }
@@ -88,8 +88,8 @@ object Arguments {
       DocumentValue("chr20", "Chromosome 20"),
       DocumentValue("chr21", "Chromosome 21"),
       DocumentValue("chr22", "Chromosome 22"),
-      DocumentValue("X", "Chromosome X"),
-      DocumentValue("Y", "Chromosome Y")
+      DocumentValue("chrX", "Chromosome X"),
+      DocumentValue("chrY", "Chromosome Y")
     )
   val paginationGQLImp: InputObjectType[Pagination] = deriveInputObjectType[Pagination](
     InputObjectTypeDescription(
