@@ -24,7 +24,7 @@ import models.entities.Interactions.*
 import models.entities.Loci.*
 import models.entities.MechanismsOfAction.*
 import models.entities.MousePhenotypes.*
-import models.entities.NoveltyResults.*
+import models.entities.AssociationTimeSeriesResults.*
 import models.entities.Pharmacogenomics.*
 import models.entities.SearchFacetsResults.*
 import models.entities.Studies.*
@@ -725,20 +725,22 @@ class Backend @Inject() (implicit
     dbRetriever.executeQuery[MechanismsOfAction, Query](query.query)
   }
 
-  def getNovelty(diseaseId: String,
-                 targetId: String,
-                 isDirect: Boolean,
-                 pagination: Option[Pagination]
-  ): Future[NoveltyResults] = {
-    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.novelty.name)
+  def getAssociationTimeSeries(diseaseId: String,
+                               targetId: String,
+                               isDirect: Boolean,
+                               pagination: Option[Pagination]
+  ): Future[AssociationTimeSeriesResults] = {
+    val tableName = getTableWithPrefixOrDefault(
+      defaultOTSettings.clickhouse.associationTimeSeries.name
+    )
     val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
-    logger.debug(s"querying novelty", keyValue("table", tableName))
-    val query = NoveltyQuery(diseaseId, targetId, isDirect, tableName, pag._1, pag._2)
-    dbRetriever.executeQuery[Novelty, Query](query.query).map { noveltySeq =>
-      if (noveltySeq.isEmpty) {
-        NoveltyResults(0, noveltySeq)
+    logger.debug(s"querying association time series", keyValue("table", tableName))
+    val query = AssociationTimeSeriesQuery(diseaseId, targetId, isDirect, tableName, pag._1, pag._2)
+    dbRetriever.executeQuery[AssociationTimeSeries, Query](query.query).map { timeSeriesSeq =>
+      if (timeSeriesSeq.isEmpty) {
+        AssociationTimeSeriesResults(0, timeSeriesSeq)
       } else {
-        NoveltyResults(noveltySeq.head.meta_total, noveltySeq)
+        AssociationTimeSeriesResults(timeSeriesSeq.head.meta_total, timeSeriesSeq)
       }
     }
   }

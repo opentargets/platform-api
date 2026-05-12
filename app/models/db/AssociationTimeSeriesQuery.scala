@@ -5,12 +5,12 @@ import esecuele.Column.literal
 import esecuele.*
 import utils.OTLogging
 
-case class NoveltyQuery(diseaseId: String,
-                        targetId: String,
-                        isDirect: Boolean,
-                        tableName: String,
-                        offset: Int,
-                        size: Int
+case class AssociationTimeSeriesQuery(diseaseId: String,
+                                      targetId: String,
+                                      isDirect: Boolean,
+                                      tableName: String,
+                                      offset: Int,
+                                      size: Int
 ) extends Queryable
     with OTLogging {
 
