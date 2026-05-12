@@ -749,12 +749,8 @@ object Objects extends OTLogging {
         "Association scores computed for every datasource (e.g., IMPC, ChEMBL, Gene2Phenotype)"
       ),
       DocumentField(
-        "noveltyDirect",
-        "A measure of how novel the target–disease association is, calculated based on the accumulation of direct evidence over time"
-      ),
-      DocumentField(
-        "noveltyIndirect",
-        "A measure of how novel the target–disease association is, calculated based on the accumulation of indirect evidence over time"
+        "novelty",
+        "A measure of how novel the target–disease association is, calculated based on the accumulation of evidence over time"
       ),
       ReplaceField(
         "id",
@@ -783,12 +779,8 @@ object Objects extends OTLogging {
         "Association scores computed for every datasource (e.g., IMPC, ChEMBL, Gene2Phenotype)"
       ),
       DocumentField(
-        "noveltyDirect",
+        "novelty",
         "A measure of how novel the target–disease association is, calculated based on the accumulation of direct evidence over time"
-      ),
-      DocumentField(
-        "noveltyIndirect",
-        "A measure of how novel the target–disease association is, calculated based on the accumulation of indirect evidence over time"
       ),
       ReplaceField(
         "id",

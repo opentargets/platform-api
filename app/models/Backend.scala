@@ -870,6 +870,7 @@ class Backend @Inject() (implicit
       tableName: String,
       datasources: Option[Seq[DatasourceSettings]],
       fixedEntityId: String,
+      indirect: Boolean,
       indirectIds: Set[String],
       bIds: Set[String],
       columnFilters: Seq[(String, Any)],
@@ -899,6 +900,7 @@ class Backend @Inject() (implicit
       weights,
       _,
       dontPropagate,
+      indirect,
       page.offset,
       page.size
     )
@@ -949,6 +951,7 @@ class Backend @Inject() (implicit
       getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.disease.associations.name),
       datasources,
       disease.id,
+      indirect,
       indirectIDs,
       targetIds,
       Seq.empty,
@@ -996,6 +999,7 @@ class Backend @Inject() (implicit
       getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.target.associations.name),
       datasources,
       target.id,
+      indirect,
       indirectIDs,
       diseaseIds,
       columnFilters,

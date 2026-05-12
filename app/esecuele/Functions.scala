@@ -36,6 +36,8 @@ object Functions {
 
   def any(col: Column): Column = f("any", col)
 
+  def anyIf(col: Column, cond: Column): Column = f("anyIf", col, cond)
+
   def lower(col: Column): Column = f("lower", col)
 
   def upper(col: Column): Column = f("upper", col)
