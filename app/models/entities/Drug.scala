@@ -16,7 +16,8 @@ case class Drug(
     crossReferences: Option[Seq[DrugReferences]],
     parentId: Option[String],
     maximumClinicalStage: String,
-    description: Option[String]
+    description: Option[String],
+    molfile: Option[String]
 )
 
 object Drug {
