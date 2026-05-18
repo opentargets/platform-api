@@ -291,12 +291,13 @@ case class QAOTF(
         mappedDTs,
         scoredDTs,
         scoreOverall,
+        noveltyScore,
         jointColumns,
         orderByC
       )
     )
     val selectScores = Select(
-      B :: scoreOverall.name :: scoredDTs.name :: scoreDSs.name :: noveltyScore :: Nil
+      B :: scoreOverall.name :: scoredDTs.name :: scoreDSs.name :: noveltyScore.name :: Nil
     ) // :: scoreDTs.name :: collectedDScored :: Nil)
     val fromAgg = From(queryGroupByDS.toColumn(None))
     val groupByB = GroupBy(B :: Nil)
@@ -305,6 +306,11 @@ case class QAOTF(
         OrderBy(
           (if (order == "desc") scoreOverall.name.desc
            else scoreOverall.name.asc) :: Nil
+        )
+      case ("novelty", order) =>
+        OrderBy(
+          (if (order == "desc") noveltyScore.name.desc
+           else noveltyScore.name.asc) :: Nil
         )
       case (_, order) =>
         OrderBy(
