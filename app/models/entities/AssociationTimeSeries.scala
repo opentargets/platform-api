@@ -5,7 +5,6 @@ import slick.jdbc.GetResult
 import utils.db.DbJsonParser.fromPositionedResult
 import models.gql.AggregationTypeEnum
 
-
 case class AssociationTimeSeries(
     diseaseId: String,
     targetId: String,

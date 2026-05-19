@@ -176,7 +176,10 @@ object Arguments {
   val diseaseIds: Argument[Option[Seq[String]]] =
     Argument("diseaseIds", OptionInputType(ListInputType(StringType)), description = "Disease IDs")
   val aggregationTypes =
-    Argument("aggregationTypes", OptionInputType(ListInputType(AggregationType)), description = "Aggregation types")
+    Argument("aggregationTypes",
+             OptionInputType(ListInputType(AggregationType)),
+             description = "Aggregation types"
+    )
   val studyTypes =
     Argument("studyTypes", OptionInputType(ListInputType(StudyType)), description = "Study types")
   val regions: Argument[Option[Seq[String]]] =

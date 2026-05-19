@@ -738,7 +738,16 @@ class Backend @Inject() (implicit
     )
     val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
     logger.debug(s"querying association time series", keyValue("table", tableName))
-    val query = AssociationTimeSeriesQuery(diseaseId, targetId, isDirect, tableName, pag._1, pag._2, aggregationTypes, startYear, endYear)
+    val query = AssociationTimeSeriesQuery(diseaseId,
+                                           targetId,
+                                           isDirect,
+                                           tableName,
+                                           pag._1,
+                                           pag._2,
+                                           aggregationTypes,
+                                           startYear,
+                                           endYear
+    )
     dbRetriever.executeQuery[AssociationTimeSeries, Query](query.query).map { timeSeriesSeq =>
       if (timeSeriesSeq.isEmpty) {
         AssociationTimeSeriesResults(0, timeSeriesSeq)

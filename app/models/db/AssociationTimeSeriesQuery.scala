@@ -6,20 +6,22 @@ import esecuele.*
 import utils.OTLogging
 import models.gql.AggregationTypeEnum
 
-case class AssociationTimeSeriesQuery(diseaseId: String,
-                                      targetId: String,
-                                      isDirect: Boolean,
-                                      tableName: String,
-                                      offset: Int,
-                                      size: Int,
-                                      aggregationTypeInclude: Option[Seq[AggregationTypeEnum.Value]] =
-                                        None,
-                                      yearFrom: Option[Int] = None,
-                                      yearTo: Option[Int] = None
+case class AssociationTimeSeriesQuery(
+    diseaseId: String,
+    targetId: String,
+    isDirect: Boolean,
+    tableName: String,
+    offset: Int,
+    size: Int,
+    aggregationTypeInclude: Option[Seq[AggregationTypeEnum.Value]] = None,
+    yearFrom: Option[Int] = None,
+    yearTo: Option[Int] = None
 ) extends Queryable
     with OTLogging {
 
-  private val aggregationTypes: Seq[AggregationTypeEnum.Value] = aggregationTypeInclude.getOrElse(Seq(AggregationTypeEnum.overall, AggregationTypeEnum.datasourceId))
+  private val aggregationTypes: Seq[AggregationTypeEnum.Value] = aggregationTypeInclude.getOrElse(
+    Seq(AggregationTypeEnum.overall, AggregationTypeEnum.datasourceId)
+  )
 
   private val aggregationTypeFilter =
     Functions.in(column("aggregationType"),

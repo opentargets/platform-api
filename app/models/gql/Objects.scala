@@ -703,7 +703,8 @@ object Objects extends OTLogging {
         "associationTimeSeries",
         associationTimeSeriesResultsImp,
         description = Some("Association time series"),
-        arguments = ensemblId :: isDirect :: aggregationTypes :: startYear :: endYear :: pageArg :: Nil,
+        arguments =
+          ensemblId :: isDirect :: aggregationTypes :: startYear :: endYear :: pageArg :: Nil,
         resolve = ctx =>
           ctx.ctx.getAssociationTimeSeries(ctx.value.id,
                                            ctx.arg(ensemblId),
