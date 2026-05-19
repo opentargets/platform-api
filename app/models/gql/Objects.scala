@@ -448,11 +448,14 @@ object Objects extends OTLogging {
         "associationTimeSeries",
         associationTimeSeriesResultsImp,
         description = Some("Association time series"),
-        arguments = efoId :: isDirect :: pageArg :: Nil,
+        arguments = efoId :: isDirect :: aggregationTypes :: startYear :: endYear :: pageArg :: Nil,
         resolve = ctx =>
           ctx.ctx.getAssociationTimeSeries(ctx.arg(efoId),
                                            ctx.value.id,
                                            ctx.arg(isDirect),
+                                           ctx.arg(aggregationTypes),
+                                           ctx.arg(startYear),
+                                           ctx.arg(endYear),
                                            ctx.arg(pageArg)
           )
       )
@@ -700,11 +703,14 @@ object Objects extends OTLogging {
         "associationTimeSeries",
         associationTimeSeriesResultsImp,
         description = Some("Association time series"),
-        arguments = ensemblId :: isDirect :: pageArg :: Nil,
+        arguments = ensemblId :: isDirect :: aggregationTypes :: startYear :: endYear :: pageArg :: Nil,
         resolve = ctx =>
           ctx.ctx.getAssociationTimeSeries(ctx.value.id,
                                            ctx.arg(ensemblId),
                                            ctx.arg(isDirect),
+                                           ctx.arg(aggregationTypes),
+                                           ctx.arg(startYear),
+                                           ctx.arg(endYear),
                                            ctx.arg(pageArg)
           )
       )
@@ -856,6 +862,15 @@ object Objects extends OTLogging {
       DocumentField(
         "isDirect",
         "Flag indicating whether the novelty calculation is based on direct evidence only or includes indirect evidence"
+      ),
+      ReplaceField(
+        "aggregationType",
+        Field(
+          "aggregationType",
+          AggregationType,
+          Some("Aggregation type used to group the data"),
+          resolve = _.value.aggregationType
+        )
       ),
       ExcludeFields("meta_total")
     )

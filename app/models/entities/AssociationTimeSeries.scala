@@ -3,14 +3,13 @@ package models.entities
 import play.api.libs.json.{Json, OFormat}
 import slick.jdbc.GetResult
 import utils.db.DbJsonParser.fromPositionedResult
+import models.gql.AggregationTypeEnum
 
-enum AggregationType:
-  case Overall, DatasourceId
 
 case class AssociationTimeSeries(
     diseaseId: String,
     targetId: String,
-    aggregationType: AggregationType,
+    aggregationType: AggregationTypeEnum.AggregationType,
     aggregationValue: String,
     year: Option[Int],
     associationScore: Double,
@@ -33,6 +32,4 @@ object AssociationTimeSeriesResults {
     Json.format[AssociationTimeSeries]
   implicit val AssociationTimeSeriesResultsImp: OFormat[AssociationTimeSeriesResults] =
     Json.format[AssociationTimeSeriesResults]
-  implicit val AggregationTypeFormat: OFormat[AggregationType] =
-    Json.format[AggregationType]
 }

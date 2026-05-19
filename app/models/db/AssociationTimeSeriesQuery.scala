@@ -4,7 +4,7 @@ import esecuele.Column.column
 import esecuele.Column.literal
 import esecuele.*
 import utils.OTLogging
-import models.entities.AggregationType
+import models.gql.AggregationTypeEnum
 
 case class AssociationTimeSeriesQuery(diseaseId: String,
                                       targetId: String,
@@ -12,16 +12,18 @@ case class AssociationTimeSeriesQuery(diseaseId: String,
                                       tableName: String,
                                       offset: Int,
                                       size: Int,
-                                      aggregationTypeInclude: Seq[AggregationType] =
-                                        Seq(AggregationType.Overall, AggregationType.DatasourceId),
+                                      aggregationTypeInclude: Option[Seq[AggregationTypeEnum.Value]] =
+                                        None,
                                       yearFrom: Option[Int] = None,
                                       yearTo: Option[Int] = None
 ) extends Queryable
     with OTLogging {
 
+  private val aggregationTypes: Seq[AggregationTypeEnum.Value] = aggregationTypeInclude.getOrElse(Seq(AggregationTypeEnum.overall, AggregationTypeEnum.datasourceId))
+
   private val aggregationTypeFilter =
     Functions.in(column("aggregationType"),
-                 Functions.set(aggregationTypeInclude.map(t => literal(t.toString)))
+                 Functions.set(aggregationTypes.map(t => literal(t.toString)))
     )
 
   private val yearFromFilter: Option[Column] = yearFrom match {

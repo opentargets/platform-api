@@ -31,7 +31,7 @@ import models.entities.Studies.*
 import models.entities.Evidences.*
 import models.entities.SequenceOntologyTerm.*
 import models.entities.*
-import models.gql.{StudyTypeEnum, InteractionSourceEnum}
+import models.gql.{AggregationTypeEnum, StudyTypeEnum, InteractionSourceEnum}
 import models.entities.Violations.{DateFilterError, InputParameterCheckError}
 
 import org.apache.http.impl.nio.reactor.IOReactorConfig
@@ -728,6 +728,9 @@ class Backend @Inject() (implicit
   def getAssociationTimeSeries(diseaseId: String,
                                targetId: String,
                                isDirect: Boolean,
+                               aggregationTypes: Option[Seq[AggregationTypeEnum.Value]],
+                               startYear: Option[Int],
+                               endYear: Option[Int],
                                pagination: Option[Pagination]
   ): Future[AssociationTimeSeriesResults] = {
     val tableName = getTableWithPrefixOrDefault(
@@ -735,7 +738,7 @@ class Backend @Inject() (implicit
     )
     val pag = pagination.getOrElse(Pagination.mkDefault).offsetLimit
     logger.debug(s"querying association time series", keyValue("table", tableName))
-    val query = AssociationTimeSeriesQuery(diseaseId, targetId, isDirect, tableName, pag._1, pag._2)
+    val query = AssociationTimeSeriesQuery(diseaseId, targetId, isDirect, tableName, pag._1, pag._2, aggregationTypes, startYear, endYear)
     dbRetriever.executeQuery[AssociationTimeSeries, Query](query.query).map { timeSeriesSeq =>
       if (timeSeriesSeq.isEmpty) {
         AssociationTimeSeriesResults(0, timeSeriesSeq)

@@ -9,6 +9,14 @@ import sangria.marshalling.FromInput
 import sangria.util.tag.@@
 import play.api.libs.json.{Format, Json}
 
+object AggregationTypeEnum extends Enumeration {
+
+  type AggregationType = Value
+  val overall, datasourceId = Value
+
+  implicit val aggregationTypeF: Format[AggregationType] = Json.formatEnum(this)
+}
+
 object StudyTypeEnum extends Enumeration {
 
   type StudyType = Value
@@ -27,6 +35,12 @@ object InteractionSourceEnum extends Enumeration {
 
 object Arguments {
   import sangria.macros.derive._
+  implicit val AggregationType: EnumType[AggregationTypeEnum.Value] =
+    deriveEnumType[AggregationTypeEnum.Value](
+      EnumTypeDescription(
+        "Aggregation type used to group the data"
+      )
+    )
   implicit val StudyType: EnumType[StudyTypeEnum.Value] =
     deriveEnumType[StudyTypeEnum.Value](
       EnumTypeDescription(
@@ -161,6 +175,8 @@ object Arguments {
     Argument("studyIds", OptionInputType(ListInputType(StringType)), description = "Study IDs")
   val diseaseIds: Argument[Option[Seq[String]]] =
     Argument("diseaseIds", OptionInputType(ListInputType(StringType)), description = "Disease IDs")
+  val aggregationTypes =
+    Argument("aggregationTypes", OptionInputType(ListInputType(AggregationType)), description = "Aggregation types")
   val studyTypes =
     Argument("studyTypes", OptionInputType(ListInputType(StudyType)), description = "Study types")
   val regions: Argument[Option[Seq[String]]] =
