@@ -29,7 +29,7 @@ import models.entities.Studies.*
 import models.entities.Evidences.*
 import models.entities.SequenceOntologyTerm.*
 import models.entities.*
-import models.gql.{InteractionSourceEnum, StudyTypeEnum}
+import models.gql.{Fetchers, StudyTypeEnum, InteractionSourceEnum}
 import models.entities.Violations.{DateFilterError, InputParameterCheckError}
 import org.apache.http.impl.nio.reactor.IOReactorConfig
 import play.api.cache.AsyncCacheApi
@@ -62,6 +62,7 @@ class Backend @Inject() (implicit
     markerContext = newMarkerContext
 
   implicit val defaultOTSettings: OTSettings = loadConfigurationObject[OTSettings]("ot", config)
+  Fetchers.configure(defaultOTSettings.cache)
   implicit val defaultESSettings: ElasticsearchSettings = defaultOTSettings.elasticsearch
   implicit val dbConfig: DatabaseConfig[ClickHouseProfile] = dbConfigProvider.get[ClickHouseProfile]
 
