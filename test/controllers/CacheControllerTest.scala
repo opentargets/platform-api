@@ -43,7 +43,7 @@ class CacheControllerTest
     "be cleared" taggedAs IntegrationTestTag in {
 
       // given: a seeded cache
-      val drugCache = Fetchers.drugsFetcherCache
+      val drugCache = Fetchers.fetcherCache
 
       val query = Json.parse(
         """{ "query": "query { drugs(chemblIds: [\"CHEMBL221959\", \"CHEMBL2103743\"]) { id } }"}"""
