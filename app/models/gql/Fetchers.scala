@@ -25,7 +25,7 @@ import models.entities.{
 }
 import models.entities.Configuration.CacheSettings
 import models.{Backend, entities}
-import sangria.execution.deferred.{Fetcher, FetcherCache, FetcherConfig, HasId, SimpleFetcherCache}
+import sangria.execution.deferred.{Fetcher, FetcherConfig, HasId}
 import utils.OTLogging
 
 import scala.concurrent.*
@@ -37,20 +37,50 @@ object Fetchers extends OTLogging {
   def configure(settings: CacheSettings): Unit =
     maxBytes = settings.fetcherMaxMb * 1024 * 1024
 
-  lazy val fetcherCache: LruFetcherCache = LruFetcherCache(maxBytes)
+  private lazy val caches: Map[String, LruFetcherCache] = {
+    val names = Seq(
+      "soTerm",
+      "target",
+      "targetEssentiality",
+      "disease",
+      "expression",
+      "mechanismsOfAction",
+      "mousePhenotypes",
+      "otarProjects",
+      "biosample",
+      "hpo",
+      "drug",
+      "drugWarnings",
+      "go",
+      "variant",
+      "credibleSet",
+      "study",
+      "clinicalReport",
+      "targetPrioritisation",
+      "pharmacogenomicsByDrug",
+      "pharmacogenomicsByVariant",
+      "pharmacogenomicsByTarget"
+    )
+    val perCacheBytes = maxBytes / names.size
+    names.map(n => n -> LruFetcherCache(perCacheBytes)).toMap
+  }
+
+  private def cacheFor(name: String): LruFetcherCache = caches(name)
 
   implicit val soTermHasId: HasId[SequenceOntologyTerm, String] =
     HasId[SequenceOntologyTerm, String](_.id)
   val soTermsFetcher: Fetcher[Backend, SequenceOntologyTerm, SequenceOntologyTerm, String] =
     Fetcher(
-      config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(fetcherCache),
+      config =
+        FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(cacheFor("soTerm")),
       fetch = (ctx: Backend, ids: Seq[String]) => ctx.getSoTerms(ids)
     )
 
   // target
   implicit val targetHasId: HasId[Target, String] = HasId[Target, String](_.id)
   val targetsFetcher: Fetcher[Backend, Target, Target, String] = Fetcher(
-    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(fetcherCache),
+    config =
+      FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(cacheFor("target")),
     fetch = (ctx: Backend, ids: Seq[String]) => ctx.getTargets(ids)
   )
 
@@ -61,20 +91,22 @@ object Fetchers extends OTLogging {
     Fetcher(
       config = FetcherConfig
         .maxBatchSize(entities.Configuration.batchSize)
-        .caching(fetcherCache),
+        .caching(cacheFor("targetEssentiality")),
       fetch = (ctx: Backend, ids: Seq[String]) => ctx.getTargetEssentiality(ids)
     )
 
   // disease
   implicit val diseaseHasId: HasId[Disease, String] = HasId[Disease, String](_.id)
   val diseasesFetcher: Fetcher[Backend, Disease, Disease, String] = Fetcher(
-    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(fetcherCache),
+    config =
+      FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(cacheFor("disease")),
     fetch = (ctx: Backend, ids: Seq[String]) => ctx.getDiseases(ids)
   )
 
   implicit val expressionHasId: HasId[Expressions, String] = HasId[Expressions, String](_.id)
   val expressionFetcher: Fetcher[Backend, Expressions, Expressions, String] = Fetcher(
-    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(fetcherCache),
+    config =
+      FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(cacheFor("expression")),
     fetch = (ctx: Backend, ids: Seq[String]) => ctx.getExpressions(ids)
   )
 
@@ -84,7 +116,7 @@ object Fetchers extends OTLogging {
     Fetcher(
       config = FetcherConfig
         .maxBatchSize(entities.Configuration.batchSize)
-        .caching(fetcherCache),
+        .caching(cacheFor("mechanismsOfAction")),
       fetch = (ctx: Backend, ids: Seq[String]) => ctx.getMechanismsOfAction(ids)
     )
 
@@ -93,7 +125,7 @@ object Fetchers extends OTLogging {
   val mousePhenotypesFetcher: Fetcher[Backend, MousePhenotypes, MousePhenotypes, String] = Fetcher(
     config = FetcherConfig
       .maxBatchSize(entities.Configuration.batchSize)
-      .caching(fetcherCache),
+      .caching(cacheFor("mousePhenotypes")),
     fetch = (ctx: Backend, ids: Seq[String]) => ctx.getMousePhenotypes(ids)
   )
 
@@ -101,14 +133,15 @@ object Fetchers extends OTLogging {
   val otarProjectsFetcher: Fetcher[Backend, OtarProjects, OtarProjects, String] = Fetcher(
     config = FetcherConfig
       .maxBatchSize(entities.Configuration.batchSize)
-      .caching(fetcherCache),
+      .caching(cacheFor("otarProjects")),
     fetch = (ctx: Backend, ids: Seq[String]) => ctx.getOtarProjects(ids)
   )
 
   // hpo fetcher
   implicit val biosampleHasId: HasId[Biosample, String] = HasId[Biosample, String](_.biosampleId)
   val biosamplesFetcher: Fetcher[Backend, Biosample, Biosample, String] = Fetcher(
-    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(fetcherCache),
+    config =
+      FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(cacheFor("biosample")),
     fetch = (ctx: Backend, ids: Seq[String]) => ctx.getBiosamples(ids)
   )
 
@@ -116,7 +149,7 @@ object Fetchers extends OTLogging {
   implicit val hpoHasId: HasId[HPO, String] = HasId[HPO, String](_.id)
 
   val hposFetcher: Fetcher[Backend, HPO, HPO, String] = Fetcher(
-    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(fetcherCache),
+    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(cacheFor("hpo")),
     fetch = (ctx: Backend, ids: Seq[String]) => ctx.getHPOs(ids)
   )
 
@@ -124,7 +157,7 @@ object Fetchers extends OTLogging {
   implicit val drugHasId: HasId[Drug, String] = HasId[Drug, String](_.id)
 
   val drugsFetcher: Fetcher[Backend, Drug, Drug, String] = Fetcher(
-    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(fetcherCache),
+    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(cacheFor("drug")),
     fetch = (ctx: Backend, ids: Seq[String]) => ctx.getDrugs(ids)
   )
 
@@ -133,20 +166,21 @@ object Fetchers extends OTLogging {
   val drugWarningsFetcher: Fetcher[Backend, DrugWarnings, DrugWarnings, String] = Fetcher(
     config = FetcherConfig
       .maxBatchSize(entities.Configuration.batchSize)
-      .caching(fetcherCache),
+      .caching(cacheFor("drugWarnings")),
     fetch = (ctx: Backend, ids: Seq[String]) => ctx.getDrugWarnings(ids)
   )
 
   implicit val goFetcherId: HasId[GeneOntologyTerm, String] = HasId[GeneOntologyTerm, String](_.id)
   val goFetcher: Fetcher[Backend, GeneOntologyTerm, GeneOntologyTerm, String] = Fetcher(
-    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(fetcherCache),
+    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(cacheFor("go")),
     fetch = (ctx: Backend, ids: Seq[String]) => ctx.getGoTerms(ids)
   )
 
   implicit val variantFetcherId: HasId[VariantIndex, String] =
     HasId[VariantIndex, String](_.variantId)
   val variantFetcher: Fetcher[Backend, VariantIndex, VariantIndex, String] = Fetcher(
-    config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(fetcherCache),
+    config =
+      FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(cacheFor("variant")),
     fetch = (ctx: Backend, ids: Seq[String]) => ctx.getVariants(ids)
   )
 
@@ -156,7 +190,7 @@ object Fetchers extends OTLogging {
     Fetcher(
       config = FetcherConfig
         .maxBatchSize(entities.Configuration.batchSize)
-        .caching(fetcherCache),
+        .caching(cacheFor("credibleSet")),
       fetch = (ctx: Backend, ids: Seq[String]) => ctx.getCredibleSet(ids)
     )
   }
@@ -165,7 +199,8 @@ object Fetchers extends OTLogging {
     implicit val studyFetcherId: HasId[Study, String] =
       HasId[Study, String](js => (js.studyId))
     Fetcher(
-      config = FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(fetcherCache),
+      config =
+        FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(cacheFor("study")),
       fetch = (ctx: Backend, ids: Seq[String]) => ctx.getStudy(ids)
     )
   }
@@ -176,7 +211,7 @@ object Fetchers extends OTLogging {
     Fetcher(
       config = FetcherConfig
         .maxBatchSize(entities.Configuration.batchSize)
-        .caching(fetcherCache),
+        .caching(cacheFor("clinicalReport")),
       fetch = (ctx: Backend, ids: Seq[String]) => ctx.getClinicalReports(ids)
     )
   }
@@ -188,7 +223,7 @@ object Fetchers extends OTLogging {
     Fetcher(
       config = FetcherConfig
         .maxBatchSize(entities.Configuration.batchSize)
-        .caching(fetcherCache),
+        .caching(cacheFor("targetPrioritisation")),
       fetch = (ctx: Backend, ids: Seq[String]) => ctx.getTargetPrioritisation(ids)
     )
 
@@ -199,7 +234,7 @@ object Fetchers extends OTLogging {
     Fetcher(
       config = FetcherConfig
         .maxBatchSize(entities.Configuration.batchSize)
-        .caching(fetcherCache),
+        .caching(cacheFor("pharmacogenomicsByDrug")),
       fetch = (ctx: Backend, ids: Seq[String]) => ctx.getPharmacogenomicsByDrug(ids)
     )
 
@@ -210,7 +245,7 @@ object Fetchers extends OTLogging {
     Fetcher(
       config = FetcherConfig
         .maxBatchSize(entities.Configuration.batchSize)
-        .caching(fetcherCache),
+        .caching(cacheFor("pharmacogenomicsByVariant")),
       fetch = (ctx: Backend, ids: Seq[String]) => ctx.getPharmacogenomicsByVariant(ids)
     )
 
@@ -221,16 +256,16 @@ object Fetchers extends OTLogging {
     Fetcher(
       config = FetcherConfig
         .maxBatchSize(entities.Configuration.batchSize)
-        .caching(fetcherCache),
+        .caching(cacheFor("pharmacogenomicsByTarget")),
       fetch = (ctx: Backend, ids: Seq[String]) => ctx.getPharmacogenomicsByTarget(ids)
     )
 
   def resetCache(): Unit = {
     logger.info("clearing GraphQL cache")
-    fetcherCache.clear()
+    caches.values.foreach(_.clear())
   }
-  def cacheStats() =
+  def cacheStats(): Unit =
     logger.info(
-      s"Fetcher cache stats: ${fetcherCache.stats()}"
+      s"Fetcher cache stats: ${caches.map { case (name, c) => s"$name: ${c.stats()}" }.mkString(", ")}"
     )
 }
