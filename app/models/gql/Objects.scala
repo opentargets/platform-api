@@ -1513,7 +1513,7 @@ object Objects extends OTLogging {
                   "Cross-reference information for this molecule from external databases"
     ),
     DocumentField("description", "Summary of the drug's clinical development"),
-    DocumentField("molfile", "Molfile"),
+    DocumentField("molblock", "Molblock"),
     ReplaceField(
       "parentId",
       Field(
