@@ -17,7 +17,7 @@ case class Drug(
     parentId: Option[String],
     maximumClinicalStage: String,
     description: Option[String],
-    molfile: Option[String]
+    molblock: Option[String]
 )
 
 object Drug {
