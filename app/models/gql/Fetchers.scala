@@ -65,7 +65,7 @@ object Fetchers extends OTLogging {
     names.map(n => n -> LruFetcherCache(perCacheBytes)).toMap
   }
 
-  private def cacheFor(name: String): LruFetcherCache = caches(name)
+  def cacheFor(name: String): LruFetcherCache = caches(name)
 
   implicit val soTermHasId: HasId[SequenceOntologyTerm, String] =
     HasId[SequenceOntologyTerm, String](_.id)
