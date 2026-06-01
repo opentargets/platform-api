@@ -43,7 +43,8 @@ case class LocationAndSource(
     location: String,
     source: String,
     termSL: Option[String],
-    labelSL: Option[String]
+    labelSL: Option[String],
+    targetModifier: String
 )
 
 case class TargetClass(id: Long, label: String, level: String)
