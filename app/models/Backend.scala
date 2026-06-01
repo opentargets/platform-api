@@ -699,7 +699,7 @@ class Backend @Inject() (implicit
         case _               => 0
       }
       .await
-    logger.info(s"Total baseline expressions found: $total")
+    logger.debug(s"Total baseline expressions found: $total")
 
     val results =
       if total == 0 then Future.successful(BaselineExpression(total, Vector.empty))
