@@ -71,7 +71,7 @@ case class BaselineExpressionRow(
     datasourceId: String,
     datatypeId: String,
     unit: String,
-    qualityControls: String
+    qualityControls: Option[String]
 )
 
 case class BaselineExpression(
@@ -102,7 +102,7 @@ object BaselineExpression {
       val datasourceId: String = r.<<
       val datatypeId: String = r.<<
       val unit: String = r.<<
-      val qualityControls: String = r.<<
+      val qualityControls: Option[String] = r.<<?
 
       BaselineExpressionRow(
         targetId,
