@@ -70,7 +70,8 @@ case class BaselineExpressionRow(
     specificity_score: Option[Double],
     datasourceId: String,
     datatypeId: String,
-    unit: String
+    unit: String,
+    qualityControls: String
 )
 
 case class BaselineExpression(
@@ -101,6 +102,7 @@ object BaselineExpression {
       val datasourceId: String = r.<<
       val datatypeId: String = r.<<
       val unit: String = r.<<
+      val qualityControls: String = r.<<
 
       BaselineExpressionRow(
         targetId,
@@ -120,7 +122,8 @@ object BaselineExpression {
         specificity_score,
         datasourceId,
         datatypeId,
-        unit
+        unit,
+        qualityControls
       )
     }
 
