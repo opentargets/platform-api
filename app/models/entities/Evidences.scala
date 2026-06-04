@@ -126,14 +126,12 @@ case class Evidence(
     statisticalTestTail: Option[String],
     interactingTargetFromSourceId: Option[String],
     phenotypicConsequenceLogFoldChange: Option[Double],
-    phenotypicConsequenceFDR: Option[Double],
     phenotypicConsequencePValue: Option[Double],
     geneticInteractionScore: Option[Double],
-    geneticInteractionPValue: Option[Double],
     geneticInteractionFDR: Option[Double],
     biomarkerList: Option[Seq[NameAndDescription]],
     projectDescription: Option[String],
-    geneInteractionType: Option[String],
+    geneticInteractionType: Option[String],
     targetRole: Option[String],
     interactingTargetRole: Option[String],
     ancestry: Option[String],
@@ -153,7 +151,14 @@ case class Evidence(
     qualityControls: Seq[String],
     publicationDate: Option[String],
     evidenceDate: Option[String],
-    metaTotal: Int = 0
+    metaTotal: Int = 0,
+    validationReadouts: Seq[ValidationReadouts]
+)
+
+case class ValidationReadouts(readoutMethodName: Option[String],
+                              hsaValue: Option[Double],
+                              screen: Option[String],
+                              isValidated: Option[Boolean]
 )
 
 case class Evidences(count: Int, cursor: Option[String], rows: IndexedSeq[Evidence])
