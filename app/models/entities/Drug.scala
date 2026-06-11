@@ -1,5 +1,6 @@
 package models.entities
 
+import models.entities.Target.labelAndSourceImpF
 import play.api.libs.json._
 import slick.jdbc.GetResult
 import utils.db.DbJsonParser.fromPositionedResult
@@ -9,8 +10,8 @@ case class DrugReferences(source: String, ids: Seq[String])
 case class Drug(
     id: String,
     name: String,
-    synonyms: Seq[String],
-    tradeNames: Seq[String],
+    synonyms: Seq[LabelAndSource],
+    tradeNames: Seq[LabelAndSource],
     childChemblIds: Option[Seq[String]], // Gone?
     drugType: String,
     crossReferences: Option[Seq[DrugReferences]],

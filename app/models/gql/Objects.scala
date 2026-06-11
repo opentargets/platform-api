@@ -1652,8 +1652,14 @@ object Objects extends OTLogging {
     ),
     DocumentField("id", "Drug or clinical candidate molecule identifier"),
     DocumentField("name", "Generic name of the drug molecule"),
-    DocumentField("synonyms", "List of alternative names for the drug"),
-    DocumentField("tradeNames", "List of brand names for the drug"),
+    DocumentField(
+      "synonyms",
+      "List of alternative names for the drug, each with its source (e.g. ChEMBL, or AACT for names mined from clinical trials)"
+    ),
+    DocumentField(
+      "tradeNames",
+      "List of brand names for the drug, each with its source"
+    ),
     DocumentField(
       "drugType",
       "Classification of the molecule's therapeutic category or chemical class (e.g. Antibody)"
