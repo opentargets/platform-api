@@ -1646,6 +1646,13 @@ object Objects extends OTLogging {
       DocumentField("year", "Year when the warning was issued")
     )
 
+  implicit val drugLabelAndSourceImp: ObjectType[Backend, DrugLabelAndSource] =
+    deriveObjectType[Backend, DrugLabelAndSource](
+      ObjectTypeDescription("Label with source information"),
+      DocumentField("label", "Label value (e.g., synonym, symbol)"),
+      DocumentField("source", "Source database of the label")
+    )
+
   implicit lazy val drugImp: ObjectType[Backend, Drug] = deriveObjectType[Backend, Drug](
     ObjectTypeDescription(
       "Core annotation for drug or clinical candidate molecules. A drug in the platform is understood as any bioactive molecule with drug-like properties included in the EMBL-EBI ChEMBL database. All ChEMBL molecules fullfilling any of the next criteria are included in the database: a) Molecules with a known indication. b) Molecules with a known mechanism of action c) ChEMBL molecules included in the DrugBank database d) Molecules that are acknowledged as chemical probes"
