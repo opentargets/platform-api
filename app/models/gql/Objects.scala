@@ -4,7 +4,7 @@ import models.*
 import models.entities.Configuration.*
 import models.entities.*
 import models.gql.Arguments.*
-import models.gql.Fetchers.{diseasesFetcher, *}
+import models.gql.Fetchers.*
 import models.Helpers.ComplexityCalculator.*
 import models.entities.ClinicalIndications.{
   clinicalIndicationsFromDiseaseImp,
@@ -13,7 +13,6 @@ import models.entities.ClinicalIndications.{
 import models.entities.ClinicalTargets.clinicalTargetsImp
 import sangria.macros.derive.*
 import sangria.schema.*
-
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.*
 import models.entities.Violations.{InputParameterCheckError, InvalidArgValueError}
@@ -2976,6 +2975,8 @@ object Objects extends OTLogging {
     DocumentField("shortName", "Short name of the assay")
   )
 
+  implicit val validationReadoutsImp: ObjectType[Backend, ValidationReadouts] = deriveObjectType()
+
   implicit val evidenceImp: ObjectType[Backend, Evidence] = deriveObjectType(
     ObjectTypeName("Evidence"),
     ObjectTypeDescription(
@@ -3086,17 +3087,13 @@ object Objects extends OTLogging {
     DocumentField("statisticalTestTail", "End of the distribution the target was picked from"),
     DocumentField("interactingTargetFromSourceId", "Identifer of the interacting target"),
     DocumentField("phenotypicConsequenceLogFoldChange", "Log 2 fold change of the cell survival"),
-    DocumentField("phenotypicConsequenceFDR", "False discovery rate of the genetic test"),
-    DocumentField("phenotypicConsequencePValue", "P-value of the the cell survival test"),
     DocumentField(
       "geneticInteractionScore",
       "The strength of the genetic interaction. Directionality is captured as well: antagonistics < 0 < cooperative"
     ),
-    DocumentField("geneticInteractionPValue", "P-value of the genetic interaction test"),
-    DocumentField("geneticInteractionFDR", "False discovery rate of the genetic interaction test"),
     DocumentField("biomarkerList", "List of biomarkers associated with the biological model"),
     DocumentField("projectDescription", "Description of the project that generated the data"),
-    DocumentField("geneInteractionType", "Description of the interaction between the two genes"),
+    DocumentField("geneticInteractionType", "Description of the interaction between the two genes"),
     DocumentField("targetRole", "Role of a target in the genetic interaction test"),
     DocumentField("interactingTargetRole", "Role of a target in the genetic interaction test"),
     DocumentField("assays", "Assays used in the study"),
