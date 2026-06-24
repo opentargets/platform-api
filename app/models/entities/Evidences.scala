@@ -168,6 +168,9 @@ object Evidences {
   implicit val getEvidenceFromDB: GetResult[Evidence] =
     GetResult(fromPositionedResult[Evidence])
 
+  implicit val validationReadoutsImp: OFormat[ValidationReadouts] =
+    Json.format[ValidationReadouts]
+
   implicit val nameAndDescriptionJsonFormatImp: OFormat[NameAndDescription] =
     Json.format[NameAndDescription]
 
