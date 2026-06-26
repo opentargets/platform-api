@@ -7,7 +7,6 @@ import models.entities.{
   Disease,
   Drug,
   DrugWarnings,
-  Expressions,
   GeneOntologyTerm,
   HPO,
   MechanismsOfAction,
@@ -101,13 +100,6 @@ object Fetchers extends OTLogging {
     config =
       FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(cacheFor("disease")),
     fetch = (ctx: Backend, ids: Seq[String]) => ctx.getDiseases(ids)
-  )
-
-  implicit val expressionHasId: HasId[Expressions, String] = HasId[Expressions, String](_.id)
-  val expressionFetcher: Fetcher[Backend, Expressions, Expressions, String] = Fetcher(
-    config =
-      FetcherConfig.maxBatchSize(entities.Configuration.batchSize).caching(cacheFor("expression")),
-    fetch = (ctx: Backend, ids: Seq[String]) => ctx.getExpressions(ids)
   )
 
   implicit val mechanismsOfActionHasId: HasId[MechanismsOfAction, String] =

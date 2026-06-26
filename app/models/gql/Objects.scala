@@ -322,18 +322,6 @@ object Objects extends OTLogging {
           }
       ),
       Field(
-        "expressions",
-        ListType(expressionImp),
-        description = Some(
-          "Baseline RNA and protein expression data across tissues for this target. Expression data shows how targets are selectively expressed across different tissues and biosamples, combining values from multiple sources including Expression Atlas and Human Protein Atlas."
-        ),
-        resolve = r =>
-          DeferredValue(expressionFetcher.deferOpt(r.value.id)).map {
-            case Some(expressions) => expressions.rows
-            case None              => Seq.empty
-          }
-      ),
-      Field(
         "baselineExpression",
         baselineExpressionImp,
         description = Some("Baseline expression"),
@@ -911,25 +899,6 @@ object Objects extends OTLogging {
       DocumentField("reliability", "Reliability of the protein expression measurement"),
       DocumentField("level", "Level of protein expression normalised to 0-5 or -1 if absent"),
       DocumentField("cellType", "List of cell types were protein levels were measured")
-    )
-  implicit val expressionImp: ObjectType[Backend, Expression] =
-    deriveObjectType[Backend, Expression](
-      ObjectTypeDescription(
-        "Array of structs containing expression data relevant to a particular gene and biosample combination"
-      ),
-      DocumentField("tissue", "Tissue/biosample information for the expression data"),
-      DocumentField("rna", "RNA expression values for the biosample and gene combination"),
-      DocumentField("protein", "Protein expression values for the biosample and gene combination")
-    )
-  implicit val expressionsImp: ObjectType[Backend, Expressions] =
-    deriveObjectType[Backend, Expressions](
-      ObjectTypeDescription(
-        "Baseline RNA and protein expression data across tissues for a target gene"
-      ),
-      ExcludeFields("id"),
-      DocumentField("rows",
-                    "Array of structs containing expression data relevant to a particular gene"
-      )
     )
   implicit lazy val baselineExpressionRowImp: ObjectType[Backend, BaselineExpressionRow] =
     deriveObjectType[Backend, BaselineExpressionRow](
