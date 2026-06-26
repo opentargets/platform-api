@@ -286,7 +286,6 @@ object DeferredResolvers extends OTLogging {
     Fetchers.drugWarningsFetcher,
     Fetchers.diseasesFetcher,
     Fetchers.hposFetcher,
-    Fetchers.expressionFetcher,
     Fetchers.mechanismsOfActionFetcher,
     Fetchers.mousePhenotypesFetcher,
     Fetchers.otarProjectsFetcher,

@@ -673,14 +673,6 @@ class Backend @Inject() (implicit
     dbRetriever.executeQuery[OtarProjects, Query](query.query)
   }
 
-  def getExpressions(ids: Seq[String]): Future[IndexedSeq[Expressions]] = {
-    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.expression.name)
-    val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
-    logger.debug(s"querying expressions for the ids ${ids.mkString(",")}")(localMarkerContext)
-    val expressionQuery = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
-    dbRetriever.executeQuery[Expressions, Query](expressionQuery.query)
-  }
-
   def getBaselineExpression(targetId: String,
                             pagination: Option[Pagination]
   ): Future[BaselineExpression] = {
