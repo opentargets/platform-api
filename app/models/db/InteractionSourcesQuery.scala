@@ -10,6 +10,12 @@ case class InteractionSourcesQuery(
 ) extends Queryable
     with OTLogging {
 
+  val interaction_subset: Column = Query(
+    Select(Column.star :: Nil),
+    From(column(tableName)),
+    Limit(0, 1000)
+  ).toColumn(Some("t"))
+
   override val query: Query =
     Query(
       Select(Column.star :: Nil),
@@ -17,19 +23,17 @@ case class InteractionSourcesQuery(
         Query(
           Select(
             Seq(
-              column("resource.databaseVersion").as(Some("databaseVersion")),
-              column("resource.sourceDatabase").as(Some("sourceDatabase"))
+              column("evidence.interactionResources.databaseVersion").as(Some("databaseVersion")),
+              column("evidence.interactionResources.sourceDatabase").as(Some("sourceDatabase"))
             ),
             distinct = true
           ),
-          From(column(tableName)),
+          From(interaction_subset),
           ArrayJoin(
-            column("evidences.interactionResources").as(Some("resource"))
+            column("t.interactions").as(Some("interaction"))
           ),
-          Where(
-            Column.inSet("resource.sourceDatabase",
-                         InteractionSourceEnum.values.map(_.toString).toSeq
-            )
+          ArrayJoin(
+            column("interaction.evidences").as(Some("evidence"))
           ),
           Limit(0, InteractionSourceEnum.values.size)
         ).toColumn(None)
