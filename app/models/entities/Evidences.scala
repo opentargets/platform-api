@@ -152,7 +152,7 @@ case class Evidence(
     publicationDate: Option[String],
     evidenceDate: Option[String],
     metaTotal: Int = 0,
-    validationReadouts: Seq[ValidationReadouts]
+    validationReadouts: Option[Seq[ValidationReadouts]]
 )
 
 case class ValidationReadouts(readoutMethodName: Option[String],
