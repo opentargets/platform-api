@@ -10,6 +10,7 @@ enum ClinicalReportType {
 }
 
 case class ClinRepDrugListItem(drugFromSource: Option[String], drugId: Option[String])
+case class TrialSponsor(agencyClass: String, name: String)
 
 case class ClinicalReport(
     id: String,
@@ -28,6 +29,7 @@ case class ClinicalReport(
     trialPrimaryPurpose: Option[String],
     trialPhase: Option[String],
     trialStopReasonCategories: Seq[String],
+    trialSponsor: Option[Seq[TrialSponsor]],
     qualityControls: Seq[String],
     diseases: Seq[ClinicalDiseaseListItem],
     drugs: Seq[ClinRepDrugListItem],
@@ -62,6 +64,8 @@ object ClinicalReport extends OTLogging {
       }
     case _ => JsError("ClinicalReportType must be a string")
   }
+
+  implicit val trialSponsorF: OFormat[TrialSponsor] = Json.format[TrialSponsor]
 
   implicit val clinicalReportF: OFormat[ClinicalReport] = Json.format[ClinicalReport]
 }

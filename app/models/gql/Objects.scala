@@ -1875,6 +1875,12 @@ object Objects extends OTLogging {
     )
   )
 
+  implicit val trialSponsor: ObjectType[Backend, TrialSponsor] =
+    deriveObjectType[Backend, TrialSponsor](
+      DocumentField("agencyClass", "TODO"),
+      DocumentField("name", "TODO")
+    )
+
   implicit val clinicalReportImp: ObjectType[Backend, ClinicalReport] =
     deriveObjectType[Backend, ClinicalReport](
       DocumentField("id", "Report ID"),
@@ -1918,6 +1924,10 @@ object Objects extends OTLogging {
       DocumentField(
         "trialPrimaryPurpose",
         "Purpose for the intervention of the clinical trial associated with the clinical report"
+      ),
+      DocumentField(
+        "trialSponsor",
+        "TODO"
       ),
       DocumentField("hasExpertReview",
                     "Whether the clinical report has been reviewed by an expert or not"
