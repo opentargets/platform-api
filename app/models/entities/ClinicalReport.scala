@@ -10,7 +10,7 @@ enum ClinicalReportType {
 }
 
 case class ClinRepDrugListItem(drugFromSource: Option[String], drugId: Option[String])
-case class TrialSponsor(agencyClass: String, name: String)
+case class TrialSponsor(agencyClass: Option[String], name: Option[String])
 
 case class ClinicalReport(
     id: String,
