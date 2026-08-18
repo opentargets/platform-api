@@ -29,7 +29,7 @@ case class ClinicalReport(
     trialPrimaryPurpose: Option[String],
     trialPhase: Option[String],
     trialStopReasonCategories: Seq[String],
-    trialSponsor: TrialSponsor,
+    trialSponsor: Option[TrialSponsor],
     qualityControls: Seq[String],
     diseases: Seq[ClinicalDiseaseListItem],
     drugs: Seq[ClinRepDrugListItem],
