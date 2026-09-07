@@ -8,12 +8,17 @@ import slick.jdbc.GetResult
 import utils.OTLogging
 import utils.db.DbJsonParser.fromPositionedResult
 
+enum Strand(val value: Int):
+  case Positive extends Strand(1)
+  case Negative extends Strand(-1)
+  case Unknown extends Strand(0)
+
 case class CanonicalTranscript(
     id: String,
     chromosome: String,
     start: Long,
     end: Long,
-    strand: String
+    strand: Strand
 )
 
 case class ChemicalProbeUrl(niceName: String, url: Option[String])
@@ -91,7 +96,7 @@ case class Homologue(
     isHighConfidence: Option[String]
 )
 
-case class GenomicLocation(chromosome: String, start: Long, end: Long, strand: Int)
+case class GenomicLocation(chromosome: String, start: Long, end: Long, strand: Strand)
 
 case class GeneOntology(
     id: String,
@@ -174,6 +179,16 @@ object Target extends OTLogging {
 
   implicit val getTargetFromDB: GetResult[Target] =
     GetResult(fromPositionedResult[Target])
+
+  implicit val strandWrites: Writes[Strand] = Writes(s => JsNumber(s.value))
+  implicit val strandReads: Reads[Strand] = Reads {
+    case JsNumber(n) =>
+      Strand.values.find(_.value == n.toIntExact) match {
+        case Some(v) => JsSuccess(v)
+        case None    => JsError(s"Invalid Strand value: $n")
+      }
+    case _ => JsError("Strand must be a number")
+  }
 
   implicit val tepImpW: OWrites[Tep] = Json.writes[Tep]
   implicit val tepImpR: Reads[Tep] =
