@@ -1130,13 +1130,30 @@ object Objects extends OTLogging {
       DocumentField("label", "Label value (e.g., synonym, symbol)"),
       DocumentField("source", "Source database of the label")
     )
+  implicit val StrandEnumType: EnumType[Strand] = EnumType(
+    "Strand",
+    Some("Strand orientation of a genomic feature"),
+    List(
+      EnumValue("POSITIVE", value = Strand.Positive, description = Some("Positive strand")),
+      EnumValue("NEGATIVE", value = Strand.Negative, description = Some("Negative strand")),
+      EnumValue("UNKNOWN", value = Strand.Unknown, description = Some("Unknown strand"))
+    )
+  )
   implicit val genomicLocationImp: ObjectType[Backend, GenomicLocation] =
     deriveObjectType[Backend, GenomicLocation](
       ObjectTypeDescription("Genomic location information of the target gene"),
       DocumentField("chromosome", "Chromosome on which the target is located"),
       DocumentField("start", "Genomic start position of the target gene"),
       DocumentField("end", "Genomic end position of the target gene"),
-      DocumentField("strand", "Strand orientation of the target gene")
+      ReplaceField(
+        "strand",
+        Field(
+          "strand",
+          IntType,
+          Some("Strand orientation of the target gene (1 = positive, -1 = negative, 0 = unknown)"),
+          resolve = _.value.strand.value
+        )
+      )
     )
   implicit val targetClassImp: ObjectType[Backend, TargetClass] =
     deriveObjectType[Backend, TargetClass](
@@ -1158,8 +1175,18 @@ object Objects extends OTLogging {
       DocumentField("chromosome", "Chromosome location of the canonical transcript"),
       DocumentField("start", "Genomic start position of the canonical transcript"),
       DocumentField("end", "Genomic end position of the canonical transcript"),
-      DocumentField("strand", "Strand orientation of the canonical transcript")
+      DocumentField("strand", "Strand orientation of the canonical transcript"),
+      ReplaceField(
+        "strand",
+        Field(
+          "strand",
+          IntType,
+          Some("Strand orientation of the target gene (1 = positive, -1 = negative, 0 = unknown)"),
+          resolve = _.value.strand.value
+        )
+      )
     )
+
   implicit val constraintImp: ObjectType[Backend, Constraint] =
     deriveObjectType[Backend, Constraint](
       ObjectTypeDescription(
