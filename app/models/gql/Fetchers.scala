@@ -85,7 +85,7 @@ object Fetchers extends OTLogging {
 
   // target essentiality
   implicit val targetEssentialityHasId: HasId[TargetEssentiality, String] =
-    HasId[TargetEssentiality, String](_.id)
+    HasId[TargetEssentiality, String](_.targetId)
   val targetEssentialityFetcher: Fetcher[Backend, TargetEssentiality, TargetEssentiality, String] =
     Fetcher(
       config = FetcherConfig
