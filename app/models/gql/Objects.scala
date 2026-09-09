@@ -200,7 +200,6 @@ object Objects extends OTLogging {
     DocumentField("obsoleteNames", "List of obsolete names previously used for the target gene"),
     DocumentField("nameSynonyms", "List of name-based synonyms for the target gene"),
     DocumentField("symbolSynonyms", "List of symbol-based synonyms for the target gene"),
-    DocumentField("tep", "Target Enabling Package (TEP) information"),
     DocumentField("tractability", "Tractability information for the target"),
     DocumentField("transcriptIds",
                   "List of Ensembl transcript identifiers associated with the target"
@@ -466,7 +465,6 @@ object Objects extends OTLogging {
       DocumentField("mechanismOfAction", "Mechanism of action of the chemical probe"),
       DocumentField("isHighQuality", "Indicates if the chemical probe is high quality"),
       DocumentField("origin", "Origin of the chemical probe"),
-      DocumentField("probeMinerScore", "Score from ProbeMiner for chemical probe quality"),
       DocumentField("probesDrugsScore", "Score for chemical probes related to druggability"),
       DocumentField("scoreInCells", "Score indicating chemical probe activity in cells"),
       DocumentField("scoreInOrganisms", "Score indicating chemical probe activity in organisms"),
@@ -1097,16 +1095,6 @@ object Objects extends OTLogging {
                     "MGI identifier for the target gene in the mouse model [bioregistry:mgi]"
       )
     )
-
-  implicit val tepImp: ObjectType[Backend, Tep] = deriveObjectType[Backend, Tep](
-    ObjectTypeDescription("Target Enabling Package (TEP) information"),
-    DocumentField("targetFromSourceId", "Ensembl gene ID for the TEP target"),
-    DocumentField("description", "Description of the TEP target"),
-    DocumentField("therapeuticArea", "Therapeutic area associated with the TEP target"),
-    DocumentField("url", "URL linking to more information on the TEP target"),
-    RenameField("targetFromSourceId", "name"),
-    RenameField("url", "uri")
-  )
 
   implicit val idAndSourceImp: ObjectType[Backend, IdAndSource] =
     deriveObjectType[Backend, IdAndSource](
@@ -1908,6 +1896,12 @@ object Objects extends OTLogging {
       DocumentField("name", "Name of sponsor organisation.")
     )
 
+  implicit val trialLiteratureImp: ObjectType[Backend, TrialLiterature] =
+    deriveObjectType[Backend, TrialLiterature](
+      DocumentField("id", ""),
+      DocumentField("type", "")
+    )
+
   implicit val clinicalReportImp: ObjectType[Backend, ClinicalReport] =
     deriveObjectType[Backend, ClinicalReport](
       DocumentField("id", "Report ID"),
@@ -1956,9 +1950,6 @@ object Objects extends OTLogging {
         "trialSponsor",
         "Information on the entity or individual initiating the study."
       ),
-      DocumentField("hasExpertReview",
-                    "Whether the clinical report has been reviewed by an expert or not"
-      ),
       DocumentField(
         "countries",
         "List of countries where the clinical report was conducted/reported"
@@ -1966,6 +1957,8 @@ object Objects extends OTLogging {
       DocumentField("year", "The year to which the clinical report refers."),
       DocumentField("qualityControls", "Flags related to report concerns"),
       DocumentField("drugs", "List of drugs mentioned in the report"),
+      DocumentField("origin", ""),
+      DocumentField("provider", ""),
       ReplaceField(
         "diseases",
         Field(

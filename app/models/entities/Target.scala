@@ -31,7 +31,6 @@ case class ChemicalProbe(
     mechanismOfAction: Option[Seq[String]],
     isHighQuality: Boolean,
     origin: Option[Seq[String]],
-    probeMinerScore: Option[Double],
     probesDrugsScore: Option[Double],
     scoreInCells: Option[Double],
     scoreInOrganisms: Option[Double],
@@ -108,13 +107,6 @@ case class GeneOntology(
 
 case class GeneOntologyLookup(id: String, name: String)
 
-case class Tep(
-    targetFromSourceId: String,
-    url: String,
-    therapeuticArea: String,
-    description: String
-)
-
 case class IdAndSource(id: String, source: String)
 
 case class Constraint(
@@ -169,7 +161,6 @@ case class Target(
     symbolSynonyms: Seq[LabelAndSource] = Seq.empty,
     synonyms: Seq[LabelAndSource] = Seq.empty, // double check, this is name and symbol
     targetClass: Seq[TargetClass] = Seq.empty,
-    tep: Option[Tep],
     tractability: Seq[Tractability] = Seq.empty,
     transcriptIds: Seq[String] = Seq.empty,
     transcripts: Seq[Transcript] = Seq.empty
@@ -189,20 +180,6 @@ object Target extends OTLogging {
       }
     case _ => JsError("Strand must be a number")
   }
-
-  implicit val tepImpW: OWrites[Tep] = Json.writes[Tep]
-  implicit val tepImpR: Reads[Tep] =
-    (
-      (__ \ "targetFromSourceId").read[String] and
-        (__ \ "url").read[String] and
-        (__ \ "therapeuticArea").read[String] and
-        (__ \ "description").read[String]
-    )((tar, url, t, desc) =>
-      (tar, url, t, desc) match {
-        case ("", "", "", "")    => null
-        case (tar, url, t, desc) => Tep(tar, url, t, desc)
-      }
-    )
   implicit val idAndSourceImpF: OFormat[IdAndSource] = Json.format[IdAndSource]
   implicit val labelAndSourceImpF: OFormat[LabelAndSource] = Json.format[LabelAndSource]
   implicit val locationAndSourceImpF: OFormat[LocationAndSource] = Json.format[LocationAndSource]
