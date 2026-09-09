@@ -24,8 +24,6 @@ case class InteractionEvidence(
     expansionMethodShortName: Option[String],
     hostOrganismScientificName: Option[String],
     hostOrganismTaxId: Option[Long],
-    intASource: String,
-    intBSource: String,
     interactionDetectionMethodMiIdentifier: String,
     interactionDetectionMethodShortName: String,
     interactionIdentifier: Option[String],
