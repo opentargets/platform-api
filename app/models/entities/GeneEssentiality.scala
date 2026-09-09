@@ -19,7 +19,10 @@ case class DepMapEssentiality(screens: Seq[GeneEssentialityScreen],
                               tissueName: Option[String]
 )
 
-case class TargetEssentiality(targetId: String, isEssential: Boolean, depMapEssentiality: Seq[DepMapEssentiality])
+case class TargetEssentiality(targetId: String,
+                              isEssential: Boolean,
+                              depMapEssentiality: Seq[DepMapEssentiality]
+)
 
 object TargetEssentiality extends OTLogging {
   implicit val getTargetEssentialityResult: GetResult[TargetEssentiality] =
