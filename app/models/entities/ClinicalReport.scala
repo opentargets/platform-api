@@ -12,6 +12,8 @@ enum ClinicalReportType {
 case class ClinRepDrugListItem(drugFromSource: Option[String], drugId: Option[String])
 case class TrialSponsor(agencyClass: Option[String], name: Option[String])
 
+case class TrialLiterature(id: String, `type`: String)
+
 case class ClinicalReport(
     id: String,
     source: String,
@@ -23,7 +25,7 @@ case class ClinicalReport(
     trialDescription: Option[String],
     trialNumberOfArms: Option[Int],
     trialStartDate: Option[String],
-    trialLiterature: Seq[String],
+    trialLiterature: Seq[TrialLiterature],
     trialOverallStatus: Option[String],
     trialWhyStopped: Option[String],
     trialPrimaryPurpose: Option[String],
@@ -33,17 +35,21 @@ case class ClinicalReport(
     qualityControls: Seq[String],
     diseases: Seq[ClinicalDiseaseListItem],
     drugs: Seq[ClinRepDrugListItem],
-    hasExpertReview: Boolean,
     countries: Seq[String],
     year: Option[Int],
     sideEffects: Seq[ClinicalDiseaseListItem],
     trialOfficialTitle: Option[String],
-    url: Option[String]
+    url: Option[String],
+    origin: String,
+    provider: String
 )
 
 object ClinicalReport extends OTLogging {
   implicit val getClinicalReportFromDB: GetResult[ClinicalReport] =
     GetResult(fromPositionedResult[ClinicalReport])
+
+  implicit val trialLiteratureF: OFormat[TrialLiterature] =
+    Json.format[TrialLiterature]
 
   implicit val diseaseListItemW: Writes[ClinicalDiseaseListItem] =
     Json.writes[ClinicalDiseaseListItem]
