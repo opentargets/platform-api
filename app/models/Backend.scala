@@ -397,7 +397,7 @@ class Backend @Inject() (implicit
     val localMarkerContext = markerContext.fromExistingContext(append("table", tableName))
     logger
       .debug(s"querying target essentiality for the ids ${ids.mkString(",")}")(localMarkerContext)
-    val query = IdsQuery(ids, "id", tableName, 0, Pagination.sizeMax)
+    val query = IdsQuery(ids, "targetId", tableName, 0, Pagination.sizeMax)
     dbRetriever.executeQuery[TargetEssentiality, Query](query.query)
   }
 

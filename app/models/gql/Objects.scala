@@ -385,7 +385,7 @@ object Objects extends OTLogging {
         resolve = ctx =>
           DeferredValue(targetEssentialityFetcher.deferOpt(ctx.value.id)).map {
             case Some(ess) =>
-              ess.geneEssentiality.head.isEssential
+              ess.isEssential
             case None => None
           }
       ),
@@ -398,7 +398,7 @@ object Objects extends OTLogging {
         resolve = ctx =>
           DeferredValue(targetEssentialityFetcher.deferOpt(ctx.value.id)).map {
             case Some(ess) =>
-              ess.geneEssentiality.flatMap(_.depMapEssentiality)
+              ess.depMapEssentiality
             case None => None
           }
       ),
