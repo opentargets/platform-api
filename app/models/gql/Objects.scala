@@ -3689,8 +3689,6 @@ object Objects extends OTLogging {
                     "Scientific name of the host organism in which the interaction was observed"
       ),
       DocumentField("hostOrganismTaxId", "NCBI taxon ID of the host organism"),
-      DocumentField("intASource", "Source where interactor A is identified"),
-      DocumentField("intBSource", "Source where interactor B is identified"),
       DocumentField(
         "interactionDetectionMethodMiIdentifier",
         "Molecular Interactions (MI) identifier for the interaction detection method [bioregistry:mi]"
