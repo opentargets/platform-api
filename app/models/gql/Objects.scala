@@ -1958,7 +1958,7 @@ object Objects extends OTLogging {
       DocumentField("qualityControls", "Flags related to report concerns"),
       DocumentField("drugs", "List of drugs mentioned in the report"),
       DocumentField("origin", "Nature of the record the report originates from (e.g. CLINICAL_TRIAL, DRUG_LABEL, REGULATORY_AGENCY, CURATED_RESOURCE)."),
-      DocumentField("provider", ""),
+      DocumentField("provider", "Resource or organisation that distributes the data fetched from the primary source (e.g. AACT, ChEMBL, EMA, PMDA, TTD)."),
       ReplaceField(
         "diseases",
         Field(
