@@ -8,7 +8,7 @@ import models.entities.*
 import net.logstash.logback.argument.StructuredArguments.keyValue
 import services.ApplicationStart
 import slick.basic.DatabaseConfig
-import slick.jdbc.{GetResult, SQLActionBuilder}
+import slick.jdbc.{GetResult, PositionedResult, SQLActionBuilder}
 import utils.OTLogging
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -59,17 +59,33 @@ class ClickhouseRetriever(config: OTSettings)(implicit
     }
   }
 
+  // clickhouse-jdbc's PreparedStatement (what Slick's sql"..." normally executes through) ignores
+  // the trailing FORMAT JSONEachRow clause and returns typed per-column results instead of the
+  // single JSON-blob column DbJsonParser/GetResult expect; a plain Statement respects it. So this
+  // runs the raw statement directly instead of going through Slick's default PreparedStatement path.
   def executeQuery[A, B <: Q](q: B)(implicit rconv: GetResult[A]): Future[Vector[A]] = {
     logger.debug(s"execute query from esecuele Q ${q.toString}")
-    val qq = q.as[A]
+    val qStr = q.rep
 
     appStart.DatabaseCallCounter.labelValues(db_name, "executeQuery").inc()
 
-    db.run(qq.asTry).map {
+    val action = SimpleDBIO[Vector[A]] { ctx =>
+      val st = ctx.connection.createStatement()
+      try {
+        val rs = st.executeQuery(qStr)
+        try {
+          val pr = new PositionedResult(rs) { def close(): Unit = () }
+          val b = Vector.newBuilder[A]
+          while (pr.nextRow) b += rconv(pr)
+          b.result()
+        } finally rs.close()
+      } finally st.close()
+    }
+
+    db.run(action.asTry).map {
       case Success(v) => v
       case Failure(ex) =>
-        lazy val qStr = qq.statements.mkString("\n")
-        logger.error(s"executeQuery an exception was thrown ${ex.getMessage} with Query $qStr", ex)
+        logger.error(s"executeQuery an exception was thrown ${ex.getCause()} with Query $qStr", ex)
         Vector.empty // TODO: maybe we should return the error instead of an empty vector, to inform the user
     }
   }
