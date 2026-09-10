@@ -1898,7 +1898,7 @@ object Objects extends OTLogging {
 
   implicit val trialLiteratureImp: ObjectType[Backend, TrialLiterature] =
     deriveObjectType[Backend, TrialLiterature](
-      DocumentField("id", ""),
+      DocumentField("id", "PubMed identifier of the reference, when the source records one."),
       DocumentField("type", "")
     )
 
