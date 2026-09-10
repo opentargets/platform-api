@@ -1957,7 +1957,7 @@ object Objects extends OTLogging {
       DocumentField("year", "The year to which the clinical report refers."),
       DocumentField("qualityControls", "Flags related to report concerns"),
       DocumentField("drugs", "List of drugs mentioned in the report"),
-      DocumentField("origin", ""),
+      DocumentField("origin", "Nature of the record the report originates from (e.g. CLINICAL_TRIAL, DRUG_LABEL, REGULATORY_AGENCY, CURATED_RESOURCE)."),
       DocumentField("provider", ""),
       ReplaceField(
         "diseases",
