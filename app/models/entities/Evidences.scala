@@ -32,7 +32,7 @@ case class EvidenceVariation(
 
 case class LabelledElement(id: String, label: String)
 
-case class LabelledUri(url: String, niceName: Option[String])
+case class LabelledUri(url: Option[String], niceName: Option[String])
 
 case class BiomarkerGeneExpression(name: Option[String], id: Option[String])
 
