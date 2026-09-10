@@ -1899,7 +1899,10 @@ object Objects extends OTLogging {
   implicit val trialLiteratureImp: ObjectType[Backend, TrialLiterature] =
     deriveObjectType[Backend, TrialLiterature](
       DocumentField("id", "PubMed identifier of the reference, when the source records one."),
-      DocumentField("type", "How the reference relates to the trial: RESULT and DERIVED report its outcome, BACKGROUND is literature its authors cited.")
+      DocumentField(
+        "type",
+        "How the reference relates to the trial: RESULT and DERIVED report its outcome, BACKGROUND is literature its authors cited."
+      )
     )
 
   implicit val clinicalReportImp: ObjectType[Backend, ClinicalReport] =
@@ -1957,8 +1960,14 @@ object Objects extends OTLogging {
       DocumentField("year", "The year to which the clinical report refers."),
       DocumentField("qualityControls", "Flags related to report concerns"),
       DocumentField("drugs", "List of drugs mentioned in the report"),
-      DocumentField("origin", "Nature of the record the report originates from (e.g. CLINICAL_TRIAL, DRUG_LABEL, REGULATORY_AGENCY, CURATED_RESOURCE)."),
-      DocumentField("provider", "Resource or organisation that distributes the data fetched from the primary source (e.g. AACT, ChEMBL, EMA, PMDA, TTD)."),
+      DocumentField(
+        "origin",
+        "Nature of the record the report originates from (e.g. CLINICAL_TRIAL, DRUG_LABEL, REGULATORY_AGENCY, CURATED_RESOURCE)."
+      ),
+      DocumentField(
+        "provider",
+        "Resource or organisation that distributes the data fetched from the primary source (e.g. AACT, ChEMBL, EMA, PMDA, TTD)."
+      ),
       ReplaceField(
         "diseases",
         Field(
