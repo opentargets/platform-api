@@ -8,10 +8,10 @@ import slick.jdbc.GetResult
 import utils.OTLogging
 import utils.db.DbJsonParser.fromPositionedResult
 
-enum Strand(val value: Int):
-  case Positive extends Strand(1)
-  case Negative extends Strand(-1)
-  case Unknown extends Strand(0)
+enum Strand(val value: String):
+  case Positive extends Strand("1")
+  case Negative extends Strand("-1")
+  case Unknown extends Strand("0")
 
 case class CanonicalTranscript(
     id: String,
@@ -171,14 +171,14 @@ object Target extends OTLogging {
   implicit val getTargetFromDB: GetResult[Target] =
     GetResult(fromPositionedResult[Target])
 
-  implicit val strandWrites: Writes[Strand] = Writes(s => JsNumber(s.value))
+  implicit val strandWrites: Writes[Strand] = Writes(s => JsString(s.value))
   implicit val strandReads: Reads[Strand] = Reads {
-    case JsNumber(n) =>
-      Strand.values.find(_.value == n.toIntExact) match {
+    case JsString(s) =>
+      Strand.values.find(_.value == s) match {
         case Some(v) => JsSuccess(v)
-        case None    => JsError(s"Invalid Strand value: $n")
+        case None    => JsError(s"Invalid Strand value: $s")
       }
-    case _ => JsError("Strand must be a number")
+    case _ => JsError("Strand must be a string")
   }
   implicit val idAndSourceImpF: OFormat[IdAndSource] = Json.format[IdAndSource]
   implicit val labelAndSourceImpF: OFormat[LabelAndSource] = Json.format[LabelAndSource]

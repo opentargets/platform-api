@@ -1133,15 +1133,6 @@ object Objects extends OTLogging {
       DocumentField("chromosome", "Chromosome on which the target is located"),
       DocumentField("start", "Genomic start position of the target gene"),
       DocumentField("end", "Genomic end position of the target gene"),
-      ReplaceField(
-        "strand",
-        Field(
-          "strand",
-          IntType,
-          Some("Strand orientation of the target gene (1 = positive, -1 = negative, 0 = unknown)"),
-          resolve = _.value.strand.value
-        )
-      )
     )
   implicit val targetClassImp: ObjectType[Backend, TargetClass] =
     deriveObjectType[Backend, TargetClass](
@@ -1164,15 +1155,6 @@ object Objects extends OTLogging {
       DocumentField("start", "Genomic start position of the canonical transcript"),
       DocumentField("end", "Genomic end position of the canonical transcript"),
       DocumentField("strand", "Strand orientation of the canonical transcript"),
-      ReplaceField(
-        "strand",
-        Field(
-          "strand",
-          IntType,
-          Some("Strand orientation of the target gene (1 = positive, -1 = negative, 0 = unknown)"),
-          resolve = _.value.strand.value
-        )
-      )
     )
 
   implicit val constraintImp: ObjectType[Backend, Constraint] =
