@@ -93,7 +93,7 @@ jobs:
           project_id: 'open-targets-eu-dev'
           workload_identity_provider: projects/426265110888/locations/global/workloadIdentityPools/github-actions/providers/opentargets
           service_account: github-actions@open-targets-eu-dev.iam.gserviceaccount.com
-          access_token_lifetime: 300s
+          access_token_lifetime: 600s
 
       - id: auth-gar
         name: Login to Google Artifact Registry
