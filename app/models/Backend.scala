@@ -29,7 +29,7 @@ import models.entities.Pharmacogenomics.*
 import models.entities.SearchFacetsResults.*
 import models.entities.Studies.*
 import models.entities.Target.*
-import models.entities.Transcript.*
+import models.entities.Transcripts.*
 import models.entities.Evidences.*
 import models.entities.SequenceOntologyTerm.*
 import models.entities.*
