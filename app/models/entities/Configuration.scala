@@ -122,6 +122,7 @@ object Configuration {
       study: DbTableSettings,
       so: DbTableSettings,
       target: TargetSettings,
+      transcript: DbTableSettings,
       variant: DbTableSettings
   )
 

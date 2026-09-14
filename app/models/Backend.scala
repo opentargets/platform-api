@@ -29,10 +29,17 @@ import models.entities.Pharmacogenomics.*
 import models.entities.SearchFacetsResults.*
 import models.entities.Studies.*
 import models.entities.Target.*
+import models.entities.Transcript.*
 import models.entities.Evidences.*
 import models.entities.SequenceOntologyTerm.*
 import models.entities.*
-import models.gql.{Fetchers, AggregationTypeEnum, StudyTypeEnum, InteractionSourceEnum, ChromosomeEnum}
+import models.gql.{
+  Fetchers,
+  AggregationTypeEnum,
+  StudyTypeEnum,
+  InteractionSourceEnum,
+  ChromosomeEnum
+}
 import models.entities.Violations.{DateFilterError, InputParameterCheckError, RegionRangeError}
 
 import org.apache.http.impl.nio.reactor.IOReactorConfig
@@ -238,6 +245,18 @@ class Backend @Inject() (implicit
         }
       }
     results
+  }
+
+  def getTranscripts(id: String,
+                     canonical: Option[Boolean],
+                     page: Option[Pagination]
+  ): Future[Transcripts] = {
+    val tableName = getTableWithPrefixOrDefault(defaultOTSettings.clickhouse.transcript.name)
+    val pag = page.getOrElse(Pagination.mkDefault)
+    val transcriptQuery = OneToMany.transcriptQuery(id, canonical, tableName, pag._1, pag._2)
+    dbRetriever
+      .executeQuery[Transcripts, Query](transcriptQuery.query)
+      .map(_.headOption.getOrElse(Transcripts.empty))
   }
 
   def getColocalisations(studyLocusIds: Seq[String],
@@ -742,12 +761,12 @@ class Backend @Inject() (implicit
         pag._2,
         Some(models.db.OrderBy("target -> target.genomicLocation.start", sortDirection.ASC))
       )
-    logger.debug(s"querying targets by region",
-                 keyValue("chromosome", chromosome),
-                 keyValue("start", start),
-                 keyValue("end", end),
-                 keyValue("table", tableName)
-    )
+    // logger.debug(s"querying targets by region",
+    //              keyValue("chromosome", chromosome),
+    //              keyValue("start", start),
+    //              keyValue("end", end),
+    //              keyValue("table", tableName)
+    // )
     val results = dbRetriever.executeQuery[Targets, Query](targetsQuery.query)
     results.map(_.headOption.getOrElse(Targets.empty))
   }

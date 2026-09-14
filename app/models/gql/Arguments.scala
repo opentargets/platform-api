@@ -168,6 +168,8 @@ object Arguments {
     Argument("queryString", StringType, description = "Search query string")
   val category: Argument[Option[String]] =
     Argument("category", OptionInputType(StringType), description = "Category filter")
+  val canonical: Argument[Option[Boolean]] =
+    Argument("canonical", OptionInputType(BooleanType), description = "Canonical filter")
   val queryTerms: Argument[Seq[String @@ FromInput.CoercedScalaResult]] =
     Argument("queryTerms", ListInputType(StringType), description = "List of query terms to map")
   val optQueryString: Argument[Option[String]] =

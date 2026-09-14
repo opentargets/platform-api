@@ -140,6 +140,37 @@ object OneToMany {
       size
     )
 
+  def transcriptQuery(targetId: String,
+                      canonical: Option[Boolean],
+                      tableName: String,
+                      offset: Int,
+                      size: Int
+  ): OneToMany =
+    val filter: Option[Column] =
+      canonical match {
+        case Some(canonical) =>
+          Some(
+            Functions.arrayFilter(
+              s"t -> (${Functions
+                  .equals(
+                    column("t.isEnsemblCanonical"),
+                    literal(canonical)
+                  )})",
+              column("transcripts")
+            )
+          )
+        case None => None
+      }
+    OneToMany(
+      Seq(targetId),
+      "targetId",
+      "transcripts",
+      tableName,
+      offset,
+      size,
+      filter = filter
+    )
+
   def locusQuery(studyLocusIds: Seq[String],
                  tableName: String,
                  variantIds: Option[Seq[String]],
