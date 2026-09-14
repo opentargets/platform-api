@@ -456,7 +456,7 @@ object Objects extends OTLogging {
         transcriptsImp,
         description = Some(""),
         arguments = canonical :: pageArg :: Nil,
-        complexity = Some(complexityCalculator(pageSize)),
+        // complexity = Some(complexityCalculator(pageSize)),
         resolve = ctx => ctx.ctx.getTranscripts(ctx.value.id, ctx.arg(canonical), ctx.arg(pageArg))
       )
     )
