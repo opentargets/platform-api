@@ -1851,23 +1851,15 @@ object Objects extends OTLogging {
 
   implicit val ClinicalReportEnumType: EnumType[ClinicalReportType] = EnumType(
     "ClinicalReportType",
-    Some(""),
+    Some("Kind of clinical evidence the report describes."),
     List(
-      EnumValue("CURATED_RESOURCE",
-                value = ClinicalReportType.CURATED_RESOURCE,
-                description = Some("Clinical report curated from a scientific resource.")
+      EnumValue("INDICATION",
+                value = ClinicalReportType.INDICATION,
+                description = Some("Clinical evidence informing about a drug/disease claim.")
       ),
-      EnumValue("DRUG_LABEL",
-                value = ClinicalReportType.DRUG_LABEL,
-                description = Some("Clinical report extracted from drug labels.")
-      ),
-      EnumValue("CLINICAL_TRIAL",
-                value = ClinicalReportType.CLINICAL_TRIAL,
-                description = Some("Clinical report derived from clinical trial records.")
-      ),
-      EnumValue("REGULATORY_AGENCY",
-                value = ClinicalReportType.REGULATORY_AGENCY,
-                description = Some("Clinical report issued by regulatory agencies.")
+      EnumValue("SAFETY",
+                value = ClinicalReportType.SAFETY,
+                description = Some("Clinical evidence informing about a drug's safety event")
       )
     )
   )
@@ -1902,7 +1894,7 @@ object Objects extends OTLogging {
       DocumentField("phaseFromSource", "Clinical phase reported at source"),
       DocumentField(
         "type",
-        "Type of clinical report. List of possible values: CURATED_RESOURCE, DRUG_LABEL, CLINICAL_TRIAL and REGULATORY_AGENCY."
+        "Type of clinical report. List of possible values: INDICATION, SAFETY."
       ),
       DocumentField("trialDescription",
                     "Description of the trial associated with the clinical report"
