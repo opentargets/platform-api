@@ -6,7 +6,7 @@ import utils.OTLogging
 import utils.db.DbJsonParser.fromPositionedResult
 
 enum ClinicalReportType {
-  case CURATED_RESOURCE, DRUG_LABEL, CLINICAL_TRIAL, REGULATORY_AGENCY
+  case INDICATION, SAFETY
 }
 
 case class ClinRepDrugListItem(drugFromSource: Option[String], drugId: Option[String])
