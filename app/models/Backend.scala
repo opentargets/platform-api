@@ -761,12 +761,6 @@ class Backend @Inject() (implicit
         pag._2,
         Some(models.db.OrderBy("target -> target.genomicLocation.start", sortDirection.ASC))
       )
-    // logger.debug(s"querying targets by region",
-    //              keyValue("chromosome", chromosome),
-    //              keyValue("start", start),
-    //              keyValue("end", end),
-    //              keyValue("table", tableName)
-    // )
     val results = dbRetriever.executeQuery[Targets, Query](targetsQuery.query)
     results.map(_.headOption.getOrElse(Targets.empty))
   }

@@ -139,17 +139,7 @@ object Objects extends OTLogging {
     )
 
   implicit val transcriptImp: ObjectType[Backend, Transcript] =
-    deriveObjectType[Backend, Transcript](
-      // ObjectTypeDescription("Transcript annotation for a target gene"),
-      // DocumentField("transcriptId", "Ensembl transcript identifier"),
-      // DocumentField("biotype", "Biotype classification of the transcript"),
-      // DocumentField("isEnsemblCanonical", "Whether this is the Ensembl canonical transcript"),
-      // DocumentField("uniprotId", "UniProt accession mapped to the transcript"),
-      // DocumentField("isUniprotReviewed", "Whether the UniProt entry is reviewed (Swiss-Prot)"),
-      // DocumentField("translationId", "Ensembl translation identifier"),
-      // DocumentField("alphafoldId", "AlphaFold structure prediction identifier"),
-      // DocumentField("uniprotIsoformId", "UniProt isoform identifier")
-    )
+    deriveObjectType[Backend, Transcript]()
 
   implicit val exonImp: ObjectType[Backend, Exon] = deriveObjectType(
   )
@@ -210,10 +200,6 @@ object Objects extends OTLogging {
     DocumentField("transcriptIds",
                   "List of Ensembl transcript identifiers associated with the target"
     ),
-    // DocumentField(
-    //   "transcripts",
-    //   "List of transcripts associated with the target including protein and structure annotations"
-    // ),
     DocumentField("pathways", "Pathway annotations for the target"),
     RenameField("go", "geneOntology"),
     RenameField("constraint", "geneticConstraint"),
@@ -456,7 +442,6 @@ object Objects extends OTLogging {
         transcriptsImp,
         description = Some(""),
         arguments = canonical :: pageArg :: Nil,
-        // complexity = Some(complexityCalculator(pageSize)),
         resolve = ctx => ctx.ctx.getTranscripts(ctx.value.id, ctx.arg(canonical), ctx.arg(pageArg))
       )
     )
