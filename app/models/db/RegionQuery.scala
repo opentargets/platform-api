@@ -32,8 +32,8 @@ case class RegionQuery(chromosome: String,
   private val positionalQuery = Where(
     Functions.and(
       Functions.equals(column("chromosome"), literal(sanitisedChromosome)),
-      Functions.greaterOrEquals(column("start"), literal(start)),
-      Functions.lessOrEquals(column("end"), literal(end))
+      Functions.lessOrEquals(column("start"), literal(end)),
+      Functions.greaterOrEquals(column("end"), literal(start))
     )
   )
 
